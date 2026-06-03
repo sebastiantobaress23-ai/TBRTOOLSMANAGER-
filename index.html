@@ -699,7 +699,7 @@ const pr = (costo * (1 + m / 100)) / (1 - conf.mlCom / 100) + env;
 
 const gn = (pr - env) * (1 - conf.mlCom / 100) - costo;
     if (m<(settings.marginAlert||15)) low=true;
-    ganT+=gn*(p.q||1);
+   ganT += gn;
     CALC.margins[p.id]=m;CALC.envios[p.id]=env;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td>
