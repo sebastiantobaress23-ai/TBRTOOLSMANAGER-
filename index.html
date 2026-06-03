@@ -688,8 +688,8 @@ function renderResults(c) {
   body.innerHTML='';
   v.forEach(p=>{
     const cu=p.p*TCE;
-    const m =prev.m[p.id]!==undefined?prev.m[p.id]:30;
-    const env=prev.e[p.id]!==undefined?prev.e[p.id]:conf.mlEnv;
+    const m = p.b1 || 30;
+const env = conf.mlEnv;
     const pr=cu*(1+m/100);
     const gn=pr*(1-conf.mlCom/100)-cu-env;
     if (m<(settings.marginAlert||15)) low=true;
