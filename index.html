@@ -612,10 +612,13 @@ function switchConf(id) {
 
 function updTotbar() {
   const conf=getConf();
-  const v=PP.filter(p=>p.p>0);
+  const v = PP.filter(p => (p.lista || 0) > 0);
   if (!v.length) return;
   let up=0,u=0;
-  v.forEach(p=>{up+=(p.q||1)*p.p;u+=(p.q||1);});
+  v.forEach(p => {
+  up += (p.q || 1) * (p.lista || 0);
+  u += (p.q || 1);
+});
   let ut,at;
   if (conf.mode==='ars') { ut=up*(1+conf.comInt/100); at=ut+conf.flete; }
   else if (conf.mode==='pesos') { ut=up*(1+conf.comInt/100); at=ut*conf.precio+conf.flete; }
