@@ -74,7 +74,15 @@ body{display:flex;flex-direction:column}
 .ph{display:grid;grid-template-columns:2fr 110px 64px 100px 50px 50px 34px;gap:8px;padding:0 6px 8px}
 .ph-l{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--mu)}
 .pr{display:grid;grid-template-columns:2fr 110px 64px 100px 50px 50px 34px;gap:8px;align-items:center;margin-bottom:6px}
-.pr-boni{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.pr-boni{
+  display:flex;
+  gap:4px;
+  align-items:center;
+  flex-wrap:nowrap;
+  overflow:hidden;
+  max-width:100%;
+  margin-top:4px;
+}
 .pr-boni input{height:34px;width:58px;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:0 6px;color:var(--ch);font-size:13px;text-align:center;outline:none;transition:border-color .15s}
 .pr-boni input:focus{border-color:var(--si)}
 .pr-boni input::placeholder{color:var(--mu);font-size:11px}
@@ -251,7 +259,9 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .savebar input,.savebar button{width:100%}
   footer{flex-direction:column;gap:4px;text-align:center}
   .cat-t,.cat-r{grid-template-columns:1fr 90px 80px 70px}
-  .cat-t .h-code,.cat-r .c-code{display:none}
+  .cat-t .h-code,.cat-r .c-code{display:none} 
+.pr-boni{
+  display:none;
 }
 </style>
 </head>
