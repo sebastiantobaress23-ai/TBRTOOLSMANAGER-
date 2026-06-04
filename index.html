@@ -516,12 +516,14 @@ function pgCompra() {
       <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">📦 Del catálogo</button>`:''}<button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
-      <div class="ph-l">Nombre</div>
-      <div class="ph-l h-code">Código</div>
-      <div class="ph-l" style="text-align:center">Cant.</div>
-      <div class="ph-l">${conf.mode==='ars'?'Lista ARS · Boni%':'Lista USD · Boni%'}</div>
-      <div></div>
-    </div>
+  <div class="ph-l">Nombre</div>
+  <div class="ph-l h-code">Código</div>
+  <div class="ph-l" style="text-align:center">Cant.</div>
+  <div class="ph-l">${conf.mode==='ars'?'Lista ARS':'Lista USD'}</div>
+  <div class="ph-l">B1%</div>
+  <div class="ph-l">B2%</div>
+  <div></div>
+</div>
     <div id="plist">${PP.length===0?'<div class="empty" style="padding:16px">Sin productos. Agregá uno arriba.</div>':PP.map(prodRow).join('')}</div>
     <button class="btn-add-row" onclick="addProd()">+ Agregar producto</button>
     <div id="totbar-wrap" style="display:${PP.length>0?'block':'none'}">
