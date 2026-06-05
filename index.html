@@ -99,32 +99,38 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 .sparkline{display:block;margin-top:6px;opacity:.7}
 
 /* ── MOBILE BOTTOM NAV ── */
-@media(max-width:640px){
-  .nav{display:none!important}
-  .mob-nav{display:flex!important}
-  body{padding-bottom:64px}
-}
 .mob-nav{
   display:none;
-  position:fixed;bottom:0;left:0;right:0;height:64px;
-  background:rgba(8,8,8,.97);
-  border-top:1px solid var(--b1);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  z-index:500;
+  position:fixed;bottom:0;left:0;right:0;
+  height:64px;
+  background:rgba(8,8,8,.98);
+  border-top:1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  z-index:9999;
   align-items:stretch;
-  box-shadow:0 -4px 24px rgba(0,0,0,.5);
+  box-shadow:0 -4px 32px rgba(0,0,0,.7);
+  /* iOS safe area */
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  height:calc(64px + env(safe-area-inset-bottom,0px));
 }
 .mob-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;cursor:pointer;padding:6px 0;
   font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--di);transition:all .15s;border:none;background:transparent;
-  -webkit-tap-highlight-color:transparent;
+  text-transform:uppercase;color:rgba(255,255,255,.25);transition:all .15s;border:none;background:transparent;
+  -webkit-tap-highlight-color:transparent;min-width:0;
 }
-.mob-tab .mob-icon{font-size:18px;line-height:1}
+.mob-tab .mob-icon{font-size:20px;line-height:1;margin-bottom:1px}
 .mob-tab.on{color:var(--us)}
-.mob-tab.on .mob-icon{filter:drop-shadow(0 0 4px rgba(45,212,191,.5))}
-html.light .mob-nav{background:rgba(255,255,255,.97);border-top-color:var(--b1)}
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(45,212,191,.6))}
+html.light .mob-nav{background:rgba(255,255,255,.98);border-top-color:var(--b2)}
+/* Media query AFTER the base rule so it correctly overrides */
+@media screen and (max-width:640px){
+  .nav{display:none!important}
+  .mob-nav{display:flex!important}
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+}
 
 /* ── PAGE ACCENT ── */
 .hdr-accent{height:2px;position:absolute;bottom:0;left:0;right:0;transition:background .3s}
@@ -2499,6 +2505,13 @@ window.onload = function() {
   }
   initTheme();
   initCompact();
+  // Force mobile nav visibility on small screens (iOS Safari fix)
+  if (window.innerWidth <= 640 || screen.width <= 640) {
+    const mn = document.getElementById('mob-nav');
+    if (mn) mn.style.cssText += ';display:flex!important';
+    const dn = document.querySelector('.nav');
+    if (dn) dn.style.display = 'none';
+  }
   navigate('dashboard');
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
