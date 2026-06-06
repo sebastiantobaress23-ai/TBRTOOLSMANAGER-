@@ -688,8 +688,22 @@ const DB = {
 
 async function fbWrite(k, v) {
   try {
-    await fetch(`${FB}/${k}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});
-  } catch {}
+    const r = await fetch(`${FB}/${k}.json`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(v)
+    });
+
+    if (!r.ok) {
+      console.error('Firebase error', k, r.status);
+      return;
+    }
+
+    _lastWrite = Date.now();
+
+  } catch (err) {
+    console.error('Firebase error', err);
+  }
 }
 
 // Cuando vuelve internet, subir cambios pendientes
