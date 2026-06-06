@@ -1744,33 +1744,106 @@ after.stats=()=>{
 /* ═══════════════════════════════════════════
    PUBLICAR ML
 ═══════════════════════════════════════════ */
-let ML = { srcType:'calc', srcId:null, mode:'clasico', glbCom:null, glbEnv:null, margins:{}, envios:{} };
+let ML = { srcType:'calc', srcId:null, mode:'clasico', glbCom:null, glbEnv:null, margins:{}, envios:{}, manualProducts:[] };
+
+/* ── helper: build product cards HTML ── */
+function _mlCards(products, glbCom, glbEnv) {
+  return products.map(p => {
+    const m   = ML.margins[p.id] !== undefined ? ML.margins[p.id] : 30;
+    const env = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : glbEnv);
+    const pr  = p.cu*(1+m/100)/(1-glbCom/100)+env;
+    const gn  = pr*(1-glbCom/100)-p.cu-env;
+    const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
+    const rmBtn = ML.srcType==='manual'
+      ? `<button class="btn-rm" onclick="mlRmManualProd('${p.id}')" title="Quitar artículo">✕</button>` : '';
+    return `<div class="ml-card" id="mlc-${p.id}">
+      <div class="ml-card-top">
+        <div>
+          <div class="ml-card-name">${esc(p.n||'Producto')}</div>
+          ${p.c?`<div class="ml-card-code">${esc(p.c)} · ${p.q} u.</div>`:`<div class="ml-card-code">${p.q} u.</div>`}
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ml-card-cost">
+            <div class="ml-card-cost-lbl">Costo ARS</div>
+            <div class="ml-card-cost-val">${fmtA(p.cu)}</div>
+          </div>
+          ${rmBtn}
+        </div>
+      </div>
+      <div class="ml-card-inputs">
+        <div class="ml-card-field">
+          <label>Margen %</label>
+          <input type="number" value="${m}" min="0" max="999" step="1" data-mlid="${p.id}" data-mlcu="${p.cu}" class="ml-margin-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
+        </div>
+        ${ML.mode==='clasico'
+          ?`<div class="ml-card-field"><label>Envío ML $</label><input type="number" value="${env}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`
+          :`<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">✓ Full incluido</div></div>`}
+        <div class="ml-card-field">
+          <label>Com. ML %</label>
+          <input type="number" value="${glbCom}" min="0" max="30" step="0.5" data-mlcid="${p.id}" data-mlcu="${p.cu}" class="ml-com-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
+        </div>
+      </div>
+      <div class="ml-card-results" id="mlr-${p.id}">
+        <div class="ml-res-item">
+          <div class="ml-res-lbl">Precio ML</div>
+          <div class="ml-res-val cch" id="mlrp-${p.id}">${fmtA(pr)}</div>
+          <div class="ml-res-sub" id="mlrp2-${p.id}">× ${p.q} = ${fmtA(pr*p.q)}</div>
+        </div>
+        <div class="ml-res-item">
+          <div class="ml-res-lbl">Ganancia / u.</div>
+          <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrg-${p.id}">${fmtA(gn)}</div>
+          <div class="ml-res-sub" id="mlrg2-${p.id}">${gnPct}% sobre costo</div>
+        </div>
+        <div class="ml-res-item">
+          <div class="ml-res-lbl">Gan. total</div>
+          <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrgt-${p.id}">${fmtA(gn*p.q)}</div>
+          <div class="ml-res-sub">× ${p.q} unidades</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function pgML() {
-  const ps = DB.get('purchases',[]);
+  const ps   = DB.get('purchases',[]);
   const conf = getConf();
-  // Determine source products
+  const pubs = DB.get('mlpubs',[]);
+
+  // ── Resolve source products ──
   let products = [], srcLabel = '';
   if (ML.srcType === 'calc' && CALC && CALC.v.length) {
-    products = CALC.v.map(p => ({ id:p.id, n:p.n, c:p.c, q:p.q||1, cu: p.p * CALC.TCE }));
-    srcLabel = 'Compra actual (sin guardar)';
+    products  = CALC.v.map(p => ({ id:p.id, n:p.n, c:p.c, q:p.q||1, cu: p.p * CALC.TCE }));
+    srcLabel  = 'Compra actual (sin guardar)';
   } else if (ML.srcType === 'purchase' && ML.srcId) {
     const p = ps.find(x=>x.id===ML.srcId);
     if (p) {
       products = (p.products||[]).map(pr => ({ id:pr.id, n:pr.n, c:pr.c, q:pr.q||1, cu: pr.p*(p.r?.TCE||0) }));
       srcLabel = p.name||'Sin nombre';
     }
+  } else if (ML.srcType === 'manual') {
+    products = ML.manualProducts;
+    srcLabel = 'Ingreso manual';
   }
-  const hasSrc = products.length > 0;
-  const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
-  const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
-  const envFull = ML.mode === 'full' ? 0 : glbEnv; // Full = envío gratis para cliente (ML lo cobra al vendedor)
-  const envDesc = ML.mode === 'full' ? 'ML Full (envío incluido en precio)' : `Clásico · $${Math.round(glbEnv).toLocaleString('es-AR')} por unidad`;
+
+  const hasSrc  = products.length > 0;
+  const glbCom  = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
+  const glbEnv  = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
+
+  // ── Totals for render ──
+  let totP=0, totG=0;
+  products.forEach(p=>{
+    const m   = ML.margins[p.id]!==undefined ? ML.margins[p.id] : 30;
+    const env = ML.mode==='full' ? 0 : (ML.envios[p.id]!==undefined ? ML.envios[p.id] : glbEnv);
+    const pr  = p.cu*(1+m/100)/(1-glbCom/100)+env;
+    const gn  = pr*(1-glbCom/100)-p.cu-env;
+    totP += pr*p.q; totG += gn*p.q;
+  });
+
   return `<div class="pg">
   <div class="sh mb4">Publicar en Mercado Libre</div>
-  <div class="hint mb20">Calculá precios de venta a partir de tus costos reales importados.</div>
+  <div class="hint mb20">Calculá precios de venta a partir de tus costos reales.</div>
 
-  <!-- FUENTE DE DATOS -->
+  <!-- ── FUENTE ── -->
   <div class="sh mb12" style="font-size:9px">FUENTE DE COSTOS</div>
   <div class="ml-src-bar mb20">
     ${CALC&&CALC.v.length?`<button class="ml-src-btn${ML.srcType==='calc'?' on':''}" onclick="mlSetSrc('calc',null)">✦ Compra actual</button>`:''}
@@ -1778,207 +1851,278 @@ function pgML() {
       <option value="">— Elegir compra guardada —</option>
       ${ps.slice().reverse().map(p=>`<option value="${p.id}"${ML.srcId===p.id&&ML.srcType==='purchase'?' selected':''}>${esc(p.name||'Sin nombre')} · ${fmtD(p.date)} · TCE ${fmtA(p.r?.TCE||0)}</option>`).join('')}
     </select>
+    <button class="ml-src-btn${ML.srcType==='manual'?' on':''}" onclick="mlSetSrc('manual',null)">✏ Manual</button>
   </div>
 
-  ${!hasSrc ? `<div class="empty-state">
+  <!-- ── FORMULARIO MANUAL ── -->
+  ${ML.srcType==='manual'?`<div class="card mb16">
+    <div class="sh mb12" style="font-size:9px;margin-bottom:14px">AGREGAR ARTÍCULO</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 80px;gap:10px;margin-bottom:12px">
+      <div><label class="fl">Nombre del artículo</label><div class="iw"><input type="text" id="mlm-n" placeholder="Ej: Taladro 20V DEWALT"></div></div>
+      <div><label class="fl">Código (opcional)</label><div class="iw"><input type="text" id="mlm-c" placeholder="SKU / ref."></div></div>
+      <div><label class="fl">Cant.</label><div class="iw"><input type="number" id="mlm-q" value="1" min="1" step="1"></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label class="fl">Costo ARS (directo)</label>
+        <div class="iw"><span class="ipre">ARS</span><input type="number" id="mlm-ars" placeholder="0" step="100" min="0"></div>
+        <div class="hint">Ingresá el costo final en pesos.</div>
+      </div>
+      <div>
+        <label class="fl">— o — Costo USD × TCE</label>
+        <div style="display:flex;gap:6px">
+          <div class="iw" style="flex:1"><span class="ipre">USD</span><input type="number" id="mlm-usd" placeholder="0.00" step="0.5" min="0"></div>
+          <div class="iw" style="flex:1"><span class="ipre">TCE</span><input type="number" id="mlm-tce" placeholder="1200" step="10" min="1"></div>
+        </div>
+        <div class="hint">Se multiplican para obtener el costo ARS.</div>
+      </div>
+    </div>
+    <div class="fe"><button class="btn-p" onclick="mlAddManualProd()">+ Agregar artículo</button></div>
+  </div>`:''}
+
+  <!-- ── EMPTY STATE ── -->
+  ${!hasSrc?`<div class="empty-state">
     <svg class="empty-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M32 8L56 20V44L32 56L8 44V20L32 8Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
       <path d="M32 8V56M8 20L32 32L56 20" stroke="currentColor" stroke-width="2" opacity=".5"/>
     </svg>
     <div class="empty-title">Sin productos cargados</div>
-    <div class="empty-sub">Elegí una compra guardada o calculá una compra nueva primero.</div>
-  </div>` : `
-  <!-- MODO ML -->
+    <div class="empty-sub">${ML.srcType==='manual'
+      ?'Completá el formulario de arriba y hacé clic en + Agregar artículo.'
+      :'Elegí una compra guardada, calculá una compra nueva, o usá el modo ✏ Manual.'}</div>
+  </div>`:`
+
+  <!-- ── MODALIDAD ── -->
   <div class="sh mb12" style="font-size:9px">MODALIDAD DE PUBLICACIÓN</div>
   <div class="ml-mode-bar mb16">
     <button class="ml-mode-btn${ML.mode==='clasico'?' on':''}" onclick="mlSetMode('clasico')">Clásico · con envío</button>
     <button class="ml-mode-btn${ML.mode==='full'?' on':''}" onclick="mlSetMode('full')">Full · envío gratis</button>
   </div>
 
-  <!-- PARÁMETROS GLOBALES -->
+  <!-- ── PARÁMETROS GLOBALES ── -->
   <div class="ml-global mb20">
     <div class="ml-gfield">
       <label>Comisión ML %</label>
       <input type="number" value="${glbCom}" min="0" max="30" step="0.5" id="ml-glb-com" oninput="mlGlobal()">
     </div>
-    ${ML.mode==='clasico'?`<div class="ml-gfield">
-      <label>Envío ML $</label>
-      <input type="number" value="${glbEnv}" min="0" step="100" id="ml-glb-env" oninput="mlGlobal()">
-    </div>`:'<div style="font-size:12px;color:var(--di);align-self:center">Envío gratis para el comprador · ML cobra una tarifa fija al vendedor.</div>'}
+    ${ML.mode==='clasico'
+      ?`<div class="ml-gfield"><label>Envío ML $</label><input type="number" value="${glbEnv}" min="0" step="100" id="ml-glb-env" oninput="mlGlobal()"></div>`
+      :'<div style="font-size:12px;color:var(--di);align-self:center">Envío gratis para el comprador · ML cobra tarifa fija al vendedor.</div>'}
     <div class="ml-gfield">
       <label>Margen global %</label>
       <input type="number" value="" placeholder="Aplicar a todos" min="0" max="999" step="1" id="ml-glb-margin" oninput="mlApplyGlobalMargin()" style="width:110px">
     </div>
   </div>
 
-  <!-- PRODUCTOS -->
+  <!-- ── TARJETAS DE PRODUCTOS ── -->
   <div class="sh mb12" style="font-size:9px">PRODUCTOS · ${esc(srcLabel)}</div>
-  <div id="ml-products">
-    ${products.map(p => {
-      const m = ML.margins[p.id] !== undefined ? ML.margins[p.id] : 30;
-      const env = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : glbEnv);
-      const pr = p.cu*(1+m/100)/(1-glbCom/100)+env;
-      const gn = pr*(1-glbCom/100)-p.cu-env;
-      const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
-      return `<div class="ml-card" id="mlc-${p.id}">
-        <div class="ml-card-top">
-          <div>
-            <div class="ml-card-name">${esc(p.n||'Producto')}</div>
-            ${p.c?`<div class="ml-card-code">${esc(p.c)} · ${p.q} u.</div>`:`<div class="ml-card-code">${p.q} u.</div>`}
-          </div>
-          <div class="ml-card-cost">
-            <div class="ml-card-cost-lbl">Costo ARS</div>
-            <div class="ml-card-cost-val">${fmtA(p.cu)}</div>
-          </div>
-        </div>
-        <div class="ml-card-inputs">
-          <div class="ml-card-field">
-            <label>Margen %</label>
-            <input type="number" value="${m}" min="0" max="999" step="1" data-mlid="${p.id}" data-mlcu="${p.cu}" class="ml-margin-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
-          </div>
-          ${ML.mode==='clasico'?`<div class="ml-card-field">
-            <label>Envío ML $</label>
-            <input type="number" value="${env}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
-          </div>`:`<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">✓ Full incluido</div></div>`}
-          <div class="ml-card-field">
-            <label>Com. ML %</label>
-            <input type="number" value="${glbCom}" min="0" max="30" step="0.5" data-mlcid="${p.id}" data-mlcu="${p.cu}" class="ml-com-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
-          </div>
-        </div>
-        <div class="ml-card-results" id="mlr-${p.id}">
-          <div class="ml-res-item">
-            <div class="ml-res-lbl">Precio ML</div>
-            <div class="ml-res-val cch" id="mlrp-${p.id}">${fmtA(pr)}</div>
-            <div class="ml-res-sub" id="mlrp2-${p.id}">× ${p.q} = ${fmtA(pr*p.q)}</div>
-          </div>
-          <div class="ml-res-item">
-            <div class="ml-res-lbl">Ganancia / u.</div>
-            <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrg-${p.id}">${fmtA(gn)}</div>
-            <div class="ml-res-sub" id="mlrg2-${p.id}">${gnPct}% sobre costo</div>
-          </div>
-          <div class="ml-res-item">
-            <div class="ml-res-lbl">Gan. total</div>
-            <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrgt-${p.id}">${fmtA(gn*p.q)}</div>
-            <div class="ml-res-sub">× ${p.q} unidades</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('')}
+  <div id="ml-products">${_mlCards(products, glbCom, glbEnv)}</div>
+
+  <!-- ── TOTALES ── -->
+  <div class="ml-totbar" id="ml-totbar">
+    <div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
+    <div class="ml-tot-item"><div class="ml-tot-lbl">Ganancia total</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
+    <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${ML.mode==='full'?'ML FULL':'CLÁSICO'}</div></div>
   </div>
 
-  <!-- TOTALES -->
-  <div class="ml-totbar" id="ml-totbar">
-    ${(() => {
-      let totP=0, totG=0;
-      products.forEach(p=>{
-        const m=ML.margins[p.id]!==undefined?ML.margins[p.id]:30;
-        const env=ML.mode==='full'?0:(ML.envios[p.id]!==undefined?ML.envios[p.id]:glbEnv);
-        const pr=p.cu*(1+m/100)/(1-glbCom/100)+env;
-        const gn=pr*(1-glbCom/100)-p.cu-env;
-        totP+=pr*p.q; totG+=gn*p.q;
-      });
-      return `<div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
-      <div class="ml-tot-item"><div class="ml-tot-lbl">Ganancia total</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
-      <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${ML.mode==='full'?'ML FULL':'CLÁSICO'}</div></div>`;
-    })()}
+  <!-- ── GUARDAR PUBLICACIÓN ── -->
+  <div class="savebar mt16">
+    <div style="flex:1"><input type="text" id="ml-pub-name" placeholder="Nombre de esta publicación (ej: Taladros Junio 2026)" style="width:100%"></div>
+    <button class="btn-p" onclick="mlSavePub()" style="height:42px;white-space:nowrap;flex-shrink:0">💾 Guardar publicación</button>
   </div>`}
+
+  <!-- ── PUBLICACIONES GUARDADAS ── -->
+  ${pubs.length?`<div class="mt24">
+    <div class="sh mb16">Publicaciones guardadas</div>
+    ${pubs.slice().reverse().map((pub,i)=>`<div class="hi">
+      <div class="hi-hdr" onclick="toggleHi('mlp${i}')">
+        <div>
+          <div class="hi-n">${esc(pub.name||'Sin nombre')}</div>
+          <div class="hi-d">${fmtD(pub.date)} · ${pub.products?.length||0} productos · ${pub.mode==='full'?'ML Full':'Clásico'}</div>
+        </div>
+        <div>
+          <div class="hi-v" style="color:var(--ch)">${fmtA(pub.totFac||0)}</div>
+          <div class="hi-t">gan. ${fmtA(pub.totGan||0)}</div>
+        </div>
+      </div>
+      <div class="hi-body" id="mlp${i}">
+        <div style="overflow-x:auto;margin-top:12px">
+          <table><thead><tr>
+            <th>Producto</th><th>Código</th><th class="tc2">Cant.</th>
+            <th class="tr">Costo ARS</th><th class="tc2">Margen</th>
+            <th class="tr">Precio ML</th><th class="tr">Gan./u.</th>
+          </tr></thead>
+          <tbody>${(pub.products||[]).map(pr=>`<tr>
+            <td class="tn">${esc(pr.n||'—')}</td>
+            <td class="tc">${esc(pr.c||'—')}</td>
+            <td class="tc2">${pr.q||1}</td>
+            <td class="tr tm csi">${fmtA(pr.cu||0)}</td>
+            <td class="tc2 tm">${pr.margin||30}%</td>
+            <td class="tr tm cch">${fmtA(pr.precio||0)}</td>
+            <td class="tr tm ${(pr.gn||0)>=0?'cg':'cr'}">${fmtA(pr.gn||0)}</td>
+          </tr>`).join('')}</tbody></table>
+        </div>
+        <div class="hi-acts">
+          <button class="btn-d" onclick="mlDelPub('${pub.id}')">🗑 Borrar</button>
+        </div>
+      </div>
+    </div>`).join('')}
+  </div>`:''}
 </div>`;
 }
 
 function mlSetSrc(type, id) {
   ML.srcType = type;
-  ML.srcId = id || null;
-  if (type==='purchase' && id) ML.srcType='purchase';
+  ML.srcId   = (type==='purchase' && id) ? id : null;
+  if (type !== 'manual') ML.manualProducts = [];
   ML.margins = {}; ML.envios = {};
   render();
 }
-function mlSetMode(m) {
-  ML.mode = m;
+function mlSetMode(m) { ML.mode = m; render(); }
+
+function mlAddManualProd() {
+  const n = document.getElementById('mlm-n')?.value.trim();
+  if (!n) { toast('Ingresá el nombre del artículo.', false); return; }
+  const q      = Math.max(1, parseInt(document.getElementById('mlm-q')?.value)||1);
+  const c      = document.getElementById('mlm-c')?.value.trim()||'';
+  const arsVal = parseFloat(document.getElementById('mlm-ars')?.value);
+  const usdVal = parseFloat(document.getElementById('mlm-usd')?.value);
+  const tceVal = parseFloat(document.getElementById('mlm-tce')?.value)||0;
+  let cu = 0;
+  if (!isNaN(arsVal) && arsVal > 0) {
+    cu = arsVal;
+  } else if (!isNaN(usdVal) && usdVal > 0 && tceVal > 0) {
+    cu = usdVal * tceVal;
+  }
+  if (cu <= 0) { toast('Ingresá el costo del artículo (ARS directo o USD × TCE).', false); return; }
+  ML.manualProducts.push({ id:uid(), n, c, q, cu });
   render();
 }
+
+function mlRmManualProd(id) {
+  ML.manualProducts = ML.manualProducts.filter(p=>p.id!==id);
+  delete ML.margins[id];
+  delete ML.envios[id];
+  render();
+}
+
+function mlSavePub() {
+  const conf   = getConf();
+  const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
+  const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
+  const name   = document.getElementById('ml-pub-name')?.value.trim()
+               || 'ML ' + new Date().toLocaleDateString('es-AR');
+
+  // Collect state from DOM at save time
+  const products = [];
+  let totFac = 0, totGan = 0;
+  document.querySelectorAll('.ml-margin-inp').forEach(inp => {
+    const id  = inp.dataset.mlid;
+    const cu  = parseFloat(inp.dataset.mlcu)||0;
+    const m   = parseFloat(inp.value)||0;
+    const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
+    const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
+    const env    = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
+    const com    = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
+    const pr  = cu*(1+m/100)/(1-com/100)+env;
+    const gn  = pr*(1-com/100)-cu-env;
+    const card = document.getElementById('mlc-'+id);
+    const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
+    const pname = card?.querySelector('.ml-card-name')?.textContent||'';
+    const codeRaw = card?.querySelector('.ml-card-code')?.textContent||'';
+    const pcode = codeRaw.includes(' · ') ? codeRaw.split(' · ')[0] : '';
+    products.push({ id, n:pname, c:pcode, q, cu, margin:m, env, com, precio:pr, gn });
+    totFac += pr*q; totGan += gn*q;
+  });
+
+  if (!products.length) { toast('Sin productos para guardar.', false); return; }
+
+  const pub = { id:uid(), date:new Date().toISOString(), name, mode:ML.mode, glbCom, glbEnv, totFac, totGan, products };
+  const pubs = DB.get('mlpubs',[]);
+  pubs.push(pub);
+  DB.set('mlpubs', pubs);
+  _lastWrite = Date.now();
+  toast('✅ Publicación guardada');
+  render();
+}
+
+function mlDelPub(id) {
+  confirm2('¿Borrar esta publicación guardada?', ()=>{ DB.set('mlpubs', DB.get('mlpubs',[]).filter(p=>p.id!==id)); render(); });
+}
+
 function mlGlobal() {
   const com = parseFloat(document.getElementById('ml-glb-com')?.value);
   const env = parseFloat(document.getElementById('ml-glb-env')?.value);
   if (!isNaN(com)) ML.glbCom = com;
   if (!isNaN(env)) ML.glbEnv = env;
-  // Recalc all visible products
   document.querySelectorAll('.ml-margin-inp').forEach(inp => mlRecalc(inp));
-  // Update totals
   mlUpdateTotals();
 }
 function mlApplyGlobalMargin() {
   const m = parseFloat(document.getElementById('ml-glb-margin')?.value);
   if (isNaN(m)) return;
-  document.querySelectorAll('.ml-margin-inp').forEach(inp => {
-    inp.value = m;
-    mlRecalc(inp);
-  });
+  document.querySelectorAll('.ml-margin-inp').forEach(inp => { inp.value = m; mlRecalc(inp); });
 }
 function mlRecalc(inp) {
-  const conf = getConf();
+  const conf   = getConf();
   const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
   const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
-  // Find all inputs for this product
   let id, cu, m, env, com;
   if (inp.dataset.mlid) {
-    id = inp.dataset.mlid; cu = parseFloat(inp.dataset.mlcu);
-    m = parseFloat(inp.value)||0;
+    id = inp.dataset.mlid; cu = parseFloat(inp.dataset.mlcu); m = parseFloat(inp.value)||0;
     ML.margins[id] = m;
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
     env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
     com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
   } else if (inp.dataset.mleid) {
-    id = inp.dataset.mleid; cu = parseFloat(inp.dataset.mlcu);
-    env = parseFloat(inp.value)||0;
+    id = inp.dataset.mleid; cu = parseFloat(inp.dataset.mlcu); env = parseFloat(inp.value)||0;
     ML.envios[id] = env;
-    const mgInp = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
+    const mgInp  = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    m = mgInp ? parseFloat(mgInp.value)||0 : (ML.margins[id]||30);
+    m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
     com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
   } else if (inp.dataset.mlcid) {
-    id = inp.dataset.mlcid; cu = parseFloat(inp.dataset.mlcu);
-    com = parseFloat(inp.value)||glbCom;
-    const mgInp = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
+    id = inp.dataset.mlcid; cu = parseFloat(inp.dataset.mlcu); com = parseFloat(inp.value)||glbCom;
+    const mgInp  = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
-    m = mgInp ? parseFloat(mgInp.value)||0 : (ML.margins[id]||30);
-    env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
+    m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
+    env = envInp ? parseFloat(envInp.value)||0  : (ML.mode==='full'?0:glbEnv);
   } else return;
-  const pr = cu*(1+m/100)/(1-com/100)+env;
-  const gn = pr*(1-com/100)-cu-env;
+  const pr  = cu*(1+m/100)/(1-com/100)+env;
+  const gn  = pr*(1-com/100)-cu-env;
   const gnPct = cu > 0 ? ((gn/cu)*100).toFixed(1) : 0;
-  // Get quantity from card
-  const card = document.getElementById('mlc-'+id);
-  const q = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+) u/)?.[1]||'1') : 1;
-  const prEl = document.getElementById('mlrp-'+id);
-  const p2El = document.getElementById('mlrp2-'+id);
-  const gnEl = document.getElementById('mlrg-'+id);
+  const card  = document.getElementById('mlc-'+id);
+  const q     = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
+  const prEl  = document.getElementById('mlrp-'+id);
+  const p2El  = document.getElementById('mlrp2-'+id);
+  const gnEl  = document.getElementById('mlrg-'+id);
   const gn2El = document.getElementById('mlrg2-'+id);
-  const gtEl = document.getElementById('mlrgt-'+id);
-  if (prEl) prEl.textContent = fmtA(pr);
-  if (p2El) p2El.textContent = '× '+q+' = '+fmtA(pr*q);
-  if (gnEl) { gnEl.textContent = fmtA(gn); gnEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
+  const gtEl  = document.getElementById('mlrgt-'+id);
+  if (prEl)  prEl.textContent  = fmtA(pr);
+  if (p2El)  p2El.textContent  = '× '+q+' = '+fmtA(pr*q);
+  if (gnEl)  { gnEl.textContent = fmtA(gn); gnEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
   if (gn2El) gn2El.textContent = gnPct+'% sobre costo';
-  if (gtEl) { gtEl.textContent = fmtA(gn*q); gtEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
+  if (gtEl)  { gtEl.textContent = fmtA(gn*q); gtEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
   mlUpdateTotals();
 }
 function mlUpdateTotals() {
-  const conf = getConf();
+  const conf   = getConf();
   const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
   const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
   let totP=0, totG=0;
   document.querySelectorAll('.ml-margin-inp').forEach(inp => {
-    const id = inp.dataset.mlid;
-    const cu = parseFloat(inp.dataset.mlcu)||0;
-    const m = parseFloat(inp.value)||0;
+    const id  = inp.dataset.mlid;
+    const cu  = parseFloat(inp.dataset.mlcu)||0;
+    const m   = parseFloat(inp.value)||0;
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
     const env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
     const com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const pr = cu*(1+m/100)/(1-com/100)+env;
-    const gn = pr*(1-com/100)-cu-env;
+    const pr  = cu*(1+m/100)/(1-com/100)+env;
+    const gn  = pr*(1-com/100)-cu-env;
     const card = document.getElementById('mlc-'+id);
-    const q = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+) u/)?.[1]||'1') : 1;
+    const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
     totP += pr*q; totG += gn*q;
   });
   const bar = document.getElementById('ml-totbar');
@@ -2216,74 +2360,128 @@ function clearAll(){confirm2('⚠ BORRAR TODO: compras, catálogo, proveedores y
    ORDEN DE COMPRA (PRINT)
 ═══════════════════════════════════════════ */
 function printOrden(id) {
-  const p=DB.get('purchases',[]).find(x=>x.id===id);
+  const p = DB.get('purchases',[]).find(x=>x.id===id);
   if (!p) return;
-  const emp=DB.get('empresa',{});
-  const items=(p.products||[]).map((pr,i)=>{
-    const cu=(pr.p||0)*(p.r?.TCE||0);
-    const total=cu*(pr.q||1);
-    return `<tr><td>${i+1}</td><td>${esc(pr.n||'—')}</td><td>${esc(pr.c||'—')}</td><td style="text-align:center">${pr.q||1}</td><td style="text-align:right">${(pr.lista||pr.p||0).toFixed(2)} ${p.conf?.mode==='ars'?'ARS':'USD'}</td>${pr.b1||pr.b2?`<td style="text-align:center">${pr.b1||0}%${pr.b2?' / '+pr.b2+'%':''}</td><td style="text-align:right">${(pr.p||0).toFixed(2)} USD</td>`:'<td>—</td><td style="text-align:right">${(pr.p||0).toFixed(2)} USD</td>'}<td style="text-align:right">${fmtA(cu)}</td><td style="text-align:right">${fmtA(total)}</td></tr>`;
+  const emp = DB.get('empresa',{});
+  const isARS = p.conf?.mode === 'ars';
+  const currency = isARS ? 'ARS' : 'USD';
+  const currSym  = isARS ? '$'   : 'US$';
+  const fecha = new Date(p.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const nro = nextOCNumber();
+
+  const items = (p.products||[]).map((pr,i) => {
+    const listPx  = pr.lista || pr.p || 0;
+    const netPx   = pr.p || 0;
+    const qty     = pr.q || 1;
+    const subtot  = netPx * qty;
+    const hasBonus = (pr.b1||0) > 0 || (pr.b2||0) > 0;
+    const bonif   = hasBonus ? `${pr.b1||0}%${pr.b2?' / '+pr.b2+'%':''}` : '—';
+    return `<tr>
+      <td class="num">${i+1}</td>
+      <td>${esc(pr.n||'—')}</td>
+      <td>${esc(pr.c||'—')}</td>
+      <td class="ctr">${qty}</td>
+      <td class="cright">${currSym} ${listPx.toFixed(2)}</td>
+      <td class="ctr">${bonif}</td>
+      <td class="cright">${currSym} ${netPx.toFixed(2)}</td>
+      <td class="cright">${currSym} ${subtot.toFixed(2)}</td>
+    </tr>`;
   }).join('');
-  const fecha=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
-  const nro='OC-'+Date.now().toString().slice(-6);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Orden de Compra ${nro}</title><style>
+
+  const totalNet = (p.products||[]).reduce((s,pr)=>s+(pr.p||0)*(pr.q||1), 0);
+  const totalItems = (p.products||[]).length;
+  const totalUnits = (p.products||[]).reduce((s,pr)=>s+(pr.q||1), 0);
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nro} · TBR TOOLS</title>
+<style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:24px}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid #111;margin-bottom:20px}
-.emp h1{font-size:18px;margin-bottom:4px}
-.emp p{font-size:11px;color:#555;margin:2px 0}
-.ord{text-align:right}
-.ord h2{font-size:22px;font-weight:900;letter-spacing:2px;margin-bottom:8px}
-.ord p{font-size:11px;color:#555;margin:2px 0}
-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-thead th{background:#111;color:#fff;padding:8px 10px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase}
-tbody tr:nth-child(even){background:#f5f5f5}
-tbody td{padding:8px 10px;border-bottom:1px solid #ddd;vertical-align:middle}
-.totals{margin-left:auto;width:280px;border-collapse:collapse}
-.totals td{padding:6px 10px;border-bottom:1px solid #eee}
-.totals .tot-row td{font-weight:700;font-size:14px;border-top:2px solid #111;border-bottom:none}
-.footer{margin-top:48px;display:flex;justify-content:space-between}
+@page{size:A4;margin:12mm}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padding:0}
+.toolbar{background:#f0f0f0;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border-radius:6px}
+.toolbar span{font-size:13px;color:#555}
+.btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
+.btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
+.brand p{font-size:10px;color:#666;margin:1px 0}
+.doc-badge{text-align:right}
+.oc-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.oc-num{font-size:24px;font-weight:900;color:#111;letter-spacing:1px}
+.oc-date{font-size:11px;color:#666;margin-top:2px}
+.doc-meta{display:flex;gap:0;border-bottom:1px solid #ddd;background:#fafafa}
+.meta-item{flex:1;padding:8px 16px;border-right:1px solid #ddd}
+.meta-item:last-child{border-right:none}
+.meta-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:2px}
+.meta-val{font-size:12px;font-weight:600;color:#111}
+table{width:100%;border-collapse:collapse}
+thead th{background:#111;color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+tbody tr:nth-child(even){background:#f9f9f9}
+tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+.num{color:#999;font-size:11px;width:28px}
+.ctr{text-align:center}
+.cright{text-align:right;font-family:monospace}
+.doc-totals{padding:10px 16px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd}
+.totals-box{width:260px}
+.tot-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#555;border-bottom:1px solid #eee}
+.tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111}
+.doc-footer{padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid #ddd}
 .firma{text-align:center;width:180px}
 .firma hr{border:none;border-top:1px solid #333;margin-bottom:6px}
-.firma p{font-size:10px;color:#555}
-@media print{body{padding:10px}.no-print{display:none}}
+.firma p{font-size:10px;color:#666}
+.firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
+.foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+@media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
-<div class="no-print" style="background:#f0f0f0;padding:12px 16px;border-radius:6px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
-  <span style="font-size:13px">Listo para imprimir</span>
-  <button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:13px">🖨 Imprimir / Guardar PDF</button>
-  <button onclick="window.close()" style="background:transparent;border:1px solid #ccc;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:13px">✕ Cerrar</button>
+<div class="toolbar">
+  <span>📄 ${nro} listo para imprimir</span>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
 </div>
-<div class="hdr">
-  <div class="emp">
-    <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-    <p>CUIT: ${esc(emp.cuit||'—')}</p>
-    <p>${esc(emp.domicilio||'')}</p>
-    <p>Condición IVA: ${esc(emp.condIVA||'')}</p>
-    <p>Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Orden de Compra</div>
+      <div class="oc-num">${nro}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
   </div>
-  <div class="ord">
-    <h2>ORDEN DE COMPRA</h2>
-    <p><strong>N°:</strong> ${nro}</p>
-    <p><strong>Fecha:</strong> ${fecha}</p>
-    <p><strong>Proveedor:</strong> ${esc(p.conf?.name||'—')}</p>
-    <p><strong>Compra:</strong> ${esc(p.name||'—')}</p>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(p.conf?.name||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Compra</div><div class="meta-val">${esc(p.name||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${totalItems} ítems · ${totalUnits} u.</div></div>
   </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th>
+      <th class="cright">P. Lista (${currency})</th>
+      <th class="ctr">Bonif.</th>
+      <th class="cright">P. Neto (${currency})</th>
+      <th class="cright">Subtotal (${currency})</th>
+    </tr></thead>
+    <tbody>${items}</tbody>
+  </table>
+  <div class="doc-totals">
+    <div class="totals-box">
+      <div class="tot-row main"><span>TOTAL ${currency}</span><span>${currSym} ${totalNet.toFixed(2)}</span></div>
+    </div>
+  </div>
+  <div class="doc-footer">
+    <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
+    <div class="firma"><hr><strong>${esc(p.conf?.name||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${nro}</div>
 </div>
-<table>
-<thead><tr><th>#</th><th>Descripción</th><th>Código</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. Lista</th><th style="text-align:center">Bonif.</th><th style="text-align:right">P. Neto</th><th style="text-align:right">Costo ARS</th><th style="text-align:right">Total ARS</th></tr></thead>
-<tbody>${items}</tbody></table>
-<table class="totals">
-  <tr><td>TCE</td><td style="text-align:right">${fmtA(p.r?.TCE||0)} ARS/USD</td></tr>
-  <tr><td>USDT / USD productos</td><td style="text-align:right">${fmtT(p.r?.up||0)}</td></tr>
-  <tr class="tot-row"><td>TOTAL INVERTIDO</td><td style="text-align:right">${fmtA(p.r?.ars||0)}</td></tr>
-</table>
-<div class="footer">
-  <div class="firma"><hr><p>Firma y aclaración<br>Comprador</p></div>
-  <div class="firma"><hr><p>Firma y aclaración<br>Proveedor</p></div>
-</div>
-</body></html>`;
-  const w=window.open('','_blank','width=900,height=700');
-  w.document.write(html);w.document.close();
+</body></html>`);
+  w.document.close();
 }
 
 /* ═══════════════════════════════════════════
