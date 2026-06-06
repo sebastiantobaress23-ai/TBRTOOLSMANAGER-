@@ -102,38 +102,45 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 .mob-nav{
   display:none;
   position:fixed;bottom:0;left:0;right:0;
-  height:64px;
-  background:rgba(8,8,8,.98);
-  border-top:1px solid rgba(255,255,255,.06);
-  -webkit-backdrop-filter:blur(20px);
-  backdrop-filter:blur(20px);
+  background:rgba(8,8,8,.99);
+  border-top:1px solid rgba(226,201,126,.12);
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
   z-index:9999;
   align-items:stretch;
-  box-shadow:0 -4px 32px rgba(0,0,0,.7);
+  box-shadow:0 -4px 40px rgba(0,0,0,.8),0 -1px 0 rgba(226,201,126,.08);
   overflow-x:auto;
   overflow-y:hidden;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
   padding-bottom:env(safe-area-inset-bottom,0px);
-  height:calc(64px + env(safe-area-inset-bottom,0px));
+  height:calc(72px + env(safe-area-inset-bottom,0px));
 }
 .mob-nav::-webkit-scrollbar{display:none}
 .mob-tab{
-  flex:0 0 auto;min-width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;cursor:pointer;padding:6px 8px;
-  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;
-  text-transform:uppercase;color:rgba(255,255,255,.25);transition:all .15s;border:none;background:transparent;
+  flex:0 0 auto;min-width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;padding:8px 10px;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;color:rgba(255,255,255,.22);transition:color .18s,background .18s;border:none;background:transparent;
   -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
-.mob-tab .mob-icon{font-size:18px;line-height:1;margin-bottom:1px}
-.mob-tab.on{color:var(--us)}
-.mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(45,212,191,.6))}
-html.light .mob-nav{background:rgba(255,255,255,.98);border-top-color:var(--b2)}
+.mob-tab .mob-icon{
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  transition:filter .18s,transform .18s;
+}
+.mob-tab .mob-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.mob-tab.on{color:rgba(226,201,126,.9)}
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(226,201,126,.45))}
+.mob-tab.on .mob-icon svg{stroke-width:2}
+html.light .mob-nav{background:rgba(255,255,255,.99);border-top-color:rgba(226,201,126,.18)}
+html.light .mob-tab{color:rgba(0,0,0,.28)}
+html.light .mob-tab.on{color:rgba(160,130,60,.95)}
 /* Media query AFTER the base rule so it correctly overrides */
 @media screen and (max-width:768px){
   .nav{display:none!important}
   .mob-nav{display:flex!important}
-  body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 }
 
 /* ── PAGE ACCENT ── */
@@ -249,7 +256,7 @@ body.compact .g4{gap:8px!important}
 /* Sort buttons */
 .sort-btn.on{background:rgba(45,212,191,.1)!important;border-color:rgba(45,212,191,.4)!important}
 /* Better mob tab active */
-.mob-tab.on{color:var(--us);background:rgba(45,212,191,.06)}
+.mob-tab.on{color:rgba(226,201,126,.9);background:rgba(226,201,126,.05)}
 /* Better badge */
 .badge{font-size:8.5px;letter-spacing:2.5px;padding:2px 8px;border-radius:3px}
 /* Section pg refinement */
@@ -628,15 +635,15 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mob-nav" id="mob-nav">
-  <button class="mob-tab" data-p="dashboard"  onclick="navigate('dashboard')"><span class="mob-icon">◈</span>Inicio</button>
-  <button class="mob-tab" data-p="compra"     onclick="navigate('compra')"><span class="mob-icon">＋</span>Compra</button>
-  <button class="mob-tab" data-p="historial"  onclick="navigate('historial')"><span class="mob-icon">≡</span>Historial</button>
-  <button class="mob-tab" data-p="catalogo"   onclick="navigate('catalogo')"><span class="mob-icon">▤</span>Catálogo</button>
-  <button class="mob-tab" data-p="stats"      onclick="navigate('stats')"><span class="mob-icon">⩘</span>Stats</button>
-  <button class="mob-tab" data-p="publicar"   onclick="navigate('publicar')"><span class="mob-icon">◎</span>ML</button>
-  <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon">🏪</span>Proveed.</button>
-  <button class="mob-tab" data-p="orden"      onclick="navigate('orden')"><span class="mob-icon">▣</span>OC</button>
-  <button class="mob-tab" data-p="config"     onclick="navigate('config')"><span class="mob-icon">⌘</span>Config</button>
+  <button class="mob-tab" data-p="dashboard"   onclick="navigate('dashboard')"><span class="mob-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Inicio</button>
+  <button class="mob-tab" data-p="compra"      onclick="navigate('compra')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Compra</button>
+  <button class="mob-tab" data-p="historial"   onclick="navigate('historial')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></span>Historial</button>
+  <button class="mob-tab" data-p="catalogo"    onclick="navigate('catalogo')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Catálogo</button>
+  <button class="mob-tab" data-p="stats"       onclick="navigate('stats')"><span class="mob-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg></span>Stats</button>
+  <button class="mob-tab" data-p="publicar"    onclick="navigate('publicar')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>ML</button>
+  <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Proveed.</button>
+  <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
+  <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
 </nav>
 
 <div id="app"></div>
