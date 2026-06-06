@@ -622,6 +622,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   <div class="tab"     data-p="publicar"    onclick="navigate('publicar')">Publicar ML</div>
   <div class="tab"     data-p="competencia" onclick="navigate('competencia')">Competencia</div>
   <div class="tab"     data-p="orden"       onclick="navigate('orden')">Orden de Compra</div>
+  <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
 </nav>
 
@@ -633,7 +634,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   <button class="mob-tab" data-p="catalogo"   onclick="navigate('catalogo')"><span class="mob-icon">▤</span>Catálogo</button>
   <button class="mob-tab" data-p="stats"      onclick="navigate('stats')"><span class="mob-icon">⩘</span>Stats</button>
   <button class="mob-tab" data-p="publicar"   onclick="navigate('publicar')"><span class="mob-icon">◎</span>ML</button>
-  <button class="mob-tab" data-p="competencia" onclick="navigate('competencia')"><span class="mob-icon">⌁ </span>Compet.</button>
+  <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon">🏪</span>Proveed.</button>
   <button class="mob-tab" data-p="orden"      onclick="navigate('orden')"><span class="mob-icon">▣</span>OC</button>
   <button class="mob-tab" data-p="config"     onclick="navigate('config')"><span class="mob-icon">⌘</span>Config</button>
 </nav>
@@ -763,7 +764,12 @@ const calcEf=(l,b1,b2)=> (+l||0)*(1-(+b1||0)/100)*(1-(+b2||0)/100);
 function getConf() {
   const cs = DB.get('configs',[]);
   const s  = DB.get('settings',{});
-  return cs.find(c=>c.id===s.activeConfig)||cs[0]||{precio:1405,spread:6,comInt:20,flete:62000,mlCom:16,mlEnv:7500,mode:'usdt',bonifications:[]};
+  const base = cs.find(c=>c.id===s.activeConfig)||cs[0]||{precio:1405,spread:6,comInt:20,flete:62000,mode:'usdt',bonifications:[]};
+  // mlCom y mlEnv viven en settings (no en el proveedor)
+  return Object.assign({}, base, {
+    mlCom: s.mlCom !== undefined ? s.mlCom : (base.mlCom !== undefined ? base.mlCom : 16),
+    mlEnv: s.mlEnv !== undefined ? s.mlEnv : (base.mlEnv !== undefined ? base.mlEnv : 7500)
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -781,7 +787,7 @@ const DRAFT_KEY = 'tbr_draft_v2';
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
-const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)'};
+const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
@@ -797,7 +803,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,proveedores:pgProveedores};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
 }
 
@@ -1023,7 +1029,7 @@ function pgCompra() {
   return `<div class="pg">
   ${hasDraft?`<div class="draft-banner fade-up"><p>📋 <strong>Borrador recuperado</strong> · ${PP.length} producto${PP.length>1?'s':''} guardado${PP.length>1?'s':''}. ¿Continuás donde dejaste?</p><button class="btn-d" onclick="discardDraft()">✕ Descartar</button></div>`:''}
   <div class="sh mb16">Nueva compra</div>
-  ${confs.length>0?`<div class="fb mb16"><div class="sh" style="margin:0;flex:1">Configuración activa</div><div class="iw" style="width:240px;margin-left:16px"><select id="conf-sel" onchange="switchConf(this.value)">${confs.map(c=>`<option value="${c.id}" ${c.id===s.activeConfig?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>`:'<div class="info mb16">Sin configuraciones. <span class="link" onclick="navigate(\'config\')">Crear una →</span></div>'}
+  ${confs.length>0?`<div class="fb mb16"><div class="sh" style="margin:0;flex:1">Configuración activa</div><div class="iw" style="width:240px;margin-left:16px"><select id="conf-sel" onchange="switchConf(this.value)">${confs.map(c=>`<option value="${c.id}" ${c.id===s.activeConfig?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>`:'<div class="info mb16">Sin proveedores. <span class="link" onclick="navigate(\'config\')">Crear una →</span></div>'}
   <div class="card mb16" style="padding:12px 18px">
     <div style="display:flex;gap:0;flex-wrap:wrap;align-items:center">
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Modo</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:${modeColor}">${modeTxt}</span></div>
@@ -1275,7 +1281,7 @@ function renderResults(c) {
     <div class="tbox main"><div class="tx-l">TCE (ARS/${conf.mode==='pesos'?'USD':'USDT'})</div><div class="tx-v big">${fmtA(TCE)}</div><div class="tx-s">TC ${fmtA(conf.precio)} · com.int. ${conf.comInt}%</div></div>
     <div class="tbox"><div class="tx-l">Total ARS</div><div class="tx-v g">${fmtA(at)}</div><div class="tx-s">mercadería + comisión + flete</div></div>
     <div class="tbox"><div class="tx-l" style="color:var(--in)">USD productos</div><div class="tx-v" style="color:var(--in)">${fmtU(up)}</div><div class="tx-s">valor neto</div></div>
-    <div class="tbox"><div class="tx-l">Flete</div><div class="tx-v csi">${fmtA(conf.flete)}</div><div class="tx-s">Paraguay → Argentina</div></div>`:`
+    <div class="tbox"><div class="tx-l">Flete</div><div class="tx-v csi">${fmtA(conf.flete)}</div><div class="tx-s">Flete proveedor</div></div>`:`
     <div class="tbox main"><div class="tx-l">TCE (ARS/USDT)</div><div class="tx-v big">${fmtA(TCE)}</div><div class="tx-s">precio ${fmtA(conf.precio)} · spread ${conf.spread}% · com. ${conf.comInt}%</div></div>
     <div class="tbox"><div class="tx-l">Total ARS</div><div class="tx-v g">${fmtA(at)}</div><div class="tx-s">mercadería + comisión + flete</div></div>
     <div class="tbox"><div class="tx-l" style="color:var(--us)">USDT productos</div><div class="tx-v u">${fmtT(up)}</div><div class="tx-s">valor neto</div></div>
@@ -2007,26 +2013,106 @@ function pgComp() {
 function cmpCalc(i,tu,cu,inp){const c=parseFloat(inp.value)||0;const el=document.getElementById('cmp-r-'+i);if(!el||!c)return;const d=tu-c;const p=((d/c)*100).toFixed(1);el.innerHTML=d<0?`<span style="color:var(--gr)">✅ Sos ${fmtA(Math.abs(d))} más barato (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">⚠ Tu precio es ${fmtA(d)} más caro (${p}%)<br><span style="font-size:12px">Sugerido: ${fmtA(c-1)}</span></span>`;}
 
 /* ═══════════════════════════════════════════
-   CONFIG
+   PROVEEDORES (página propia)
 ═══════════════════════════════════════════ */
-function pgConfig() {
+function pgProveedores() {
   const confs=DB.get('configs',[]);
-  const s=DB.get('settings',{marginAlert:15});
-  const emp=DB.get('empresa',{});
+  const s=DB.get('settings',{});
   return `<div class="pg">
+  <div class="fb mb20">
+    <div>
+      <div class="sh" style="margin-bottom:4px">Proveedores</div>
+      <div style="font-size:13px;color:var(--di)">Configurá tus proveedores: tipo de cambio, flete y bonificaciones.</div>
+    </div>
+    <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap">+ Nuevo proveedor</button>
+  </div>
 
-  <div class="sh mb16">Configuraciones de proveedores</div>
-  <div class="card mb16">
-    ${confs.length===0?'<div class="empty" style="padding:16px">Sin configuraciones.</div>':confs.map(c=>{const mc={usdt:'var(--us)',pesos:'var(--in)',ars:'var(--ye)'}[c.mode||'usdt'];const mt={usdt:'USDT',pesos:'PESOS+USD',ars:'PESOS ARS'}[c.mode||'usdt'];return `<div class="mc" style="cursor:default">
-      <div><div class="mc-n">${esc(c.name)}</div><div class="mc-d"><span style="color:${mc}">${mt}</span> · TC: ${fmtA(c.precio)} · Com.int: ${c.comInt}% · Flete: ${fmtA(c.flete)}</div></div>
-      <div class="fg">
-        ${c.id===s.activeConfig?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:var(--us);padding:0 8px">ACTIVA</span>`:`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`}
+  ${confs.length===0
+    ? `<div class="card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:32px;margin-bottom:12px">🏪</div>
+        <div class="empty-title">Sin proveedores</div>
+        <div class="empty-sub">Creá tu primer proveedor para empezar a calcular compras.</div>
+        <button class="btn-p" onclick="openConf()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear proveedor</button>
+       </div>`
+    : confs.map(c=>{
+        const mc={usdt:'var(--us)',pesos:'var(--in)',ars:'var(--ye)'}[c.mode||'usdt'];
+        const mt={usdt:'USDT',pesos:'PESOS+USD',ars:'PESOS ARS'}[c.mode||'usdt'];
+        const isActive = c.id===s.activeConfig;
+        return `<div class="mc" style="cursor:default;${isActive?'border-color:rgba(45,212,191,.35);background:linear-gradient(135deg,rgba(20,20,20,1),rgba(12,20,16,1));':''}" >
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div class="mc-n">${esc(c.name)}</div>
+          ${isActive?`<span class="badge badge-u">ACTIVO</span>`:''}
+        </div>
+        <div class="mc-d">
+          <span style="color:${mc}">${mt}</span>
+          ${c.mode!=='ars'?` · TC: ${fmtA(c.precio)}`:''}
+          ${c.comInt?' · Com.int: '+c.comInt+'%':''}
+          ${c.flete?' · Flete: '+fmtA(c.flete):''}
+          ${c.bonifications?.length?' · '+c.bonifications.length+' bonif.':''}
+        </div>
+      </div>
+      <div class="fg" style="flex-shrink:0">
+        ${!isActive?`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`:''}
         <button class="btn-g btn-sm" onclick="openConf('${c.id}')">✏</button>
         <button class="btn-d" onclick="delConf('${c.id}')">✕</button>
       </div>
-    </div>`}).join('')}
+    </div>`;
+      }).join('')}
+
+  <!-- MODAL PROVEEDOR -->
+  <div id="conf-modal" class="mol" style="display:none" onclick="if(event.target===this)closeConf()">
+    <div class="mbox">
+      <div class="mhdr"><span id="conf-title">Nuevo proveedor</span><button class="btn-rm" onclick="closeConf()">✕</button></div>
+      <div class="mbody">
+        <div><label class="fl">Nombre del proveedor</label><div class="iw"><input type="text" id="cm-name" placeholder="Ej: Importador A · China"></div></div>
+        <div><label class="fl">Modo de pago</label><div class="iw"><select id="cm-mode" onchange="toggleCmMode()">
+          <option value="usdt">💱 USDT — Pagás en crypto (proveedor cotiza en USD)</option>
+          <option value="pesos">💵 Pesos + USD — Proveedor en USD, pagás en pesos</option>
+          <option value="ars">🪙 Pesos ARS — Todo en pesos</option>
+        </select></div></div>
+        <div id="cm-precio-wrap"><label class="fl" id="cm-precio-lbl">Precio base (ARS)</label><div class="iw"><span class="ipre">ARS</span><input type="number" id="cm-precio" value="1405" step="1"></div></div>
+        <div id="cm-spread-wrap"><label class="fl">Spread USD → USDT</label><div class="iw"><input type="number" id="cm-spread" value="6" step="0.5"><span class="isuf">%</span></div></div>
+        <div><label class="fl">Comisión intermediario</label><div class="iw"><input type="number" id="cm-comint" value="20" step="0.5"><span class="isuf">%</span></div></div>
+        <div><label class="fl">Flete (proveedor → destino)</label><div class="iw"><span class="ipre">ARS</span><input type="number" id="cm-flete" value="0" step="1000"></div></div>
+        <div><label class="fl">Comisión de red (Tron / USDT)</label><div class="iw"><input type="number" id="cm-netfee" value="1.3" step="0.1" min="0"><span class="isuf">USDT</span></div><div class="hint">Fee fija por transacción en blockchain (ej: 1.30 USDT en Tron).</div></div>
+        <div>
+          <label class="fl">Bonificaciones preset</label>
+          <div id="boni-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+          <button class="btn-g btn-sm" onclick="addBoni()" style="width:100%">+ Agregar bonificación</button>
+          <div class="hint">Aparecen como chips al cargar productos en una compra.</div>
+        </div>
+        <input type="hidden" id="cm-id">
+        <button class="btn-go" style="margin-top:8px" onclick="saveConf()">Guardar proveedor</button>
+      </div>
+    </div>
   </div>
-  <button class="btn-p mb24" onclick="openConf()">+ Nueva configuración</button>
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+function pgConfig() {
+  const s=DB.get('settings',{marginAlert:15,mlCom:16,mlEnv:7500});
+  const emp=DB.get('empresa',{});
+  return `<div class="pg">
+
+  <div class="sh mb16">Mercado Libre</div>
+  <div class="card mb24">
+    <div class="hint mb16" style="color:var(--si)">Estos valores se usan como default en Publicar ML y en todas las calculadoras. Son independientes del proveedor.</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label class="fl">Comisión ML</label>
+        <div class="iw" style="max-width:200px"><input type="number" id="ml-com" value="${s.mlCom!==undefined?s.mlCom:16}" min="0" max="100" step="0.5"><span class="isuf">%</span></div>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label class="fl">Envío ML por defecto</label>
+        <div class="iw" style="max-width:220px"><span class="ipre">ARS</span><input type="number" id="ml-env" value="${s.mlEnv!==undefined?s.mlEnv:7500}" step="500"></div>
+      </div>
+      <button class="btn-p" onclick="saveMLSettings()" style="height:42px;padding:0 20px">Guardar</button>
+    </div>
+  </div>
 
   <div class="sh mb16">Mi empresa</div>
   <div class="card mb24">
@@ -2062,37 +2148,8 @@ function pgConfig() {
   <div class="card mb16"><button class="btn-g" onclick="exportAllXLSX()" style="height:42px">⬇ Exportar todo a Excel</button></div>
 
   <div class="sh mb16">Zona de peligro</div>
-  <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo y configuraciones.</div></div>
+  <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
-  <!-- MODAL CONF -->
-  <div id="conf-modal" class="mol" style="display:none" onclick="if(event.target===this)closeConf()">
-    <div class="mbox">
-      <div class="mhdr"><span id="conf-title">Nueva configuración</span><button class="btn-rm" onclick="closeConf()">✕</button></div>
-      <div class="mbody">
-        <div><label class="fl">Nombre del proveedor</label><div class="iw"><input type="text" id="cm-name" placeholder="Paraguay · Importador A"></div></div>
-        <div><label class="fl">Modo de pago</label><div class="iw"><select id="cm-mode" onchange="toggleCmMode()">
-          <option value="usdt">💱 USDT — Pagás en crypto (proveedor cotiza en USD)</option>
-          <option value="pesos">💵 Pesos + USD — Proveedor en USD, pagás en pesos</option>
-          <option value="ars">🪙 Pesos ARS — Todo en pesos</option>
-        </select></div></div>
-        <div id="cm-precio-wrap"><label class="fl" id="cm-precio-lbl">Precio base (ARS)</label><div class="iw"><span class="ipre">ARS</span><input type="number" id="cm-precio" value="1405" step="1"></div></div>
-        <div id="cm-spread-wrap"><label class="fl">Spread USD → USDT</label><div class="iw"><input type="number" id="cm-spread" value="6" step="0.5"><span class="isuf">%</span></div></div>
-        <div><label class="fl">Comisión intermediario</label><div class="iw"><input type="number" id="cm-comint" value="20" step="0.5"><span class="isuf">%</span></div></div>
-        <div><label class="fl">Flete Paraguay → Argentina</label><div class="iw"><span class="ipre">ARS</span><input type="number" id="cm-flete" value="62000" step="1000"></div></div>
-        <div><label class="fl">Comisión de red (Tron / USDT)</label><div class="iw"><input type="number" id="cm-netfee" value="1.3" step="0.1" min="0"><span class="isuf">USDT</span></div><div class="hint">Fee fija por transacción en blockchain (ej: 1.30 USDT en Tron).</div></div>
-        <div><label class="fl">Comisión ML</label><div class="iw"><input type="number" id="cm-mlcom" value="16" step="0.5"><span class="isuf">%</span></div></div>
-        <div><label class="fl">Envío ML (default por producto)</label><div class="iw"><span class="ipre">ARS</span><input type="number" id="cm-mlenv" value="7500" step="500"></div></div>
-        <div>
-          <label class="fl">Bonificaciones preset</label>
-          <div id="boni-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-          <button class="btn-g btn-sm" onclick="addBoni()" style="width:100%">+ Agregar bonificación</button>
-          <div class="hint">Aparecen como chips al cargar productos.</div>
-        </div>
-        <input type="hidden" id="cm-id">
-        <button class="btn-go" style="margin-top:8px" onclick="saveConf()">Guardar configuración</button>
-      </div>
-    </div>
-  </div>
 </div>`;
 }
 
@@ -2111,15 +2168,15 @@ function renderBoni(){const l=document.getElementById('boni-list');if(!l)return;
 function addBoni(){_boni.push({name:'',pct:0});renderBoni();}
 
 function openConf(id){
+  // Si el modal no está en el DOM (no estamos en la página Proveedores), ir primero
+  if(!document.getElementById('conf-modal')){navigate('proveedores');setTimeout(()=>openConf(id),100);return;}
   const c=id?DB.get('configs',[]).find(x=>x.id===id):null;
-  document.getElementById('conf-title').textContent=c?'Editar configuración':'Nueva configuración';
+  document.getElementById('conf-title').textContent=c?'Editar proveedor':'Nuevo proveedor';
   document.getElementById('cm-name').value=c?.name||'';
   document.getElementById('cm-precio').value=c?.precio||1405;
   document.getElementById('cm-spread').value=c?.spread||6;
   document.getElementById('cm-comint').value=c?.comInt||20;
-  document.getElementById('cm-flete').value=c?.flete||62000;
-  document.getElementById('cm-mlcom').value=c?.mlCom||16;
-  document.getElementById('cm-mlenv').value=c?.mlEnv||7500;
+  document.getElementById('cm-flete').value=c?.flete||0;
   document.getElementById('cm-netfee').value=c?.netFee||1.3;
   document.getElementById('cm-id').value=c?.id||'';
   document.getElementById('cm-mode').value=c?.mode||'usdt';
@@ -2127,7 +2184,7 @@ function openConf(id){
   setTimeout(()=>{toggleCmMode();renderBoni();},50);
   document.getElementById('conf-modal').style.display='flex';
 }
-function closeConf(){document.getElementById('conf-modal').style.display='none';}
+function closeConf(){const m=document.getElementById('conf-modal');if(m)m.style.display='none';}
 function saveConf(){
   const name=document.getElementById('cm-name').value.trim();
   if(!name){toast('Ingresá el nombre del proveedor.',false);return;}
@@ -2136,9 +2193,7 @@ function saveConf(){
     precio:parseFloat(document.getElementById('cm-precio').value)||1405,
     spread:parseFloat(document.getElementById('cm-spread').value)||6,
     comInt:parseFloat(document.getElementById('cm-comint').value)||20,
-    flete:parseFloat(document.getElementById('cm-flete').value)||62000,
-    mlCom:parseFloat(document.getElementById('cm-mlcom').value)||16,
-    mlEnv:parseFloat(document.getElementById('cm-mlenv').value)||7500,
+    flete:parseFloat(document.getElementById('cm-flete').value)||0,
     mode:document.getElementById('cm-mode').value||'usdt',
     netFee:parseFloat(document.getElementById('cm-netfee').value)||0,
     bonifications:_boni.filter(b=>b.name&&b.pct>0)
@@ -2149,14 +2204,14 @@ function saveConf(){
   DB.set('configs',cs);
   const s=DB.get('settings',{});
   if(!s.activeConfig){s.activeConfig=conf.id;DB.set('settings',s);}
-  closeConf();render();toast('Configuración guardada ✅');
+  closeConf();render();toast('Proveedor guardado ✅');
 }
-function delConf(id){confirm2('¿Eliminar esta configuración?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));render();});}
+function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
+function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada ✅');}
 function saveEmpresa(){const emp={razonSocial:document.getElementById('emp-rs').value.trim(),cuit:document.getElementById('emp-cuit').value.trim(),domicilio:document.getElementById('emp-dom').value.trim(),condIVA:document.getElementById('emp-iva').value.trim(),tel:document.getElementById('emp-tel').value.trim(),email:document.getElementById('emp-email').value.trim()};DB.set('empresa',emp);toast('Datos guardados ✅');}
 function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada ✅');}
-function clearAll(){confirm2('⚠ BORRAR TODO: compras, catálogo, configuraciones y datos de empresa.',()=>{['purchases','catalog','configs','settings','empresa'].forEach(k=>DB.del(k));PP=[];CALC=null;render();},  '⚠ Borrar todo','cm-ok');}
-
+function clearAll(){confirm2('⚠ BORRAR TODO: compras, catálogo, proveedores y configuraciones.',()=>{['purchases','catalog','configs','settings','empresa'].forEach(k=>DB.del(k));PP=[];CALC=null;render();},  '⚠ Borrar todo','cm-ok');}
 /* ═══════════════════════════════════════════
    ORDEN DE COMPRA (PRINT)
 ═══════════════════════════════════════════ */
@@ -2529,14 +2584,25 @@ after.orden = ()=>{};
    INIT
 ═══════════════════════════════════════════ */
 window.onload = function() {
-  // Inicializar defaults si no existen
-  if (!DB.get('configs')) {
-    const id=uid();
-    DB.set('configs',[{id,name:'Paraguay · Default',precio:1405,spread:5,comInt:20,flete:62000,mlCom:16,mlEnv:7500,mode:'usdt',netFee:1.3,bonifications:[]}]);
-    DB.set('settings',{marginAlert:15,activeConfig:id});
+  // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados)
+  if (DB.get('configs') === null) {
+    DB.set('configs', []);
   }
-  if (!DB.get('empresa')) {
-    DB.set('empresa',{razonSocial:'Alexis Sebastián Tobares',cuit:'20-43069752-9',domicilio:'Comandante Salas 38, Depto. 3',condIVA:'Monotributo',tel:'2604375765',email:'tbrtoolsoficial@gmail.com'});
+  if (DB.get('settings') === null) {
+    DB.set('settings', {marginAlert: 15, mlCom: 16, mlEnv: 7500});
+  } else {
+    // Migrar mlCom/mlEnv desde el primer proveedor a settings si no existen aún
+    const s = DB.get('settings', {});
+    if (s.mlCom === undefined || s.mlEnv === undefined) {
+      const cs = DB.get('configs', []);
+      const firstConf = cs[0];
+      if (s.mlCom === undefined) s.mlCom = firstConf?.mlCom !== undefined ? firstConf.mlCom : 16;
+      if (s.mlEnv === undefined) s.mlEnv = firstConf?.mlEnv !== undefined ? firstConf.mlEnv : 7500;
+      DB.set('settings', s);
+    }
+  }
+  if (DB.get('empresa') === null) {
+    DB.set('empresa', {});
   }
   initTheme();
   initCompact();
