@@ -1280,14 +1280,18 @@ function renderResults(c) {
     <div class="tbox"><div class="tx-l">Total ARS</div><div class="tx-v g">${fmtA(at)}</div><div class="tx-s">mercadería + comisión + flete</div></div>
     <div class="tbox"><div class="tx-l" style="color:var(--us)">USDT productos</div><div class="tx-v u">${fmtT(up)}</div><div class="tx-s">valor neto</div></div>
     <div class="tbox"><div class="tx-l" style="color:var(--ud)">USDT enviado</div><div class="tx-v d">${fmtT(ut)}</div><div class="tx-s">com. +${fmtT(up*(conf.comInt/100))} · fee +${fmtT(conf.netFee||0)}</div></div>`;
-  // Conv row
-  const cr=document.getElementById('conv-row');
-  if (!isA&&!isP&&conf.spread>0) {
-    cr.style.display='flex';
-    cr.innerHTML=`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">CONVERSIÓN</span><span class="bx bx-u">${fmtU(uc)} USD</span><span style="color:var(--b3)">→ spread ${conf.spread}% →</span><span class="bx bx-t">${fmtT(ut)}</span><span style="color:var(--b3)">→</span><span class="bx bx-a">${fmtA(ac)} ARS</span><span style="font-size:12px;color:var(--di)">+ flete ${fmtA(conf.flete)}</span>`;
-  } else cr.style.display='none';
-  // Col label
-  const cl=document.getElementById('col-usd-lbl');
+ // Conv row
+const cr=document.getElementById('conv-row');
+
+if (!isA&&!isP&&conf.spread>0) {
+  cr.style.display='flex';
+  cr.innerHTML=`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">CONVERSIÓN</span><span class="bx bx-u">${fmtU(uc)} USD necesarios</span><span style="color:var(--b3)">→ ${conf.spread}% pérdida →</span><span class="bx bx-t">${fmtT(ut)} USDT enviados</span><span style="color:var(--b3)">→</span><span class="bx bx-a">${fmtA(ac)} ARS</span><span style="font-size:12px;color:var(--di)">+ flete ${fmtA(conf.flete)}</span>`;
+} else {
+  cr.style.display='none';
+}
+
+// Col label
+const cl=document.getElementById('col-usd-lbl');
   if (cl) {cl.textContent=isA?'ARS c/u':isP?'USD c/u':'USDT c/u';cl.style.color=isA?'var(--ye)':isP?'var(--in)':'var(--us)';}
   // Tabla — solo costos
   const body=document.getElementById('rtbody');
