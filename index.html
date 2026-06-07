@@ -813,14 +813,14 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 let _lastWrite = 0;
 async function fbSync() {
-  if (Date.now()-_lastWrite < 2000) return;
+  if (Date.now()-_lastWrite < 3000) return;
   try {
     const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(5000)});
     if (!r.ok) return;
     const d = await r.json();
     if (!d) return;
     let changed = false;
-    for (const k of ['purchases','catalog','configs','settings','empresa']) {
+    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones']) {
       if (d[k]==null) continue;
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(d[k])) {
@@ -1717,8 +1717,8 @@ function histCard(p, idx, badges=[]) {
     <div class="hi-body" id="${idx}">
       ${p.notes?`<div class="hi-note">📝 ${esc(p.notes)}</div>`:''}
       <div style="overflow-x:auto;margin-top:12px">
-        <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th><th class="tc2">Margen</th><th class="tr">Precio ML</th></tr></thead>
-        <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);const env=pr.envio||(p.conf?.mlEnv||7500);const precio=cu*(1+(pr.margin||30)/100)/(1-(p.conf?.mlCom||16)/100)+env;return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td><td class="tc2 tm">${pr.margin||30}%</td><td class="tr tm cch">${fmtA(precio)}</td></tr>`;}).join('')}</tbody></table>
+        <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th></tr></thead>
+        <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
       </div>
       <div class="hi-acts">
         <button class="btn-g btn-sm" onclick="printOrden('${p.id}')">🖨 OC</button>
@@ -2671,8 +2671,8 @@ function exportOneXLSX(id){
   if(window.__xlsxOffline||typeof XLSX==='undefined'){toast('Excel no disponible sin conexión a internet',false);return;}
   const p=DB.get('purchases',[]).find(x=>x.id===id);
   if(!p||typeof XLSX==='undefined'){toast('No se pudo exportar',false);return;}
-  const rows=[['Producto','Código','Cant.','Lista','B1%','B2%','Precio efectivo','Costo ARS','Margen %','Precio ML','Envío ML','Ganancia neta']];
-  (p.products||[]).forEach(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);const precio=cu*(1+(pr.margin||30)/100);const env=pr.envio||0;const gan=precio*(1-(p.conf?.mlCom||16)/100)-cu-env;rows.push([pr.n,pr.c,pr.q,pr.lista||pr.p,pr.b1||0,pr.b2||0,pr.p,Math.round(cu),pr.margin||30,Math.round(precio),env,Math.round(gan)]);});
+  const rows=[['Producto','Código','Cant.','Lista','B1%','B2%','Precio efectivo','Costo ARS']];
+  (p.products||[]).forEach(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);rows.push([pr.n,pr.c,pr.q,pr.lista||pr.p,pr.b1||0,pr.b2||0,pr.p,Math.round(cu)]);});
   rows.push([]);rows.push(['TCE','ARS Total','USDT Prod.']);rows.push([Math.round(p.r?.TCE||0),Math.round(p.r?.ars||0),(p.r?.up||0).toFixed(2)]);
   const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,(p.name||'compra').slice(0,31));XLSX.writeFile(wb,(p.name||'compra').replace(/[^a-zA-Z0-9]/g,'_')+'.xlsx');
 }
@@ -2684,7 +2684,7 @@ function exportAllXLSX(){
   const sum=[['Fecha','Nombre','TCE','ARS Total','USDT Prod.','Ganancia Proy.']];
   ps.forEach(p=>sum.push([fmtD(p.date),p.name,Math.round(p.r?.TCE||0),Math.round(p.r?.ars||0),(p.r?.up||0).toFixed(2),Math.round(purchaseGain(p))]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
-  ps.forEach(p=>{const rows=[['Producto','Código','Cant.','Precio efectivo','Costo ARS','Margen %','Precio ML']];(p.products||[]).forEach(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);rows.push([pr.n,pr.c,pr.q,pr.p,Math.round(cu),pr.margin||30,Math.round(cu*(1+(pr.margin||30)/100))]);});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),(p.name||'C').slice(0,31).replace(/[^a-zA-Z0-9 ]/g,''));});
+  ps.forEach(p=>{const rows=[['Producto','Código','Cant.','Precio efectivo','Costo ARS']];(p.products||[]).forEach(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);rows.push([pr.n,pr.c,pr.q,pr.p,Math.round(cu)]);});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),(p.name||'C').slice(0,31).replace(/[^a-zA-Z0-9 ]/g,''));});
   XLSX.writeFile(wb,'TBR_TOOLS_Historial.xlsx');
 }
 
@@ -3326,6 +3326,12 @@ after.cotizaciones = ()=>{};
 /* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 window.onload = function() {
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados)
   if (DB.get('configs') === null) {

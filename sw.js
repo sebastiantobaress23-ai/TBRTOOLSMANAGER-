@@ -1,13 +1,17 @@
-const CACHE = 'tbr-cache-v2';
+const CACHE = 'tbr-cache-v3';
+
+const PRECACHE = [
+  '/',
+  '/index.html',
+  'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then(cache =>
-      cache.addAll([
-        '/',
-        '/index.html'
-      ])
+      Promise.all(PRECACHE.map(url => cache.add(new Request(url, {mode: 'no-cors'})).catch(() => {})))
     )
   );
 });
