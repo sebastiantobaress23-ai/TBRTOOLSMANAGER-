@@ -1175,6 +1175,26 @@ function navigate(p) {
   if (acc) acc.style.background = PAGE_COLORS[p]||'transparent';
   render();
   window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(updateNavHints, 350);
+}
+
+function updateNavHints(){
+  [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']].forEach(([navSel,hintSel])=>{
+    const nav = document.querySelector(navSel);
+    const hint = document.querySelector(hintSel);
+    if (!nav || !hint) return;
+    const overflows = nav.scrollWidth > nav.clientWidth + 2;
+    const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
+    hint.style.display = (overflows && !atEnd) ? '' : 'none';
+  });
+}
+function setupNavHints(){
+  ['nav.nav','#mob-nav'].forEach(sel=>{
+    const nav = document.querySelector(sel);
+    if (nav) nav.addEventListener('scroll', updateNavHints, {passive:true});
+  });
+  window.addEventListener('resize', updateNavHints);
+  updateNavHints();
 }
 
 function render() {
@@ -2253,8 +2273,8 @@ function pgVentas(){
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
       </select></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
     </div>
     <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados.</div>
     <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
@@ -3024,12 +3044,12 @@ function pgProveedores() {
   const s=DB.get('settings',{});
   return `<div class="pg">
   ${pgProveedoresRanking()}
-  <div class="fb mb20">
-    <div>
+  <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
+    <div style="flex:1;min-width:200px">
       <div class="sh" style="margin-bottom:4px">Proveedores</div>
       <div style="font-size:13px;color:var(--di)">Configurá tus proveedores: tipo de cambio, flete y bonificaciones.</div>
     </div>
-    <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap">+ Nuevo proveedor</button>
+    <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo proveedor</button>
   </div>
 
   ${confs.length===0
@@ -4117,15 +4137,15 @@ function pgOrden() {
 
   <!-- Proveedor -->
   <div class="card mb16">
-    <div class="fb">
-      <div><label class="fl mb8">Proveedor</label>
+    <div class="fb" style="flex-wrap:wrap;gap:16px 24px;align-items:flex-start">
+      <div style="flex:1;min-width:220px"><label class="fl mb8" style="min-height:28px">Proveedor</label>
       <div class="iw" style="max-width:320px">
         <select id="ord-prov" onchange="orderConf=this.value">
           <option value="">Seleccionar proveedor...</option>
           ${confs.map(c=>`<option value="${c.id}" ${(orderConf||s.activeConfig)===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
         </select>
       </div></div>
-      <div><label class="fl mb8">Referenciar cotización (opcional)</label>
+      <div style="flex:1;min-width:220px"><label class="fl mb8" style="min-height:28px">Referenciar cotización (opcional)</label>
       <div class="iw" style="max-width:320px">
         <select id="ord-cot" onchange="orderCotRef=this.value">
           <option value="">Sin referencia</option>
@@ -4540,6 +4560,7 @@ window.onload = function() {
   }
   checkAccessPin();
   navigate('dashboard');
+  setupNavHints();
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
