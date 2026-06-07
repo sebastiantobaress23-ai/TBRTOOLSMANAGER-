@@ -3164,6 +3164,23 @@ function pgConfig() {
     <div class="fe mt16"><button class="btn-p" onclick="saveEmpresa()">Guardar datos empresa</button></div>
   </div>
 
+  <div class="sh mb16">Mensajes de WhatsApp</div>
+  <div class="card mb24">
+    <div class="info mb16" style="font-size:12px">Personalizá el texto que se envía junto al PDF al compartir una Orden de Compra o Cotización por WhatsApp. Variables disponibles: <code>{numero}</code> <code>{proveedor}</code> <code>{fecha}</code> <code>{items}</code> <code>{total}</code> <code>{ref}</code></div>
+    <div class="mb16">
+      <label class="fl">Plantilla — Orden de Compra</label>
+      <textarea id="wa-tpl-oc" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||DEFAULT_WA_TPL_OC)}</textarea>
+    </div>
+    <div class="mb16">
+      <label class="fl">Plantilla — Solicitud de Cotización</label>
+      <textarea id="wa-tpl-cot" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplCot||DEFAULT_WA_TPL_COT)}</textarea>
+    </div>
+    <div class="fe" style="gap:10px">
+      <button class="btn-p" onclick="saveWaTpl()">Guardar plantillas</button>
+      <button class="btn-g btn-sm" onclick="resetWaTpl()">Restaurar predeterminadas</button>
+    </div>
+  </div>
+
   <div class="sh mb16">Alertas</div>
   <div class="card mb24">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -4183,6 +4200,25 @@ async function generateReport(period){
   shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, doc, filename);
 }
 
+const DEFAULT_WA_TPL_OC = `*Orden de Compra {numero}*\nProveedor: {proveedor}\nFecha: {fecha}{ref}\n\n{items}\n\n*Total: {total}*`;
+const DEFAULT_WA_TPL_COT = `*Solicitud de cotización {numero}*\nProveedor: {proveedor}\nFecha: {fecha}\n\n{items}\n\nPor favor envíenos su cotización indicando el número *{numero}* como referencia. ¡Gracias!`;
+function applyTemplate(tpl, vars){
+  return tpl.replace(/\{(\w+)\}/g, (m,k)=> vars[k]!==undefined ? vars[k] : m);
+}
+function saveWaTpl(){
+  const s=DB.get('settings',{});
+  s.waTplOC=document.getElementById('wa-tpl-oc').value||'';
+  s.waTplCot=document.getElementById('wa-tpl-cot').value||'';
+  DB.set('settings',s);
+  toast('Plantillas guardadas ✅');
+}
+function resetWaTpl(){
+  const s=DB.get('settings',{});
+  delete s.waTplOC; delete s.waTplCot;
+  DB.set('settings',s);
+  render();
+  toast('Plantillas restauradas a las predeterminadas');
+}
 async function shareCotWA(id){
   const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
   if(!o)return;
@@ -4190,7 +4226,8 @@ async function shareCotWA(id){
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
   const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
-  const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
+  const s=DB.get('settings',{});
+  const txt=applyTemplate(s.waTplCot||DEFAULT_WA_TPL_COT, {numero:o.nro, proveedor:o.proveedor||'—', fecha, items:lines});
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = cotDocBody(o);
@@ -4437,7 +4474,8 @@ async function shareOCWA(id){
   const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
   const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
-  const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
+  const s=DB.get('settings',{});
+  const txt=applyTemplate(s.waTplOC||DEFAULT_WA_TPL_OC, {numero:o.nro, proveedor:o.proveedor||'—', fecha, ref, items:lines, total:`${sym} ${total.toFixed(2)}`});
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = ocDocBody(o);
