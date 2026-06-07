@@ -2441,6 +2441,21 @@ function printOrden(id) {
   const totalItems = (p.products||[]).length;
   const totalUnits = (p.products||[]).reduce((s,pr)=>s+(pr.q||1), 0);
 
+  // Guardar OC en historial (misma colección y numeración que "Orden de compra")
+  const ocRecord = {
+    id:uid(), nro, date:new Date().toISOString(),
+    proveedor:p.conf?.name||'—', proveedorId:p.conf?.id||'',
+    items:(p.products||[]).map(pr=>({n:pr.n, c:pr.c, q:pr.q, p:pr.p})),
+    totalUSD: isARS ? 0 : totalNet,
+    totalARS: isARS ? totalNet : 0,
+    currency, sourcePurchaseId:p.id
+  };
+  const ocs = DB.get('ordenes',[]);
+  ocs.push(ocRecord);
+  DB.set('ordenes', ocs);
+  _lastWrite = Date.now();
+  toast(`✅ ${nro} guardada en Órdenes de compra`);
+
   const w = window.open('','_blank','width=900,height=700');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nro} · TBR TOOLS</title>
 <style>
@@ -2613,7 +2628,7 @@ function pgOrden() {
         <button class="btn-p btn-sm" onclick="addOrdRow()">+ Agregar</button>
       </div>
     </div>
-    <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 60px 110px 34px;gap:8px;padding:0 6px 8px">
+    <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 1fr 34px;gap:8px;padding:0 6px 8px">
       <div class="ph-l">Descripción</div><div class="ph-l">Código</div>
       <div class="ph-l" style="text-align:center">Cant.</div>
       <div class="ph-l" style="text-align:right">Precio USD</div><div></div>
@@ -2637,12 +2652,12 @@ function pgOrden() {
   ${ocs.map((o,i)=>`<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('oc${i}')">
       <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos</div></div>
-      <div><div class="hi-v" style="color:var(--us)">${fmtU(o.totalUSD||0)}</div><div class="hi-t">total USD</div></div>
+      <div><div class="hi-v" style="color:${o.currency==='ARS'?'var(--ye)':'var(--us)'}">${o.currency==='ARS'?fmtA(o.totalARS||0):fmtU(o.totalUSD||0)}</div><div class="hi-t">total ${o.currency||'USD'}</div></div>
     </div>
     <div class="hi-body" id="oc${i}">
       <div style="overflow-x:auto;margin-top:12px">
         <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Total</th></tr></thead>
-        <tbody>${(o.items||[]).map(p=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">$${(p.p||0).toFixed(2)}</td><td class="tr tm cch">$${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`).join('')}</tbody>
+        <tbody>${(o.items||[]).map(p=>{const sym=o.currency==='ARS'?'$':'US$';return `<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">${sym} ${(p.p||0).toFixed(2)}</td><td class="tr tm cch">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`;}).join('')}</tbody>
         </table>
       </div>
       <div class="hi-acts"><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
@@ -2659,11 +2674,11 @@ function pgOrden() {
 }
 
 function ordRow(p) {
-  return `<div class="ord-row" style="display:grid;grid-template-columns:2fr 100px 60px 110px 34px;gap:8px;align-items:center;margin-bottom:8px" id="ord-${p.id}">
-    <input value="${esc(p.n)}" placeholder="Descripción" style="height:40px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 10px;color:var(--ch);font-size:14px;width:100%;outline:none" oninput="updOrd('${p.id}','n',this.value)">
-    <input value="${esc(p.c)}" placeholder="Código" style="height:40px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 10px;color:var(--ch);font-size:12px;letter-spacing:1px;width:100%;outline:none" oninput="updOrd('${p.id}','c',this.value)">
-    <input type="number" value="${p.q||1}" min="1" style="height:40px;text-align:center;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 8px;color:var(--ch);font-size:14px;width:100%;outline:none" oninput="updOrd('${p.id}','q',this.value)" onchange="updOrd('${p.id}','q',this.value)">
-    <input type="number" value="${p.p||''}" placeholder="0.00" step="0.5" min="0" style="height:40px;text-align:right;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 10px;color:var(--ch);font-size:14px;width:100%;outline:none" oninput="updOrd('${p.id}','p',this.value)" onchange="updOrd('${p.id}','p',this.value)">
+  return `<div class="pr ord-row" id="ord-${p.id}">
+    <input value="${esc(p.n)}" placeholder="Descripción" oninput="updOrd('${p.id}','n',this.value)">
+    <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updOrd('${p.id}','c',this.value)">
+    <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updOrd('${p.id}','q',this.value)" onchange="updOrd('${p.id}','q',this.value)">
+    <input type="number" value="${p.p||''}" placeholder="0.00 USD" step="0.5" min="0" style="text-align:right" oninput="updOrd('${p.id}','p',this.value)" onchange="updOrd('${p.id}','p',this.value)">
     <button class="btn-rm" onclick="rmOrd('${p.id}')">✕</button>
   </div>`;
 }
@@ -2717,7 +2732,7 @@ function printOrdenNew() {
   const totalUSD=ORDER.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
 
   // Guardar OC en historial
-  const ocRecord={id:uid(),nro,date:new Date().toISOString(),proveedor:prov?.name||'—',proveedorId:provId||'',items:ORDER.map(p=>({...p})),totalUSD};
+  const ocRecord={id:uid(),nro,date:new Date().toISOString(),proveedor:prov?.name||'—',proveedorId:provId||'',items:ORDER.map(p=>({...p})),totalUSD,totalARS:0,currency:'USD'};
   const ocs=DB.get('ordenes',[]);
   ocs.push(ocRecord);
   DB.set('ordenes',ocs);
