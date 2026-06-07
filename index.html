@@ -3831,6 +3831,20 @@ function reprintCot(id){
 /* ═══════════════════════════════════════════
    PDF + COMPARTIR POR WHATSAPP (con archivo adjunto cuando es posible)
 ═══════════════════════════════════════════ */
+let _jspdfLoading = null;
+function ensureJsPDF(){
+  if (typeof window.jspdf !== 'undefined') return Promise.resolve(true);
+  if (_jspdfLoading) return _jspdfLoading;
+  _jspdfLoading = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = () => { window.__jspdfOffline = false; resolve(true); };
+    s.onerror = () => { resolve(false); };
+    document.head.appendChild(s);
+    setTimeout(()=>resolve(typeof window.jspdf !== 'undefined'), 7000);
+  });
+  return _jspdfLoading;
+}
 function buildDocPDF(opts){
   if (window.__jspdfOffline || typeof window.jspdf==='undefined') return null;
   const { jsPDF } = window.jspdf;
@@ -3898,7 +3912,8 @@ async function shareViaWA(phone, text, pdfDoc, filename){
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
 }
 
-function generateReport(period){
+async function generateReport(period){
+  await ensureJsPDF();
   const now = new Date();
   const since = new Date(now);
   let label;
@@ -3961,7 +3976,7 @@ function generateReport(period){
   shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, doc, filename);
 }
 
-function shareCotWA(id){
+async function shareCotWA(id){
   const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
   if(!o)return;
   const confs=DB.get('configs',[]);
@@ -3970,6 +3985,7 @@ function shareCotWA(id){
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
   const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
   const pdfRows=(o.items||[]).map((p,i)=>`${i+1}. ${(p.n||'—').slice(0,40).padEnd(42)} ${(p.c||'—').padEnd(14)} x${p.q||1}`);
+  if (!await ensureJsPDF()) { toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500); }
   const pdf=buildDocPDF({
     title:'Solicitud de Cotización', nro:o.nro, proveedor:o.proveedor||'—', fecha,
     header:'#  Descripción                                   Código          Cant.',
@@ -4205,7 +4221,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   w.document.close();
 }
 
-function shareOCWA(id){
+async function shareOCWA(id){
   const o=DB.get('ordenes',[]).find(x=>x.id===id);
   if(!o)return;
   const confs=DB.get('configs',[]);
@@ -4217,6 +4233,7 @@ function shareOCWA(id){
   const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
   const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
   const pdfRows=(o.items||[]).map((p,i)=>`${i+1}. ${(p.n||'—').slice(0,34).padEnd(36)} ${(p.c||'—').padEnd(12)} x${String(p.q||1).padEnd(4)} ${sym} ${(p.p||0).toFixed(2)}`);
+  if (!await ensureJsPDF()) { toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500); }
   const pdf=buildDocPDF({
     title:'Orden de Compra', nro:o.nro, proveedor:o.proveedor||'—', fecha,
     extra:o.cotizacionRef?`Ref. cotización: ${o.cotizacionRef}`:'',
