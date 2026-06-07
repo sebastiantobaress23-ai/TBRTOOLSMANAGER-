@@ -753,6 +753,7 @@ select{cursor:pointer}
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
   <div class="tab"     data-p="historial"   onclick="navigate('historial')">Historial</div>
+  <div class="tab"     data-p="ventas"      onclick="navigate('ventas')">Ventas</div>
   <div class="tab"     data-p="catalogo"    onclick="navigate('catalogo')">Catálogo</div>
   <div class="tab"     data-p="stats"       onclick="navigate('stats')">Estadísticas</div>
   <div class="tab"     data-p="publicar"    onclick="navigate('publicar')">Publicar ML</div>
@@ -768,6 +769,7 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="dashboard"   onclick="navigate('dashboard')"><span class="mob-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Inicio</button>
   <button class="mob-tab" data-p="compra"      onclick="navigate('compra')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Compra</button>
   <button class="mob-tab" data-p="historial"   onclick="navigate('historial')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></span>Historial</button>
+  <button class="mob-tab" data-p="ventas"      onclick="navigate('ventas')"><span class="mob-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Ventas</button>
   <button class="mob-tab" data-p="catalogo"    onclick="navigate('catalogo')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Catálogo</button>
   <button class="mob-tab" data-p="stats"       onclick="navigate('stats')"><span class="mob-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg></span>Stats</button>
   <button class="mob-tab" data-p="publicar"    onclick="navigate('publicar')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>ML</button>
@@ -870,7 +872,7 @@ async function fbSync() {
     const d = await r.json();
     if (!d) return;
     let changed = false;
-    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones']) {
+    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','sales']) {
       if (d[k]==null) continue;
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(d[k])) {
@@ -1110,7 +1112,7 @@ const DRAFT_KEY = 'tbr_draft_v2';
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
-const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
+const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
@@ -1126,7 +1128,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
 }
 
@@ -2025,6 +2027,109 @@ function pgHist() {
     <button class="sort-btn${histSort==='tce'?' on':''}" onclick="sortHist('tce')">TCE más alto</button>
   </div>
   <div id="hist-list">${ps.length?ps.map((p,i)=>histCard(p,'h'+i,getBadges(p,i))).join(''):'<div class="empty">Sin resultados.</div>'}</div>
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   VENTAS — registro de ventas reales y rentabilidad
+═══════════════════════════════════════════ */
+function lastTCE(){ const ps=DB.get('purchases',[]); return ps.length ? (ps[ps.length-1].r?.TCE||0) : 0; }
+function suggestSaleCost(code, name){
+  const cat=DB.get('catalog',[]);
+  const c = cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+  if (!c) return 0;
+  const tce = lastTCE();
+  return Math.round((c.lastPrice||c.defaultPrice||0) * tce);
+}
+function fillSaleCost(){
+  const sel=document.getElementById('sale-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  const [name,code]=opt.value.split('|||');
+  document.getElementById('sale-cost').value = suggestSaleCost(code, name) || '';
+}
+function addSale(){
+  const sel=document.getElementById('sale-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
+  const [name,code]=opt.value.split('|||');
+  const qty=parseInt(document.getElementById('sale-qty').value)||1;
+  const price=parseFloat(document.getElementById('sale-price').value)||0;
+  const cost=parseFloat(document.getElementById('sale-cost').value)||0;
+  if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
+  const s=DB.get('settings',{});
+  const sale={id:uid(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500};
+  const sales=DB.get('sales',[]);
+  sales.push(sale);
+  DB.set('sales',sales);
+  toast('✅ Venta registrada');
+  document.getElementById('sale-qty').value='1';
+  document.getElementById('sale-price').value='';
+  document.getElementById('sale-cost').value='';
+  render();
+}
+function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
+function saleProfit(s){
+  const com = (s.priceARS * (s.mlCom??16)/100);
+  const unitNet = s.priceARS - com - (s.mlEnv??0) - (s.costARS||0);
+  return unitNet * (s.qty||1);
+}
+function pgVentas(){
+  const sales = DB.get('sales',[]).slice().reverse();
+  const cat = DB.get('catalog',[]);
+  const totalRev = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const totalUnits = sales.reduce((a,s)=>a+(s.qty||1),0);
+
+  // Ranking de rentabilidad por producto
+  const map={};
+  sales.forEach(s=>{
+    const key=(s.code||s.name||'').toLowerCase();
+    if(!map[key]) map[key]={name:s.name,code:s.code,units:0,revenue:0,profit:0};
+    map[key].units += (s.qty||1);
+    map[key].revenue += s.priceARS*(s.qty||1);
+    map[key].profit += saleProfit(s);
+  });
+  const ranking = Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
+
+  return `<div class="pg">
+  <div class="sh mb16">Registrar venta</div>
+  <div class="card mb24">
+    <div class="fg-w">
+      <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div class="iw"><select id="sale-prod" onchange="fillSaleCost()">
+        <option value="">Elegí un producto del catálogo…</option>
+        ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+      </select></div></div>
+      <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
+    </div>
+    <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados.</div>
+    <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
+  </div>
+
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Ingresos totales</div><div class="sc-v g">${totalRev?fmtA(totalRev):'—'}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''} · ${totalUnits} unidad${totalUnits!==1?'es':''}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${totalRev?fmtA(totalProfit):'—'}</div><div class="sc-s">neto de comisión, envío y costo</div></div>
+    <div class="sc accent-u"><div class="sc-l">Margen real promedio</div><div class="sc-v u">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
+    <div class="sc accent-d"><div class="sc-l">Ticket promedio</div><div class="sc-v">${sales.length?fmtA(totalRev/sales.length):'—'}</div><div class="sc-s">por venta</div></div>
+  </div>
+
+  <div class="sh mb16">Ranking de rentabilidad por producto</div>
+  ${ranking.length ? `<div class="card mb24" style="padding:0;overflow:hidden">
+    ${ranking.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
+      <div><div style="font-weight:600;font-size:14px">${i===0?'🏆 ':''}${esc(r.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${r.units} unidad${r.units!==1?'es':''} vendida${r.units!==1?'s':''} · margen real ${r.marginPct.toFixed(1)}%</div></div>
+      <div style="text-align:right"><div style="font-weight:700;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div><div style="font-size:11px;color:var(--di)">de ${fmtA(r.revenue)}</div></div>
+    </div>`).join('')}
+  </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
+
+  <div class="sh mb16">Historial de ventas</div>
+  ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
+    ${sales.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b2)">
+      <div><div style="font-weight:600;font-size:14px">${esc(s.name)} ${s.qty>1?`× ${s.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtD(s.date)} · venta ${fmtA(s.priceARS)} c/u · costo ${fmtA(s.costARS||0)} c/u</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
+    </div>`).join('')}
+  </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
 }
 function toggleHi(id){const e=document.getElementById(id);if(e)e.classList.toggle('open');}
