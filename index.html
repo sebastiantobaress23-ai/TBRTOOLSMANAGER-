@@ -883,6 +883,38 @@ function purchaseGain(p) {
 /* ═══════════════════════════════════════════
    META MENSUAL DE COMPRAS
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   SIMULADOR "¿QUÉ PASARÍA SI...?"
+═══════════════════════════════════════════ */
+function openSimulador(){
+  const s=DB.get('settings',{});
+  const conf=getConf?.()||{};
+  const tceEl=document.getElementById('sim-tce'); if(tceEl) tceEl.value = Math.round(conf.precio||1000);
+  const comEl=document.getElementById('sim-com'); if(comEl) comEl.value = s.mlCom??16;
+  const envEl=document.getElementById('sim-envio'); if(envEl) envEl.value = s.mlEnv??7500;
+  document.getElementById('sim-modal').style.display='flex';
+  simRecalc();
+}
+function closeSimulador(){const m=document.getElementById('sim-modal');if(m)m.style.display='none';}
+function simRecalc(){
+  const costo=parseFloat(document.getElementById('sim-costo')?.value)||0;
+  const tce=parseFloat(document.getElementById('sim-tce')?.value)||0;
+  const margen=parseFloat(document.getElementById('sim-margen')?.value)||0;
+  const com=parseFloat(document.getElementById('sim-com')?.value)||0;
+  const envio=parseFloat(document.getElementById('sim-envio')?.value)||0;
+  const cu=costo*tce;
+  const precio=cu*(1+margen/100)/(1-com/100)+envio;
+  const gan=precio*(1-com/100)-cu-envio;
+  const ganPct=cu>0?(gan/cu*100):0;
+  const r=document.getElementById('sim-result');
+  if(!r)return;
+  r.innerHTML=`
+    <div class="fb mb8"><span style="font-size:12px;color:var(--di)">Costo en pesos</span><strong>${fmtA(cu)}</strong></div>
+    <div class="fb mb8"><span style="font-size:12px;color:var(--di)">Precio sugerido en ML</span><strong style="color:var(--ch)">${fmtA(precio)}</strong></div>
+    <div class="fb mb8"><span style="font-size:12px;color:var(--di)">Ganancia neta estimada</span><strong style="color:${gan>=0?'var(--gr)':'var(--re)'}">${fmtA(gan)}</strong></div>
+    <div class="fb"><span style="font-size:12px;color:var(--di)">Rentabilidad sobre costo</span><strong style="color:${ganPct>=0?'var(--gr)':'var(--re)'}">${ganPct.toFixed(1)}%</strong></div>
+  `;
+}
 function monthlyGoalCard(ps) {
   const s = DB.get('settings',{});
   const goal = s.monthlyGoal || 0;
@@ -1062,7 +1094,19 @@ function pgDash() {
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
-  <div class="sh mb20">Resumen general</div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Resumen general</div><button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button></div>
+  <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
+    <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador "¿Qué pasaría si...?"<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
+    <div class="mbody">
+      <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
+      <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
+      <div><label class="fl">Tipo de cambio (TCE)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-tce" min="0" step="10" value="1000" oninput="simRecalc()"></div></div>
+      <div><label class="fl">Margen deseado (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-margen" min="0" step="1" value="30" oninput="simRecalc()"></div></div>
+      <div><label class="fl">Comisión Mercado Libre (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-com" min="0" step="1" value="16" oninput="simRecalc()"></div></div>
+      <div><label class="fl">Envío (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-envio" min="0" step="100" value="7500" oninput="simRecalc()"></div></div>
+      <div id="sim-result" class="card mb16" style="margin-top:16px;padding:16px"></div>
+    </div></div>
+  </div>
   <div class="g4 mb20">
     <div class="sc accent-g">
       <div class="sc-l">Total invertido</div>
@@ -1252,7 +1296,7 @@ function pgCompra() {
   <div class="card">
     <div class="fb mb12">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">📦 Del catálogo</button>`:''}<button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">📦 Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -1310,6 +1354,10 @@ function pgCompra() {
   <div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
     <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCatModal()">✕</button></div>
     <div id="cat-modal-body" class="mbody"></div></div>
+  </div>
+  <div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
+    <div class="mbox"><div class="mhdr">Plantillas de compra<button class="btn-rm" onclick="closeTplModal()">✕</button></div>
+    <div id="tpl-modal-body" class="mbody"></div></div>
   </div>
 </div>`;
 }
@@ -1788,6 +1836,41 @@ function closeCatModal(){const m=document.getElementById('cat-modal');if(m)m.sty
 function addFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addProd(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||0,0,0);closeCatModal();}
 
 /* ═══════════════════════════════════════════
+   PLANTILLAS DE COMPRA RECURRENTES
+═══════════════════════════════════════════ */
+function saveAsTemplate() {
+  if (!PP.length){toast('Agregá productos primero.',false);return;}
+  const name = prompt('Nombre de la plantilla (ej: "Pedido mensual ferretería"):','');
+  if (name===null) return;
+  const nm = name.trim() || ('Plantilla '+new Date().toLocaleDateString('es-AR'));
+  const tpls = DB.get('templates',[]);
+  tpls.push({id:uid(), name:nm, date:new Date().toISOString(), products:PP.map(p=>({n:p.n,c:p.c,q:p.q,lista:p.lista,b1:p.b1||0,b2:p.b2||0}))});
+  DB.set('templates',tpls);
+  toast(`✅ Plantilla "${nm}" guardada`);
+  render();
+}
+function openTplModal() {
+  const tpls = DB.get('templates',[]).slice().reverse();
+  const m=document.getElementById('tpl-modal');
+  const b=document.getElementById('tpl-modal-body');
+  if(!m||!b)return;
+  b.innerHTML = tpls.length===0 ? '<div class="empty">Sin plantillas guardadas.</div>' : tpls.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)">
+    <div><div style="font-weight:600">${esc(t.name)}</div><div style="font-size:11px;color:var(--di)">${t.products.length} producto${t.products.length!==1?'s':''} · ${fmtD(t.date)}</div></div>
+    <div class="fg"><button class="btn-p btn-sm" onclick="loadTemplate('${t.id}')">+ Cargar</button><button class="btn-d" onclick="delTemplate('${t.id}')">🗑</button></div>
+  </div>`).join('');
+  m.style.display='flex';
+}
+function closeTplModal(){const m=document.getElementById('tpl-modal');if(m)m.style.display='none';}
+function loadTemplate(id) {
+  const t = DB.get('templates',[]).find(x=>x.id===id);
+  if (!t) return;
+  t.products.forEach(p=>addProd(p.n,p.c,p.q,p.lista,p.b1||0,p.b2||0));
+  closeTplModal();
+  toast(`✅ Plantilla "${t.name}" cargada`);
+}
+function delTemplate(id){confirm2('¿Borrar esta plantilla?',()=>{DB.set('templates',DB.get('templates',[]).filter(t=>t.id!==id));closeTplModal();toast('Plantilla borrada');});}
+
+/* ═══════════════════════════════════════════
    HISTORIAL
 ═══════════════════════════════════════════ */
 
@@ -1879,7 +1962,7 @@ function pgCat() {
         ${(()=>{const h=c.priceHistory||[];if(!h.length)return '';const prev=h[h.length-1]?.price||0;const cur=c.lastPrice||c.defaultPrice||0;const d=cur-prev;if(!d)return '<span class="trend-eq">sin cambio</span>';return d>0?`<span class="trend-up">▲ ${fmtU(Math.abs(d))}</span>`:`<span class="trend-dn">▼ ${fmtU(Math.abs(d))}</span>`;})()}
       </div>
       <div style="font-size:11px;color:var(--di)">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe"><button class="btn-g btn-sm" onclick="openProd360('${c.id}')">👁 360</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
+      <div class="fg fe"><button class="btn-g btn-sm" title="Vista 360" onclick="openProd360('${c.id}')">👁</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
     </div>`).join('')}
   </div>`}
   <!-- MODAL VISTA 360 -->
@@ -2943,7 +3026,7 @@ function pgCotizaciones() {
       </div>
       <div class="hi-acts">
         <button class="btn-g" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?'✓ Marcar como pendiente':'✓ Marcar como cotizada'}</button>
-        <button class="btn-g" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button>
+        <button class="btn-g" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button><button class="btn-g" onclick="shareCotWA('${o.id}')">📲 WhatsApp</button>
         <button class="btn-d" onclick="delCot('${o.id}')">🗑 Borrar</button>
       </div>
     </div>
@@ -3126,6 +3209,13 @@ function reprintCot(id){
   if(!o)return;
   cotPrintDoc(o,true);
 }
+function shareCotWA(id){
+  const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
+  if(!o)return;
+  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
+  const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fmtD(o.date)}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+}
 
 function pgOrden() {
   const cat   = DB.get('catalog',[]);
@@ -3197,7 +3287,7 @@ function pgOrden() {
         <tbody>${(o.items||[]).map(p=>{const sym=o.currency==='ARS'?'$':'US$';return `<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">${sym} ${(p.p||0).toFixed(2)}</td><td class="tr tm cch">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`;}).join('')}</tbody>
         </table>
       </div>
-      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">🖨 Reimprimir</button><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
+      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">🖨 Reimprimir</button><button class="btn-g" onclick="shareOCWA('${o.id}')">📲 WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
@@ -3353,6 +3443,16 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   w.document.close();
 }
 
+function shareOCWA(id){
+  const o=DB.get('ordenes',[]).find(x=>x.id===id);
+  if(!o)return;
+  const sym=o.currency==='ARS'?'$':'US$';
+  const total=o.currency==='ARS'?(o.totalARS||0):(o.totalUSD||0);
+  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
+  const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
+  const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fmtD(o.date)}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+}
 function delOC(id){confirm2('¿Borrar esta orden?',()=>{DB.set('ordenes',DB.get('ordenes',[]).filter(o=>o.id!==id));render();});}
 function openOrdCatModal(){
   const cat=DB.get('catalog',[]);
