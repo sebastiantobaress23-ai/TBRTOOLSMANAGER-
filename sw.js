@@ -1,8 +1,9 @@
-const CACHE = 'tbr-cache-v16';
+const CACHE = 'tbr-cache-v17';
 
 const PRECACHE = [
   '/',
   '/index.html',
+  '/manifest.json',
   'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
@@ -10,8 +11,11 @@ const PRECACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js'
 ];
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then(cache =>
       Promise.all(PRECACHE.map(url => cache.add(new Request(url, {mode: 'no-cors'})).catch(() => {})))
