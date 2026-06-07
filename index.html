@@ -1793,9 +1793,14 @@ function pgCat() {
         ${(()=>{const h=c.priceHistory||[];if(!h.length)return '';const prev=h[h.length-1]?.price||0;const cur=c.lastPrice||c.defaultPrice||0;const d=cur-prev;if(!d)return '<span class="trend-eq">sin cambio</span>';return d>0?`<span class="trend-up">▲ ${fmtU(Math.abs(d))}</span>`:`<span class="trend-dn">▼ ${fmtU(Math.abs(d))}</span>`;})()}
       </div>
       <div style="font-size:11px;color:var(--di)">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe"><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
+      <div class="fg fe"><button class="btn-g btn-sm" onclick="openProd360('${c.id}')">👁 360</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
     </div>`).join('')}
   </div>`}
+  <!-- MODAL VISTA 360 -->
+  <div id="prod360-modal" class="mol" style="display:none" onclick="if(event.target===this)closeProd360()">
+    <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()">✕</button></div>
+    <div id="prod360-body" class="mbody"></div></div>
+  </div>
   <!-- MODAL -->
   <div id="cat-edit-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatEdit()">
     <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">✕</button></div>
@@ -1814,6 +1819,81 @@ function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)retur
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
 function saveCat(){const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;if(!name){toast('Ingresá el nombre.',false);return;}let cat=DB.get('catalog',[]);if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString()}:c);else cat.push({id:uid(),name,code,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString()});DB.set('catalog',cat);closeCatEdit();render();}
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
+
+/* ═══════════════════════════════════════════
+   VISTA 360 — Línea de tiempo del producto + detector de oportunidades
+═══════════════════════════════════════════ */
+function prod360Data(c) {
+  const key = (c.code||c.name||'').toLowerCase();
+  const purchases = DB.get('purchases',[]);
+  const events = [];
+  purchases.forEach(p=>{
+    (p.products||[]).forEach(pr=>{
+      const k = (pr.c||pr.n||'').toLowerCase();
+      if (k && k===key) {
+        events.push({type:'compra', date:p.date, costoUSD:pr.p||0, costoARS:(pr.p||0)*(p.r?.TCE||0), q:pr.q||1, ref:p.name||'—'});
+      }
+    });
+  });
+  const pubs = DB.get('mlpubs',[]);
+  pubs.forEach(pub=>{
+    (pub.products||[]).forEach(pp=>{
+      const k=(pp.c||pp.n||'').toLowerCase();
+      if (k && k===key) {
+        events.push({type:'publicacion', date:pub.date, precio:pp.precio||0, margin:pp.margin||0, gan:pp.gn||0, ref:pub.name||'—'});
+      }
+    });
+  });
+  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  return events;
+}
+function prod360Opportunity(events) {
+  const compras = events.filter(e=>e.type==='compra');
+  if (compras.length < 2) return null;
+  const last = compras[compras.length-1];
+  const prev = compras.slice(0,-1);
+  const avgPrev = prev.reduce((s,e)=>s+e.costoUSD,0)/prev.length;
+  if (avgPrev<=0) return null;
+  const diff = (last.costoUSD - avgPrev)/avgPrev*100;
+  if (diff <= -8) {
+    return {kind:'buy', msg:`💡 Oportunidad de compra: el último costo (US$ ${last.costoUSD.toFixed(2)}) bajó ${Math.abs(diff).toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)}). Buen momento para reabastecer.`};
+  }
+  if (diff >= 12) {
+    return {kind:'warn', msg:`⚠ El costo subió ${diff.toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)} → US$ ${last.costoUSD.toFixed(2)}). Revisá tu margen antes de volver a comprar.`};
+  }
+  return null;
+}
+function openProd360(id) {
+  const c = DB.get('catalog',[]).find(x=>x.id===id);
+  if (!c) return;
+  const events = prod360Data(c);
+  const opp = prod360Opportunity(events);
+  document.getElementById('prod360-title').textContent = `Vista 360 · ${c.name}`;
+  const body = document.getElementById('prod360-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div class="fb mb12" style="flex-wrap:wrap;gap:8px">
+      <div><div class="fl">Código</div><div style="font-weight:600">${esc(c.code||'—')}</div></div>
+      <div><div class="fl">Último precio (lista)</div><div style="font-weight:600;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div></div>
+    </div>
+    ${opp?`<div class="card mb16" style="border-color:${opp.kind==='buy'?'var(--gr)':'var(--ye)'};background:${opp.kind==='buy'?'rgba(74,222,128,.06)':'rgba(250,204,21,.06)'}"><div style="font-size:13px;line-height:1.5">${opp.msg}</div></div>`:''}
+    ${events.length===0?'<div class="empty" style="padding:16px">Sin historial todavía para este producto.</div>':`
+    <div class="sh" style="margin-bottom:10px">Línea de tiempo</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto">
+      ${events.map(e=>e.type==='compra'?`
+        <div class="card" style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-weight:600;font-size:13px">🛒 Compra · ${esc(e.ref)}</div><div style="font-size:11px;color:var(--di)">${fmtD(e.date)} · ${e.q} u.</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--us)">${fmtU(e.costoUSD)}</div><div style="font-size:11px;color:var(--di)">${fmtA(e.costoARS)}</div></div>
+        </div>`:`
+        <div class="card" style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-weight:600;font-size:13px">🏷 Publicación ML · ${esc(e.ref)}</div><div style="font-size:11px;color:var(--di)">${fmtD(e.date)} · margen ${e.margin}%</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--ch)">${fmtA(e.precio)}</div><div style="font-size:11px;color:${e.gan>=0?'var(--gr)':'var(--re)'}">gan. ${fmtA(e.gan)}</div></div>
+        </div>`).join('')}
+    </div>`}
+  `;
+  document.getElementById('prod360-modal').style.display='flex';
+}
+function closeProd360(){const m=document.getElementById('prod360-modal');if(m)m.style.display='none';}
 
 /* ═══════════════════════════════════════════
    ESTADÍSTICAS
