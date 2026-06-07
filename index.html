@@ -109,7 +109,7 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   z-index:9999;
   align-items:stretch;
   box-shadow:0 -4px 40px rgba(0,0,0,.8),0 -1px 0 rgba(226,201,126,.08);
-  overflow-x:auto;
+  overflow-x:hidden;
   overflow-y:hidden;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
@@ -118,18 +118,19 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 }
 .mob-nav::-webkit-scrollbar{display:none}
 .mob-tab{
-  flex:0 0 auto;min-width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;cursor:pointer;padding:8px 10px;
-  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;padding:8px 2px;
+  font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:.6px;
   text-transform:uppercase;color:rgba(255,255,255,.22);transition:color .18s,background .18s;border:none;background:transparent;
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .mob-tab .mob-icon{
-  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
   transition:filter .18s,transform .18s;
 }
-.mob-tab .mob-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.mob-tab .mob-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .mob-tab.on{color:rgba(226,201,126,.9)}
 .mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(226,201,126,.45))}
 .mob-tab.on .mob-icon svg{stroke-width:2}
@@ -2143,16 +2144,37 @@ function pgComp() {
   const ps=DB.get('purchases',[]);
   if (!ps.length) return `<div class="pg"><div class="sh mb16">Comparar precios ML</div><div class="empty">Guardá una compra primero.</div></div>`;
   const last=ps[ps.length-1];
+  const pubs=DB.get('mlpubs',[]);
+  const lastPub=pubs.length?pubs[pubs.length-1]:null;
+  // Mapa código/nombre -> producto publicado en ML (con margen ya aplicado)
+  const pubMap={};
+  if (lastPub) (lastPub.products||[]).forEach(pp=>{
+    const key=(pp.c||pp.n||'').toLowerCase();
+    if (key) pubMap[key]=pp;
+  });
   return `<div class="pg">
   <div class="sh mb8">Comparar precios ML</div>
-  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong> · Ingresá precios de la competencia para comparar.</div>
-  ${(last.products||[]).map((p,i)=>{const cu=(p.p||0)*(last.r?.TCE||0);return `<div class="card mb12">
+  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong>${lastPub?` · Precios de venta tomados de la publicación ML "<strong style="color:var(--ch)">${esc(lastPub.name||'')}</strong>"`:' · No tenés publicaciones ML guardadas: se muestra el costo real.'} · Ingresá precios de la competencia para comparar.</div>
+  ${(last.products||[]).map((p,i)=>{
+    const cu=(p.p||0)*(last.r?.TCE||0);
+    const key=(p.c||p.n||'').toLowerCase();
+    const pub=pubMap[key];
+    const margin=pub?(pub.margin??30):30;
+    const env=pub?(pub.env||0):0;
+    const com=pub?(pub.com||16):16;
+    const precio=pub?pub.precio:cu*(1+margin/100)/(1-com/100)+env;
+    return `<div class="card mb12">
     <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
     <div class="fg-w mb12">
-      <div><div class="sc-l">Tu costo real</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700">${fmtA(cu)}</div></div>
+      <div><div class="sc-l">Tu costo real</div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--si)">${fmtA(cu)}</div></div>
+      <div><div class="sc-l">Tu precio en ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700" id="cmp-precio-${i}">${fmtA(precio)}</div></div>
+      <div>
+        <div class="sc-l">Margen aplicado</div>
+        <div class="iw" style="width:90px"><input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700">%</div>
+      </div>
     </div>
     <div class="fg-w" style="align-items:flex-end">
-      <div><label class="fl">Precio comp. 1</label><div class="iw" style="width:150px"><span class="ipre">$</span><input type="number" placeholder="0" step="100" oninput="cmpCalc(${i},${cu},this)"></div></div>
+      <div><label class="fl">Precio comp. 1</label><div class="iw" style="width:150px"><span class="ipre">$</span><input type="number" id="cmp-comp-${i}" placeholder="0" step="100" oninput="cmpCalc(${i},this)"></div></div>
       <div><label class="fl">Precio comp. 2</label><div class="iw" style="width:150px"><span class="ipre">$</span><input type="number" placeholder="0" step="100"></div></div>
       <div id="cmp-r-${i}" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--di);padding-bottom:8px"></div>
     </div>
@@ -2160,7 +2182,22 @@ function pgComp() {
   </div>`;}).join('')}
 </div>`;
 }
-function cmpCalc(i,cu,inp){const c=parseFloat(inp.value)||0;const el=document.getElementById('cmp-r-'+i);if(!el||!c)return;const d=cu-c;const p=((d/c)*100).toFixed(1);el.innerHTML=d<0?`<span style="color:var(--gr)">✅ Tu costo es ${fmtA(Math.abs(d))} más bajo que el precio de la competencia (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">⚠ Tu costo es ${fmtA(d)} más alto que el precio de la competencia (${p}%)</span>`;}
+function cmpRecalc(i,cu,env,com){
+  const m=parseFloat(document.getElementById('cmp-margin-'+i)?.value)||0;
+  const precio=cu*(1+m/100)/(1-com/100)+env;
+  const el=document.getElementById('cmp-precio-'+i);
+  if (el) el.textContent=fmtA(precio);
+  const inp=document.getElementById('cmp-comp-'+i);
+  if (inp && inp.value) cmpCalc(i,inp);
+}
+function cmpCalc(i,inp){
+  const tu=parseFloat(document.getElementById('cmp-precio-'+i)?.textContent?.replace(/[^\d.,-]/g,'').replace(/\./g,'').replace(',','.'))||0;
+  const c=parseFloat(inp.value)||0;
+  const el=document.getElementById('cmp-r-'+i);
+  if(!el||!c)return;
+  const d=tu-c;const p=((d/c)*100).toFixed(1);
+  el.innerHTML=d<0?`<span style="color:var(--gr)">✅ Sos ${fmtA(Math.abs(d))} más barato (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">⚠ Tu precio es ${fmtA(d)} más caro (${p}%)</span>`;
+}
 
 /* ═══════════════════════════════════════════
    PROVEEDORES (página propia)
