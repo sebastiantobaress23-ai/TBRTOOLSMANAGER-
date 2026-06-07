@@ -1175,6 +1175,26 @@ function navigate(p) {
   if (acc) acc.style.background = PAGE_COLORS[p]||'transparent';
   render();
   window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(updateNavHints, 350);
+}
+
+function updateNavHints(){
+  [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']].forEach(([navSel,hintSel])=>{
+    const nav = document.querySelector(navSel);
+    const hint = document.querySelector(hintSel);
+    if (!nav || !hint) return;
+    const overflows = nav.scrollWidth > nav.clientWidth + 2;
+    const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
+    hint.style.display = (overflows && !atEnd) ? '' : 'none';
+  });
+}
+function setupNavHints(){
+  ['nav.nav','#mob-nav'].forEach(sel=>{
+    const nav = document.querySelector(sel);
+    if (nav) nav.addEventListener('scroll', updateNavHints, {passive:true});
+  });
+  window.addEventListener('resize', updateNavHints);
+  updateNavHints();
 }
 
 function render() {
@@ -4540,6 +4560,7 @@ window.onload = function() {
   }
   checkAccessPin();
   navigate('dashboard');
+  setupNavHints();
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
