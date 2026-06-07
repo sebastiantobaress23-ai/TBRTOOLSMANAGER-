@@ -2274,8 +2274,10 @@ function pgVentas(){
 ═══════════════════════════════════════════ */
 function getTrip(){
   let t = DB.get('trip', null);
-  if (!t) { t = {budgetUSD:0, tce: lastTCE()||0, items:[]}; DB.set('trip', t); }
-  if (t.tce === undefined) t.tce = lastTCE()||0;
+  if (!t || typeof t !== 'object') { t = {budgetUSD:0, tce: lastTCE()||0, items:[]}; DB.set('trip', t); }
+  if (t.tce === undefined || t.tce === null) t.tce = lastTCE()||0;
+  if (!Array.isArray(t.items)) t.items = [];
+  if (typeof t.budgetUSD !== 'number') t.budgetUSD = parseFloat(t.budgetUSD)||0;
   return t;
 }
 function saveTripSettings(){
