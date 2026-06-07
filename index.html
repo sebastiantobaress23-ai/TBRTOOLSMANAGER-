@@ -1132,7 +1132,7 @@ function pgProveedoresRanking() {
       </div>
       <div style="text-align:right">
         <div style="font-weight:700;color:var(--us)">${fmtA(r.totalARS)}</div>
-        <div style="font-size:11px;color:${r.gain>=0?'var(--gr)':'var(--re)'}">gan. proy. ${fmtA(r.gain)}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:${r.gain>=0?'var(--gr)':'var(--re)'}">Gan. proyectada · ${fmtA(r.gain)}</div>
       </div>
     </div>`).join('')}
     </div>
@@ -2156,7 +2156,7 @@ function histCard(p, idx, badges=[]) {
         <div class="hi-n">${esc(p.name||'Sin nombre')}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
         <div class="hi-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div>
       </div>
-      <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t">gan. proy. ${fmtA(purchaseGain(p))}</div></div>
+      <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">Gan. proyectada · ${fmtA(purchaseGain(p))}</div></div>
     </div>
     <div class="hi-body" id="${idx}">
       ${p.notes?`<div class="hi-note">${esc(p.notes)}</div>`:''}
