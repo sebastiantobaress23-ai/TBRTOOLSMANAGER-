@@ -1564,15 +1564,10 @@ function savePurchase() {
   DB.set('catalog',cat);
   const purchase={
     id:uid(),date:new Date().toISOString(),name,notes,
-   products: CALC.v.map(p => ({
-  id: p.id,
-  name: p.n,
-  code: p.c || '',
-  qty: p.q || 1,
-
-  cost: p.p,            // costo real
-  currencyCost: p.lista || p.p
-})),
+    products:CALC.v.map(p=>({...p,margin:30,envio:conf.mlEnv})),
+    conf:{...conf},
+    r:{TCE:CALC.TCE,up:CALC.up,ut:CALC.ut,ars:CALC.at,gan:CALC.ganProyectada||0}
+  };
   const ps=DB.get('purchases',[]);
   ps.push(purchase);
   DB.set('purchases',ps);
