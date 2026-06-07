@@ -904,6 +904,34 @@ const calcEf=(l,b1,b2)=> (+l||0)*(1-(+b1||0)/100)*(1-(+b2||0)/100);
    Toma el precio publicado en ML para cada producto (margen real definido
    por el usuario); si todavía no fue publicado, usa una estimación de
    referencia (margen 30%) con la comisión/envío configurados. */
+function smartAlerts() {
+  const cat = DB.get('catalog',[]);
+  const now = Date.now();
+  const alerts = [];
+  cat.forEach(c=>{
+    if (c.lastUpdated) {
+      const days = Math.floor((now - new Date(c.lastUpdated).getTime())/86400000);
+      if (days >= 60) alerts.push({icon:'⏳', kind:'stock', text:`"${c.name}" no se repone hace ${days} días — quizás sea momento de reabastecer.`});
+    }
+    const hist = c.priceHistory||[];
+    if (hist.length && c.lastPrice) {
+      const prev = hist[hist.length-1].price;
+      if (prev > 0) {
+        const diff = (c.lastPrice - prev)/prev*100;
+        if (diff >= 8) alerts.push({icon:'📈', kind:'price', text:`El costo de "${c.name}" subió ${diff.toFixed(0)}% respecto a la compra anterior (${fmtU(prev)} → ${fmtU(c.lastPrice)}).`});
+      }
+    }
+  });
+  return alerts.slice(0,6);
+}
+function smartAlertsCard() {
+  const alerts = smartAlerts();
+  if (!alerts.length) return '';
+  return `<div class="card mb20">
+    <div class="sh mb12" style="margin-top:0">Alertas inteligentes</div>
+    ${alerts.map(a=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--b2)"><span style="font-size:16px;line-height:1.3">${a.icon}</span><span style="font-size:13px;color:var(--di)">${esc(a.text)}</span></div>`).join('')}
+  </div>`;
+}
 function purchaseGain(p) {
   const pubs=DB.get('mlpubs',[]);
   const pubMap={};
@@ -1196,6 +1224,7 @@ function pgDash() {
     </div>
   </div>
   ${monthlyGoalCard(ps)}
+  ${smartAlertsCard()}
   <div class="g2 mb20">
     <div>
       <div class="sh mb16">Evolución del TCE</div>
