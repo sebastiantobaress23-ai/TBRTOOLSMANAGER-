@@ -372,6 +372,10 @@ body{display:flex;flex-direction:column}
 /* NAV */
 .nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5)}
 .nav::-webkit-scrollbar{display:none}
+.nav-hint,.mob-nav-hint{position:sticky;right:0;flex:0 0 auto;display:flex;align-items:center;justify-content:center;pointer-events:none;color:rgba(245,240,228,.55);background:linear-gradient(to right,transparent,rgba(8,8,8,.95) 55%);animation:navHintPulse 1.8s ease-in-out infinite}
+.nav-hint{padding:0 14px 0 28px;font-size:16px}
+.mob-nav-hint{padding:0 10px 0 22px;font-size:15px;height:100%}
+@keyframes navHintPulse{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(3px)}}
 .tab{padding:14px 18px;font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.18);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
 .tab:hover{color:rgba(255,255,255,.55)}
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
@@ -776,6 +780,7 @@ select{cursor:pointer}
   <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
   <div class="tab"     data-p="viaje"       onclick="navigate('viaje')">Viaje de compras</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
+  <div class="nav-hint">›</div>
 </nav>
 
 <!-- MOBILE BOTTOM NAV -->
@@ -793,6 +798,7 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
   <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
+  <div class="mob-nav-hint">›</div>
 </nav>
 
 <div id="app"></div>
