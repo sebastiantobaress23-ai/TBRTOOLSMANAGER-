@@ -114,13 +114,16 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   overflow-y:hidden;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+  scroll-behavior:smooth;
   padding-bottom:env(safe-area-inset-bottom,0px);
   height:calc(72px + env(safe-area-inset-bottom,0px));
 }
 .mob-nav::-webkit-scrollbar{display:none}
 .mob-tab{
-  flex:0 0 auto;min-width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;cursor:pointer;padding:8px 10px;
+  flex:0 0 auto;min-width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;padding:8px 8px;
+  scroll-snap-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;
   text-transform:uppercase;color:rgba(255,255,255,.22);transition:color .18s,background .18s;border:none;background:transparent;
   -webkit-tap-highlight-color:transparent;
@@ -131,8 +134,8 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   transition:filter .18s,transform .18s;
 }
 .mob-tab .mob-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-.mob-tab.on{color:rgba(226,201,126,.9)}
-.mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(226,201,126,.45))}
+.mob-tab.on{color:rgba(226,201,126,.65)}
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 3px rgba(226,201,126,.22))}
 .mob-tab.on .mob-icon svg{stroke-width:2}
 html.light .mob-nav{background:rgba(255,255,255,.99);border-top-color:rgba(226,201,126,.18)}
 html.light .mob-tab{color:rgba(0,0,0,.28)}
@@ -690,7 +693,7 @@ select{cursor:pointer}
 
 /* Mobile nav: tab activo con realce e indicador */
 .mob-tab{position:relative}
-.mob-tab.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px}
+.mob-tab.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.5),transparent);border-radius:2px}
 .mob-tab:active{transform:scale(.93)}
 .mob-tab{transition:transform .14s cubic-bezier(.22,.61,.36,1),color .18s}
 
@@ -1180,7 +1183,7 @@ function cmCancel() { document.getElementById('cm-ol').style.display='none'; _co
 function waIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M16.004 2.667c-7.363 0-13.333 5.97-13.333 13.333 0 2.353.615 4.65 1.784 6.667L2.67 29.333l6.823-1.784a13.27 13.27 0 0 0 6.51 1.658h.006c7.362 0 13.332-5.97 13.332-13.333S23.366 2.667 16.004 2.667zm0 24.4a11 11 0 0 1-5.61-1.535l-.402-.24-4.05 1.06 1.082-3.95-.262-.405a10.97 10.97 0 0 1-1.687-5.864c0-6.083 4.95-11.033 11.034-11.033 2.948 0 5.717 1.148 7.8 3.232a10.96 10.96 0 0 1 3.23 7.804c0 6.083-4.95 11.033-11.033 11.033zm6.05-8.27c-.332-.166-1.96-.967-2.263-1.077-.304-.11-.526-.166-.747.166s-.857 1.077-1.05 1.298c-.193.222-.387.25-.718.083-.332-.166-1.4-.516-2.667-1.645-.985-.879-1.65-1.964-1.844-2.296-.193-.332-.02-.51.146-.675.15-.149.332-.388.498-.582.166-.193.221-.332.332-.554.11-.222.055-.416-.028-.583-.083-.166-.747-1.8-1.024-2.465-.27-.648-.544-.56-.747-.57-.193-.01-.415-.012-.637-.012s-.582.083-.886.416c-.304.332-1.16 1.133-1.16 2.764s1.188 3.206 1.353 3.428c.166.222 2.337 3.567 5.66 5.001.79.341 1.407.545 1.888.697.793.252 1.514.217 2.084.131.636-.095 1.96-.801 2.236-1.575.276-.774.276-1.437.193-1.575-.083-.139-.304-.222-.636-.388z"/></svg>`;
 }
-function toast(msg, ok=true) {
+function toast(msg, ok=true, ms=2500) {
   let el = document.getElementById('toast');
   if (!el) {
     el=document.createElement('div');
@@ -1193,7 +1196,7 @@ function toast(msg, ok=true) {
   el.style.borderColor = ok ? 'rgba(74,222,128,.3)' : 'rgba(248,113,113,.3)';
   el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)';
   clearTimeout(el._t);
-  el._t = setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(-50%) translateY(8px)';}, 2500);
+  el._t = setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(-50%) translateY(8px)';}, ms);
 }
 
 /* ═══════════════════════════════════════════
@@ -2312,7 +2315,7 @@ function pgViaje(){
   </div>
 
   <div class="g4 mb20">
-    <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">≈ ${fmtA(totalARS)}</div></div>
+    <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">${t.tce?'≈ '+fmtA(totalARS):'cargá un tipo de cambio para ver en ARS'}</div></div>
     <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?'⚠ excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
     <div class="sc accent-u"><div class="sc-l">Ya comprado (marcado)</div><div class="sc-v u">${fmtU(checkedUSD)}</div><div class="sc-s">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div></div>
     <div class="sc accent-d"><div class="sc-l">Tipo de cambio</div><div class="sc-v">${t.tce?fmtA(t.tce):'—'}</div><div class="sc-s">usado para la conversión</div></div>
@@ -3849,7 +3852,8 @@ async function shareViaWA(phone, text, pdfDoc, filename){
     const u = URL.createObjectURL(file);
     const a = document.createElement('a'); a.href=u; a.download=filename; a.click();
     URL.revokeObjectURL(u);
-    toast('📄 PDF descargado — adjuntalo manualmente en WhatsApp');
+    try { await navigator.clipboard?.writeText(text); } catch {}
+    toast('📄 PDF descargado y texto copiado — adjuntalo en WhatsApp desde "Archivos" y pegá el texto', true, 5000);
   }
   const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
