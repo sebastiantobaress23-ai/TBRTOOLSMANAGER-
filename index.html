@@ -767,8 +767,12 @@ select{cursor:pointer}
 
 <div id="lock-ov" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;text-align:center">
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ch)">Acceso protegido</div>
-  <div style="font-size:13px;color:var(--di);max-width:320px">Ingresá el PIN para acceder a la aplicación.</div>
+  <div style="font-size:13px;color:var(--di);max-width:320px">Ingresá tus credenciales para acceder a la aplicación.</div>
   <div id="lock-pin-wrap">
+    <div id="lock-userpass" style="display:none">
+      <div class="iw" style="max-width:240px;margin:0 auto 8px"><input type="text" id="lock-user" placeholder="Usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('lock-pass').focus()"></div>
+      <div class="iw" style="max-width:240px;margin:0 auto"><input type="password" id="lock-pass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')document.getElementById('lock-pin')?document.getElementById('lock-pin').focus():tryUnlock()"></div>
+    </div>
     <div class="iw" style="max-width:200px"><input type="password" id="lock-pin" placeholder="PIN" inputmode="numeric" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
     <div id="lock-err" style="display:none;font-size:12px;color:var(--re);margin-top:8px">PIN incorrecto</div>
     <div style="margin-top:14px"><button class="btn-p" onclick="tryUnlock()">Entrar</button></div>
@@ -3315,6 +3319,20 @@ function pgConfig() {
     <div class="hint mt12">${s.accessPin?'🔒 El acceso está protegido con PIN.'+(s.pinQuestion?' Tenés una pregunta de recuperación configurada.':' ⚠ No definiste pregunta de recuperación: si te olvidás el PIN, no vas a poder recuperar el acceso.'):'⚠ Sin PIN, cualquiera con el link puede entrar y modificar los datos.'}</div>
   </div>
 
+  <div class="sh mb16">Capa adicional: usuario y contraseña</div>
+  <div class="card mb24">
+    <div class="info mb16" style="font-size:12px">Sumá una verificación extra (usuario + contraseña) además del PIN, para reforzar el acceso a la app.</div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px"><label class="fl">Usuario</label><div class="iw"><input type="text" id="sec-user" placeholder="Nombre de usuario" value="${esc(s.accessUser||'')}" autocomplete="off"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Contraseña</label><div class="iw"><input type="password" id="sec-pass" placeholder="${s.accessPass?'••••••••':'Nueva contraseña'}" autocomplete="new-password"></div></div>
+    </div>
+    <div class="fe mt16">
+      <button class="btn-p" onclick="saveAccessUserPass()">Guardar</button>
+      ${(s.accessUser||s.accessPass)?'<button class="btn-d" onclick="removeAccessUserPass()">Quitar capa adicional</button>':''}
+    </div>
+    <div class="hint mt12">${(s.accessUser&&s.accessPass)?'🔐 Activa: además del PIN, vas a tener que ingresar usuario y contraseña.':'Sin esta capa, el acceso depende solo del PIN.'}</div>
+  </div>
+
   <div class="sh mb16">Notificaciones</div>
   <div class="card mb24">
     <div class="info mb16" style="font-size:12px">Activá los avisos para enterarte al instante de alertas inteligentes nuevas (subas de precio, productos para reponer) y cuando alcances tu meta mensual — aunque tengas la app en segundo plano.</div>
@@ -3429,23 +3447,60 @@ function removeAccessPin(){
     render();
   },'Quitar PIN','cm-ok');
 }
+function saveAccessUserPass(){
+  const u=(document.getElementById('sec-user').value||'').trim();
+  const wRaw=(document.getElementById('sec-pass').value||'').trim();
+  const s=DB.get('settings',{});
+  if(!u){ toast('Ingresá un usuario',false); return; }
+  if(!wRaw && !s.accessPass){ toast('Ingresá una contraseña',false); return; }
+  s.accessUser=u;
+  if(wRaw) s.accessPass=wRaw;
+  DB.set('settings',s);
+  sessionStorage.removeItem('tbr_unlocked');
+  toast('Capa adicional guardada 🔐');
+  render();
+}
+function removeAccessUserPass(){
+  confirm2('¿Quitar la verificación de usuario y contraseña?',()=>{
+    const s=DB.get('settings',{});
+    delete s.accessUser; delete s.accessPass;
+    DB.set('settings',s);
+    sessionStorage.removeItem('tbr_unlocked');
+    toast('Capa adicional eliminada');
+    render();
+  },'Quitar','cm-ok');
+}
 function checkAccessPin(){
   const s=DB.get('settings',{});
   const pin=s.accessPin;
+  const hasUP = !!(s.accessUser && s.accessPass);
   const ov=document.getElementById('lock-ov');
-  if(!pin){ if(ov) ov.style.display='none'; return true; }
-  if(sessionStorage.getItem('tbr_unlocked')===pin){ if(ov) ov.style.display='none'; return true; }
+  if(!pin && !hasUP){ if(ov) ov.style.display='none'; return true; }
+  const token = JSON.stringify({p:pin||'',u:s.accessUser||'',w:s.accessPass||''});
+  if(sessionStorage.getItem('tbr_unlocked')===token){ if(ov) ov.style.display='none'; return true; }
   if(ov) ov.style.display='flex';
+  const upWrap=document.getElementById('lock-userpass');
+  const pinInput=document.getElementById('lock-pin');
+  if(upWrap) upWrap.style.display = hasUP ? 'block' : 'none';
+  if(pinInput) pinInput.style.display = pin ? '' : 'none';
   return false;
 }
 function tryUnlock(){
   const s=DB.get('settings',{});
-  const v=document.getElementById('lock-pin').value.trim();
-  if(v && v===s.accessPin){
-    sessionStorage.setItem('tbr_unlocked', v);
+  const hasUP = !!(s.accessUser && s.accessPass);
+  const v=(document.getElementById('lock-pin').value||'').trim();
+  const u=(document.getElementById('lock-user')?.value||'').trim();
+  const w=(document.getElementById('lock-pass')?.value||'').trim();
+  const pinOk = !s.accessPin || v===s.accessPin;
+  const upOk = !hasUP || (u===s.accessUser && w===s.accessPass);
+  if(pinOk && upOk && (s.accessPin || hasUP)){
+    const token = JSON.stringify({p:s.accessPin||'',u:s.accessUser||'',w:s.accessPass||''});
+    sessionStorage.setItem('tbr_unlocked', token);
     document.getElementById('lock-ov').style.display='none';
     document.getElementById('lock-err').style.display='none';
     document.getElementById('lock-pin').value='';
+    if(document.getElementById('lock-user')) document.getElementById('lock-user').value='';
+    if(document.getElementById('lock-pass')) document.getElementById('lock-pass').value='';
   } else {
     document.getElementById('lock-err').style.display='block';
   }
