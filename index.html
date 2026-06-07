@@ -1619,7 +1619,7 @@ function histCard(p, idx, badges=[]) {
       ${p.notes?`<div class="hi-note">📝 ${esc(p.notes)}</div>`:''}
       <div style="overflow-x:auto;margin-top:12px">
         <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th><th class="tc2">Margen</th><th class="tr">Precio ML</th></tr></thead>
-        <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);const env=pr.envio||(p.conf?.mlEnv||7500);const precio=cu*(1+(pr.margin||30)/100)/(1-(p.conf?.mlCom||16)/100)+env;return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td><td class="tc2 tm">${pr.margin||30}%</td><td class="tr tm cch">${fmtA(precio)}</td></tr>`;}).join('')}</tbody></table>
+        <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);const env=pr.envio||(p.conf?.mlEnv||7500);const precio=cu*(1+(pr.margin||30)/100)/(1-(p.conf?.mlCom||14.50)/100)+env;return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td><td class="tc2 tm">${pr.margin||30}%</td><td class="tr tm cch">${fmtA(precio)}</td></tr>`;}).join('')}</tbody></table>
       </div>
       <div class="hi-acts">
         <button class="btn-g btn-sm" onclick="printOrden('${p.id}')">🖨 OC</button>
