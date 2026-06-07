@@ -114,8 +114,6 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   overflow-y:hidden;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x proximity;
-  scroll-behavior:smooth;
   padding-bottom:env(safe-area-inset-bottom,0px);
   height:calc(72px + env(safe-area-inset-bottom,0px));
 }
@@ -123,7 +121,6 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 .mob-tab{
   flex:0 0 auto;min-width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:4px;cursor:pointer;padding:8px 8px;
-  scroll-snap-align:center;
   font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;
   text-transform:uppercase;color:rgba(255,255,255,.22);transition:color .18s,background .18s;border:none;background:transparent;
   -webkit-tap-highlight-color:transparent;
@@ -134,8 +131,8 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   transition:filter .18s,transform .18s;
 }
 .mob-tab .mob-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-.mob-tab.on{color:rgba(226,201,126,.65)}
-.mob-tab.on .mob-icon{filter:drop-shadow(0 0 3px rgba(226,201,126,.22))}
+.mob-tab.on{color:rgba(245,240,228,.85)}
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 4px rgba(226,201,126,.3))}
 .mob-tab.on .mob-icon svg{stroke-width:2}
 html.light .mob-nav{background:rgba(255,255,255,.99);border-top-color:rgba(226,201,126,.18)}
 html.light .mob-tab{color:rgba(0,0,0,.28)}
@@ -693,7 +690,7 @@ select{cursor:pointer}
 
 /* Mobile nav: tab activo con realce e indicador */
 .mob-tab{position:relative}
-.mob-tab.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.5),transparent);border-radius:2px}
+.mob-tab.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,transparent,rgba(245,238,222,.6),transparent);border-radius:2px}
 .mob-tab:active{transform:scale(.93)}
 .mob-tab{transition:transform .14s cubic-bezier(.22,.61,.36,1),color .18s}
 
@@ -3840,12 +3837,19 @@ async function shareViaWA(phone, text, pdfDoc, filename){
       file = new File([blob], filename, {type:'application/pdf'});
     } catch {}
   }
-  if (file && navigator.canShare && navigator.canShare({files:[file]})) {
-    try {
-      await navigator.share({files:[file], text});
-      return;
-    } catch(e) {
-      if (e?.name==='AbortError') return;
+  if (file && navigator.canShare && navigator.share) {
+    if (navigator.canShare({files:[file], text})) {
+      try { await navigator.share({files:[file], text}); return; }
+      catch(e){ if (e?.name==='AbortError') return; }
+    }
+    if (navigator.canShare({files:[file]})) {
+      try { await navigator.clipboard?.writeText(text); } catch {}
+      try {
+        await navigator.share({files:[file]});
+        toast('📄 PDF compartido — el texto quedó copiado, pegalo en el chat', true, 4000);
+        return;
+      }
+      catch(e){ if (e?.name==='AbortError') return; }
     }
   }
   if (file) {
