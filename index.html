@@ -398,6 +398,8 @@ body{display:flex;flex-direction:column}
 /* CONTENT */
 #app{flex:1;background:#0c0c0c;animation:pgFadeIn .28s ease both}
 @keyframes pgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes numPulse{0%{transform:scale(1);text-shadow:none}30%{transform:scale(1.12);text-shadow:0 0 16px currentColor}100%{transform:scale(1);text-shadow:none}}
+.num-pulse{display:inline-block;animation:numPulse .5s ease}
 .pg{max-width:1060px;margin:0 auto;padding:26px 32px 48px}
 
 /* SECTION HEADING */
@@ -1522,7 +1524,21 @@ const TBRChart = {
     }
   }
 };
+let _kpiPrev = {};
+function pulseKpis(){
+  document.querySelectorAll('.sc-v').forEach((el,i)=>{
+    const key = 'sc'+i;
+    const val = el.textContent;
+    if(_kpiPrev[key]!==undefined && _kpiPrev[key]!==val){
+      el.classList.remove('num-pulse');
+      void el.offsetWidth;
+      el.classList.add('num-pulse');
+    }
+    _kpiPrev[key]=val;
+  });
+}
 after.dashboard = ()=>{
+  setTimeout(pulseKpis,30);
   const ps = DB.get('purchases',[]);
   if (ps.length<2) return;
   const labels = ps.map((p,i)=>p.name||'C'+(i+1));
