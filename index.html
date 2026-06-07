@@ -109,7 +109,7 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
   z-index:9999;
   align-items:stretch;
   box-shadow:0 -4px 40px rgba(0,0,0,.8),0 -1px 0 rgba(226,201,126,.08);
-  overflow-x:hidden;
+  overflow-x:auto;
   overflow-y:hidden;
   scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
@@ -118,19 +118,18 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 }
 .mob-nav::-webkit-scrollbar{display:none}
 .mob-tab{
-  flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;cursor:pointer;padding:8px 2px;
-  font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:.6px;
+  flex:0 0 auto;min-width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;padding:8px 10px;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;
   text-transform:uppercase;color:rgba(255,255,255,.22);transition:color .18s,background .18s;border:none;background:transparent;
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .mob-tab .mob-icon{
-  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
   transition:filter .18s,transform .18s;
 }
-.mob-tab .mob-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.mob-tab .mob-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .mob-tab.on{color:rgba(226,201,126,.9)}
 .mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(226,201,126,.45))}
 .mob-tab.on .mob-icon svg{stroke-width:2}
@@ -2170,7 +2169,7 @@ function pgComp() {
       <div><div class="sc-l">Tu precio en ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700" id="cmp-precio-${i}">${fmtA(precio)}</div></div>
       <div>
         <div class="sc-l">Margen aplicado</div>
-        <div class="iw" style="width:90px"><input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700">%</div>
+        <div class="iw" style="width:100px"><input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700"><span class="isuf" style="padding:0 10px;color:var(--di);font-size:13px">%</span></div>
       </div>
     </div>
     <div class="fg-w" style="align-items:flex-end">
