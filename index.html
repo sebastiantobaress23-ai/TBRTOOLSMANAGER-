@@ -708,6 +708,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   <div class="tab"     data-p="publicar"    onclick="navigate('publicar')">Publicar ML</div>
   <div class="tab"     data-p="competencia" onclick="navigate('competencia')">Competencia</div>
   <div class="tab"     data-p="orden"       onclick="navigate('orden')">Orden de Compra</div>
+  <div class="tab"     data-p="cotizaciones" onclick="navigate('cotizaciones')">Cotizaciones</div>
   <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
 </nav>
@@ -723,6 +724,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   <button class="mob-tab" data-p="competencia" onclick="navigate('competencia')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Compet.</button>
   <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Proveed.</button>
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
+  <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
 </nav>
 
@@ -920,7 +922,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,proveedores:pgProveedores};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
 }
 
@@ -2692,6 +2694,9 @@ function exportAllXLSX(){
 ═══════════════════════════════════════════ */
 let ORDER = [];
 let orderConf = null; // proveedor seleccionado para la orden
+let orderCotRef = ''; // cotización referenciada por la orden actual
+let COT = [];
+let cotConf = null;
 
 /* Numeración correlativa OC-001, OC-002... */
 function nextOCNumber() {
@@ -2700,6 +2705,259 @@ function nextOCNumber() {
   s.ocCounter = n;
   DB.set('settings', s);
   return 'OC-' + String(n).padStart(3, '0');
+}
+
+/* Numeración correlativa SC-001, SC-002... (Solicitud de Cotización) */
+function nextSCNumber() {
+  const s = DB.get('settings', {});
+  const n = (s.scCounter || 0) + 1;
+  s.scCounter = n;
+  DB.set('settings', s);
+  return 'SC-' + String(n).padStart(3, '0');
+}
+
+/* ═══════════════════════════════════════════
+   COTIZACIONES (RFQ — Solicitud de precios al proveedor)
+═══════════════════════════════════════════ */
+function pgCotizaciones() {
+  const cat   = DB.get('catalog',[]);
+  const confs = DB.get('configs',[]);
+  const s     = DB.get('settings',{});
+  const cots  = DB.get('cotizaciones',[]).slice().reverse();
+
+  return `<div class="pg">
+  <div class="sh mb16">Nueva solicitud de cotización</div>
+
+  <div class="card mb16">
+    <div class="fb">
+      <div><label class="fl mb8">Proveedor</label>
+      <div class="iw" style="max-width:320px">
+        <select id="cot-prov" onchange="cotConf=this.value">
+          <option value="">Seleccionar proveedor...</option>
+          ${confs.map(c=>`<option value="${c.id}" ${(cotConf||s.activeConfig)===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="card mb16">
+    <div class="fb mb12">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS A COTIZAR</span>
+      <div class="fg">
+        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openCotCatModal()">📦 Del catálogo</button>`:''}
+        <button class="btn-p btn-sm" onclick="addCotRow()">+ Agregar</button>
+      </div>
+    </div>
+    <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 34px;gap:8px;padding:0 6px 8px">
+      <div class="ph-l">Descripción</div><div class="ph-l">Código</div>
+      <div class="ph-l" style="text-align:center">Cant.</div><div></div>
+    </div>
+    <div id="cot-list">${COT.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':COT.map(cotRow).join('')}</div>
+    <button class="btn-add-row" onclick="addCotRow()">+ Agregar artículo</button>
+  </div>
+
+  <div class="fg-w mb16">
+    <button class="btn-p" style="flex:1;height:50px;font-size:14px;letter-spacing:2px" onclick="printCotizacion()">🖨 Generar e imprimir solicitud</button>
+    <button class="btn-g" onclick="clearCot()">Limpiar</button>
+  </div>
+
+  ${cots.length>0?`<div>
+  <div class="sh mb16">Solicitudes generadas</div>
+  ${cots.map((o,i)=>`<div class="hi">
+    <div class="hi-hdr" onclick="toggleHi('cot${i}')">
+      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${o.status==='cotizada'?'<span style="color:var(--gr)">Cotizada</span>':'<span style="color:var(--ye)">Pendiente</span>'}</div></div>
+      <div><div class="hi-v">${o.status==='cotizada'?fmtU((o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.precio||0),0)):'—'}</div><div class="hi-t">${o.status==='cotizada'?'total cotizado':''}</div></div>
+    </div>
+    <div class="hi-body" id="cot${i}">
+      <div style="overflow-x:auto;margin-top:12px">
+        <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio cotizado</th></tr></thead>
+        <tbody>${(o.items||[]).map((p,j)=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr"><div class="iw" style="max-width:140px;margin-left:auto"><span class="ipre">US$</span><input type="number" step="0.01" min="0" value="${p.precio||''}" placeholder="0.00" oninput="setCotPrice('${o.id}',${j},this.value)"></div></td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="hi-acts">
+        <button class="btn-g" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?'✓ Marcar como pendiente':'✓ Marcar como cotizada'}</button>
+        <button class="btn-g" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button>
+        <button class="btn-d" onclick="delCot('${o.id}')">🗑 Borrar</button>
+      </div>
+    </div>
+  </div>`).join('')}
+  </div>`:''}
+
+  <div id="cot-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCotCatModal()">
+    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCotCatModal()">✕</button></div>
+    <div id="cot-cat-body" class="mbody"></div></div>
+  </div>
+</div>`;
+}
+
+function cotRow(p) {
+  return `<div class="pr ord-row" id="cot-${p.id}" style="grid-template-columns:2fr 100px 56px 34px">
+    <input value="${esc(p.n)}" placeholder="Descripción" oninput="updCot('${p.id}','n',this.value)">
+    <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updCot('${p.id}','c',this.value)">
+    <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updCot('${p.id}','q',this.value)" onchange="updCot('${p.id}','q',this.value)">
+    <button class="btn-rm" onclick="rmCot('${p.id}')">✕</button>
+  </div>`;
+}
+function addCotRow(n='',c='',q=1) {
+  const id=uid();COT.push({id,n,c,q:+q||1});
+  const list=document.getElementById('cot-list');
+  if (list) {
+    if (COT.length===1) list.innerHTML='';
+    list.insertAdjacentHTML('beforeend',cotRow(COT[COT.length-1]));
+  }
+}
+function rmCot(id) {
+  COT=COT.filter(x=>x.id!==id);
+  const el=document.getElementById('cot-'+id);
+  if(el)el.remove();
+  if(!COT.length){const l=document.getElementById('cot-list');if(l)l.innerHTML='<div class="empty" style="padding:16px">Sin artículos.</div>';}
+}
+function updCot(id,k,v) {
+  const x=COT.find(x=>x.id===id);
+  if(x) x[k]=(k==='q')?(parseInt(v)||1):v;
+}
+function clearCot(){confirm2('¿Limpiar la solicitud?',()=>{COT=[];render();});}
+function openCotCatModal(){
+  const cat=DB.get('catalog',[]);
+  const m=document.getElementById('cot-cat-modal');
+  const b=document.getElementById('cot-cat-body');
+  if(!m||!b)return;
+  b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')}</div></div><button class="btn-p btn-sm" onclick="addCotFromCat('${c.id}')">+ Agregar</button></div>`).join('');
+  m.style.display='flex';
+}
+function closeCotCatModal(){const m=document.getElementById('cot-cat-modal');if(m)m.style.display='none';}
+function addCotFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addCotRow(c.name,c.code||'',1);closeCotCatModal();}
+
+function setCotPrice(id,idx,v){
+  const cots=DB.get('cotizaciones',[]);
+  const o=cots.find(x=>x.id===id);
+  if(!o||!o.items[idx])return;
+  o.items[idx].precio=parseFloat(v)||0;
+  DB.set('cotizaciones',cots);
+}
+function markCotQuoted(id){
+  const cots=DB.get('cotizaciones',[]);
+  const o=cots.find(x=>x.id===id);
+  if(!o)return;
+  o.status = o.status==='cotizada' ? 'pendiente' : 'cotizada';
+  DB.set('cotizaciones',cots);
+  render();
+}
+function delCot(id){confirm2('¿Borrar esta solicitud?',()=>{DB.set('cotizaciones',DB.get('cotizaciones',[]).filter(o=>o.id!==id));render();});}
+
+function cotPrintDoc(o, reprint) {
+  const emp = DB.get('empresa',{});
+  const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
+  const items = (o.items||[]).map((p,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(p.n||'—')}</td>
+    <td>${esc(p.c||'—')}</td>
+    <td class="ctr">${p.q||1}</td>
+    <td class="cright">______________</td>
+  </tr>`).join('');
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.nro} · TBR TOOLS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4;margin:12mm}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padding:0}
+.toolbar{background:#f0f0f0;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border-radius:6px}
+.toolbar span{font-size:13px;color:#555}
+.btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
+.btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
+.brand p{font-size:10px;color:#666;margin:1px 0}
+.doc-badge{text-align:right}
+.doc-badge .oc-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.doc-badge .oc-num{font-size:24px;font-weight:900;color:#111;letter-spacing:1px}
+.doc-badge .oc-date{font-size:11px;color:#666;margin-top:2px}
+.doc-meta{display:flex;gap:0;border-bottom:1px solid #ddd;background:#fafafa}
+.meta-item{flex:1;padding:8px 16px;border-right:1px solid #ddd}
+.meta-item:last-child{border-right:none}
+.meta-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:2px}
+.meta-val{font-size:12px;font-weight:600;color:#111}
+table{width:100%;border-collapse:collapse}
+thead th{background:#111;color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+tbody tr:nth-child(even){background:#f9f9f9}
+tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+.num{color:#999;font-size:11px;width:28px}
+.ctr{text-align:center}
+.cright{text-align:right;font-family:monospace}
+.note{padding:14px 20px;font-size:11px;color:#666;border-top:1px solid #ddd;background:#fafafa}
+.doc-footer{padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid #ddd}
+.firma{text-align:center;width:180px}
+.firma hr{border:none;border-top:1px solid #333;margin-bottom:6px}
+.firma p{font-size:10px;color:#666}
+.firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
+.foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+@media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
+</style></head><body>
+<div class="toolbar">
+  <span>📄 ${o.nro} ${reprint?'· copia para reimprimir':'listo para enviar al proveedor'}</span>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Solicitud de Cotización</div>
+      <div class="oc-num">${o.nro}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th><th class="cright">Precio cotizado (a completar)</th>
+    </tr></thead>
+    <tbody>${items}</tbody>
+  </table>
+  <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
+  <div class="doc-footer">
+    <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
+    <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}</div>
+</div>
+</body></html>`);
+  w.document.close();
+}
+
+function printCotizacion() {
+  if (!COT.length){toast('Agregá artículos a la solicitud.',false);return;}
+  const provId=document.getElementById('cot-prov')?.value;
+  const confs=DB.get('configs',[]);
+  const prov=confs.find(c=>c.id===provId);
+  const nro=nextSCNumber();
+  const record={id:uid(),nro,date:new Date().toISOString(),proveedor:prov?.name||'—',proveedorId:provId||'',items:COT.map(p=>({...p,precio:0})),status:'pendiente'};
+  const cots=DB.get('cotizaciones',[]);
+  cots.push(record);
+  DB.set('cotizaciones',cots);
+  _lastWrite=Date.now();
+  toast(`✅ ${nro} guardada`);
+  cotPrintDoc(record,false);
+  COT=[];
+  render();
+}
+function reprintCot(id){
+  const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
+  if(!o)return;
+  cotPrintDoc(o,true);
 }
 
 function pgOrden() {
@@ -2719,6 +2977,13 @@ function pgOrden() {
         <select id="ord-prov" onchange="orderConf=this.value">
           <option value="">Seleccionar proveedor...</option>
           ${confs.map(c=>`<option value="${c.id}" ${(orderConf||s.activeConfig)===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div></div>
+      <div><label class="fl mb8">Referenciar cotización (opcional)</label>
+      <div class="iw" style="max-width:320px">
+        <select id="ord-cot" onchange="orderCotRef=this.value">
+          <option value="">Sin referencia</option>
+          ${DB.get('cotizaciones',[]).slice().reverse().map(c=>`<option value="${esc(c.nro)}" ${orderCotRef===c.nro?'selected':''}>${esc(c.nro)} · ${esc(c.proveedor)}</option>`).join('')}
         </select>
       </div></div>
     </div>
@@ -2756,7 +3021,7 @@ function pgOrden() {
   <div class="sh mb16">Órdenes generadas</div>
   ${ocs.map((o,i)=>`<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('oc${i}')">
-      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos</div></div>
+      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos${o.cotizacionRef?` · Ref: ${esc(o.cotizacionRef)}`:''}</div></div>
       <div><div class="hi-v" style="color:${o.currency==='ARS'?'var(--ye)':'var(--us)'}">${o.currency==='ARS'?fmtA(o.totalARS||0):fmtU(o.totalUSD||0)}</div><div class="hi-t">total ${o.currency||'USD'}</div></div>
     </div>
     <div class="hi-body" id="oc${i}">
@@ -2897,6 +3162,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+    ${o.cotizacionRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(o.cotizacionRef)}</div></div>`:''}
   </div>
   <table>
     <thead><tr>
@@ -2938,17 +3204,19 @@ function printOrdenNew() {
   const provId=document.getElementById('ord-prov')?.value;
   const confs=DB.get('configs',[]);
   const prov=confs.find(c=>c.id===provId);
+  const cotRef=document.getElementById('ord-cot')?.value||'';
   const fecha=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const nro=nextOCNumber();
   const totalUSD=ORDER.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
 
   // Guardar OC en historial
-  const ocRecord={id:uid(),nro,date:new Date().toISOString(),proveedor:prov?.name||'—',proveedorId:provId||'',items:ORDER.map(p=>({...p})),totalUSD,totalARS:0,currency:'USD'};
+  const ocRecord={id:uid(),nro,date:new Date().toISOString(),proveedor:prov?.name||'—',proveedorId:provId||'',items:ORDER.map(p=>({...p})),totalUSD,totalARS:0,currency:'USD',cotizacionRef:cotRef};
   const ocs=DB.get('ordenes',[]);
   ocs.push(ocRecord);
   DB.set('ordenes',ocs);
   _lastWrite=Date.now();
   toast(`✅ ${nro} guardada en historial`);
+  orderCotRef='';
 
   const items=ORDER.map((p,i)=>`<tr>
     <td class="num">${i+1}</td>
@@ -3028,6 +3296,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(prov?.name||'—')}</div></div>
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${ORDER.length} ítems · ${ORDER.reduce((s,p)=>s+(p.q||1),0)} u.</div></div>
+    ${cotRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(cotRef)}</div></div>`:''}
   </div>
   <table>
     <thead><tr>
@@ -3052,6 +3321,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 }
 
 after.orden = ()=>{};
+after.cotizaciones = ()=>{};
 
 /* ═══════════════════════════════════════════
    INIT
