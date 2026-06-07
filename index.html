@@ -1564,15 +1564,7 @@ function savePurchase() {
   DB.set('catalog',cat);
   const purchase={
     id:uid(),date:new Date().toISOString(),name,notes,
-   products: CALC.v.map(p => ({
-  ...p,
-  margin: 30,
-  envio: conf.mlEnv,
-
-  // 🟢 NUEVO: snapshot real (NO rompe nada)
-  snapshotCost: p.p,
-  snapshotQty: p.q || 1
-})),
+  products: CALC.v.map(p => ({...p, margin: 30, envio: conf.mlEnv})),
   const ps=DB.get('purchases',[]);
   ps.push(purchase);
   DB.set('purchases',ps);
