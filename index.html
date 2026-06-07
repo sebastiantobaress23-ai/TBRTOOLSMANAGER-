@@ -3118,6 +3118,16 @@ function pgConfig() {
     <div class="hint mt12">${s.accessPin?'🔒 El acceso está protegido con PIN.'+(s.pinQuestion?' Tenés una pregunta de recuperación configurada.':' ⚠ No definiste pregunta de recuperación: si te olvidás el PIN, no vas a poder recuperar el acceso.'):'⚠ Sin PIN, cualquiera con el link puede entrar y modificar los datos.'}</div>
   </div>
 
+  <div class="sh mb16">Notificaciones</div>
+  <div class="card mb24">
+    <div class="info mb16" style="font-size:12px">Activá los avisos para enterarte al instante de alertas inteligentes nuevas (subas de precio, productos para reponer) y cuando alcances tu meta mensual — aunque tengas la app en segundo plano.</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button class="btn-p" id="notif-btn" onclick="enableNotifications()">${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'🔔 Notificaciones activadas':'🔔 Activar notificaciones'}</button>
+      ${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'<button class="btn-g btn-sm" onclick="testNotification()">Enviar prueba</button>':''}
+    </div>
+    <div class="hint mt12">${(typeof Notification!=='undefined'&&Notification.permission==='denied')?'⚠ Bloqueaste los permisos de notificación en el navegador — habilitalos manualmente desde la configuración del sitio para poder activarlas.':''}</div>
+  </div>
+
   <div class="sh mb16">Backup y sincronización</div>
   <div class="card mb16">
     <div class="info mb16" style="font-size:12px"><span style="color:var(--ch)">Antes de actualizar la app:</span> exportá el backup, actualizá, importá.<br><span style="color:var(--ch)">iPhone ↔ Notebook:</span> exportá en un dispositivo → AirDrop/iCloud → importá en el otro.</div>
@@ -3277,6 +3287,63 @@ function submitPinRecovery(){
   sessionStorage.setItem('tbr_unlocked', np);
   document.getElementById('lock-ov').style.display='none';
   toast('PIN restablecido 🔒');
+}
+/* ═══════════════════════════════════════════
+   NOTIFICACIONES — avisos locales vía service worker
+═══════════════════════════════════════════ */
+function notifySupported(){ return typeof Notification !== 'undefined' && 'serviceWorker' in navigator; }
+function enableNotifications(){
+  if (!notifySupported()) { toast('Tu navegador no soporta notificaciones.', false); return; }
+  if (Notification.permission === 'granted') { toast('Las notificaciones ya están activadas 🔔'); return; }
+  Notification.requestPermission().then(perm=>{
+    if (perm === 'granted') { toast('🔔 Notificaciones activadas'); checkAndNotify(true); }
+    else toast('No se otorgaron permisos de notificación.', false);
+    render();
+  });
+}
+function sendNotification(title, body, tag){
+  if (!notifySupported() || Notification.permission !== 'granted') return;
+  navigator.serviceWorker.getRegistration().then(reg=>{
+    if (reg) reg.showNotification(title, {body, tag});
+    else new Notification(title, {body, tag});
+  }).catch(()=>{ try{ new Notification(title, {body, tag}); }catch{} });
+}
+function testNotification(){
+  sendNotification('TBR Tools Manager', 'Así se van a ver tus avisos 🔔', 'tbr-test');
+}
+function checkAndNotify(silent){
+  if (!notifySupported() || Notification.permission !== 'granted') return;
+  const seen = DB.get('notif_seen', {alerts:[], goalMonth:null});
+  let changed = false;
+
+  // Alertas inteligentes nuevas
+  const alerts = smartAlerts();
+  alerts.forEach(a=>{
+    const key = a.kind+'|'+a.text;
+    if (!seen.alerts.includes(key)) {
+      sendNotification('⚡ Nueva alerta', a.text, 'tbr-alert-'+seen.alerts.length);
+      seen.alerts.push(key);
+      changed = true;
+    }
+  });
+  seen.alerts = seen.alerts.slice(-40);
+
+  // Meta mensual alcanzada
+  const s = DB.get('settings',{});
+  if (s.monthlyGoal > 0) {
+    const ps = DB.get('purchases',[]);
+    const now = new Date();
+    const monthKey = now.getFullYear()+'-'+now.getMonth();
+    const cur = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
+                  .reduce((a,p)=>a+(p.r?.ars||0),0);
+    if (cur >= s.monthlyGoal && seen.goalMonth !== monthKey) {
+      sendNotification('🎯 ¡Meta alcanzada!', `Llegaste a tu meta de compras del mes (${fmtA(s.monthlyGoal)}).`, 'tbr-goal');
+      seen.goalMonth = monthKey;
+      changed = true;
+    }
+  }
+
+  if (changed) DB.set('notif_seen', seen);
 }
 function clearAll(){confirm2('⚠ BORRAR TODO: compras, catálogo, proveedores y configuraciones.',()=>{['purchases','catalog','configs','settings','empresa'].forEach(k=>DB.del(k));PP=[];CALC=null;render();},  '⚠ Borrar todo','cm-ok');}
 /* ═══════════════════════════════════════════
@@ -4300,6 +4367,11 @@ window.onload = function() {
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
+  // Revisar alertas/metas para notificaciones cada 5 min
+  if (notifySupported() && Notification.permission === 'granted') {
+    setTimeout(()=>checkAndNotify(), 4000);
+    setInterval(checkAndNotify, 5*60*1000);
+  }
 };
 </script>
 </body>
