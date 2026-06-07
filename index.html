@@ -1178,22 +1178,32 @@ function navigate(p) {
   setTimeout(updateNavHints, 350);
 }
 
+let _navHintPairs = null;
+let _navHintTicking = false;
 function updateNavHints(){
-  [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']].forEach(([navSel,hintSel])=>{
-    const nav = document.querySelector(navSel);
-    const hint = document.querySelector(hintSel);
-    if (!nav || !hint) return;
+  if (!_navHintPairs) {
+    _navHintPairs = [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']]
+      .map(([navSel,hintSel])=>[document.querySelector(navSel), document.querySelector(hintSel)])
+      .filter(([nav,hint])=>nav && hint);
+  }
+  _navHintPairs.forEach(([nav,hint])=>{
     const overflows = nav.scrollWidth > nav.clientWidth + 2;
     const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
     hint.style.display = (overflows && !atEnd) ? '' : 'none';
   });
 }
+function requestNavHintUpdate(){
+  if (_navHintTicking) return;
+  _navHintTicking = true;
+  requestAnimationFrame(()=>{ updateNavHints(); _navHintTicking = false; });
+}
 function setupNavHints(){
+  _navHintPairs = null;
   ['nav.nav','#mob-nav'].forEach(sel=>{
     const nav = document.querySelector(sel);
-    if (nav) nav.addEventListener('scroll', updateNavHints, {passive:true});
+    if (nav) nav.addEventListener('scroll', requestNavHintUpdate, {passive:true});
   });
-  window.addEventListener('resize', updateNavHints);
+  window.addEventListener('resize', requestNavHintUpdate);
   updateNavHints();
 }
 
