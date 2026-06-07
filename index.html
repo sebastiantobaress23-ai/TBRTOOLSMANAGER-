@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- Chart.js replaced with offline-safe TBRChart below -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.__xlsxOffline=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="window.__jspdfOffline=true"></script>
 <style>
 :root{
   --bg:#0c0c0c; --bg1:#111; --bg2:#161616; --bg3:#1c1c1c; --bg4:#202020;
@@ -2641,6 +2642,7 @@ function pgProveedores() {
           ${c.comInt?' · Com.int: '+c.comInt+'%':''}
           ${c.flete?' · Flete: '+fmtA(c.flete):''}
           ${c.bonifications?.length?' · '+c.bonifications.length+' bonif.':''}
+          ${c.phone?' · WhatsApp: '+esc(c.phone):''}
         </div>
       </div>
       <div class="fg" style="flex-shrink:0">
@@ -2657,6 +2659,7 @@ function pgProveedores() {
       <div class="mhdr"><span id="conf-title">Nuevo proveedor</span><button class="btn-rm" onclick="closeConf()">✕</button></div>
       <div class="mbody">
         <div><label class="fl">Nombre del proveedor</label><div class="iw"><input type="text" id="cm-name" placeholder="Ej: Importador A · China"></div></div>
+        <div><label class="fl">WhatsApp del proveedor</label><div class="iw"><input type="text" id="cm-phone" placeholder="Ej: 5491122334455 (con código de país, sin + ni espacios)"></div></div>
         <div><label class="fl">Modo de pago</label><div class="iw"><select id="cm-mode" onchange="toggleCmMode()">
           <option value="usdt">💱 USDT — Pagás en crypto (proveedor cotiza en USD)</option>
           <option value="pesos">💵 Pesos + USD — Proveedor en USD, pagás en pesos</option>
@@ -2764,6 +2767,7 @@ function openConf(id){
   const c=id?DB.get('configs',[]).find(x=>x.id===id):null;
   document.getElementById('conf-title').textContent=c?'Editar proveedor':'Nuevo proveedor';
   document.getElementById('cm-name').value=c?.name||'';
+  document.getElementById('cm-phone').value=c?.phone||'';
   document.getElementById('cm-precio').value=c?.precio||1405;
   document.getElementById('cm-spread').value=c?.spread||6;
   document.getElementById('cm-comint').value=c?.comInt||20;
@@ -2781,6 +2785,7 @@ function saveConf(){
   if(!name){toast('Ingresá el nombre del proveedor.',false);return;}
   const conf={
     id:document.getElementById('cm-id').value||uid(),name,
+    phone:document.getElementById('cm-phone').value.trim().replace(/[^0-9]/g,''),
     precio:parseFloat(document.getElementById('cm-precio').value)||1405,
     spread:parseFloat(document.getElementById('cm-spread').value)||6,
     comInt:parseFloat(document.getElementById('cm-comint').value)||20,
@@ -3251,12 +3256,83 @@ function reprintCot(id){
   if(!o)return;
   cotPrintDoc(o,true);
 }
+
+/* ═══════════════════════════════════════════
+   PDF + COMPARTIR POR WHATSAPP (con archivo adjunto cuando es posible)
+═══════════════════════════════════════════ */
+function buildDocPDF(opts){
+  if (window.__jspdfOffline || typeof window.jspdf==='undefined') return null;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(16); doc.setFont(undefined,'bold');
+  doc.text(opts.title, 14, y); y+=9;
+  doc.setFontSize(10); doc.setFont(undefined,'normal');
+  doc.text(`N°: ${opts.nro}`, 14, y); y+=6;
+  doc.text(`Proveedor: ${opts.proveedor}`, 14, y); y+=6;
+  doc.text(`Fecha: ${opts.fecha}`, 14, y); y+=6;
+  if (opts.extra) { doc.text(opts.extra, 14, y); y+=6; }
+  y += 3;
+  doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=7;
+  doc.setFont(undefined,'bold');
+  doc.text(opts.header, 14, y); y+=6;
+  doc.line(14, y-4, 196, y-4);
+  doc.setFont(undefined,'normal');
+  opts.rows.forEach(r=>{
+    if (y > 275) { doc.addPage(); y = 20; }
+    doc.text(r, 14, y); y+=6;
+  });
+  y += 3; doc.line(14, y, 196, y); y += 7;
+  doc.setFont(undefined,'bold');
+  doc.text(opts.totalLine||'', 14, y);
+  if (opts.note) {
+    y += 10; doc.setFont(undefined,'normal'); doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(opts.note, 180), 14, y);
+  }
+  return doc;
+}
+async function shareViaWA(phone, text, pdfDoc, filename){
+  let file = null;
+  if (pdfDoc) {
+    try {
+      const blob = pdfDoc.output('blob');
+      file = new File([blob], filename, {type:'application/pdf'});
+    } catch {}
+  }
+  if (file && navigator.canShare && navigator.canShare({files:[file]})) {
+    try {
+      await navigator.share({files:[file], text});
+      return;
+    } catch(e) {
+      if (e?.name==='AbortError') return;
+    }
+  }
+  if (file) {
+    const u = URL.createObjectURL(file);
+    const a = document.createElement('a'); a.href=u; a.download=filename; a.click();
+    URL.revokeObjectURL(u);
+    toast('📄 PDF descargado — adjuntalo manualmente en WhatsApp');
+  }
+  const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
+  window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
+}
+
 function shareCotWA(id){
   const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
   if(!o)return;
+  const confs=DB.get('configs',[]);
+  const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
+  const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
-  const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fmtD(o.date)}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+  const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
+  const pdfRows=(o.items||[]).map((p,i)=>`${i+1}. ${(p.n||'—').slice(0,40).padEnd(42)} ${(p.c||'—').padEnd(14)} x${p.q||1}`);
+  const pdf=buildDocPDF({
+    title:'Solicitud de Cotización', nro:o.nro, proveedor:o.proveedor||'—', fecha,
+    header:'#  Descripción                                   Código          Cant.',
+    rows:pdfRows, totalLine:'',
+    note:`Por favor completar el precio cotizado por artículo y responder indicando el número ${o.nro} como referencia.`
+  });
+  shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 
 function pgOrden() {
@@ -3488,12 +3564,22 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 function shareOCWA(id){
   const o=DB.get('ordenes',[]).find(x=>x.id===id);
   if(!o)return;
+  const confs=DB.get('configs',[]);
+  const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
   const sym=o.currency==='ARS'?'$':'US$';
   const total=o.currency==='ARS'?(o.totalARS||0):(o.totalUSD||0);
+  const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
   const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
-  const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fmtD(o.date)}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+  const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
+  const pdfRows=(o.items||[]).map((p,i)=>`${i+1}. ${(p.n||'—').slice(0,34).padEnd(36)} ${(p.c||'—').padEnd(12)} x${String(p.q||1).padEnd(4)} ${sym} ${(p.p||0).toFixed(2)}`);
+  const pdf=buildDocPDF({
+    title:'Orden de Compra', nro:o.nro, proveedor:o.proveedor||'—', fecha,
+    extra:o.cotizacionRef?`Ref. cotización: ${o.cotizacionRef}`:'',
+    header:'#  Descripción                          Código       Cant.  P. Unit.',
+    rows:pdfRows, totalLine:`TOTAL ${o.currency||'USD'}: ${sym} ${total.toFixed(2)}`
+  });
+  shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 function delOC(id){confirm2('¿Borrar esta orden?',()=>{DB.set('ordenes',DB.get('ordenes',[]).filter(o=>o.id!==id));render();});}
 function openOrdCatModal(){
