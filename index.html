@@ -1258,7 +1258,11 @@ function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
   PAGE = p;
-  document.querySelectorAll('.tab,.mob-tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
+  document.querySelectorAll('.tab,.mob-tab').forEach(t=>{
+    const active = t.dataset.p===p;
+    t.classList.toggle('on',active);
+    if (active) t.scrollIntoView({inline:'center', block:'nearest'});
+  });
   const acc = document.getElementById('hdr-accent');
   if (acc) acc.style.background = PAGE_COLORS[p]||'transparent';
   _pageTransition = true;
@@ -1311,6 +1315,7 @@ function render() {
       app.style.animation = '';
     }
     after[PAGE]?.();
+    requestNavHintUpdate();
   }
   else {
     // Build desincronizado (el navegador tiene una versión vieja sin esta página): forzar actualización limpia
