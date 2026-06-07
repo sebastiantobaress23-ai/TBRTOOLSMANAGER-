@@ -736,9 +736,22 @@ select{cursor:pointer}
 <div id="lock-ov" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;text-align:center">
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ch)">Acceso protegido</div>
   <div style="font-size:13px;color:var(--di);max-width:320px">Ingresá el PIN para acceder a la aplicación.</div>
-  <div class="iw" style="max-width:200px"><input type="password" id="lock-pin" placeholder="PIN" inputmode="numeric" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
-  <div id="lock-err" style="display:none;font-size:12px;color:var(--re)">PIN incorrecto</div>
-  <button class="btn-p" onclick="tryUnlock()">Entrar</button>
+  <div id="lock-pin-wrap">
+    <div class="iw" style="max-width:200px"><input type="password" id="lock-pin" placeholder="PIN" inputmode="numeric" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
+    <div id="lock-err" style="display:none;font-size:12px;color:var(--re);margin-top:8px">PIN incorrecto</div>
+    <div style="margin-top:14px"><button class="btn-p" onclick="tryUnlock()">Entrar</button></div>
+    <div style="margin-top:10px"><span class="link" style="font-size:12px" onclick="showPinRecovery()">¿Olvidaste tu PIN?</span></div>
+  </div>
+  <div id="lock-recover" style="display:none;max-width:320px;width:100%">
+    <div style="font-size:13px;color:var(--ch);font-weight:600;margin-bottom:6px" id="lock-recover-q"></div>
+    <div class="iw" style="max-width:260px;margin:0 auto"><input type="text" id="lock-recover-a" placeholder="Tu respuesta secreta"></div>
+    <div class="iw mt12" style="max-width:260px;margin:0 auto"><input type="password" id="lock-recover-newpin" placeholder="Nuevo PIN (mín. 4 dígitos)" inputmode="numeric"></div>
+    <div id="lock-recover-err" style="display:none;font-size:12px;color:var(--re);margin-top:8px">Respuesta incorrecta</div>
+    <div style="margin-top:14px;display:flex;gap:10px;justify-content:center">
+      <button class="btn-g btn-sm" onclick="cancelPinRecovery()">Volver</button>
+      <button class="btn-p btn-sm" onclick="submitPinRecovery()">Restablecer PIN</button>
+    </div>
+  </div>
 </div>
 
 <header class="hdr">
@@ -3092,10 +3105,27 @@ function pgConfig() {
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="flex:1;min-width:160px"><label class="fl">${s.accessPin?'Cambiar PIN':'Crear PIN de acceso'}</label><div class="iw"><input type="password" id="sec-pin" placeholder="Nuevo PIN (mín. 4 dígitos)" inputmode="numeric"></div></div>
       <div style="flex:1;min-width:160px"><label class="fl">Confirmar PIN</label><div class="iw"><input type="password" id="sec-pin2" placeholder="Repetí el PIN" inputmode="numeric"></div></div>
-      <button class="btn-p" onclick="saveAccessPin()">Guardar PIN</button>
+    </div>
+    <div class="info mb12 mt12" style="font-size:12px">Para poder restablecer el PIN si te lo olvidás, definí una pregunta y respuesta secreta — sin esto, no hay forma de recuperar el acceso.</div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px"><label class="fl">Pregunta de seguridad</label><div class="iw"><input type="text" id="sec-q" placeholder="Ej: ¿Nombre de tu primera mascota?" value="${esc(s.pinQuestion||'')}"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Respuesta secreta</label><div class="iw"><input type="text" id="sec-a" placeholder="Respuesta" value="${s.pinAnswer?'••••••':''}"></div></div>
+    </div>
+    <div class="fe mt16">
+      <button class="btn-p" onclick="saveAccessPin()">Guardar</button>
       ${s.accessPin?'<button class="btn-d" onclick="removeAccessPin()">Quitar PIN</button>':''}
     </div>
-    <div class="hint mt12">${s.accessPin?'🔒 El acceso está protegido con PIN.':'⚠ Sin PIN, cualquiera con el link puede entrar y modificar los datos.'}</div>
+    <div class="hint mt12">${s.accessPin?'🔒 El acceso está protegido con PIN.'+(s.pinQuestion?' Tenés una pregunta de recuperación configurada.':' ⚠ No definiste pregunta de recuperación: si te olvidás el PIN, no vas a poder recuperar el acceso.'):'⚠ Sin PIN, cualquiera con el link puede entrar y modificar los datos.'}</div>
+  </div>
+
+  <div class="sh mb16">Notificaciones</div>
+  <div class="card mb24">
+    <div class="info mb16" style="font-size:12px">Activá los avisos para enterarte al instante de alertas inteligentes nuevas (subas de precio, productos para reponer) y cuando alcances tu meta mensual — aunque tengas la app en segundo plano.</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <button class="btn-p" id="notif-btn" onclick="enableNotifications()">${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'🔔 Notificaciones activadas':'🔔 Activar notificaciones'}</button>
+      ${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'<button class="btn-g btn-sm" onclick="testNotification()">Enviar prueba</button>':''}
+    </div>
+    <div class="hint mt12">${(typeof Notification!=='undefined'&&Notification.permission==='denied')?'⚠ Bloqueaste los permisos de notificación en el navegador — habilitalos manualmente desde la configuración del sitio para poder activarlas.':''}</div>
   </div>
 
   <div class="sh mb16">Backup y sincronización</div>
@@ -3181,8 +3211,12 @@ function saveAccessPin(){
   const p2=document.getElementById('sec-pin2').value.trim();
   if(p1.length<4){toast('El PIN debe tener al menos 4 dígitos',false);return;}
   if(p1!==p2){toast('Los PIN no coinciden',false);return;}
+  const q=document.getElementById('sec-q').value.trim();
+  const aRaw=document.getElementById('sec-a').value.trim();
   const s=DB.get('settings',{});
   s.accessPin=p1;
+  if(q) s.pinQuestion=q;
+  if(aRaw && aRaw!=='••••••') s.pinAnswer=aRaw.toLowerCase();
   DB.set('settings',s);
   sessionStorage.setItem('tbr_unlocked', p1);
   toast('PIN guardado 🔒');
@@ -3191,7 +3225,7 @@ function saveAccessPin(){
 function removeAccessPin(){
   confirm2('¿Quitar el PIN de acceso? Cualquier persona con el link podrá entrar.',()=>{
     const s=DB.get('settings',{});
-    delete s.accessPin;
+    delete s.accessPin; delete s.pinQuestion; delete s.pinAnswer;
     DB.set('settings',s);
     sessionStorage.removeItem('tbr_unlocked');
     toast('PIN eliminado');
@@ -3218,6 +3252,98 @@ function tryUnlock(){
   } else {
     document.getElementById('lock-err').style.display='block';
   }
+}
+function showPinRecovery(){
+  const s=DB.get('settings',{});
+  const wrap=document.getElementById('lock-recover');
+  if(!s.pinQuestion || !s.pinAnswer){
+    toast('No configuraste una pregunta de recuperación. Contactá a quien administra la app.', false);
+    return;
+  }
+  document.getElementById('lock-recover-q').textContent = s.pinQuestion;
+  wrap.style.display='block';
+  document.getElementById('lock-pin-wrap').style.display='none';
+  document.getElementById('lock-recover-err').style.display='none';
+}
+function cancelPinRecovery(){
+  document.getElementById('lock-recover').style.display='none';
+  document.getElementById('lock-pin-wrap').style.display='block';
+}
+function submitPinRecovery(){
+  const s=DB.get('settings',{});
+  const ans=(document.getElementById('lock-recover-a').value||'').trim().toLowerCase();
+  if(!ans || ans!==s.pinAnswer){
+    document.getElementById('lock-recover-err').style.display='block';
+    return;
+  }
+  const np=(document.getElementById('lock-recover-newpin').value||'').trim();
+  if(np.length<4){
+    document.getElementById('lock-recover-err').textContent='El nuevo PIN debe tener al menos 4 dígitos';
+    document.getElementById('lock-recover-err').style.display='block';
+    return;
+  }
+  s.accessPin = np;
+  DB.set('settings', s);
+  sessionStorage.setItem('tbr_unlocked', np);
+  document.getElementById('lock-ov').style.display='none';
+  toast('PIN restablecido 🔒');
+}
+/* ═══════════════════════════════════════════
+   NOTIFICACIONES — avisos locales vía service worker
+═══════════════════════════════════════════ */
+function notifySupported(){ return typeof Notification !== 'undefined' && 'serviceWorker' in navigator; }
+function enableNotifications(){
+  if (!notifySupported()) { toast('Tu navegador no soporta notificaciones.', false); return; }
+  if (Notification.permission === 'granted') { toast('Las notificaciones ya están activadas 🔔'); return; }
+  Notification.requestPermission().then(perm=>{
+    if (perm === 'granted') { toast('🔔 Notificaciones activadas'); checkAndNotify(true); }
+    else toast('No se otorgaron permisos de notificación.', false);
+    render();
+  });
+}
+function sendNotification(title, body, tag){
+  if (!notifySupported() || Notification.permission !== 'granted') return;
+  navigator.serviceWorker.getRegistration().then(reg=>{
+    if (reg) reg.showNotification(title, {body, tag});
+    else new Notification(title, {body, tag});
+  }).catch(()=>{ try{ new Notification(title, {body, tag}); }catch{} });
+}
+function testNotification(){
+  sendNotification('TBR Tools Manager', 'Así se van a ver tus avisos 🔔', 'tbr-test');
+}
+function checkAndNotify(silent){
+  if (!notifySupported() || Notification.permission !== 'granted') return;
+  const seen = DB.get('notif_seen', {alerts:[], goalMonth:null});
+  let changed = false;
+
+  // Alertas inteligentes nuevas
+  const alerts = smartAlerts();
+  alerts.forEach(a=>{
+    const key = a.kind+'|'+a.text;
+    if (!seen.alerts.includes(key)) {
+      sendNotification('⚡ Nueva alerta', a.text, 'tbr-alert-'+seen.alerts.length);
+      seen.alerts.push(key);
+      changed = true;
+    }
+  });
+  seen.alerts = seen.alerts.slice(-40);
+
+  // Meta mensual alcanzada
+  const s = DB.get('settings',{});
+  if (s.monthlyGoal > 0) {
+    const ps = DB.get('purchases',[]);
+    const now = new Date();
+    const monthKey = now.getFullYear()+'-'+now.getMonth();
+    const cur = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
+                  .reduce((a,p)=>a+(p.r?.ars||0),0);
+    if (cur >= s.monthlyGoal && seen.goalMonth !== monthKey) {
+      sendNotification('🎯 ¡Meta alcanzada!', `Llegaste a tu meta de compras del mes (${fmtA(s.monthlyGoal)}).`, 'tbr-goal');
+      seen.goalMonth = monthKey;
+      changed = true;
+    }
+  }
+
+  if (changed) DB.set('notif_seen', seen);
 }
 function clearAll(){confirm2('⚠ BORRAR TODO: compras, catálogo, proveedores y configuraciones.',()=>{['purchases','catalog','configs','settings','empresa'].forEach(k=>DB.del(k));PP=[];CALC=null;render();},  '⚠ Borrar todo','cm-ok');}
 /* ═══════════════════════════════════════════
@@ -4241,6 +4367,11 @@ window.onload = function() {
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
+  // Revisar alertas/metas para notificaciones cada 5 min
+  if (notifySupported() && Notification.permission === 'granted') {
+    setTimeout(()=>checkAndNotify(), 4000);
+    setInterval(checkAndNotify, 5*60*1000);
+  }
 };
 </script>
 </body>
