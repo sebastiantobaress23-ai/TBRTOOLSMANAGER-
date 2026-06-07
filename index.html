@@ -1577,7 +1577,7 @@ function savePurchase() {
   DB.set('catalog',cat);
   const purchase={
     id:uid(),date:new Date().toISOString(),name,notes,
-    products:CALC.v.map(p=>({...p,margin:30,envio:conf.mlEnv})),
+    products: CALC.v.map(p => ({ ...p })),
     conf:{...conf},
     r:{TCE:CALC.TCE,up:CALC.up,ut:CALC.ut,ars:CALC.at,gan:CALC.ganProyectada||0}
   };
@@ -2158,14 +2158,85 @@ function pgComp() {
   return `<div class="pg">
   <div class="sh mb8">Comparar precios ML</div>
   <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong> · Ingresá precios de la competencia para comparar.</div>
-  ${(last.products||[]).map((p,i)=>{const cu=(p.p||0)*(last.r?.TCE||0);const precio=cu*(1+(p.margin||30)/100);return `<div class="card mb12">
-    <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
-    <div class="fg-w mb12">
-      <div><div class="sc-l">Tu precio ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700">${fmtA(precio)}</div></div>
-      <div><div class="sc-l">Tu costo real</div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--si)">${fmtA(cu)}</div></div>
-      <div><div class="sc-l">Margen</div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--di)">${p.margin||30}%</div></div>
+  ${(last.products||[]).map((p,i)=>{
+
+  const cu = (p.p||0) * (last.r?.TCE||0);
+
+  const pubs = DB.get('mlpubs',[]);
+
+  const pubProd = pubs
+    .slice()
+    .reverse()
+    .flatMap(pub => pub.products || [])
+    .find(x =>
+      (x.c && p.c && x.c === p.c) ||
+      (x.n && p.n && x.n === p.n)
+    );
+
+ const precio = pubProd?.precio || 0;
+const margen = pubProd?.margin ?? null;
+
+return `<div class="card mb12">
+  <div style="font-weight:600;margin-bottom:10px">
+    ${esc(p.n||'Producto')}
+    <span style="font-size:11px;color:var(--di);font-weight:400">
+      ${p.c ? '· ' + esc(p.c) : ''}
+    </span>
+  </div>
+
+  <div class="fg-w mb12">
+
+    <div>
+      <div class="sc-l">Tu precio ML</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700">
+        ${precio ? fmtA(precio) : 'Sin publicar'}
+      </div>
     </div>
-    <div class="fg-w" style="align-items:flex-end">
+
+    <div>
+      <div class="sc-l">Tu costo real</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--si)">
+        ${fmtA(cu)}
+      </div>
+    </div>
+
+    <div>
+      <div class="sc-l">Margen</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--di)">
+        ${margen !== null ? margen + '%' : 'Sin publicar'}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="fg-w" style="align-items:flex-end">
+    <div>
+      <label class="fl">Precio comp. 1</label>
+      <div class="iw" style="width:150px">
+        <span class="ipre">$</span>
+        <input type="number" placeholder="0" step="100"
+          oninput="cmpCalc(${i},${precio},${cu},this)">
+      </div>
+    </div>
+
+    <div>
+      <label class="fl">Precio comp. 2</label>
+      <div class="iw" style="width:150px">
+        <span class="ipre">$</span>
+        <input type="number" placeholder="0" step="100">
+      </div>
+    </div>
+
+    <div id="cmp-r-${i}" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--di);padding-bottom:8px"></div>
+  </div>
+
+  <a style="display:inline-flex;align-items:center;gap:4px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:var(--us);text-decoration:none;margin-top:8px;cursor:pointer" href="https://listado.mercadolibre.com.ar/${encodeURIComponent(p.n||'')}" target="_blank">
+    🔍 Buscar en Mercado Libre →
+  </a>
+
+</div>`;
+function cmpCalc(i,tu,cu,inp){const c=parseFloat(inp.value)||0;const el=document.getElementById('cmp-r-'+i);if(!el||!c)return;const d=tu-c;const p=((d/c)*100).toFixed(1);el.innerHTML=d<0?`<span style="color:var(--gr)">✅ Sos ${fmtA(Math.abs(d))} más barato (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">⚠ Tu precio es ${fmtA(d)} más caro (${p}%)<br><span style="font-size:12px">Sugerido: ${fmtA(c-1)}</span></span>`;}
+
       <div><label class="fl">Precio comp. 1</label><div class="iw" style="width:150px"><span class="ipre">$</span><input type="number" placeholder="0" step="100" oninput="cmpCalc(${i},${precio},${cu},this)"></div></div>
       <div><label class="fl">Precio comp. 2</label><div class="iw" style="width:150px"><span class="ipre">$</span><input type="number" placeholder="0" step="100"></div></div>
       <div id="cmp-r-${i}" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--di);padding-bottom:8px"></div>
