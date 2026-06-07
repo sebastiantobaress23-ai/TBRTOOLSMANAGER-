@@ -600,6 +600,13 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
 .mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
 .fb{display:flex;justify-content:space-between;align-items:center}
+.dash-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.dash-hdr-acts{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:680px){
+  .dash-hdr{flex-direction:column;align-items:flex-start;gap:10px}
+  .dash-hdr-acts{width:100%}
+  .dash-hdr-acts .btn-g{flex:1 1 calc(50% - 4px);justify-content:center;white-space:nowrap;font-size:10px;padding-left:8px;padding-right:8px}
+}
 .fe{display:flex;justify-content:flex-end}
 .fg{display:flex;gap:8px}
 .fg-w{display:flex;gap:8px;flex-wrap:wrap}
@@ -1246,13 +1253,16 @@ function pgDash() {
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
-  <div class="fb mb20" style="flex-wrap:wrap;gap:8px"><div class="sh" style="margin:0;flex:1">Resumen general</div>
-    <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
-    <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
-    <button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button>
+  <div class="dash-hdr mb20">
+    <div class="sh" style="margin:0">Resumen general</div>
+    <div class="dash-hdr-acts">
+      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
+      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
+      <button class="btn-g btn-sm" onclick="openSimulador()">🧪 Simulador de ganancias</button>
+    </div>
   </div>
   <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
-    <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador "¿Qué pasaría si...?"<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
+    <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
     <div class="mbody">
       <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
       <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
