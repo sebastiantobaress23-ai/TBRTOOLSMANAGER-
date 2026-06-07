@@ -355,7 +355,7 @@ body{display:flex;flex-direction:column}
 .hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(255,255,255,.05);padding:0 32px;height:68px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
 .hdr{isolation:isolate}
 .hdr-logo-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.hdr-logo-wrap::before{content:'';position:absolute;inset:-26px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.13),rgba(226,201,126,.05) 45%,rgba(226,201,126,0) 75%);filter:blur(16px);opacity:.7;transition:opacity .3s,transform .3s;z-index:-1}
+.hdr-logo-wrap::before{content:'';position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 35%,rgba(226,201,126,0) 70%);filter:blur(26px);opacity:.65;transition:opacity .3s,transform .3s;z-index:-1}
 .hdr-logo-wrap:hover::before{opacity:1;transform:scale(1.12)}
 .hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
@@ -384,7 +384,7 @@ body{display:flex;flex-direction:column}
   .hdr:hover img{filter:drop-shadow(0 0 20px rgba(226,201,126,.3)) brightness(1.1)}
 }
 @media(max-width:720px){
-  .hdr img{height:42px;mix-blend-mode:screen;filter:drop-shadow(0 0 12px rgba(255,255,255,.22)) brightness(1.05);background:transparent}
+  .hdr img{height:50px;mix-blend-mode:screen;filter:drop-shadow(0 0 12px rgba(255,255,255,.22)) brightness(1.05);background:transparent}
 }
 
 /* NAV */
@@ -1250,6 +1250,7 @@ function navigate(p) {
   document.querySelectorAll('.tab,.mob-tab').forEach(t=>t.classList.toggle('on',t.dataset.p===p));
   const acc = document.getElementById('hdr-accent');
   if (acc) acc.style.background = PAGE_COLORS[p]||'transparent';
+  _pageTransition = true;
   render();
   window.scrollTo({top:0,behavior:'smooth'});
   setTimeout(updateNavHints, 350);
@@ -1257,6 +1258,7 @@ function navigate(p) {
 
 let _navHintPairs = null;
 let _navHintTicking = false;
+let _pageTransition = false;
 function updateNavHints(){
   if (!_navHintPairs) {
     _navHintPairs = [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']]
@@ -1291,9 +1293,12 @@ function render() {
   const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,viaje:pgViaje};
   if (fns[PAGE]) {
     app.innerHTML = fns[PAGE]();
-    app.style.animation = 'none';
-    void app.offsetWidth;
-    app.style.animation = '';
+    if (_pageTransition) {
+      _pageTransition = false;
+      app.style.animation = 'none';
+      void app.offsetWidth;
+      app.style.animation = '';
+    }
     after[PAGE]?.();
   }
   else {
