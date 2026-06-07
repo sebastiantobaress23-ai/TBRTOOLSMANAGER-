@@ -915,7 +915,12 @@ async function fbSync() {
         changed = true;
       }
     }
-    if (changed) { render(); setSyncDot(true); }
+    if (changed) {
+      const ae = document.activeElement;
+      const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
+      if (!typing) render();
+      setSyncDot(true);
+    }
   } catch { setSyncDot(false); }
 }
 
@@ -3843,12 +3848,14 @@ async function shareViaWA(phone, text, pdfDoc, filename){
       file = new File([blob], filename, {type:'application/pdf'});
     } catch {}
   }
-  if (file && navigator.canShare && navigator.share) {
-    if (navigator.canShare({files:[file], text})) {
+  if (file && navigator.share) {
+    const canFilesText = navigator.canShare ? navigator.canShare({files:[file], text}) : true;
+    if (canFilesText) {
       try { await navigator.share({files:[file], text}); return; }
       catch(e){ if (e?.name==='AbortError') return; }
     }
-    if (navigator.canShare({files:[file]})) {
+    const canFiles = navigator.canShare ? navigator.canShare({files:[file]}) : true;
+    if (canFiles) {
       try { await navigator.clipboard?.writeText(text); } catch {}
       try {
         await navigator.share({files:[file]});
