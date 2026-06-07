@@ -761,6 +761,7 @@ select{cursor:pointer}
   <div class="tab"     data-p="orden"       onclick="navigate('orden')">Orden de Compra</div>
   <div class="tab"     data-p="cotizaciones" onclick="navigate('cotizaciones')">Cotizaciones</div>
   <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
+  <div class="tab"     data-p="viaje"       onclick="navigate('viaje')">Viaje de compras</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
 </nav>
 
@@ -775,6 +776,7 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="publicar"    onclick="navigate('publicar')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>ML</button>
   <button class="mob-tab" data-p="competencia" onclick="navigate('competencia')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Compet.</button>
   <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Proveed.</button>
+  <button class="mob-tab" data-p="viaje" onclick="navigate('viaje')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>Viaje</button>
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
   <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
@@ -872,7 +874,7 @@ async function fbSync() {
     const d = await r.json();
     if (!d) return;
     let changed = false;
-    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','sales']) {
+    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','sales','trip']) {
       if (d[k]==null) continue;
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(d[k])) {
@@ -1112,7 +1114,7 @@ const DRAFT_KEY = 'tbr_draft_v2';
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
-const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
+const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
@@ -1128,7 +1130,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,viaje:pgViaje};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
 }
 
@@ -2134,6 +2136,111 @@ function pgVentas(){
       <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
     </div>`).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   VIAJE DE COMPRAS — checklist offline con presupuesto
+═══════════════════════════════════════════ */
+function getTrip(){
+  let t = DB.get('trip', null);
+  if (!t) { t = {budgetUSD:0, tce: lastTCE()||0, items:[]}; DB.set('trip', t); }
+  if (t.tce === undefined) t.tce = lastTCE()||0;
+  return t;
+}
+function saveTripSettings(){
+  const t = getTrip();
+  t.budgetUSD = parseFloat(document.getElementById('trip-budget').value)||0;
+  t.tce = parseFloat(document.getElementById('trip-tce').value)||0;
+  DB.set('trip', t);
+  toast('Presupuesto guardado');
+  render();
+}
+function addTripItem(){
+  const name = document.getElementById('trip-item-name').value.trim();
+  const qty = parseInt(document.getElementById('trip-item-qty').value)||1;
+  const price = parseFloat(document.getElementById('trip-item-price').value)||0;
+  if(!name){ toast('Ingresá el nombre del producto.',false); return; }
+  const t = getTrip();
+  t.items.push({id:uid(), name, qty, priceUSD:price, checked:false});
+  DB.set('trip', t);
+  document.getElementById('trip-item-name').value='';
+  document.getElementById('trip-item-qty').value='1';
+  document.getElementById('trip-item-price').value='';
+  render();
+}
+function toggleTripItem(id){
+  const t = getTrip();
+  const it = t.items.find(x=>x.id===id);
+  if(it){ it.checked = !it.checked; DB.set('trip', t); render(); }
+}
+function delTripItem(id){
+  const t = getTrip();
+  t.items = t.items.filter(x=>x.id!==id);
+  DB.set('trip', t);
+  render();
+}
+function clearTrip(){
+  confirm2('¿Vaciar la lista del viaje de compras? Se borrarán todos los productos cargados.',()=>{
+    DB.set('trip', {budgetUSD:0, tce: lastTCE()||0, items:[]});
+    render();
+  },'Vaciar lista','cm-ok');
+}
+function pgViaje(){
+  const t = getTrip();
+  const totalUSD = t.items.reduce((a,i)=>a+i.priceUSD*i.qty,0);
+  const checkedUSD = t.items.filter(i=>i.checked).reduce((a,i)=>a+i.priceUSD*i.qty,0);
+  const totalARS = totalUSD * (t.tce||0);
+  const pctBudget = t.budgetUSD>0 ? Math.min(100, totalUSD/t.budgetUSD*100) : 0;
+  const overBudget = t.budgetUSD>0 && totalUSD > t.budgetUSD;
+
+  return `<div class="pg">
+  <div class="fb mb16"><div class="sh" style="margin:0;flex:1">Viaje de compras</div>${t.items.length?`<button class="btn-d btn-sm" onclick="clearTrip()">🗑 Vaciar lista</button>`:''}</div>
+  <div class="info mb20" style="font-size:12px">Armá tu lista de compra antes de viajar: cargá presupuesto, productos estimados y tipo de cambio. Funciona 100% offline — todo se guarda en el dispositivo.</div>
+
+  <div class="card mb20">
+    <div class="fg-w">
+      <div style="flex:1;min-width:160px"><label class="fl">Presupuesto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="trip-budget" min="0" step="10" value="${t.budgetUSD||''}"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Tipo de cambio estimado (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="trip-tce" min="0" step="10" value="${t.tce||''}"></div></div>
+      <button class="btn-p" onclick="saveTripSettings()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">≈ ${fmtA(totalARS)}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?'⚠ excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
+    <div class="sc accent-u"><div class="sc-l">Ya comprado (marcado)</div><div class="sc-v u">${fmtU(checkedUSD)}</div><div class="sc-s">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div></div>
+    <div class="sc accent-d"><div class="sc-l">Tipo de cambio</div><div class="sc-v">${t.tce?fmtA(t.tce):'—'}</div><div class="sc-s">usado para la conversión</div></div>
+  </div>
+
+  ${t.budgetUSD>0?`
+  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+    <span style="font-weight:600">${fmtU(totalUSD)} <span style="color:var(--di);font-weight:400">de ${fmtU(t.budgetUSD)}</span></span>
+    <span style="color:${overBudget?'var(--re)':'var(--ch)'};font-weight:700">${pctBudget.toFixed(0)}%</span>
+  </div>
+  <div class="card mb20" style="height:10px;padding:0;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden">
+    <div style="height:100%;border-radius:6px;width:${pctBudget}%;background:linear-gradient(90deg,var(--us),${overBudget?'var(--re)':'var(--ch)'});transition:width .4s"></div>
+  </div>
+  `:''}
+
+  <div class="sh mb16">Agregar producto a la lista</div>
+  <div class="card mb24">
+    <div class="fg-w">
+      <div style="flex:2;min-width:180px"><label class="fl">Producto</label><div class="iw"><input type="text" id="trip-item-name" placeholder="Ej: Auriculares bluetooth"></div></div>
+      <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="trip-item-qty" value="1" min="1" step="1"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Precio estimado (USD, c/u)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="trip-item-price" min="0" step="0.5" placeholder="0"></div></div>
+    </div>
+    <div class="fe mt16"><button class="btn-p" onclick="addTripItem()">+ Agregar a la lista</button></div>
+  </div>
+
+  <div class="sh mb16">Lista de compra (${t.items.length})</div>
+  ${t.items.length ? `<div class="card" style="padding:0;overflow:hidden">
+    ${t.items.map(i=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--b2);${i.checked?'opacity:.5':''}">
+      <input type="checkbox" ${i.checked?'checked':''} onchange="toggleTripItem('${i.id}')" style="width:18px;height:18px;accent-color:var(--ch);cursor:pointer">
+      <div style="flex:1"><div style="font-weight:600;font-size:14px;${i.checked?'text-decoration:line-through':''}">${esc(i.name)} ${i.qty>1?`× ${i.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtU(i.priceUSD)} c/u · total ${fmtU(i.priceUSD*i.qty)} ${t.tce?'· ≈ '+fmtA(i.priceUSD*i.qty*t.tce):''}</div></div>
+      <button class="btn-rm" onclick="delTripItem('${i.id}')">✕</button>
+    </div>`).join('')}
+  </div>` : emptyState(EMPTY_ICONS.catalog,'Lista vacía','Agregá los productos que\npensás comprar en tu próximo viaje.')}
 </div>`;
 }
 function toggleHi(id){const e=document.getElementById(id);if(e)e.classList.toggle('open');}
