@@ -880,6 +880,91 @@ function purchaseGain(p) {
   },0);
 }
 
+/* ═══════════════════════════════════════════
+   META MENSUAL DE COMPRAS
+═══════════════════════════════════════════ */
+function monthlyGoalCard(ps) {
+  const s = DB.get('settings',{});
+  const goal = s.monthlyGoal || 0;
+  const now = new Date();
+  const cur = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
+                .reduce((a,p)=>a+(p.r?.ars||0),0);
+  const pct = goal>0 ? Math.min(100, cur/goal*100) : 0;
+  const monthName = now.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  return `<div class="card mb20">
+    <div class="fb mb12" style="flex-wrap:wrap;gap:8px">
+      <div>
+        <div class="sh" style="margin-bottom:2px">Meta de compras del mes</div>
+        <div style="font-size:12px;color:var(--di);text-transform:capitalize">${monthName}</div>
+      </div>
+      <div class="iw" style="max-width:180px">
+        <span class="ipre">$</span>
+        <input type="number" id="monthly-goal-inp" placeholder="Meta en ARS" min="0" step="1000" value="${goal||''}" onchange="setMonthlyGoal(this.value)">
+      </div>
+    </div>
+    ${goal>0?`
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+      <span style="font-weight:600">${fmtA(cur)} <span style="color:var(--di);font-weight:400">de ${fmtA(goal)}</span></span>
+      <span style="color:${pct>=100?'var(--gr)':'var(--ch)'};font-weight:700">${pct.toFixed(0)}%</span>
+    </div>
+    <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden">
+      <div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,var(--us),${pct>=100?'var(--gr)':'var(--ch)'});transition:width .4s"></div>
+    </div>
+    ${pct>=100?'<div style="margin-top:8px;font-size:12px;color:var(--gr)">🎉 ¡Meta alcanzada este mes!</div>':''}
+    `:`<div class="empty" style="padding:14px">Definí una meta mensual de compras (en ARS) para hacer seguimiento de tu progreso.</div>`}
+  </div>`;
+}
+function setMonthlyGoal(v) {
+  const s = DB.get('settings',{});
+  s.monthlyGoal = parseFloat(v)||0;
+  DB.set('settings', s);
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   RANKING DE PROVEEDORES
+═══════════════════════════════════════════ */
+function supplierRanking() {
+  const ps = DB.get('purchases',[]);
+  const confs = DB.get('configs',[]);
+  const map = {};
+  ps.forEach(p=>{
+    const id = p.proveedorId || p.conf?.id || p.confId;
+    const name = p.conf?.name || confs.find(c=>c.id===id)?.name || p.proveedor || 'Sin proveedor';
+    const key = id || name;
+    if (!map[key]) map[key]={name, count:0, totalARS:0, totalUSD:0, gain:0, lastDate:null};
+    map[key].count++;
+    map[key].totalARS += p.r?.ars||0;
+    map[key].totalUSD += p.r?.up||0;
+    map[key].gain += purchaseGain(p);
+    if (!map[key].lastDate || new Date(p.date)>new Date(map[key].lastDate)) map[key].lastDate=p.date;
+  });
+  return Object.values(map).sort((a,b)=>b.totalARS-a.totalARS);
+}
+function pgProveedoresRanking() {
+  const rk = supplierRanking();
+  if (!rk.length) return '';
+  const medals=['🥇','🥈','🥉'];
+  return `<div class="mb20">
+    <div class="sh mb16">Ranking de proveedores</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+    ${rk.map((r,i)=>`<div class="card" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${medals[i]||'#'+(i+1)}</span>
+        <div>
+          <div style="font-weight:700">${esc(r.name)}</div>
+          <div style="font-size:11px;color:var(--di)">${r.count} compra${r.count!==1?'s':''} · última: ${fmtD(r.lastDate)}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;color:var(--us)">${fmtA(r.totalARS)}</div>
+        <div style="font-size:11px;color:${r.gain>=0?'var(--gr)':'var(--re)'}">gan. proy. ${fmtA(r.gain)}</div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 function getConf() {
   const cs = DB.get('configs',[]);
   const s  = DB.get('settings',{});
@@ -1004,6 +1089,7 @@ function pgDash() {
       ${sparkline(spTce,'#e2c97e')}
     </div>
   </div>
+  ${monthlyGoalCard(ps)}
   <div class="g2 mb20">
     <div>
       <div class="sh mb16">Evolución del TCE</div>
@@ -2399,6 +2485,7 @@ function pgProveedores() {
   const confs=DB.get('configs',[]);
   const s=DB.get('settings',{});
   return `<div class="pg">
+  ${pgProveedoresRanking()}
   <div class="fb mb20">
     <div>
       <div class="sh" style="margin-bottom:4px">Proveedores</div>
