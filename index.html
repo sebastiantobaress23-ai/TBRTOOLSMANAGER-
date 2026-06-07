@@ -360,7 +360,8 @@ body{display:flex;flex-direction:column}
 .hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
 .hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .3s,letter-spacing .3s}
-.gsearch-btn{margin-left:auto;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:rgba(255,255,255,.45);cursor:pointer;transition:.2s}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.gsearch-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:rgba(255,255,255,.45);cursor:pointer;transition:.2s}
 .gsearch-btn:hover{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
 .gsearch-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px}
 .gsearch-box{width:100%;max-width:560px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
@@ -791,11 +792,13 @@ select{cursor:pointer}
   </div>
   <div class="hdr-sep"></div>
   <div class="hdr-txt">Business Manager</div>
-  <div id="sync-dot" class="sync-dot" style="opacity:.4" title="Sincronización Firebase"></div>
-  <div id="offline-badge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ye);background:#1a1000;border:1px solid #3a2800;border-radius:4px;padding:3px 8px">OFFLINE</div>
-  <button id="gsearch-btn" class="gsearch-btn" onclick="openGSearch()" title="Buscar (Ctrl+K)">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-  </button>
+  <div class="hdr-right">
+    <div id="sync-dot" class="sync-dot" style="opacity:.4" title="Sincronización Firebase"></div>
+    <div id="offline-badge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ye);background:#1a1000;border:1px solid #3a2800;border-radius:4px;padding:3px 8px">OFFLINE</div>
+    <button id="gsearch-btn" class="gsearch-btn" onclick="openGSearch()" title="Buscar (Ctrl+K)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+  </div>
 </header>
 <div id="gsearch-ol" class="gsearch-ol" style="display:none" onclick="if(event.target===this)closeGSearch()">
   <div class="gsearch-box">
