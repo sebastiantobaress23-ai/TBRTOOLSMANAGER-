@@ -612,6 +612,81 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .cat-t,.cat-r{grid-template-columns:1fr 90px 80px 70px}
   .cat-t .h-code,.cat-r .c-code{display:none}
 }
+
+/* ═══════════════════════════════════════════
+   REFINAMIENTO VISUAL GLOBAL (pulido estético)
+═══════════════════════════════════════════ */
+
+/* Cards: profundidad y borde sutil más vivo al pasar el mouse */
+.card{position:relative;transition:transform .22s cubic-bezier(.22,.61,.36,1),box-shadow .22s,border-color .22s}
+.card:hover{border-color:rgba(226,201,126,.14);box-shadow:0 8px 32px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.05)}
+@media(hover:hover){.card:hover{transform:translateY(-1px)}}
+
+/* sc: brillo sutil en el borde superior para dar foco */
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.35),transparent);opacity:0;transition:opacity .25s}
+.sc:hover::before{opacity:1}
+.sc{transition:transform .22s cubic-bezier(.22,.61,.36,1),box-shadow .22s}
+@media(hover:hover){.sc:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)}}
+
+/* Botones: realce y feedback táctil más agradable */
+.btn-p,.btn-g,.btn-d{position:relative;overflow:hidden}
+.btn-p:hover{border-color:rgba(226,201,126,.35);box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 0 1px rgba(226,201,126,.08);transform:translateY(-1px)}
+.btn-p:active,.btn-g:active,.btn-d:active{transform:translateY(0) scale(.98)}
+.btn-g:hover{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.03)}
+.btn-d:hover{filter:brightness(1.15)}
+.btn-p,.btn-g,.btn-d{transition:all .16s cubic-bezier(.22,.61,.36,1)}
+
+/* Inputs: foco más suave y consistente */
+.iw{transition:border-color .18s,box-shadow .18s,background .18s}
+.iw:focus-within{box-shadow:0 0 0 3px rgba(45,212,191,.08)}
+
+/* Tabs de escritorio: indicador con gradiente */
+.tab.on{color:rgba(226,201,126,.95)!important}
+.tab{position:relative}
+.tab.on::after{content:'';position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px}
+
+/* Header con leve resplandor */
+.hdr{background:linear-gradient(180deg,rgba(18,18,18,1),rgba(8,8,8,1))}
+
+/* mc / hi: hover más expresivo */
+.mc:hover,.hi-hdr:hover{background:rgba(255,255,255,.025)}
+
+/* Scrollbars finos y discretos en escritorio */
+@media(min-width:769px){
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:6px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(226,201,126,.25)}
+}
+
+/* Mobile nav: tab activo con realce e indicador */
+.mob-tab{position:relative}
+.mob-tab.on::before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px}
+.mob-tab:active{transform:scale(.93)}
+.mob-tab{transition:transform .14s cubic-bezier(.22,.61,.36,1),color .18s}
+
+/* Botón "agregar fila": más vivo al hover */
+.btn-add-row:active{transform:scale(.99)}
+
+/* Empty states: ícono con leve animación de respiración */
+.empty-icon{animation:breathe 3.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.16;transform:scale(1)}50%{opacity:.28;transform:scale(1.06)}}
+
+/* Badges con leve brillo */
+.badge{box-shadow:0 0 0 1px rgba(255,255,255,.04) inset}
+
+/* Mejor legibilidad en celulares: tipografía algo más grande en valores clave */
+@media(max-width:640px){
+  .sc-v{font-size:22px}
+  .tx-v.big{font-size:24px}
+  .card{padding:18px}
+  .pg{max-width:100%}
+}
+
+/* Transición suave al cambiar de página */
+.pg{animation:pgfade .28s cubic-bezier(.22,.61,.36,1)}
+@keyframes pgfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
 </style>
 </head>
 <body>
