@@ -773,6 +773,36 @@ const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'sh
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const calcEf=(l,b1,b2)=> (+l||0)*(1-(+b1||0)/100)*(1-(+b2||0)/100);
 
+/* Ganancia real de una compra: costo + envío + comisión = ganancia.
+   Toma el precio publicado en ML para cada producto (margen real definido
+   por el usuario); si todavía no fue publicado, usa una estimación de
+   referencia (margen 30%) con la comisión/envío configurados. */
+function purchaseGain(p) {
+  const pubs=DB.get('mlpubs',[]);
+  const pubMap={};
+  pubs.forEach(pub=>(pub.products||[]).forEach(pp=>{
+    const key=(pp.c||pp.n||'').toLowerCase();
+    if (key) pubMap[key]=pp;
+  }));
+  const conf=p.conf||{};
+  const defCom=conf.mlCom??16, defEnv=conf.mlEnv??7500;
+  return (p.products||[]).reduce((s,pr)=>{
+    const cu=(pr.p||0)*(p.r?.TCE||0);
+    const key=(pr.c||pr.n||'').toLowerCase();
+    const pub=pubMap[key];
+    let gn;
+    if (pub) {
+      const com=pub.com??defCom, env=pub.env||0;
+      gn=(pub.precio||0)*(1-com/100)-cu-env;
+    } else {
+      const com=defCom, env=defEnv, margin=30;
+      const precio=cu*(1+margin/100)/(1-com/100)+env;
+      gn=precio*(1-com/100)-cu-env;
+    }
+    return s+gn*(pr.q||1);
+  },0);
+}
+
 function getConf() {
   const cs = DB.get('configs',[]);
   const s  = DB.get('settings',{});
@@ -858,7 +888,7 @@ function pgDash() {
   const ps  = DB.get('purchases',[]);
   const cat = DB.get('catalog',[]);
   const tot = ps.reduce((s,p)=>s+(p.r?.ars||0),0);
-  const gan = ps.reduce((s,p)=>s+(p.r?.gan||0),0);
+  const gan = ps.reduce((s,p)=>s+purchaseGain(p),0);
   const tce = ps.length ? ps.reduce((s,p)=>s+(p.r?.TCE||0),0)/ps.length : 0;
   const ltce = ps.length ? (ps[ps.length-1].r?.TCE||0) : 0;
   const ptce = ps.length>1 ? (ps[ps.length-2].r?.TCE||0) : 0;
@@ -867,7 +897,7 @@ function pgDash() {
   const last = ps.slice(-3).reverse();
   const totU = ps.reduce((s,p)=>s+(p.r?.up||0),0);
   const spTot  = ps.slice(-8).map(p=>p.r?.ars||0);
-  const spGan  = ps.slice(-8).map(p=>p.r?.gan||0);
+  const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
   <div class="sh mb20">Resumen general</div>
@@ -909,7 +939,7 @@ function pgDash() {
   </div>
   <div>
     <div class="sh mb16">Últimas compras</div>
-    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s">gan. ${fmtA(p.r?.gan||0)}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
+    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s">gan. ${fmtA(purchaseGain(p))}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
   </div>
   <div class="mt20"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
 </div>`;
@@ -1011,7 +1041,7 @@ after.dashboard = ()=>{
     const tceEl=document.getElementById('ch-tce');
     const ganEl=document.getElementById('ch-gan');
     if(tceEl) TBRChart.line(tceEl,{labels,data:ps.map(p=>p.r?.TCE||0),color:'#2dd4bf',height:160});
-    if(ganEl) TBRChart.bar(ganEl,{labels,data:ps.map(p=>p.r?.gan||0),colors:'#fbbf24',height:160});
+    if(ganEl) TBRChart.bar(ganEl,{labels,data:ps.map(p=>purchaseGain(p)),colors:'#fbbf24',height:160});
   },50);
   // Count-up animation
   document.querySelectorAll('.count-val').forEach(el=>{
@@ -1269,16 +1299,7 @@ function calcular() {
   } else {
     const fee=conf.netFee||0; ut=up*(1+conf.comInt/100)+fee;uc=ut/(1-conf.spread/100);ac=uc*conf.precio;at=ac+fleteARS;TCE=at/up;
   }
-  // Ganancia proyectada: estimación de venta en ML con margen por defecto (30%)
-  const DEF_MARGIN=30;
-  const ganProyectada = v.reduce((s,p)=>{
-    const cu=p.p*TCE;
-    const env=conf.mlEnv||0;
-    const precio=cu*(1+DEF_MARGIN/100)/(1-conf.mlCom/100)+env;
-    const gn=precio*(1-conf.mlCom/100)-cu-env;
-    return s+gn*(p.q||1);
-  },0);
-  CALC={conf,v,up,u,ut,uc,ac,at,TCE,fleteARS,ganProyectada,margins:{},envios:{}};
+  CALC={conf,v,up,u,ut,uc,ac,at,TCE,fleteARS,margins:{},envios:{}};
   renderResults(CALC);
   // Actualizar input de flete
   const fi=document.getElementById('flete-real-inp');
@@ -1580,7 +1601,7 @@ function savePurchase() {
     id:uid(),date:new Date().toISOString(),name,notes,
     products:CALC.v.map(p=>({...p})),
     conf:{...conf},
-    r:{TCE:CALC.TCE,up:CALC.up,ut:CALC.ut,ars:CALC.at,gan:CALC.ganProyectada||0}
+    r:{TCE:CALC.TCE,up:CALC.up,ut:CALC.ut,ars:CALC.at}
   };
   const ps=DB.get('purchases',[]);
   ps.push(purchase);
@@ -1614,7 +1635,7 @@ function histCard(p, idx, badges=[]) {
         <div class="hi-n">${esc(p.name||'Sin nombre')}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
         <div class="hi-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div>
       </div>
-      <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t">gan. proy. ${fmtA(p.r?.gan||0)}</div></div>
+      <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t">gan. proy. ${fmtA(purchaseGain(p))}</div></div>
     </div>
     <div class="hi-body" id="${idx}">
       ${p.notes?`<div class="hi-note">📝 ${esc(p.notes)}</div>`:''}
@@ -1638,18 +1659,18 @@ function pgHist() {
   // Sort
   const all = [...rawAll].sort((a,b)=>{
     if (histSort==='ars') return (b.r?.ars||0)-(a.r?.ars||0);
-    if (histSort==='gan') return (b.r?.gan||0)-(a.r?.gan||0);
+    if (histSort==='gan') return purchaseGain(b)-purchaseGain(a);
     if (histSort==='tce') return (b.r?.TCE||0)-(a.r?.TCE||0);
     return 0; // 'date' = already sorted by date (reversed)
   });
   const ps = histSearch ? all.filter(p=>(p.name||'').toLowerCase().includes(histSearch)) : all;
   // Compute badges
-  const maxGan = Math.max(...rawAll.map(p=>p.r?.gan||0));
+  const maxGan = Math.max(...rawAll.map(p=>purchaseGain(p)));
   const maxTce = Math.max(...rawAll.map(p=>p.r?.TCE||0));
   function getBadges(p, i) {
     const badges=[];
     if (i===0 && histSort==='date' && !histSearch) badges.push({txt:'ÚLTIMA',cls:'u'});
-    if (rawAll.length>2 && (p.r?.gan||0)===maxGan) badges.push({txt:'+ RENTABLE',cls:'g'});
+    if (rawAll.length>2 && purchaseGain(p)===maxGan) badges.push({txt:'+ RENTABLE',cls:'g'});
     if (rawAll.length>2 && (p.r?.TCE||0)===maxTce) badges.push({txt:'TCE ALTO',cls:'d'});
     return badges;
   }
@@ -1723,7 +1744,7 @@ function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',D
 function pgStats() {
   const ps=DB.get('purchases',[]);
   const tot=ps.reduce((s,p)=>s+(p.r?.ars||0),0);
-  const gan=ps.reduce((s,p)=>s+(p.r?.gan||0),0);
+  const gan=ps.reduce((s,p)=>s+purchaseGain(p),0);
   const tce=ps.length?ps.reduce((s,p)=>s+(p.r?.TCE||0),0)/ps.length:0;
   const usdt=ps.reduce((s,p)=>s+(p.r?.up||0),0);
   return `<div class="pg">
@@ -2584,7 +2605,7 @@ function exportAllXLSX(){
   if(!ps.length||typeof XLSX==='undefined'){toast('Sin datos para exportar',false);return;}
   const wb=XLSX.utils.book_new();
   const sum=[['Fecha','Nombre','TCE','ARS Total','USDT Prod.','Ganancia Proy.']];
-  ps.forEach(p=>sum.push([fmtD(p.date),p.name,Math.round(p.r?.TCE||0),Math.round(p.r?.ars||0),(p.r?.up||0).toFixed(2),Math.round(p.r?.gan||0)]));
+  ps.forEach(p=>sum.push([fmtD(p.date),p.name,Math.round(p.r?.TCE||0),Math.round(p.r?.ars||0),(p.r?.up||0).toFixed(2),Math.round(purchaseGain(p))]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
   ps.forEach(p=>{const rows=[['Producto','Código','Cant.','Precio efectivo','Costo ARS','Margen %','Precio ML']];(p.products||[]).forEach(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);rows.push([pr.n,pr.c,pr.q,pr.p,Math.round(cu),pr.margin||30,Math.round(cu*(1+(pr.margin||30)/100))]);});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),(p.name||'C').slice(0,31).replace(/[^a-zA-Z0-9 ]/g,''));});
   XLSX.writeFile(wb,'TBR_TOOLS_Historial.xlsx');
