@@ -935,6 +935,12 @@ function setSyncDot(ok) {
    UTILS
 ═══════════════════════════════════════════ */
 const uid  = ()=> Math.random().toString(36).slice(2)+Date.now().toString(36);
+function parseARS(v){
+  const s = String(v??'').trim();
+  if (!s) return 0;
+  const norm = s.replace(/\./g,'').replace(',','.');
+  return parseFloat(norm)||0;
+}
 const fmtA = n=> '$ '+Math.round(+n||0).toLocaleString('es-AR');
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
@@ -1066,7 +1072,7 @@ function monthlyGoalCard(ps) {
       </div>
       <div class="iw" style="max-width:180px">
         <span class="ipre">$</span>
-        <input type="number" id="monthly-goal-inp" placeholder="Meta en ARS" min="0" step="1000" value="${goal||''}">
+        <input type="text" inputmode="decimal" id="monthly-goal-inp" placeholder="Ej: 50.000" value="${goal?goal.toLocaleString('es-AR'):''}">
       </div>
       <button class="btn-p btn-sm" onclick="setMonthlyGoal(document.getElementById('monthly-goal-inp').value)">Guardar</button>
     </div>
@@ -1075,7 +1081,7 @@ function monthlyGoalCard(ps) {
 }
 function setMonthlyGoal(v) {
   const s = DB.get('settings',{});
-  s.monthlyGoal = parseFloat(v)||0;
+  s.monthlyGoal = parseARS(v);
   DB.set('settings', s);
   toast('Meta guardada');
   const wrap = document.getElementById('monthly-goal-progress');
