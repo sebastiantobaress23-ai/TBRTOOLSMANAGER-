@@ -358,6 +358,20 @@ body{display:flex;flex-direction:column}
 .hdr img{height:38px;width:38px;object-fit:contain;mix-blend-mode:luminosity;filter:grayscale(.55) brightness(1.15) contrast(1.05) drop-shadow(0 0 10px rgba(255,255,255,.18));isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
 .hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .3s,letter-spacing .3s}
+.gsearch-btn{margin-left:auto;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:rgba(255,255,255,.45);cursor:pointer;transition:.2s}
+.gsearch-btn:hover{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
+.gsearch-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px}
+.gsearch-box{width:100%;max-width:560px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
+.gsearch-inrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#fff}
+.gsearch-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit}
+.gsearch-input::placeholder{color:rgba(255,255,255,.3)}
+.gsearch-results{max-height:54vh;overflow-y:auto;padding:6px}
+.gsearch-cat{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:10px 12px 4px}
+.gsearch-item{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+.gsearch-item:hover{background:rgba(255,255,255,.05)}
+.gsearch-item-t{font-size:14px;color:#fff}
+.gsearch-item-s{font-size:12px;color:rgba(255,255,255,.4)}
+.gsearch-empty{padding:30px 16px;text-align:center;color:rgba(255,255,255,.3);font-size:13px}
 @media(min-width:721px){
   .hdr img{height:60px}
   .hdr-txt{font-size:14px;letter-spacing:6px}
@@ -775,7 +789,20 @@ select{cursor:pointer}
   <div class="hdr-txt">Business Manager</div>
   <div id="sync-dot" class="sync-dot" style="opacity:.4" title="Sincronización Firebase"></div>
   <div id="offline-badge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ye);background:#1a1000;border:1px solid #3a2800;border-radius:4px;padding:3px 8px">OFFLINE</div>
+  <button id="gsearch-btn" class="gsearch-btn" onclick="openGSearch()" title="Buscar (Ctrl+K)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+  </button>
 </header>
+<div id="gsearch-ol" class="gsearch-ol" style="display:none" onclick="if(event.target===this)closeGSearch()">
+  <div class="gsearch-box">
+    <div class="gsearch-inrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4;flex-shrink:0"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="gsearch-input" class="gsearch-input" placeholder="Buscar productos, proveedores, ordenes, cotizaciones..." oninput="runGSearch(this.value)" autocomplete="off">
+      <button class="btn-rm" onclick="closeGSearch()">x</button>
+    </div>
+    <div id="gsearch-results" class="gsearch-results"></div>
+  </div>
+</div>
 
 <nav class="nav">
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
@@ -1170,6 +1197,55 @@ const DRAFT_KEY = 'tbr_draft_v2';
    NAVIGATION
 ═══════════════════════════════════════════ */
 const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
+function openGSearch(){
+  const ol=document.getElementById('gsearch-ol');
+  ol.style.display='flex';
+  const inp=document.getElementById('gsearch-input');
+  inp.value='';
+  document.getElementById('gsearch-results').innerHTML='';
+  setTimeout(()=>inp.focus(),50);
+}
+function closeGSearch(){
+  document.getElementById('gsearch-ol').style.display='none';
+}
+function gsearchGo(fn){
+  closeGSearch();
+  setTimeout(fn,80);
+}
+function runGSearch(qRaw){
+  const q=(qRaw||'').trim().toLowerCase();
+  const box=document.getElementById('gsearch-results');
+  if(!q){ box.innerHTML=''; return; }
+  const groups=[];
+  const cat=DB.get('catalog',[]).filter(c=>(c.name||'').toLowerCase().includes(q)||(c.code||'').toLowerCase().includes(q)).slice(0,6);
+  if(cat.length) groups.push({label:'Catálogo',items:cat.map(c=>({t:c.name,s:c.code?('Código: '+c.code):'Producto',go:`openProd360(${JSON.stringify(c.id)})`}))});
+  const provs=DB.get('configs',[]).filter(c=>(c.name||'').toLowerCase().includes(q)).slice(0,6);
+  if(provs.length) groups.push({label:'Proveedores',items:provs.map(c=>({t:c.name,s:'Proveedor',go:`openConf(${JSON.stringify(c.id)})`}))});
+  const ocs=DB.get('ordenes',[]).filter(o=>(o.nro||'').toLowerCase().includes(q)||(o.proveedor||'').toLowerCase().includes(q)).slice(0,6);
+  if(ocs.length) groups.push({label:'Órdenes de compra',items:ocs.map(o=>({t:o.nro,s:o.proveedor||'',go:`navigate('orden')`}))});
+  const cots=DB.get('cotizaciones',[]).filter(o=>(o.nro||'').toLowerCase().includes(q)||(o.proveedor||'').toLowerCase().includes(q)).slice(0,6);
+  if(cots.length) groups.push({label:'Cotizaciones',items:cots.map(o=>({t:o.nro,s:o.proveedor||'',go:`navigate('cotizaciones')`}))});
+  const purch=DB.get('purchases',[]).filter(p=>(p.proveedor||'').toLowerCase().includes(q)).slice(0,6);
+  if(purch.length) groups.push({label:'Historial de compras',items:purch.map(p=>({t:p.proveedor||'Compra',s:p.fecha||'',go:`navigate('historial')`}))});
+  if(!groups.length){ box.innerHTML='<div class="gsearch-empty">Sin resultados para "'+esc(qRaw)+'"</div>'; return; }
+  box.innerHTML=groups.map(g=>`
+    <div class="gsearch-cat">${esc(g.label)}</div>
+    ${g.items.map(it=>`<div class="gsearch-item" onclick='gsearchGo(()=>{${it.go}})'>
+      <div class="gsearch-item-t">${esc(it.t||'')}</div>
+      ${it.s?`<div class="gsearch-item-s">${esc(it.s)}</div>`:''}
+    </div>`).join('')}
+  `).join('');
+}
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
+    e.preventDefault();
+    const ol=document.getElementById('gsearch-ol');
+    if(ol.style.display==='none'||!ol.style.display) openGSearch(); else closeGSearch();
+  } else if(e.key==='Escape'){
+    const ol=document.getElementById('gsearch-ol');
+    if(ol.style.display==='flex') closeGSearch();
+  }
+});
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
