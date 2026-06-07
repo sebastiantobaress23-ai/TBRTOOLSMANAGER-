@@ -1962,7 +1962,7 @@ function pgCat() {
         ${(()=>{const h=c.priceHistory||[];if(!h.length)return '';const prev=h[h.length-1]?.price||0;const cur=c.lastPrice||c.defaultPrice||0;const d=cur-prev;if(!d)return '<span class="trend-eq">sin cambio</span>';return d>0?`<span class="trend-up">▲ ${fmtU(Math.abs(d))}</span>`:`<span class="trend-dn">▼ ${fmtU(Math.abs(d))}</span>`;})()}
       </div>
       <div style="font-size:11px;color:var(--di)">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe"><button class="btn-g btn-sm" title="Vista 360" onclick="openProd360('${c.id}')">👁</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
+      <div class="fg fe"><button class="btn-g btn-sm" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>360</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
     </div>`).join('')}
   </div>`}
   <!-- MODAL VISTA 360 -->
@@ -3025,8 +3025,9 @@ function pgCotizaciones() {
         </table>
       </div>
       <div class="hi-acts">
-        <button class="btn-g" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?'✓ Marcar como pendiente':'✓ Marcar como cotizada'}</button>
-        <button class="btn-g" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button><button class="btn-g" onclick="shareCotWA('${o.id}')">📲 WhatsApp</button>
+        <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?'✓ Pendiente':'✓ Cotizada'}</button>
+        <button class="btn-g btn-sm" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button>
+        <button class="btn-g btn-sm" onclick="shareCotWA('${o.id}')">📲 WhatsApp</button>
         <button class="btn-d" onclick="delCot('${o.id}')">🗑 Borrar</button>
       </div>
     </div>
