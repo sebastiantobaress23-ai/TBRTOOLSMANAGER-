@@ -354,8 +354,9 @@ body{display:flex;flex-direction:column}
 /* HEADER */
 .hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(255,255,255,.05);padding:0 32px;height:68px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
 .hdr{isolation:isolate}
-.hdr-logo{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.05),rgba(255,255,255,0) 70%),linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,0) 60%);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 14px rgba(0,0,0,.5);flex-shrink:0}
-.hdr img{height:38px;width:38px;object-fit:contain;mix-blend-mode:luminosity;filter:grayscale(.55) brightness(1.15) contrast(1.05) drop-shadow(0 0 10px rgba(255,255,255,.18));isolation:isolate;transition:filter .3s}
+.hdr-logo{display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.06),rgba(255,255,255,0) 65%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 16px rgba(0,0,0,.45);flex-shrink:0;transition:.3s}
+.hdr-logo:hover{border-color:rgba(226,201,126,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 16px rgba(226,201,126,.18)}
+.hdr img{height:40px;width:40px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.2));isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
 .hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .3s,letter-spacing .3s}
 .gsearch-btn{margin-left:auto;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:rgba(255,255,255,.45);cursor:pointer;transition:.2s}
