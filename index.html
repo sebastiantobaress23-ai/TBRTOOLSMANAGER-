@@ -2660,7 +2660,7 @@ function pgOrden() {
         <tbody>${(o.items||[]).map(p=>{const sym=o.currency==='ARS'?'$':'US$';return `<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">${sym} ${(p.p||0).toFixed(2)}</td><td class="tr tm cch">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`;}).join('')}</tbody>
         </table>
       </div>
-      <div class="hi-acts"><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
+      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">🖨 Reimprimir</button><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
@@ -2709,6 +2709,112 @@ function refreshOrdTotals() {
   const tb=document.querySelector('#ord-list')?.nextElementSibling;
 }
 function clearOrder(){confirm2('¿Limpiar la orden?',()=>{ORDER=[];render();});}
+function reprintOC(id) {
+  const o = DB.get('ordenes',[]).find(x=>x.id===id);
+  if (!o) return;
+  const emp = DB.get('empresa',{});
+  const sym = o.currency==='ARS' ? '$' : 'US$';
+  const total = o.currency==='ARS' ? (o.totalARS||0) : (o.totalUSD||0);
+  const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
+
+  const items = (o.items||[]).map((p,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(p.n||'—')}</td>
+    <td>${esc(p.c||'—')}</td>
+    <td class="ctr">${p.q||1}</td>
+    <td class="cright">${sym} ${(p.p||0).toFixed(2)}</td>
+    <td class="cright">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td>
+  </tr>`).join('');
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.nro} · TBR TOOLS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4;margin:12mm}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padding:0}
+.toolbar{background:#f0f0f0;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border-radius:6px}
+.toolbar span{font-size:13px;color:#555}
+.btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
+.btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
+.brand p{font-size:10px;color:#666;margin:1px 0}
+.doc-badge{text-align:right}
+.oc-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.oc-num{font-size:24px;font-weight:900;color:#111;letter-spacing:1px}
+.oc-date{font-size:11px;color:#666;margin-top:2px}
+.doc-meta{display:flex;gap:0;border-bottom:1px solid #ddd;background:#fafafa}
+.meta-item{flex:1;padding:8px 16px;border-right:1px solid #ddd}
+.meta-item:last-child{border-right:none}
+.meta-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:2px}
+.meta-val{font-size:12px;font-weight:600;color:#111}
+table{width:100%;border-collapse:collapse}
+thead th{background:#111;color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+tbody tr:nth-child(even){background:#f9f9f9}
+tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+.num{color:#999;font-size:11px;width:28px}
+.ctr{text-align:center}
+.cright{text-align:right;font-family:monospace}
+.doc-totals{padding:10px 16px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd}
+.totals-box{width:240px}
+.tot-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#555;border-bottom:1px solid #eee}
+.tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111}
+.doc-footer{padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid #ddd}
+.firma{text-align:center;width:180px}
+.firma hr{border:none;border-top:1px solid #333;margin-bottom:6px}
+.firma p{font-size:10px;color:#666}
+.firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
+.foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+@media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
+</style></head><body>
+<div class="toolbar">
+  <span>📄 ${o.nro} · copia para reimprimir</span>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Orden de Compra</div>
+      <div class="oc-num">${o.nro}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th><th class="cright">P. Unit.</th><th class="cright">Subtotal</th>
+    </tr></thead>
+    <tbody>${items}</tbody>
+  </table>
+  <div class="doc-totals">
+    <div class="totals-box">
+      <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
+    </div>
+  </div>
+  <div class="doc-footer">
+    <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
+    <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${o.nro} · Reimpresión</div>
+</div>
+</body></html>`);
+  w.document.close();
+}
+
 function delOC(id){confirm2('¿Borrar esta orden?',()=>{DB.set('ordenes',DB.get('ordenes',[]).filter(o=>o.id!==id));render();});}
 function openOrdCatModal(){
   const cat=DB.get('catalog',[]);
