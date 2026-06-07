@@ -753,6 +753,7 @@ select{cursor:pointer}
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
   <div class="tab"     data-p="historial"   onclick="navigate('historial')">Historial</div>
+  <div class="tab"     data-p="ventas"      onclick="navigate('ventas')">Ventas</div>
   <div class="tab"     data-p="catalogo"    onclick="navigate('catalogo')">Catálogo</div>
   <div class="tab"     data-p="stats"       onclick="navigate('stats')">Estadísticas</div>
   <div class="tab"     data-p="publicar"    onclick="navigate('publicar')">Publicar ML</div>
@@ -760,6 +761,7 @@ select{cursor:pointer}
   <div class="tab"     data-p="orden"       onclick="navigate('orden')">Orden de Compra</div>
   <div class="tab"     data-p="cotizaciones" onclick="navigate('cotizaciones')">Cotizaciones</div>
   <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
+  <div class="tab"     data-p="viaje"       onclick="navigate('viaje')">Viaje de compras</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
 </nav>
 
@@ -768,11 +770,13 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="dashboard"   onclick="navigate('dashboard')"><span class="mob-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Inicio</button>
   <button class="mob-tab" data-p="compra"      onclick="navigate('compra')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Compra</button>
   <button class="mob-tab" data-p="historial"   onclick="navigate('historial')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></span>Historial</button>
+  <button class="mob-tab" data-p="ventas"      onclick="navigate('ventas')"><span class="mob-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Ventas</button>
   <button class="mob-tab" data-p="catalogo"    onclick="navigate('catalogo')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Catálogo</button>
   <button class="mob-tab" data-p="stats"       onclick="navigate('stats')"><span class="mob-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg></span>Stats</button>
   <button class="mob-tab" data-p="publicar"    onclick="navigate('publicar')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>ML</button>
   <button class="mob-tab" data-p="competencia" onclick="navigate('competencia')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Compet.</button>
   <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Proveed.</button>
+  <button class="mob-tab" data-p="viaje" onclick="navigate('viaje')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>Viaje</button>
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
   <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
@@ -781,6 +785,20 @@ select{cursor:pointer}
 <div id="app"></div>
 
 <!-- CONFIRM MODAL -->
+<div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
+  <div class="mbox" style="max-width:540px">
+    <div class="mhdr">Cargar productos desde foto<button class="btn-rm" onclick="closeOcrModal()">✕</button></div>
+    <div class="mbody">
+      <div id="ocr-status" style="font-size:13px;color:var(--di);margin-bottom:14px">Procesando imagen…</div>
+      <div id="ocr-progress" style="height:8px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:16px"><div id="ocr-bar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,var(--us),var(--ch));transition:width .25s"></div></div>
+      <div id="ocr-results" style="display:none">
+        <div class="hint mb12">Revisá las líneas detectadas y agregá las que correspondan a productos. Vas a poder ajustar nombre, cantidad y precio en la lista de la compra.</div>
+        <div id="ocr-lines"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="cm-ol" class="cm-ol" style="display:none">
   <div class="cm-box">
     <div class="cm-msg" id="cm-msg">¿Estás seguro?</div>
@@ -870,7 +888,7 @@ async function fbSync() {
     const d = await r.json();
     if (!d) return;
     let changed = false;
-    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones']) {
+    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','sales','trip']) {
       if (d[k]==null) continue;
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(d[k])) {
@@ -904,6 +922,34 @@ const calcEf=(l,b1,b2)=> (+l||0)*(1-(+b1||0)/100)*(1-(+b2||0)/100);
    Toma el precio publicado en ML para cada producto (margen real definido
    por el usuario); si todavía no fue publicado, usa una estimación de
    referencia (margen 30%) con la comisión/envío configurados. */
+function smartAlerts() {
+  const cat = DB.get('catalog',[]);
+  const now = Date.now();
+  const alerts = [];
+  cat.forEach(c=>{
+    if (c.lastUpdated) {
+      const days = Math.floor((now - new Date(c.lastUpdated).getTime())/86400000);
+      if (days >= 60) alerts.push({icon:'⏳', kind:'stock', text:`"${c.name}" no se repone hace ${days} días — quizás sea momento de reabastecer.`});
+    }
+    const hist = c.priceHistory||[];
+    if (hist.length && c.lastPrice) {
+      const prev = hist[hist.length-1].price;
+      if (prev > 0) {
+        const diff = (c.lastPrice - prev)/prev*100;
+        if (diff >= 8) alerts.push({icon:'📈', kind:'price', text:`El costo de "${c.name}" subió ${diff.toFixed(0)}% respecto a la compra anterior (${fmtU(prev)} → ${fmtU(c.lastPrice)}).`});
+      }
+    }
+  });
+  return alerts.slice(0,6);
+}
+function smartAlertsCard() {
+  const alerts = smartAlerts();
+  if (!alerts.length) return '';
+  return `<div class="card mb20">
+    <div class="sh mb12" style="margin-top:0">Alertas inteligentes</div>
+    ${alerts.map(a=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--b2)"><span style="font-size:16px;line-height:1.3">${a.icon}</span><span style="font-size:13px;color:var(--di)">${esc(a.text)}</span></div>`).join('')}
+  </div>`;
+}
 function purchaseGain(p) {
   const pubs=DB.get('mlpubs',[]);
   const pubMap={};
@@ -1082,7 +1128,7 @@ const DRAFT_KEY = 'tbr_draft_v2';
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
-const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
+const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
@@ -1098,7 +1144,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,viaje:pgViaje};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
 }
 
@@ -1156,7 +1202,11 @@ function pgDash() {
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Resumen general</div><button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button></div>
+  <div class="fb mb20" style="flex-wrap:wrap;gap:8px"><div class="sh" style="margin:0;flex:1">Resumen general</div>
+    <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
+    <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
+    <button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button>
+  </div>
   <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
     <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador "¿Qué pasaría si...?"<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
     <div class="mbody">
@@ -1196,6 +1246,7 @@ function pgDash() {
     </div>
   </div>
   ${monthlyGoalCard(ps)}
+  ${smartAlertsCard()}
   <div class="g2 mb20">
     <div>
       <div class="sh mb16">Evolución del TCE</div>
@@ -1358,7 +1409,7 @@ function pgCompra() {
   <div class="card">
     <div class="fb mb12">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -1479,6 +1530,84 @@ function prodRow(p) {
   </div>`;
 }
 
+/* ═══════════════════════════════════════════
+   OCR — carga de productos desde foto (Tesseract.js)
+═══════════════════════════════════════════ */
+let _tesseractLoading = null;
+function loadTesseract(){
+  if (window.Tesseract) return Promise.resolve();
+  if (_tesseractLoading) return _tesseractLoading;
+  _tesseractLoading = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('offline'));
+    document.head.appendChild(s);
+  });
+  return _tesseractLoading;
+}
+function closeOcrModal(){ const m=document.getElementById('ocr-modal'); if(m) m.style.display='none'; }
+function _ocrParseLines(text){
+  return text.split('\n').map(l=>l.trim()).filter(l=>l.length>2).map(line=>{
+    const nums = line.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g) || [];
+    let price = 0;
+    if (nums.length) {
+      const raw = nums[nums.length-1].replace(/\./g,'').replace(',', '.');
+      price = parseFloat(raw)||0;
+    }
+    let name = line.replace(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g,'').replace(/[$#·.\-_:]+/g,' ').replace(/\s+/g,' ').trim();
+    return { raw:line, name: name||line, price };
+  }).filter(l=>l.name);
+}
+async function handleOcrPhoto(input){
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const modal = document.getElementById('ocr-modal');
+  const status = document.getElementById('ocr-status');
+  const bar = document.getElementById('ocr-bar');
+  const results = document.getElementById('ocr-results');
+  const linesEl = document.getElementById('ocr-lines');
+  results.style.display = 'none';
+  bar.style.width = '0%';
+  status.textContent = 'Cargando motor de reconocimiento…';
+  modal.style.display = 'flex';
+  try {
+    await loadTesseract();
+    status.textContent = 'Analizando la imagen…';
+    const { data } = await window.Tesseract.recognize(file, 'spa', {
+      logger: m => {
+        if (m.status === 'recognizing text' && m.progress != null) {
+          bar.style.width = (m.progress*100).toFixed(0)+'%';
+          status.textContent = `Reconociendo texto… ${(m.progress*100).toFixed(0)}%`;
+        }
+      }
+    });
+    bar.style.width = '100%';
+    const lines = _ocrParseLines(data.text||'');
+    if (!lines.length) {
+      status.textContent = 'No se detectó texto útil en la imagen. Probá con una foto más nítida.';
+      return;
+    }
+    status.textContent = `Se detectaron ${lines.length} línea${lines.length!==1?'s':''}. Revisá y agregá las que correspondan:`;
+    linesEl.innerHTML = lines.map((l,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--b2)">
+      <input type="text" id="ocr-name-${i}" value="${esc(l.name)}" style="flex:2;height:36px;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:0 10px;color:var(--ch);font-size:13px;outline:none">
+      <div class="iw" style="flex:1;max-width:120px"><span class="ipre">$</span><input type="number" id="ocr-price-${i}" value="${l.price||''}" min="0" step="0.01"></div>
+      <button class="btn-p btn-sm" onclick="ocrAddLine(${i})">+ Agregar</button>
+    </div>`).join('');
+    results.style.display = 'block';
+  } catch(e) {
+    status.textContent = 'No se pudo procesar la imagen (¿sin conexión la primera vez?). Probá nuevamente con internet activo.';
+  } finally {
+    input.value = '';
+  }
+}
+function ocrAddLine(i){
+  const name = document.getElementById(`ocr-name-${i}`)?.value.trim();
+  const price = parseFloat(document.getElementById(`ocr-price-${i}`)?.value)||0;
+  if (!name) { toast('Ingresá un nombre.',false); return; }
+  addProd(name, '', 1, price, 0, 0);
+  toast(`✅ "${name}" agregado a la compra`);
+}
 function addProd(n='',c='',q=1,lista='',b1=0,b2=0) {
   const id = uid();
   const p  = calcEf(lista,b1,b2);
@@ -1996,6 +2125,214 @@ function pgHist() {
     <button class="sort-btn${histSort==='tce'?' on':''}" onclick="sortHist('tce')">TCE más alto</button>
   </div>
   <div id="hist-list">${ps.length?ps.map((p,i)=>histCard(p,'h'+i,getBadges(p,i))).join(''):'<div class="empty">Sin resultados.</div>'}</div>
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   VENTAS — registro de ventas reales y rentabilidad
+═══════════════════════════════════════════ */
+function lastTCE(){ const ps=DB.get('purchases',[]); return ps.length ? (ps[ps.length-1].r?.TCE||0) : 0; }
+function suggestSaleCost(code, name){
+  const cat=DB.get('catalog',[]);
+  const c = cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+  if (!c) return 0;
+  const tce = lastTCE();
+  return Math.round((c.lastPrice||c.defaultPrice||0) * tce);
+}
+function fillSaleCost(){
+  const sel=document.getElementById('sale-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  const [name,code]=opt.value.split('|||');
+  document.getElementById('sale-cost').value = suggestSaleCost(code, name) || '';
+}
+function addSale(){
+  const sel=document.getElementById('sale-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
+  const [name,code]=opt.value.split('|||');
+  const qty=parseInt(document.getElementById('sale-qty').value)||1;
+  const price=parseFloat(document.getElementById('sale-price').value)||0;
+  const cost=parseFloat(document.getElementById('sale-cost').value)||0;
+  if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
+  const s=DB.get('settings',{});
+  const sale={id:uid(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500};
+  const sales=DB.get('sales',[]);
+  sales.push(sale);
+  DB.set('sales',sales);
+  toast('✅ Venta registrada');
+  document.getElementById('sale-qty').value='1';
+  document.getElementById('sale-price').value='';
+  document.getElementById('sale-cost').value='';
+  render();
+}
+function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
+function saleProfit(s){
+  const com = (s.priceARS * (s.mlCom??16)/100);
+  const unitNet = s.priceARS - com - (s.mlEnv??0) - (s.costARS||0);
+  return unitNet * (s.qty||1);
+}
+function pgVentas(){
+  const sales = DB.get('sales',[]).slice().reverse();
+  const cat = DB.get('catalog',[]);
+  const totalRev = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const totalUnits = sales.reduce((a,s)=>a+(s.qty||1),0);
+
+  // Ranking de rentabilidad por producto
+  const map={};
+  sales.forEach(s=>{
+    const key=(s.code||s.name||'').toLowerCase();
+    if(!map[key]) map[key]={name:s.name,code:s.code,units:0,revenue:0,profit:0};
+    map[key].units += (s.qty||1);
+    map[key].revenue += s.priceARS*(s.qty||1);
+    map[key].profit += saleProfit(s);
+  });
+  const ranking = Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
+
+  return `<div class="pg">
+  <div class="sh mb16">Registrar venta</div>
+  <div class="card mb24">
+    <div class="fg-w">
+      <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div class="iw"><select id="sale-prod" onchange="fillSaleCost()">
+        <option value="">Elegí un producto del catálogo…</option>
+        ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+      </select></div></div>
+      <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
+    </div>
+    <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados.</div>
+    <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
+  </div>
+
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Ingresos totales</div><div class="sc-v g">${totalRev?fmtA(totalRev):'—'}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''} · ${totalUnits} unidad${totalUnits!==1?'es':''}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${totalRev?fmtA(totalProfit):'—'}</div><div class="sc-s">neto de comisión, envío y costo</div></div>
+    <div class="sc accent-u"><div class="sc-l">Margen real promedio</div><div class="sc-v u">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
+    <div class="sc accent-d"><div class="sc-l">Ticket promedio</div><div class="sc-v">${sales.length?fmtA(totalRev/sales.length):'—'}</div><div class="sc-s">por venta</div></div>
+  </div>
+
+  <div class="sh mb16">Ranking de rentabilidad por producto</div>
+  ${ranking.length ? `<div class="card mb24" style="padding:0;overflow:hidden">
+    ${ranking.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
+      <div><div style="font-weight:600;font-size:14px">${i===0?'🏆 ':''}${esc(r.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${r.units} unidad${r.units!==1?'es':''} vendida${r.units!==1?'s':''} · margen real ${r.marginPct.toFixed(1)}%</div></div>
+      <div style="text-align:right"><div style="font-weight:700;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div><div style="font-size:11px;color:var(--di)">de ${fmtA(r.revenue)}</div></div>
+    </div>`).join('')}
+  </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
+
+  <div class="sh mb16">Historial de ventas</div>
+  ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
+    ${sales.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b2)">
+      <div><div style="font-weight:600;font-size:14px">${esc(s.name)} ${s.qty>1?`× ${s.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtD(s.date)} · venta ${fmtA(s.priceARS)} c/u · costo ${fmtA(s.costARS||0)} c/u</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
+    </div>`).join('')}
+  </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
+</div>`;
+}
+
+/* ═══════════════════════════════════════════
+   VIAJE DE COMPRAS — checklist offline con presupuesto
+═══════════════════════════════════════════ */
+function getTrip(){
+  let t = DB.get('trip', null);
+  if (!t) { t = {budgetUSD:0, tce: lastTCE()||0, items:[]}; DB.set('trip', t); }
+  if (t.tce === undefined) t.tce = lastTCE()||0;
+  return t;
+}
+function saveTripSettings(){
+  const t = getTrip();
+  t.budgetUSD = parseFloat(document.getElementById('trip-budget').value)||0;
+  t.tce = parseFloat(document.getElementById('trip-tce').value)||0;
+  DB.set('trip', t);
+  toast('Presupuesto guardado');
+  render();
+}
+function addTripItem(){
+  const name = document.getElementById('trip-item-name').value.trim();
+  const qty = parseInt(document.getElementById('trip-item-qty').value)||1;
+  const price = parseFloat(document.getElementById('trip-item-price').value)||0;
+  if(!name){ toast('Ingresá el nombre del producto.',false); return; }
+  const t = getTrip();
+  t.items.push({id:uid(), name, qty, priceUSD:price, checked:false});
+  DB.set('trip', t);
+  document.getElementById('trip-item-name').value='';
+  document.getElementById('trip-item-qty').value='1';
+  document.getElementById('trip-item-price').value='';
+  render();
+}
+function toggleTripItem(id){
+  const t = getTrip();
+  const it = t.items.find(x=>x.id===id);
+  if(it){ it.checked = !it.checked; DB.set('trip', t); render(); }
+}
+function delTripItem(id){
+  const t = getTrip();
+  t.items = t.items.filter(x=>x.id!==id);
+  DB.set('trip', t);
+  render();
+}
+function clearTrip(){
+  confirm2('¿Vaciar la lista del viaje de compras? Se borrarán todos los productos cargados.',()=>{
+    DB.set('trip', {budgetUSD:0, tce: lastTCE()||0, items:[]});
+    render();
+  },'Vaciar lista','cm-ok');
+}
+function pgViaje(){
+  const t = getTrip();
+  const totalUSD = t.items.reduce((a,i)=>a+i.priceUSD*i.qty,0);
+  const checkedUSD = t.items.filter(i=>i.checked).reduce((a,i)=>a+i.priceUSD*i.qty,0);
+  const totalARS = totalUSD * (t.tce||0);
+  const pctBudget = t.budgetUSD>0 ? Math.min(100, totalUSD/t.budgetUSD*100) : 0;
+  const overBudget = t.budgetUSD>0 && totalUSD > t.budgetUSD;
+
+  return `<div class="pg">
+  <div class="fb mb16"><div class="sh" style="margin:0;flex:1">Viaje de compras</div>${t.items.length?`<button class="btn-d btn-sm" onclick="clearTrip()">🗑 Vaciar lista</button>`:''}</div>
+  <div class="info mb20" style="font-size:12px">Armá tu lista de compra antes de viajar: cargá presupuesto, productos estimados y tipo de cambio. Funciona 100% offline — todo se guarda en el dispositivo.</div>
+
+  <div class="card mb20">
+    <div class="fg-w">
+      <div style="flex:1;min-width:160px"><label class="fl">Presupuesto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="trip-budget" min="0" step="10" value="${t.budgetUSD||''}"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Tipo de cambio estimado (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="trip-tce" min="0" step="10" value="${t.tce||''}"></div></div>
+      <button class="btn-p" onclick="saveTripSettings()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">≈ ${fmtA(totalARS)}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?'⚠ excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
+    <div class="sc accent-u"><div class="sc-l">Ya comprado (marcado)</div><div class="sc-v u">${fmtU(checkedUSD)}</div><div class="sc-s">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div></div>
+    <div class="sc accent-d"><div class="sc-l">Tipo de cambio</div><div class="sc-v">${t.tce?fmtA(t.tce):'—'}</div><div class="sc-s">usado para la conversión</div></div>
+  </div>
+
+  ${t.budgetUSD>0?`
+  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+    <span style="font-weight:600">${fmtU(totalUSD)} <span style="color:var(--di);font-weight:400">de ${fmtU(t.budgetUSD)}</span></span>
+    <span style="color:${overBudget?'var(--re)':'var(--ch)'};font-weight:700">${pctBudget.toFixed(0)}%</span>
+  </div>
+  <div class="card mb20" style="height:10px;padding:0;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden">
+    <div style="height:100%;border-radius:6px;width:${pctBudget}%;background:linear-gradient(90deg,var(--us),${overBudget?'var(--re)':'var(--ch)'});transition:width .4s"></div>
+  </div>
+  `:''}
+
+  <div class="sh mb16">Agregar producto a la lista</div>
+  <div class="card mb24">
+    <div class="fg-w">
+      <div style="flex:2;min-width:180px"><label class="fl">Producto</label><div class="iw"><input type="text" id="trip-item-name" placeholder="Ej: Auriculares bluetooth"></div></div>
+      <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="trip-item-qty" value="1" min="1" step="1"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Precio estimado (USD, c/u)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="trip-item-price" min="0" step="0.5" placeholder="0"></div></div>
+    </div>
+    <div class="fe mt16"><button class="btn-p" onclick="addTripItem()">+ Agregar a la lista</button></div>
+  </div>
+
+  <div class="sh mb16">Lista de compra (${t.items.length})</div>
+  ${t.items.length ? `<div class="card" style="padding:0;overflow:hidden">
+    ${t.items.map(i=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--b2);${i.checked?'opacity:.5':''}">
+      <input type="checkbox" ${i.checked?'checked':''} onchange="toggleTripItem('${i.id}')" style="width:18px;height:18px;accent-color:var(--ch);cursor:pointer">
+      <div style="flex:1"><div style="font-weight:600;font-size:14px;${i.checked?'text-decoration:line-through':''}">${esc(i.name)} ${i.qty>1?`× ${i.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtU(i.priceUSD)} c/u · total ${fmtU(i.priceUSD*i.qty)} ${t.tce?'· ≈ '+fmtA(i.priceUSD*i.qty*t.tce):''}</div></div>
+      <button class="btn-rm" onclick="delTripItem('${i.id}')">✕</button>
+    </div>`).join('')}
+  </div>` : emptyState(EMPTY_ICONS.catalog,'Lista vacía','Agregá los productos que\npensás comprar en tu próximo viaje.')}
 </div>`;
 }
 function toggleHi(id){const e=document.getElementById(id);if(e)e.classList.toggle('open');}
@@ -3390,6 +3727,69 @@ async function shareViaWA(phone, text, pdfDoc, filename){
   }
   const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
+}
+
+function generateReport(period){
+  const now = new Date();
+  const since = new Date(now);
+  let label;
+  if (period==='week') { since.setDate(now.getDate()-7); label='Reporte semanal'; }
+  else { since.setDate(now.getDate()-30); label='Reporte mensual'; }
+  const ps = DB.get('purchases',[]).filter(p=>new Date(p.date) >= since);
+  const sales = DB.get('sales',[]).filter(s=>new Date(s.date) >= since);
+  const emp = DB.get('empresa',{});
+
+  const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
+  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+
+  const map={};
+  sales.forEach(s=>{
+    const key=(s.code||s.name||'').toLowerCase();
+    if(!map[key]) map[key]={name:s.name,profit:0,units:0};
+    map[key].profit += saleProfit(s);
+    map[key].units += (s.qty||1);
+  });
+  const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
+
+  const fechaStr = now.toLocaleDateString('es-AR');
+  const desdeStr = since.toLocaleDateString('es-AR');
+
+  let doc = null;
+  if (!window.__jspdfOffline && typeof window.jspdf !== 'undefined') {
+    const { jsPDF } = window.jspdf;
+    doc = new jsPDF();
+    let y = 20;
+    doc.setFontSize(16); doc.setFont(undefined,'bold');
+    doc.text(label, 14, y); y+=8;
+    doc.setFontSize(10); doc.setFont(undefined,'normal');
+    if (emp.razonSocial) { doc.text(emp.razonSocial, 14, y); y+=6; }
+    doc.text(`Período: ${desdeStr} — ${fechaStr}`, 14, y); y+=9;
+    doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
+    doc.setFont(undefined,'bold'); doc.text('Resumen', 14, y); y+=7;
+    doc.setFont(undefined,'normal');
+    [
+      `Compras realizadas: ${ps.length}  ·  Total invertido: ${fmtA(totCompras)}`,
+      `Ventas registradas: ${sales.length}  ·  Unidades vendidas: ${unidades}`,
+      `Ingresos por ventas: ${fmtA(totVentas)}`,
+      `Ganancia real (neta): ${fmtA(totGanancia)}`,
+    ].forEach(l=>{ doc.text(l, 14, y); y+=6; });
+    y += 4; doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
+    doc.setFont(undefined,'bold'); doc.text('Top 5 productos más rentables', 14, y); y+=7;
+    doc.setFont(undefined,'normal');
+    if (top.length) top.forEach((t,i)=>{ doc.text(`${i+1}. ${t.name} — ${fmtA(t.profit)} (${t.units} unid.)`, 14, y); y+=6; });
+    else { doc.text('Sin ventas registradas en el período.', 14, y); y+=6; }
+  }
+
+  const text = `📊 *${label}* (${desdeStr} – ${fechaStr})\n\n`+
+    `🛒 Compras: ${ps.length} · Invertido: ${fmtA(totCompras)}\n`+
+    `💰 Ventas: ${sales.length} · Unidades: ${unidades} · Ingresos: ${fmtA(totVentas)}\n`+
+    `📈 Ganancia real: ${fmtA(totGanancia)}\n`+
+    (top.length ? `\n🏆 Top productos:\n`+top.map((t,i)=>`${i+1}. ${t.name} — ${fmtA(t.profit)}`).join('\n') : '');
+
+  const filename = `${period==='week'?'reporte-semanal':'reporte-mensual'}-${now.toISOString().slice(0,10)}.pdf`;
+  shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, doc, filename);
 }
 
 function shareCotWA(id){
