@@ -544,6 +544,10 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .ipre,.isuf{padding:0 11px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--di);background:var(--bg4);height:100%;display:flex;align-items:center;white-space:nowrap}
 .ipre{border-right:1px solid var(--b2)}.isuf{border-left:1px solid var(--b2)}
 .iw input[type=number],.iw input[type=text]{flex:1;background:transparent;border:none;outline:none;padding:0 12px;height:100%;color:var(--ch);font-family:'Barlow',sans-serif;font-size:15px;font-weight:500;width:0}
+.cmp-margin-inp::-webkit-outer-spin-button,.cmp-margin-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.cmp-margin-inp{border-radius:4px;transition:background .15s}
+.cmp-margin-inp:hover{background:rgba(255,255,255,.04)}
+.cmp-margin-inp:focus{background:rgba(45,212,191,.08);box-shadow:0 0 0 2px rgba(45,212,191,.25)}
 .iw input::-webkit-inner-spin-button{opacity:0}
 
 /* MODAL */
@@ -2169,9 +2173,9 @@ function pgComp() {
       <div><div class="sc-l">Tu precio en ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;line-height:42px" id="cmp-precio-${i}">${fmtA(precio)}</div></div>
       <div>
         <div class="sc-l">Margen aplicado</div>
-        <div style="display:flex;align-items:baseline;gap:2px;height:42px">
-          <input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;background:transparent;border:none;border-bottom:1px solid var(--b3);outline:none;color:var(--ch);width:54px;padding:0">
-          <span style="color:var(--di);font-size:14px">%</span>
+        <div style="display:flex;align-items:center;height:42px">
+          <input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" class="cmp-margin-inp" style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;line-height:1;background:transparent;border:none;outline:none;color:var(--ch);width:46px;padding:0;height:24px;-moz-appearance:textfield">
+          <span style="color:var(--di);font-size:14px;margin-left:1px">%</span>
         </div>
       </div>
     </div>
