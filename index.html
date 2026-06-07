@@ -369,6 +369,7 @@ body{display:flex;flex-direction:column}
 
 /* SECTION HEADING */
 .sh{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.06),transparent);min-width:24px}
 .sh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent)}
 
 /* CARD */
@@ -650,6 +651,21 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 
 /* mc / hi: hover más expresivo */
 .mc:hover,.hi-hdr:hover{background:rgba(255,255,255,.025)}
+.hi{transition:border-color .2s,box-shadow .2s}
+.hi:hover{border-color:rgba(255,255,255,.1)}
+.hi-hdr{position:relative}
+.hi-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,rgba(226,201,126,.5),rgba(45,212,191,.3));opacity:0;transition:opacity .2s}
+.hi-hdr:hover::before{opacity:1}
+
+/* Selects e inputs: tipografía y contraste consistentes */
+select{cursor:pointer}
+.iw select,.iw input{font-family:'Rajdhani',sans-serif;font-weight:600}
+
+/* Badges con leve glow */
+.badge{box-shadow:0 0 0 1px rgba(255,255,255,.04) inset}
+
+/* Empty states: icono con halo sutil */
+.empty-icon{filter:drop-shadow(0 0 12px rgba(226,201,126,.08))}
 
 /* Scrollbars finos y discretos en escritorio */
 @media(min-width:769px){
@@ -926,7 +942,7 @@ function monthlyGoalCard(ps) {
   return `<div class="card mb20">
     <div class="fb mb12" style="flex-wrap:wrap;gap:8px">
       <div>
-        <div class="sh" style="margin-bottom:2px">Meta de compras del mes</div>
+        <div class="sh" style="margin-bottom:2px">🎯 Meta de compras del mes</div>
         <div style="font-size:12px;color:var(--di);text-transform:capitalize">${monthName}</div>
       </div>
       <div class="iw" style="max-width:180px">
@@ -978,7 +994,7 @@ function pgProveedoresRanking() {
   if (!rk.length) return '';
   const medals=['🥇','🥈','🥉'];
   return `<div class="mb20">
-    <div class="sh mb16">Ranking de proveedores</div>
+    <div class="sh mb16">🏆 Ranking de proveedores</div>
     <div style="display:flex;flex-direction:column;gap:8px">
     ${rk.map((r,i)=>`<div class="card" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -1094,7 +1110,7 @@ function pgDash() {
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Resumen general</div><button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">📊 Resumen general</div><button class="btn-g btn-sm" onclick="openSimulador()">🧪 ¿Qué pasaría si...?</button></div>
   <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
     <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador "¿Qué pasaría si...?"<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
     <div class="mbody">
@@ -1140,7 +1156,7 @@ function pgDash() {
       <div class="card chart-card" style="padding:16px"><div id="ch-tce" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
     <div>
-      <div class="sh mb16">Ganancia proyectada</div>
+      <div class="sh mb16">💰 Ganancia proyectada</div>
       <div class="card chart-card" style="padding:16px"><div id="ch-gan" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
   </div>
@@ -1277,7 +1293,7 @@ function pgCompra() {
   const modeTxt   = conf.mode==='ars'?'PESOS ARS':conf.mode==='pesos'?'PESOS+USD':'USDT';
   return `<div class="pg">
   ${hasDraft?`<div class="draft-banner fade-up"><p>📋 <strong>Borrador recuperado</strong> · ${PP.length} producto${PP.length>1?'s':''} guardado${PP.length>1?'s':''}. ¿Continuás donde dejaste?</p><button class="btn-d" onclick="discardDraft()">✕ Descartar</button></div>`:''}
-  <div class="sh mb16">Nueva compra</div>
+  <div class="sh mb16">🛒 Nueva compra</div>
   ${confs.length>0?`<div class="fb mb16"><div class="sh" style="margin:0;flex:1">Configuración activa</div><div class="iw" style="width:240px;margin-left:16px"><select id="conf-sel" onchange="switchConf(this.value)">${confs.map(c=>`<option value="${c.id}" ${c.id===s.activeConfig?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>`:'<div class="info mb16">Sin proveedores. <span class="link" onclick="navigate(\'config\')">Crear una →</span></div>'}
   <div class="card mb16" style="padding:12px 18px">
     <div style="display:flex;gap:0;flex-wrap:wrap;align-items:center">
@@ -1318,7 +1334,7 @@ function pgCompra() {
   </div>
   <button class="btn-go mt20" onclick="calcular()">Calcular costos y precios →</button>
   <div id="r-wrap" style="display:none;margin-top:24px">
-    <div class="sh mb16">Resumen de la compra</div>
+    <div class="sh mb16">📋 Resumen de la compra</div>
     <div class="tce-strip" id="tce-tiles"></div>
     <div class="conv" id="conv-row"></div>
 
@@ -1334,7 +1350,7 @@ function pgCompra() {
       <div id="flete-dist-info" style="display:none;margin-top:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--us)"></div>
     </div>
 
-    <div class="sh mb16">Detalle de costos por producto</div>
+    <div class="sh mb16">🧮 Detalle de costos por producto</div>
     <div class="rtw">
       <table><thead><tr>
         <th>Producto</th><th>Código</th><th class="tc2">Cant.</th>
@@ -1901,7 +1917,7 @@ function histCard(p, idx, badges=[]) {
 }
 function pgHist() {
   const rawAll=DB.get('purchases',[]).slice().reverse();
-  if (!rawAll.length) return `<div class="pg"><div class="sh mb16">Historial de compras</div>${emptyState(EMPTY_ICONS.purchases,'Sin compras','Guardá tu primera compra\npara verla aquí.',`<button class="btn-go" style="margin-top:4px;height:44px;padding:0 32px;width:auto" onclick="navigate('compra')">Hacer primera compra</button>`)}</div>`;
+  if (!rawAll.length) return `<div class="pg"><div class="sh mb16">📜 Historial de compras</div>${emptyState(EMPTY_ICONS.purchases,'Sin compras','Guardá tu primera compra\npara verla aquí.',`<button class="btn-go" style="margin-top:4px;height:44px;padding:0 32px;width:auto" onclick="navigate('compra')">Hacer primera compra</button>`)}</div>`;
   // Sort
   const all = [...rawAll].sort((a,b)=>{
     if (histSort==='ars') return (b.r?.ars||0)-(a.r?.ars||0);
@@ -1946,7 +1962,7 @@ function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)retu
 function pgCat() {
   const cat=DB.get('catalog',[]);
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">📦 Catálogo de productos</div><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -2074,7 +2090,7 @@ function pgStats() {
   const tce=ps.length?ps.reduce((s,p)=>s+(p.r?.TCE||0),0)/ps.length:0;
   const usdt=ps.reduce((s,p)=>s+(p.r?.up||0),0);
   return `<div class="pg">
-  <div class="sh mb24">Estadísticas</div>
+  <div class="sh mb24">📈 Estadísticas</div>
   <div class="g4 mb24">
     <div class="sc"><div class="sc-l">Total invertido</div><div class="sc-v g">${fmtA(tot)}</div><div class="sc-s">${ps.length} compras</div></div>
     <div class="sc"><div class="sc-l">Ganancia proyectada</div><div class="sc-v y">${fmtA(gan)}</div><div class="sc-s">según márgenes</div></div>
@@ -2301,7 +2317,7 @@ function pgML() {
 
   <!-- ── PUBLICACIONES GUARDADAS ── -->
   ${pubs.length?`<div class="mt24">
-    <div class="sh mb16">Publicaciones guardadas</div>
+    <div class="sh mb16">🏷 Publicaciones guardadas</div>
     ${pubs.slice().reverse().map((pub,i)=>`<div class="hi">
       <div class="hi-hdr" onclick="toggleHi('mlp${i}')">
         <div>
@@ -2571,7 +2587,7 @@ function pgProveedores() {
   ${pgProveedoresRanking()}
   <div class="fb mb20">
     <div>
-      <div class="sh" style="margin-bottom:4px">Proveedores</div>
+      <div class="sh" style="margin-bottom:4px">🏪 Proveedores</div>
       <div style="font-size:13px;color:var(--di)">Configurá tus proveedores: tipo de cambio, flete y bonificaciones.</div>
     </div>
     <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap">+ Nuevo proveedor</button>
@@ -2648,7 +2664,7 @@ function pgConfig() {
   const emp=DB.get('empresa',{});
   return `<div class="pg">
 
-  <div class="sh mb16">Mercado Libre</div>
+  <div class="sh mb16">🏷 Mercado Libre</div>
   <div class="card mb24">
     <div class="hint mb16" style="color:var(--si)">Estos valores se usan como default en Publicar ML y en todas las calculadoras. Son independientes del proveedor.</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
@@ -2664,7 +2680,7 @@ function pgConfig() {
     </div>
   </div>
 
-  <div class="sh mb16">Mi empresa</div>
+  <div class="sh mb16">🏢 Mi empresa</div>
   <div class="card mb24">
     <div class="cfg-g2">
       <div><label class="fl">Razón social</label><div class="iw"><input type="text" id="emp-rs" value="${esc(emp.razonSocial||'')}"></div></div>
@@ -2677,7 +2693,7 @@ function pgConfig() {
     <div class="fe mt16"><button class="btn-p" onclick="saveEmpresa()">Guardar datos empresa</button></div>
   </div>
 
-  <div class="sh mb16">Alertas</div>
+  <div class="sh mb16">🔔 Alertas</div>
   <div class="card mb24">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="flex:1"><label class="fl">Margen mínimo para alertas</label><div class="iw" style="max-width:200px"><input type="number" id="alert-m" value="${s.marginAlert||15}" min="0" max="100"><span class="isuf">%</span></div><div class="hint">Si publicás con menos margen la calculadora te avisa.</div></div>
@@ -2685,7 +2701,7 @@ function pgConfig() {
     </div>
   </div>
 
-  <div class="sh mb16">Backup y sincronización</div>
+  <div class="sh mb16">☁ Backup y sincronización</div>
   <div class="card mb16">
     <div class="info mb16" style="font-size:12px"><span style="color:var(--ch)">Antes de actualizar la app:</span> exportá el backup, actualizá, importá.<br><span style="color:var(--ch)">iPhone ↔ Notebook:</span> exportá en un dispositivo → AirDrop/iCloud → importá en el otro.</div>
     <div class="fg-w">
@@ -2694,10 +2710,10 @@ function pgConfig() {
     </div>
   </div>
 
-  <div class="sh mb16">Excel</div>
+  <div class="sh mb16">📊 Excel</div>
   <div class="card mb16"><button class="btn-g" onclick="exportAllXLSX()" style="height:42px">⬇ Exportar todo a Excel</button></div>
 
-  <div class="sh mb16">Zona de peligro</div>
+  <div class="sh mb16">⚠ Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
 </div>`;
@@ -2976,7 +2992,7 @@ function pgCotizaciones() {
   const cots  = DB.get('cotizaciones',[]).slice().reverse();
 
   return `<div class="pg">
-  <div class="sh mb16">Nueva solicitud de cotización</div>
+  <div class="sh mb16">📨 Nueva solicitud de cotización</div>
 
   <div class="card mb16">
     <div class="fb">
@@ -3012,7 +3028,7 @@ function pgCotizaciones() {
   </div>
 
   ${cots.length>0?`<div>
-  <div class="sh mb16">Solicitudes generadas</div>
+  <div class="sh mb16">📋 Solicitudes generadas</div>
   ${cots.map((o,i)=>`<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('cot${i}')">
       <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${o.status==='cotizada'?'<span style="color:var(--gr)">Cotizada</span>':'<span style="color:var(--ye)">Pendiente</span>'}</div></div>
@@ -3225,7 +3241,7 @@ function pgOrden() {
   const ocs   = DB.get('ordenes',[]).slice().reverse();
 
   return `<div class="pg">
-  <div class="sh mb16">Nueva orden de compra</div>
+  <div class="sh mb16">📝 Nueva orden de compra</div>
 
   <!-- Proveedor -->
   <div class="card mb16">
