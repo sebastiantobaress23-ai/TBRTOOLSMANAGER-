@@ -2164,12 +2164,15 @@ function pgComp() {
     const precio=pub?pub.precio:cu*(1+margin/100)/(1-com/100)+env;
     return `<div class="card mb12">
     <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
-    <div class="fg-w mb12">
-      <div><div class="sc-l">Tu costo real</div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--si)">${fmtA(cu)}</div></div>
-      <div><div class="sc-l">Tu precio en ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700" id="cmp-precio-${i}">${fmtA(precio)}</div></div>
+    <div class="fg-w mb12" style="gap:24px">
+      <div><div class="sc-l">Tu costo real</div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--si);line-height:42px">${fmtA(cu)}</div></div>
+      <div><div class="sc-l">Tu precio en ML</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;line-height:42px" id="cmp-precio-${i}">${fmtA(precio)}</div></div>
       <div>
         <div class="sc-l">Margen aplicado</div>
-        <div class="iw" style="width:100px"><input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700"><span class="isuf" style="padding:0 10px;color:var(--di);font-size:13px">%</span></div>
+        <div style="display:flex;align-items:baseline;gap:2px;height:42px">
+          <input type="number" id="cmp-margin-${i}" value="${margin}" min="0" max="999" step="1" oninput="cmpRecalc(${i},${cu},${env},${com})" style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;background:transparent;border:none;border-bottom:1px solid var(--b3);outline:none;color:var(--ch);width:54px;padding:0">
+          <span style="color:var(--di);font-size:14px">%</span>
+        </div>
       </div>
     </div>
     <div class="fg-w" style="align-items:flex-end">
