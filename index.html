@@ -352,9 +352,21 @@ body{display:flex;flex-direction:column}
 
 /* HEADER */
 .hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(255,255,255,.05);padding:0 32px;height:68px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
-.hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05)}
+.hdr{isolation:isolate}
+.hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
-.hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.2)}
+.hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .3s,letter-spacing .3s}
+@media(min-width:721px){
+  .hdr img{height:60px}
+  .hdr-txt{font-size:14px;letter-spacing:6px}
+}
+@media(hover:hover){
+  .hdr:hover .hdr-txt{color:rgba(226,201,126,.55);letter-spacing:6px}
+  .hdr:hover img{filter:drop-shadow(0 0 20px rgba(226,201,126,.3)) brightness(1.1)}
+}
+@media(max-width:720px){
+  .hdr img{height:42px;mix-blend-mode:normal;filter:none;background:transparent}
+}
 
 /* NAV */
 .nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5)}
@@ -536,7 +548,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 /* CONFIG */
 .cfg-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .cfg-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.fl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di);margin-bottom:6px}
+.fl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di);margin-bottom:6px}
 .hint{font-size:11px;color:var(--mu);margin-top:4px;line-height:1.5}
 .iw{display:flex;align-items:center;height:42px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);overflow:hidden;transition:border-color .15s;box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
 .iw:focus-within{border-color:var(--b3)}
@@ -702,6 +714,19 @@ select{cursor:pointer}
 /* Transición suave al cambiar de página */
 .pg{animation:pgfade .28s cubic-bezier(.22,.61,.36,1)}
 @keyframes pgfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Tarjetas: aparición escalonada suave al cambiar de página */
+.pg > .card,.pg > .mb16 > .card,.pg > .mb24 > .card{animation:cardIn .32s cubic-bezier(.22,.61,.36,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pg > .card:nth-of-type(1){animation-delay:.02s}
+.pg > .card:nth-of-type(2){animation-delay:.06s}
+.pg > .card:nth-of-type(3){animation-delay:.10s}
+.pg > .card:nth-of-type(4){animation-delay:.14s}
+.pg > .card:nth-of-type(5){animation-delay:.18s}
+
+/* Inputs: leve elevación al enfocar */
+.iw:focus-within{transform:translateY(-1px)}
+.iw{transition:border-color .18s,box-shadow .18s,background .18s,transform .18s}
 
 </style>
 </head>
