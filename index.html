@@ -3875,134 +3875,202 @@ function ensureJsPDF(){
   });
   return _jspdfLoading;
 }
-function buildDocPDF(opts){
-  if (window.__jspdfOffline || typeof window.jspdf==='undefined') return null;
+let _h2cLoading = null;
+function ensureHtml2Canvas(){
+  if (typeof window.html2canvas !== 'undefined') return Promise.resolve(true);
+  if (_h2cLoading) return _h2cLoading;
+  _h2cLoading = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+    setTimeout(()=>resolve(typeof window.html2canvas !== 'undefined'), 7000);
+  });
+  return _h2cLoading;
+}
+
+const DOC_CSS = `
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111}
+.doc{background:#fff}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
+.brand p{font-size:10px;color:#666;margin:1px 0}
+.doc-badge{text-align:right}
+.doc-badge .oc-label,.oc-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.doc-badge .oc-num,.oc-num{font-size:24px;font-weight:900;color:#111;letter-spacing:1px}
+.doc-badge .oc-date,.oc-date{font-size:11px;color:#666;margin-top:2px}
+.doc-meta{display:flex;gap:0;border-bottom:1px solid #ddd;background:#fafafa}
+.meta-item{flex:1;padding:8px 16px;border-right:1px solid #ddd}
+.meta-item:last-child{border-right:none}
+.meta-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:2px}
+.meta-val{font-size:12px;font-weight:600;color:#111}
+table{width:100%;border-collapse:collapse}
+thead th{background:#111;color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+tbody tr:nth-child(even){background:#f9f9f9}
+tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+.num{color:#999;font-size:11px;width:28px}
+.ctr{text-align:center}
+.cright{text-align:right;font-family:monospace}
+.note{padding:14px 20px;font-size:11px;color:#666;border-top:1px solid #ddd;background:#fafafa}
+.doc-totals{padding:10px 16px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd}
+.totals-box{width:240px}
+.tot-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#555;border-bottom:1px solid #eee}
+.tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111}
+.doc-footer{padding:12px 20px;display:flex;justify-content:space-between;border-top:1px solid #ddd}
+.firma{text-align:center;width:180px}
+.firma hr{border:none;border-top:1px solid #333;margin-bottom:6px}
+.firma p{font-size:10px;color:#666}
+.firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
+.foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+`;
+
+function ocDocBody(o){
+  const emp = DB.get('empresa',{});
+  const sym = o.currency==='ARS' ? '$' : 'US$';
+  const total = o.currency==='ARS' ? (o.totalARS||0) : (o.totalUSD||0);
+  const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
+  const items = (o.items||[]).map((p,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(p.n||'—')}</td>
+    <td>${esc(p.c||'—')}</td>
+    <td class="ctr">${p.q||1}</td>
+    <td class="cright">${sym} ${(p.p||0).toFixed(2)}</td>
+    <td class="cright">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td>
+  </tr>`).join('');
+  const html = `<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Orden de Compra</div>
+      <div class="oc-num">${o.nro}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+    ${o.cotizacionRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(o.cotizacionRef)}</div></div>`:''}
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th><th class="cright">P. Unit.</th><th class="cright">Subtotal</th>
+    </tr></thead>
+    <tbody>${items}</tbody>
+  </table>
+  <div class="doc-totals">
+    <div class="totals-box">
+      <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
+    </div>
+  </div>
+  <div class="doc-footer">
+    <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
+    <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}</div>
+</div>`;
+  return {css: DOC_CSS, html};
+}
+
+function cotDocBody(o){
+  const emp = DB.get('empresa',{});
+  const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
+  const items = (o.items||[]).map((p,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(p.n||'—')}</td>
+    <td>${esc(p.c||'—')}</td>
+    <td class="ctr">${p.q||1}</td>
+    <td class="cright">______________</td>
+  </tr>`).join('');
+  const html = `<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Solicitud de Cotización</div>
+      <div class="oc-num">${o.nro}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th><th class="cright">Precio cotizado (a completar)</th>
+    </tr></thead>
+    <tbody>${items}</tbody>
+  </table>
+  <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
+  <div class="doc-footer">
+    <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
+    <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}</div>
+</div>`;
+  return {css: DOC_CSS, html};
+}
+
+async function renderBrandedPDF(css, html, nro){
+  if (window.__jspdfOffline || typeof window.jspdf==='undefined' || typeof window.html2canvas==='undefined') return null;
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:900px;background:#fff';
+  host.innerHTML = `<style>${css}</style>${html}`;
+  document.body.appendChild(host);
+  let canvas;
+  try {
+    canvas = await window.html2canvas(host, {scale:2, backgroundColor:'#ffffff', useCORS:true});
+  } catch { document.body.removeChild(host); return null; }
+  document.body.removeChild(host);
+
+  const doc = new jsPDF({unit:'pt', format:'a4'});
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const ML = 14, MR = 14, CW = pageW - ML - MR;
-  const emp = opts.empresa || {};
-  let y = 20;
+  const margin = 20;
+  const usableW = pageW - margin*2;
+  const usableH = pageH - margin*2;
+  const sliceHeightPx = Math.floor(usableH * (canvas.width / usableW));
 
-  const colX = [];
-  { let acc = ML; opts.cols.forEach(c=>{ colX.push(acc); acc += c.w*CW; }); }
-
-  function cellPos(ci){
-    const c = opts.cols[ci], align = c.align||'left', x = colX[ci], w = c.w*CW;
-    if (align==='right') return {x:x+w-3, align:'right'};
-    if (align==='center') return {x:x+w/2, align:'center'};
-    return {x:x+3, align:'left'};
-  }
-
-  function drawTableHead(){
-    doc.setFillColor(17,17,17);
-    doc.rect(ML, y, CW, 8, 'F');
-    doc.setFont(undefined,'bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
-    opts.cols.forEach((c,i)=>{ const p = cellPos(i); doc.text(c.label.toUpperCase(), p.x, y+5.3, {align:p.align}); });
-    y += 8;
-    doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(40,40,40);
-  }
-
-  function drawHeader(){
-    y = 20;
-    doc.setFont(undefined,'bold'); doc.setFontSize(15); doc.setTextColor(17,17,17);
-    doc.text(emp.razonSocial || 'TBR TOOLS', ML, y);
-    doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(130,130,130);
-    let ly = y + 5;
-    [
-      emp.cuit ? `CUIT: ${emp.cuit}` : '',
-      emp.domicilio || '',
-      [emp.condIVA, emp.tel?`Tel: ${emp.tel}`:'', emp.email].filter(Boolean).join(' · ')
-    ].filter(Boolean).forEach(l=>{ doc.text(l, ML, ly); ly += 4; });
-
-    doc.setFont(undefined,'bold'); doc.setFontSize(7.5); doc.setTextColor(150,150,150);
-    doc.text(opts.title.toUpperCase(), pageW-MR, y-2, {align:'right'});
-    doc.setFontSize(18); doc.setTextColor(17,17,17);
-    doc.text(String(opts.nro), pageW-MR, y+5, {align:'right'});
-    doc.setFont(undefined,'normal'); doc.setFontSize(9); doc.setTextColor(130,130,130);
-    doc.text(opts.fecha, pageW-MR, y+10, {align:'right'});
-
-    y = Math.max(ly, y+13) + 4;
-    doc.setDrawColor(17,17,17); doc.setLineWidth(0.6);
-    doc.line(ML, y, pageW-MR, y);
-    y += 8;
-
-    const metaItems = [['Proveedor', opts.proveedor||'—'], ['Fecha', opts.fecha]];
-    if (opts.articulos) metaItems.push(['Artículos', opts.articulos]);
-    if (opts.cotizacionRef) metaItems.push(['Ref. cotización', opts.cotizacionRef]);
-    const metaH = 14, metaW = CW/metaItems.length;
-    doc.setFillColor(250,250,250); doc.setDrawColor(225,225,225); doc.setLineWidth(0.25);
-    doc.rect(ML, y, CW, metaH, 'FD');
-    metaItems.forEach((m,i)=>{
-      const x = ML + i*metaW;
-      if (i>0) doc.line(x, y, x, y+metaH);
-      doc.setFont(undefined,'bold'); doc.setFontSize(6.5); doc.setTextColor(160,160,160);
-      doc.text(String(m[0]).toUpperCase(), x+4, y+5.5);
-      doc.setFont(undefined,'bold'); doc.setFontSize(9.5); doc.setTextColor(17,17,17);
-      doc.text(doc.splitTextToSize(String(m[1]), metaW-8)[0]||'', x+4, y+11);
-    });
-    y += metaH + 8;
-    drawTableHead();
-  }
-
-  drawHeader();
-
-  opts.rows.forEach((r,ri)=>{
-    if (y > pageH - 55) { doc.addPage(); drawHeader(); }
-    const rowH = 7;
-    if (ri%2===1){ doc.setFillColor(249,249,249); doc.rect(ML, y, CW, rowH, 'F'); }
-    doc.setDrawColor(238,238,238); doc.setLineWidth(0.2);
-    doc.line(ML, y+rowH, ML+CW, y+rowH);
-    doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(40,40,40);
-    r.forEach((cell,ci)=>{
-      const p = cellPos(ci), w = opts.cols[ci].w*CW;
-      doc.text(doc.splitTextToSize(String(cell), w-6)[0]||'', p.x, y+rowH-2.3, {align:p.align});
-    });
-    y += rowH;
-  });
-
-  if (opts.totalLabel) {
-    y += 6;
-    if (y > pageH - 35) { doc.addPage(); drawHeader(); y += 4; }
-    const boxW = 75, boxX = pageW - MR - boxW;
-    doc.setDrawColor(17,17,17); doc.setLineWidth(0.6);
-    doc.line(boxX, y, boxX+boxW, y);
-    y += 6;
-    doc.setFont(undefined,'bold'); doc.setFontSize(11); doc.setTextColor(17,17,17);
-    doc.text(opts.totalLabel, boxX, y);
-    doc.text(opts.totalValue||'', boxX+boxW, y, {align:'right'});
-  }
-
-  if (opts.note) {
-    y += 10;
-    doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(90,90,90);
-    const lines = doc.splitTextToSize(opts.note, CW);
-    doc.text(lines, ML, y);
-    y += lines.length*4.2;
-  }
-
-  if (opts.signatures) {
-    y = Math.max(y+18, pageH-45);
-    const sigW = 65;
-    [[ML, emp.razonSocial||'Comprador', 'Firma · Comprador'],
-     [pageW-MR-sigW, opts.proveedor||'Proveedor', 'Firma · Proveedor']].forEach(([x,name,label])=>{
-      doc.setDrawColor(60,60,60); doc.setLineWidth(0.3);
-      doc.line(x, y, x+sigW, y);
-      doc.setFont(undefined,'bold'); doc.setFontSize(8); doc.setTextColor(60,60,60);
-      doc.text(String(name), x+sigW/2, y+4.5, {align:'center'});
-      doc.setFont(undefined,'normal'); doc.setFontSize(7); doc.setTextColor(140,140,140);
-      doc.text(label, x+sigW/2, y+8.5, {align:'center'});
-    });
+  let renderedPx = 0, first = true;
+  while (renderedPx < canvas.height) {
+    const sliceH = Math.min(sliceHeightPx, canvas.height - renderedPx);
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = sliceH;
+    sliceCanvas.getContext('2d').drawImage(canvas, 0, renderedPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+    const imgData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+    if (!first) doc.addPage();
+    doc.addImage(imgData, 'JPEG', margin, margin, usableW, sliceH * usableW / canvas.width);
+    renderedPx += sliceH;
+    first = false;
   }
 
   const pages = doc.internal.getNumberOfPages();
-  for (let p=1; p<=pages; p++){
-    doc.setPage(p);
-    doc.setFont(undefined,'normal'); doc.setFontSize(7); doc.setTextColor(190,190,190);
-    doc.text(`TBR TOOLS · ${opts.nro} · Pág. ${p}/${pages}`, pageW/2, pageH-10, {align:'center'});
+  if (pages > 1) {
+    for (let p=1; p<=pages; p++){
+      doc.setPage(p);
+      doc.setFont(undefined,'normal'); doc.setFontSize(7); doc.setTextColor(190,190,190);
+      doc.text(`TBR TOOLS · ${nro} · Pág. ${p}/${pages}`, pageW/2, pageH-8, {align:'center'});
+    }
   }
-
   return doc;
 }
 async function shareViaWA(phone, text, pdfDoc, filename){
@@ -4110,19 +4178,16 @@ async function shareCotWA(id){
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const emp=DB.get('empresa',{});
   const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
   const txt=`*Solicitud de cotización ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}\n\n${lines}\n\nPor favor envíenos su cotización indicando el número *${o.nro}* como referencia. ¡Gracias!`;
-  const rows=(o.items||[]).map((p,i)=>[String(i+1), p.n||'—', p.c||'—', String(p.q||1)]);
-  if (!await ensureJsPDF()) { toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500); }
-  const pdf=buildDocPDF({
-    title:'Solicitud de Cotización', nro:o.nro, proveedor:o.proveedor||'—', fecha, empresa:emp,
-    articulos:`${(o.items||[]).length} ítems`,
-    cols:[{label:'#',w:0.07},{label:'Descripción',w:0.45},{label:'Código',w:0.23},{label:'Cant.',w:0.25,align:'center'}],
-    rows,
-    note:`Por favor completar el precio cotizado por artículo y responder indicando el número ${o.nro} como referencia.`
-  });
+  let pdf = null;
+  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+    const {css, html} = cotDocBody(o);
+    pdf = await renderBrandedPDF(css, html, o.nro);
+  } else {
+    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+  }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 
@@ -4357,25 +4422,19 @@ async function shareOCWA(id){
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const emp=DB.get('empresa',{});
   const sym=o.currency==='ARS'?'$':'US$';
   const total=o.currency==='ARS'?(o.totalARS||0):(o.totalUSD||0);
   const fecha=fmtD(o.date);
   const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
   const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
   const txt=`*Orden de Compra ${o.nro}*\nProveedor: ${o.proveedor||'—'}\nFecha: ${fecha}${ref}\n\n${lines}\n\n*Total: ${sym} ${total.toFixed(2)}*`;
-  const totalUnits=(o.items||[]).reduce((s,p)=>s+(p.q||1),0);
-  const rows=(o.items||[]).map((p,i)=>[String(i+1), p.n||'—', p.c||'—', String(p.q||1), `${sym} ${(p.p||0).toFixed(2)}`, `${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}`]);
-  if (!await ensureJsPDF()) { toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500); }
-  const pdf=buildDocPDF({
-    title:'Orden de Compra', nro:o.nro, proveedor:o.proveedor||'—', fecha, empresa:emp,
-    cotizacionRef:o.cotizacionRef||'',
-    articulos:`${(o.items||[]).length} ítems · ${totalUnits} u.`,
-    cols:[{label:'#',w:0.06},{label:'Descripción',w:0.34},{label:'Código',w:0.16},{label:'Cant.',w:0.10,align:'center'},{label:'P. Unit.',w:0.17,align:'right'},{label:'Subtotal',w:0.17,align:'right'}],
-    rows,
-    totalLabel:`TOTAL ${o.currency||'USD'}`, totalValue:`${sym} ${total.toFixed(2)}`,
-    signatures:true
-  });
+  let pdf = null;
+  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+    const {css, html} = ocDocBody(o);
+    pdf = await renderBrandedPDF(css, html, o.nro);
+  } else {
+    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+  }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 function delOC(id){confirm2('¿Borrar esta orden?',()=>{DB.set('ordenes',DB.get('ordenes',[]).filter(o=>o.id!==id));render();});}
