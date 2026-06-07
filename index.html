@@ -785,6 +785,20 @@ select{cursor:pointer}
 <div id="app"></div>
 
 <!-- CONFIRM MODAL -->
+<div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
+  <div class="mbox" style="max-width:540px">
+    <div class="mhdr">Cargar productos desde foto<button class="btn-rm" onclick="closeOcrModal()">✕</button></div>
+    <div class="mbody">
+      <div id="ocr-status" style="font-size:13px;color:var(--di);margin-bottom:14px">Procesando imagen…</div>
+      <div id="ocr-progress" style="height:8px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:16px"><div id="ocr-bar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,var(--us),var(--ch));transition:width .25s"></div></div>
+      <div id="ocr-results" style="display:none">
+        <div class="hint mb12">Revisá las líneas detectadas y agregá las que correspondan a productos. Vas a poder ajustar nombre, cantidad y precio en la lista de la compra.</div>
+        <div id="ocr-lines"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="cm-ol" class="cm-ol" style="display:none">
   <div class="cm-box">
     <div class="cm-msg" id="cm-msg">¿Estás seguro?</div>
@@ -1395,7 +1409,7 @@ function pgCompra() {
   <div class="card">
     <div class="fb mb12">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -1516,6 +1530,84 @@ function prodRow(p) {
   </div>`;
 }
 
+/* ═══════════════════════════════════════════
+   OCR — carga de productos desde foto (Tesseract.js)
+═══════════════════════════════════════════ */
+let _tesseractLoading = null;
+function loadTesseract(){
+  if (window.Tesseract) return Promise.resolve();
+  if (_tesseractLoading) return _tesseractLoading;
+  _tesseractLoading = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('offline'));
+    document.head.appendChild(s);
+  });
+  return _tesseractLoading;
+}
+function closeOcrModal(){ const m=document.getElementById('ocr-modal'); if(m) m.style.display='none'; }
+function _ocrParseLines(text){
+  return text.split('\n').map(l=>l.trim()).filter(l=>l.length>2).map(line=>{
+    const nums = line.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g) || [];
+    let price = 0;
+    if (nums.length) {
+      const raw = nums[nums.length-1].replace(/\./g,'').replace(',', '.');
+      price = parseFloat(raw)||0;
+    }
+    let name = line.replace(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g,'').replace(/[$#·.\-_:]+/g,' ').replace(/\s+/g,' ').trim();
+    return { raw:line, name: name||line, price };
+  }).filter(l=>l.name);
+}
+async function handleOcrPhoto(input){
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const modal = document.getElementById('ocr-modal');
+  const status = document.getElementById('ocr-status');
+  const bar = document.getElementById('ocr-bar');
+  const results = document.getElementById('ocr-results');
+  const linesEl = document.getElementById('ocr-lines');
+  results.style.display = 'none';
+  bar.style.width = '0%';
+  status.textContent = 'Cargando motor de reconocimiento…';
+  modal.style.display = 'flex';
+  try {
+    await loadTesseract();
+    status.textContent = 'Analizando la imagen…';
+    const { data } = await window.Tesseract.recognize(file, 'spa', {
+      logger: m => {
+        if (m.status === 'recognizing text' && m.progress != null) {
+          bar.style.width = (m.progress*100).toFixed(0)+'%';
+          status.textContent = `Reconociendo texto… ${(m.progress*100).toFixed(0)}%`;
+        }
+      }
+    });
+    bar.style.width = '100%';
+    const lines = _ocrParseLines(data.text||'');
+    if (!lines.length) {
+      status.textContent = 'No se detectó texto útil en la imagen. Probá con una foto más nítida.';
+      return;
+    }
+    status.textContent = `Se detectaron ${lines.length} línea${lines.length!==1?'s':''}. Revisá y agregá las que correspondan:`;
+    linesEl.innerHTML = lines.map((l,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--b2)">
+      <input type="text" id="ocr-name-${i}" value="${esc(l.name)}" style="flex:2;height:36px;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:0 10px;color:var(--ch);font-size:13px;outline:none">
+      <div class="iw" style="flex:1;max-width:120px"><span class="ipre">$</span><input type="number" id="ocr-price-${i}" value="${l.price||''}" min="0" step="0.01"></div>
+      <button class="btn-p btn-sm" onclick="ocrAddLine(${i})">+ Agregar</button>
+    </div>`).join('');
+    results.style.display = 'block';
+  } catch(e) {
+    status.textContent = 'No se pudo procesar la imagen (¿sin conexión la primera vez?). Probá nuevamente con internet activo.';
+  } finally {
+    input.value = '';
+  }
+}
+function ocrAddLine(i){
+  const name = document.getElementById(`ocr-name-${i}`)?.value.trim();
+  const price = parseFloat(document.getElementById(`ocr-price-${i}`)?.value)||0;
+  if (!name) { toast('Ingresá un nombre.',false); return; }
+  addProd(name, '', 1, price, 0, 0);
+  toast(`✅ "${name}" agregado a la compra`);
+}
 function addProd(n='',c='',q=1,lista='',b1=0,b2=0) {
   const id = uid();
   const p  = calcEf(lista,b1,b2);
