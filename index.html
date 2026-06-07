@@ -1170,6 +1170,20 @@ function render() {
   const app = document.getElementById('app');
   const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,viaje:pgViaje};
   if (fns[PAGE]) { app.innerHTML = fns[PAGE](); after[PAGE]?.(); }
+  else {
+    // Build desincronizado (el navegador tiene una versión vieja sin esta página): forzar actualización limpia
+    if (!sessionStorage.getItem('tbr_force_refreshed_'+PAGE)) {
+      sessionStorage.setItem('tbr_force_refreshed_'+PAGE, '1');
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(rs => Promise.all(rs.map(r=>r.unregister())))
+          .then(() => caches.keys()).then(ks => Promise.all(ks.map(k=>caches.delete(k))))
+          .finally(() => location.reload());
+      } else location.reload();
+    } else {
+      app.innerHTML = `<div class="pg"><div class="info" style="font-size:13px">Esta sección necesita una actualización. Cerrá la app por completo y volvé a abrirla para cargar la última versión.</div></div>`;
+    }
+  }
 }
 
 const after = {};
