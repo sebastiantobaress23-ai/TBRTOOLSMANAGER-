@@ -1269,7 +1269,16 @@ function calcular() {
   } else {
     const fee=conf.netFee||0; ut=up*(1+conf.comInt/100)+fee;uc=ut/(1-conf.spread/100);ac=uc*conf.precio;at=ac+fleteARS;TCE=at/up;
   }
-  CALC={conf,v,up,u,ut,uc,ac,at,TCE,fleteARS,margins:{},envios:{}};
+  // Ganancia proyectada: estimación de venta en ML con margen por defecto (30%)
+  const DEF_MARGIN=30;
+  const ganProyectada = v.reduce((s,p)=>{
+    const cu=p.p*TCE;
+    const env=conf.mlEnv||0;
+    const precio=cu*(1+DEF_MARGIN/100)/(1-conf.mlCom/100)+env;
+    const gn=precio*(1-conf.mlCom/100)-cu-env;
+    return s+gn*(p.q||1);
+  },0);
+  CALC={conf,v,up,u,ut,uc,ac,at,TCE,fleteARS,ganProyectada,margins:{},envios:{}};
   renderResults(CALC);
   // Actualizar input de flete
   const fi=document.getElementById('flete-real-inp');
