@@ -1431,7 +1431,7 @@ function pgDash() {
   </div>
   <div>
     <div class="sh mb16">Últimas compras</div>
-    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s">gan. ${fmtA(purchaseGain(p))}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
+    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(purchaseGain(p))}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
   </div>
   <div class="mt20"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
 </div>`;
@@ -2643,7 +2643,7 @@ function openProd360(id) {
         </div>`:`
         <div class="card" style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
           <div><div style="font-weight:600;font-size:13px">Publicación ML · ${esc(e.ref)}</div><div style="font-size:11px;color:var(--di)">${fmtD(e.date)} · margen ${e.margin}%</div></div>
-          <div style="text-align:right"><div style="font-weight:700;color:var(--ch)">${fmtA(e.precio)}</div><div style="font-size:11px;color:${e.gan>=0?'var(--gr)':'var(--re)'}">gan. ${fmtA(e.gan)}</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--ch)">${fmtA(e.precio)}</div><div style="font-size:11px;color:${e.gan>=0?'var(--gr)':'var(--re)'};font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(e.gan)}</div></div>
         </div>`).join('')}
     </div>`}
   `;
@@ -2897,7 +2897,7 @@ function pgML() {
         </div>
         <div>
           <div class="hi-v" style="color:var(--ch)">${fmtA(pub.totFac||0)}</div>
-          <div class="hi-t">gan. ${fmtA(pub.totGan||0)}</div>
+          <div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(pub.totGan||0)}</div>
         </div>
       </div>
       <div class="hi-body" id="mlp${i}">
