@@ -1341,14 +1341,16 @@ function qaFanRefresh(){
   }
 }
 function qaFanLayout(){
-  // Distribuye los círculos visibles en un arco diagonal alrededor del FAB.
-  // Cada ítem se aleja del anterior un vector fijo (hStep,vStep) cuya longitud
-  // supera el diámetro del círculo + margen, así nunca se superponen entre sí
-  // sin importar cuántos elementos haya visibles.
+  // Arco curvo alrededor del FAB: el desplazamiento horizontal sigue una curva
+  // de seno (cuarto de círculo) que se abre hacia afuera, mientras el paso
+  // vertical es constante y mayor al diámetro del círculo + margen, así los
+  // círculos y etiquetas nunca se superponen y el conjunto "rodea" el botón
+  // en forma de arco en lugar de subir en línea recta.
   const items=[...document.querySelectorAll('#qa-fan .qa-mini')].filter(b=>b.style.display!=='none');
-  const baseDx=66, hStep=14, vStep=64;
+  const n=items.length, vStep=64, dxBase=68, dxRange=64;
   items.forEach((btn,i)=>{
-    const dx=-(baseDx+i*hStep);
+    const t=n>1?i/(n-1):0;
+    const dx=-(dxBase+dxRange*Math.sin(t*Math.PI/2));
     const dy=-(i*vStep);
     btn.style.setProperty('--dx',dx.toFixed(1)+'px');
     btn.style.setProperty('--dy',dy.toFixed(1)+'px');
