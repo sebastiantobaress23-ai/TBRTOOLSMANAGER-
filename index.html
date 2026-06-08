@@ -381,7 +381,7 @@ body{display:flex;flex-direction:column}
 /* Abanico radial alrededor del botón de acción rápida */
 .qa-fan{position:absolute;left:27px;top:27px;width:0;height:0;pointer-events:none}
 .qa-fan.open{pointer-events:auto}
-.qa-mini{position:absolute;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;background:transparent;border:none;padding:0;cursor:pointer;display:block;opacity:0;transform:translate(0,0) scale(.3);transition:opacity .16s ease,transform .3s cubic-bezier(.34,1.56,.64,1);transition-delay:0s}
+.qa-mini{position:absolute;left:0;top:0;width:42px;height:42px;margin:-21px 0 0 -21px;background:transparent;border:none;padding:0;cursor:pointer;display:block;opacity:0;transform:translate(0,0) scale(.3);transition:opacity .16s ease,transform .3s cubic-bezier(.34,1.56,.64,1);transition-delay:0s}
 .qa-fan.open .qa-mini{opacity:1;transform:translate(var(--dx,0),var(--dy,0)) scale(1);transition-delay:var(--dl,0s)}
 .qa-mini-ic{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(240,236,224,.3);color:#f0ece0;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .15s,background .15s}
 .qa-mini:hover .qa-mini-ic{border-color:rgba(240,236,224,.6);background:rgba(240,236,224,.1)}
@@ -1347,7 +1347,7 @@ function qaFanLayout(){
   // 12 (arriba), todos a la misma distancia del centro del botón principal,
   // repartidos en ángulos parejos a lo largo de ese cuarto de círculo.
   const items=[...document.querySelectorAll('#qa-fan .qa-mini')].filter(b=>b.style.display!=='none');
-  const n=items.length, R=124, labelOut=R+38;
+  const n=items.length, R=110, labelOut=40;
   const startDeg=92, endDeg=2; // de las 9 (a un costado) a las 12 (arriba), en arco parejo
   items.forEach((btn,i)=>{
     const t=n>1?i/(n-1):0;
