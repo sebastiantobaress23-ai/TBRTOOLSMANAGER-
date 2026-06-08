@@ -3432,18 +3432,18 @@ function pgConfig() {
 
   <div class="sh mb16">Mensajes de WhatsApp</div>
   <div class="card mb24">
-    <div class="info mb16" style="font-size:12px">Personalizá el texto que se envía junto al PDF al compartir una Orden de Compra o Cotización por WhatsApp. Variables disponibles: <code>{numero}</code> <code>{proveedor}</code> <code>{fecha}</code> <code>{items}</code> <code>{total}</code> <code>{ref}</code></div>
+    <div class="info mb16" style="font-size:12px">Escribí el mensaje que querés que se envíe (junto con el PDF adjunto) al compartir una Orden de Compra o Cotización por WhatsApp.</div>
     <div class="mb16">
       <label class="fl">Plantilla — Orden de Compra</label>
-      <textarea id="wa-tpl-oc" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||DEFAULT_WA_TPL_OC)}</textarea>
+      <textarea id="wa-tpl-oc" rows="5" placeholder="Escribí acá el mensaje para Órdenes de Compra…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||'')}</textarea>
     </div>
     <div class="mb16">
       <label class="fl">Plantilla — Solicitud de Cotización</label>
-      <textarea id="wa-tpl-cot" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplCot||DEFAULT_WA_TPL_COT)}</textarea>
+      <textarea id="wa-tpl-cot" rows="5" placeholder="Escribí acá el mensaje para Cotizaciones…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplCot||'')}</textarea>
     </div>
     <div class="fe" style="gap:10px">
-      <button class="btn-p" onclick="saveWaTpl()">Guardar plantillas</button>
-      <button class="btn-g btn-sm" onclick="resetWaTpl()">Restaurar predeterminadas</button>
+      <button class="btn-p" onclick="saveWaTpl()">Guardar mensajes</button>
+      <button class="btn-g btn-sm" onclick="resetWaTpl()">Vaciar</button>
     </div>
   </div>
 
@@ -4375,8 +4375,63 @@ async function shareViaWA(phone, text, pdfDoc, filename){
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
 }
 
+function reportDocBody(period, since, now, ps, sales, emp){
+  const label = period==='week' ? 'Reporte semanal' : 'Reporte mensual';
+  const fecha = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const desde = since.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
+  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+
+  const map={};
+  sales.forEach(s=>{
+    const key=(s.code||s.name||'').toLowerCase();
+    if(!map[key]) map[key]={name:s.name,profit:0,units:0};
+    map[key].profit += saleProfit(s);
+    map[key].units += (s.qty||1);
+  });
+  const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
+
+  const rows = top.length ? top.map((t,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(t.name)}</td>
+    <td class="ctr">${t.units}</td>
+    <td class="cright">${fmtA(t.profit)}</td>
+  </tr>`).join('') : `<tr><td colspan="4" class="ctr">Sin ventas registradas en el período.</td></tr>`;
+
+  const html = `<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">${label}</div>
+      <div class="oc-num">${fecha}</div>
+      <div class="oc-date">Desde ${desde}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Compras</div><div class="meta-val">${ps.length} · Invertido ${fmtA(totCompras)}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Ventas</div><div class="meta-val">${sales.length} · ${unidades} unid. · ${fmtA(totVentas)}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Ganancia neta</div><div class="meta-val">${fmtA(totGanancia)}</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Producto</th><th class="ctr">Unid.</th><th class="cright">Ganancia</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="foot-note">TBR TOOLS · ${label} · ${fecha}</div>
+</div>`;
+  return {css: DOC_CSS, html};
+}
+
 async function generateReport(period){
-  await ensureJsPDF();
   const now = new Date();
   const since = new Date(now);
   let label;
@@ -4403,30 +4458,12 @@ async function generateReport(period){
   const fechaStr = now.toLocaleDateString('es-AR');
   const desdeStr = since.toLocaleDateString('es-AR');
 
-  let doc = null;
-  if (!window.__jspdfOffline && typeof window.jspdf !== 'undefined') {
-    const { jsPDF } = window.jspdf;
-    doc = new jsPDF();
-    let y = 20;
-    doc.setFontSize(16); doc.setFont(undefined,'bold');
-    doc.text(label, 14, y); y+=8;
-    doc.setFontSize(10); doc.setFont(undefined,'normal');
-    if (emp.razonSocial) { doc.text(emp.razonSocial, 14, y); y+=6; }
-    doc.text(`Período: ${desdeStr} — ${fechaStr}`, 14, y); y+=9;
-    doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
-    doc.setFont(undefined,'bold'); doc.text('Resumen', 14, y); y+=7;
-    doc.setFont(undefined,'normal');
-    [
-      `Compras realizadas: ${ps.length}  ·  Total invertido: ${fmtA(totCompras)}`,
-      `Ventas registradas: ${sales.length}  ·  Unidades vendidas: ${unidades}`,
-      `Ingresos por ventas: ${fmtA(totVentas)}`,
-      `Ganancia real (neta): ${fmtA(totGanancia)}`,
-    ].forEach(l=>{ doc.text(l, 14, y); y+=6; });
-    y += 4; doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
-    doc.setFont(undefined,'bold'); doc.text('Top 5 productos más rentables', 14, y); y+=7;
-    doc.setFont(undefined,'normal');
-    if (top.length) top.forEach((t,i)=>{ doc.text(`${i+1}. ${t.name} — ${fmtA(t.profit)} (${t.units} unid.)`, 14, y); y+=6; });
-    else { doc.text('Sin ventas registradas en el período.', 14, y); y+=6; }
+  let pdf = null;
+  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+    const {css, html} = reportDocBody(period, since, now, ps, sales, emp);
+    pdf = await renderBrandedPDF(css, html, label);
+  } else {
+    toast('⚠ No se pudo cargar el generador de PDF — se enviará solo el mensaje de texto.', false);
   }
 
   const text = `📊 *${label}* (${desdeStr} – ${fechaStr})\n\n`+
@@ -4436,11 +4473,11 @@ async function generateReport(period){
     (top.length ? `\n🏆 Top productos:\n`+top.map((t,i)=>`${i+1}. ${t.name} — ${fmtA(t.profit)}`).join('\n') : '');
 
   const filename = `${period==='week'?'reporte-semanal':'reporte-mensual'}-${now.toISOString().slice(0,10)}.pdf`;
-  shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, doc, filename);
+  shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, pdf, filename);
 }
 
-const DEFAULT_WA_TPL_OC = `*Orden de Compra {numero}*\nProveedor: {proveedor}\nFecha: {fecha}{ref}\n\n{items}\n\n*Total: {total}*`;
-const DEFAULT_WA_TPL_COT = `*Solicitud de cotización {numero}*\nProveedor: {proveedor}\nFecha: {fecha}\n\n{items}\n\nPor favor envíenos su cotización indicando el número *{numero}* como referencia. ¡Gracias!`;
+const DEFAULT_WA_TPL_OC = '';
+const DEFAULT_WA_TPL_COT = '';
 function applyTemplate(tpl, vars){
   return tpl.replace(/\{(\w+)\}/g, (m,k)=> vars[k]!==undefined ? vars[k] : m);
 }
@@ -4456,17 +4493,15 @@ function resetWaTpl(){
   delete s.waTplOC; delete s.waTplCot;
   DB.set('settings',s);
   render();
-  toast('Plantillas restauradas a las predeterminadas');
+  toast('Mensajes vaciados');
 }
 async function shareCotWA(id){
   const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const fecha=fmtD(o.date);
-  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
   const s=DB.get('settings',{});
-  const txt=applyTemplate(s.waTplCot||DEFAULT_WA_TPL_COT, {numero:o.nro, proveedor:o.proveedor||'—', fecha, items:lines});
+  const txt=s.waTplCot||'';
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = cotDocBody(o);
@@ -4708,13 +4743,8 @@ async function shareOCWA(id){
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const sym=o.currency==='ARS'?'$':'US$';
-  const total=o.currency==='ARS'?(o.totalARS||0):(o.totalUSD||0);
-  const fecha=fmtD(o.date);
-  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
-  const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
   const s=DB.get('settings',{});
-  const txt=applyTemplate(s.waTplOC||DEFAULT_WA_TPL_OC, {numero:o.nro, proveedor:o.proveedor||'—', fecha, ref, items:lines, total:`${sym} ${total.toFixed(2)}`});
+  const txt=s.waTplOC||'';
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = ocDocBody(o);
