@@ -662,6 +662,13 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
   .prod-tools-fg .btn-g,.prod-tools-fg .btn-p{flex:1 1 calc(50% - 4px);text-align:center;white-space:nowrap}
 }
 .fg-w{display:flex;gap:8px;flex-wrap:wrap}
+.cot-actbar{display:flex;gap:10px}
+.cot-act-main{flex:1;height:50px;font-size:14px;letter-spacing:1.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cot-act-sec{height:50px;padding:0 22px}
+@media(max-width:560px){
+  .cot-actbar{flex-direction:column}
+  .cot-act-main,.cot-act-sec{width:100%;white-space:normal;font-size:13px;letter-spacing:1px}
+}
 
 /* FOOTER */
 footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#080808}
@@ -1137,52 +1144,6 @@ function simRecalc(){
     <div class="fb"><span style="font-size:12px;color:var(--di)">Rentabilidad sobre costo</span><strong style="color:${ganPct>=0?'var(--gr)':'var(--re)'}">${ganPct.toFixed(1)}%</strong></div>
   `;
 }
-function monthlyGoalProgress(ps) {
-  const s = DB.get('settings',{});
-  const goal = s.monthlyGoal || 0;
-  const now = new Date();
-  const cur = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
-                .reduce((a,p)=>a+(p.r?.ars||0),0);
-  const pct = goal>0 ? Math.min(100, cur/goal*100) : 0;
-  return goal>0?`
-    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-      <span style="font-weight:600">${fmtA(cur)} <span style="color:var(--di);font-weight:400">de ${fmtA(goal)}</span></span>
-      <span style="color:${pct>=100?'var(--gr)':'var(--ch)'};font-weight:700">${pct.toFixed(0)}%</span>
-    </div>
-    <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden">
-      <div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,var(--us),${pct>=100?'var(--gr)':'var(--ch)'});transition:width .4s"></div>
-    </div>
-    ${pct>=100?'<div style="margin-top:8px;font-size:12px;color:var(--gr)">🎉 ¡Meta alcanzada este mes!</div>':''}
-    `:`<div class="empty" style="padding:14px">Definí una meta mensual de compras (en ARS) para hacer seguimiento de tu progreso.</div>`;
-}
-function monthlyGoalCard(ps) {
-  const s = DB.get('settings',{});
-  const goal = s.monthlyGoal || 0;
-  const now = new Date();
-  const monthName = now.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  return `<div class="card mb20">
-    <div class="fb mb12" style="flex-wrap:wrap;gap:8px">
-      <div>
-        <div class="sh" style="margin-bottom:2px">Meta de compras del mes</div>
-        <div style="font-size:12px;color:var(--di);text-transform:capitalize">${monthName}</div>
-      </div>
-      <div class="iw" style="flex:1;min-width:160px;max-width:220px">
-        <span class="ipre">$</span>
-        <input type="text" inputmode="decimal" id="monthly-goal-inp" placeholder="Ej: 50.000" value="${goal?goal.toLocaleString('es-AR'):''}">
-      </div>
-      <button class="btn-p btn-sm" onclick="setMonthlyGoal(document.getElementById('monthly-goal-inp').value)">Guardar</button>
-    </div>
-    <div id="monthly-goal-progress">${monthlyGoalProgress(ps)}</div>
-  </div>`;
-}
-function setMonthlyGoal(v) {
-  const s = DB.get('settings',{});
-  s.monthlyGoal = parseARS(v);
-  DB.set('settings', s);
-  toast('Meta guardada');
-  const wrap = document.getElementById('monthly-goal-progress');
-  if (wrap) wrap.innerHTML = monthlyGoalProgress(DB.get('purchases',[]));
-}
 
 /* ═══════════════════════════════════════════
    RANKING DE PROVEEDORES
@@ -1219,9 +1180,15 @@ function pgProveedoresRanking() {
           <div style="font-size:11px;color:var(--di)">${r.count} compra${r.count!==1?'s':''} · última: ${fmtD(r.lastDate)}</div>
         </div>
       </div>
-      <div style="text-align:right">
-        <div style="font-weight:700;color:var(--us)">${fmtA(r.totalARS)}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:${r.gain>=0?'var(--gr)':'var(--re)'}">Gan. proyectada · ${fmtA(r.gain)}</div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di);margin-bottom:1px">Comprado</div>
+          <div style="font-weight:700;color:var(--us);font-size:15px">${fmtA(r.totalARS)}</div>
+        </div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di);margin-bottom:1px">Gan. proyectada</div>
+          <div style="font-weight:700;font-size:13px;color:${r.gain>=0?'var(--gr)':'var(--re)'}">${fmtA(r.gain)}</div>
+        </div>
       </div>
     </div>`).join('')}
     </div>
@@ -1589,7 +1556,6 @@ function pgDash() {
       ${sparkline(spTce,'#e2c97e')}
     </div>
   </div>
-  ${monthlyGoalCard(ps)}
   ${smartAlertsCard()}
   <div class="g2 mb20">
     <div>
@@ -3958,7 +3924,6 @@ function pgCotizaciones() {
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS A COTIZAR</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openCotCatModal()">Del catálogo</button>`:''}
-        <button class="btn-p btn-sm" onclick="addCotRow()">+ Agregar</button>
       </div>
     </div>
     <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 34px;gap:8px;padding:0 6px 8px">
@@ -3969,9 +3934,9 @@ function pgCotizaciones() {
     <button class="btn-add-row" onclick="addCotRow()">+ Agregar artículo</button>
   </div>
 
-  <div class="fg-w mb16">
-    <button class="btn-p" style="flex:1;height:50px;font-size:14px;letter-spacing:2px" onclick="printCotizacion()">🖨 Generar e imprimir solicitud</button>
-    <button class="btn-g" onclick="clearCot()">Limpiar</button>
+  <div class="cot-actbar mb16">
+    <button class="btn-p cot-act-main" onclick="printCotizacion()">🖨 Generar e imprimir solicitud</button>
+    <button class="btn-g cot-act-sec" onclick="clearCot()">Limpiar</button>
   </div>
 
   ${cots.length>0?`<div>
@@ -4583,7 +4548,7 @@ function pgOrden() {
       </div></div>
       <div style="flex:1;min-width:220px"><label class="fl mb8" style="min-height:28px">Referenciar cotización (opcional)</label>
       <div class="iw" style="max-width:320px">
-        <select id="ord-cot" onchange="orderCotRef=this.value">
+        <select id="ord-cot" onchange="onOrdCotRefChange(this.value)">
           <option value="">Sin referencia</option>
           ${DB.get('cotizaciones',[]).slice().reverse().map(c=>`<option value="${esc(c.nro)}" ${orderCotRef===c.nro?'selected':''}>${esc(c.nro)} · ${esc(c.proveedor)}</option>`).join('')}
         </select>
@@ -4597,7 +4562,6 @@ function pgOrden() {
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openOrdCatModal()">Del catálogo</button>`:''}
-        <button class="btn-p btn-sm" onclick="addOrdRow()">+ Agregar</button>
       </div>
     </div>
     <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 1fr 34px;gap:8px;padding:0 6px 8px">
@@ -4613,9 +4577,9 @@ function pgOrden() {
     </div>`:''}
   </div>
 
-  <div class="fg-w mb16">
-    <button class="btn-p" style="flex:1;height:50px;font-size:14px;letter-spacing:2px" onclick="printOrdenNew()">🖨 Generar e imprimir orden</button>
-    <button class="btn-g" onclick="clearOrder()">Limpiar</button>
+  <div class="cot-actbar mb16">
+    <button class="btn-p cot-act-main" onclick="printOrdenNew()">🖨 Generar e imprimir orden</button>
+    <button class="btn-g cot-act-sec" onclick="clearOrder()">Limpiar</button>
   </div>
 
   <!-- Historial OC -->
@@ -4655,6 +4619,18 @@ function ordRow(p) {
   </div>`;
 }
 
+function onOrdCotRefChange(nro){
+  orderCotRef = nro;
+  if (!nro) return;
+  const cot = DB.get('cotizaciones',[]).find(c=>c.nro===nro);
+  if (!cot || !(cot.items||[]).length) return;
+  const loadIt = ORDER.length===0 || confirm('¿Cargar los artículos de la cotización '+nro+' en esta orden? Esto reemplazará los artículos actuales.');
+  if (!loadIt) return;
+  ORDER = cot.items.map(it=>({id:uid(), n:it.n||it.name||'', c:it.c||it.code||'', q:it.q||it.qty||1, p:it.p||it.price||0}));
+  const list=document.getElementById('ord-list');
+  if (list) list.innerHTML = ORDER.length ? ORDER.map(ordRow).join('') : '';
+  refreshOrdTotals();
+}
 function addOrdRow(n='',c='',q=1,p='') {
   const id=uid();ORDER.push({id,n,c,q:+q||1,p:+p||0});
   const list=document.getElementById('ord-list');
