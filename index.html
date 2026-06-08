@@ -366,6 +366,23 @@ body{display:flex;flex-direction:column}
 .gsearch-btn:hover{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
 .gsearch-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px}
 .gsearch-box{width:100%;max-width:560px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
+.qa-fab{position:fixed;right:22px;bottom:22px;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:500;background:rgba(255,255,255,.03);border:1px solid rgba(226,201,126,.22);box-shadow:0 10px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);color:#e2c97e;transition:transform .2s,box-shadow .2s,border-color .2s}
+.qa-fab::before{content:'';position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.16) 0%,rgba(226,201,126,.05) 45%,rgba(226,201,126,0) 75%);filter:blur(14px);z-index:-1;opacity:.7;transition:opacity .2s}
+.qa-fab:hover{transform:translateY(-2px) scale(1.05);border-color:rgba(226,201,126,.4);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.qa-fab:hover::before{opacity:1}
+@media(max-width:720px){.qa-fab{right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
+.qa-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px}
+.qa-box{width:100%;max-width:420px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
+.qa-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.qa-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ch);display:flex;align-items:center;gap:8px}
+.qa-body{padding:18px;display:flex;flex-direction:column;gap:12px}
+.qa-actions{display:flex;flex-direction:column;gap:8px}
+.qa-act{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:.15s;text-align:left}
+.qa-act:hover{background:rgba(226,201,126,.06);border-color:rgba(226,201,126,.22)}
+.qa-act-ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(226,201,126,.08);border:1px solid rgba(226,201,126,.18);color:#e2c97e;flex-shrink:0}
+.qa-act-t{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ch)}
+.qa-act-s{font-size:11px;color:var(--di);margin-top:1px}
+
 .gsearch-inrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#fff}
 .gsearch-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit}
 .gsearch-input::placeholder{color:rgba(255,255,255,.3)}
@@ -812,6 +829,19 @@ select{cursor:pointer}
   </div>
 </div>
 
+<div id="qa-fab" class="qa-fab" onclick="openQA()" title="Acción rápida">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</div>
+<div id="qa-ol" class="qa-ol" style="display:none" onclick="if(event.target===this)closeQA()">
+  <div class="qa-box">
+    <div class="qa-hdr">
+      <div class="qa-title">⚡ Acción rápida</div>
+      <button class="btn-rm" onclick="closeQA()">x</button>
+    </div>
+    <div id="qa-body" class="qa-body"></div>
+  </div>
+</div>
+
 <nav class="nav">
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
@@ -1244,6 +1274,102 @@ function runGSearch(qRaw){
     </div>`).join('')}
   `).join('');
 }
+
+/* ═══════════════════════════════════════════
+   ACCIÓN RÁPIDA — registrar venta o agregar producto sin cambiar de sección
+═══════════════════════════════════════════ */
+function openQA(){
+  const ol=document.getElementById('qa-ol');
+  ol.style.display='flex';
+  qaShowMenu();
+}
+function closeQA(){
+  document.getElementById('qa-ol').style.display='none';
+}
+function qaPendingCotsLabel(){
+  const cots=DB.get('cotizaciones',[]);
+  const pend=cots.filter(o=>o.status!=='cotizada').length;
+  if(!cots.length) return 'Armar una solicitud de cotización';
+  return pend ? `${pend} solicitud${pend>1?'es':''} pendiente${pend>1?'s':''} de cotizar` : 'Todas las solicitudes están cotizadas';
+}
+function qaShowMenu(){
+  const sales=DB.get('sales',[]);
+  const last=sales[sales.length-1];
+  const body=document.getElementById('qa-body');
+  body.innerHTML=`<div class="qa-actions">
+    <button class="qa-act" onclick="qaShowSale()">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div><div class="qa-act-t">Registrar venta</div><div class="qa-act-s">Elegí un producto y cargá precio y cantidad</div></div>
+    </button>
+    ${last?`<button class="qa-act" onclick="qaRepeatLastSale()">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+      <div><div class="qa-act-t">Repetir última venta</div><div class="qa-act-s">${esc(last.name)} · ${fmtA(last.priceARS)} c/u${last.qty>1?' × '+last.qty:''}</div></div>
+    </button>`:''}
+    <button class="qa-act" onclick="gsearchGo(()=>navigate('compra'))">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+      <div><div class="qa-act-t">Ir a Nueva compra</div><div class="qa-act-s">Cargar productos a la compra en curso</div></div>
+    </button>
+    <button class="qa-act" onclick="gsearchGo(()=>navigate('cotizaciones'))">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <div><div class="qa-act-t">Ir a Cotizaciones</div><div class="qa-act-s">${qaPendingCotsLabel()}</div></div>
+    </button>
+  </div>`;
+  closeQA._mode='menu';
+}
+function qaShowSale(){
+  const cat=DB.get('catalog',[]);
+  const body=document.getElementById('qa-body');
+  body.innerHTML=`
+    <div class="iw"><select id="qa-prod" onchange="qaFillCost()">
+      <option value="">Elegí un producto del catálogo…</option>
+      ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+    </select></div>
+    <div style="display:flex;gap:10px">
+      <div class="iw" style="flex:1"><input type="number" id="qa-qty" value="1" min="1" step="1" placeholder="Cant."></div>
+      <div class="iw" style="flex:1.4"><span class="ipre">$</span><input type="number" id="qa-price" min="0" step="100" placeholder="Precio venta c/u"></div>
+    </div>
+    <div class="iw"><span class="ipre">$</span><input type="number" id="qa-cost" min="0" step="100" placeholder="Costo real c/u (sugerido automático)"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-g btn-sm" style="flex:1" onclick="qaShowMenu()">‹ Volver</button>
+      <button class="btn-p" style="flex:2" onclick="qaSubmitSale()">✅ Registrar venta</button>
+    </div>`;
+  setTimeout(()=>document.getElementById('qa-prod')?.focus(),50);
+}
+function qaFillCost(){
+  const sel=document.getElementById('qa-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  const [name,code]=opt.value.split('|||');
+  document.getElementById('qa-cost').value = suggestSaleCost(code, name) || '';
+}
+function qaSubmitSale(){
+  const sel=document.getElementById('qa-prod');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
+  const [name,code]=opt.value.split('|||');
+  const qty=parseInt(document.getElementById('qa-qty').value)||1;
+  const price=parseFloat(document.getElementById('qa-price').value)||0;
+  const cost=parseFloat(document.getElementById('qa-cost').value)||0;
+  if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
+  qaRegisterSale({name,code,qty,priceARS:price,costARS:cost});
+}
+function qaRegisterSale(data){
+  const s=DB.get('settings',{});
+  const sale={id:uid(),date:new Date().toISOString(),name:data.name,code:data.code||'',qty:data.qty||1,priceARS:data.priceARS,costARS:data.costARS||0,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500};
+  const sales=DB.get('sales',[]);
+  sales.push(sale);
+  DB.set('sales',sales);
+  toast('✅ Venta registrada');
+  closeQA();
+  if (PAGE==='ventas') render();
+}
+function qaRepeatLastSale(){
+  const sales=DB.get('sales',[]);
+  const last=sales[sales.length-1];
+  if(!last){ toast('No hay ventas previas.',false); return; }
+  qaRegisterSale({name:last.name,code:last.code,qty:last.qty||1,priceARS:last.priceARS,costARS:last.costARS||0});
+}
+
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
     e.preventDefault();
@@ -1252,6 +1378,8 @@ document.addEventListener('keydown', e=>{
   } else if(e.key==='Escape'){
     const ol=document.getElementById('gsearch-ol');
     if(ol.style.display==='flex') closeGSearch();
+    const qol=document.getElementById('qa-ol');
+    if(qol && qol.style.display==='flex') closeQA();
   }
 });
 function navigate(p) {
@@ -3440,11 +3568,13 @@ function checkAccessPin(){
   const users=s.users||[];
   const ov=document.getElementById('lock-ov');
   const mn=document.getElementById('mob-nav');
-  if(!users.length){ if(ov) ov.style.display='none'; if(mn) mn.style.removeProperty('visibility'); return true; }
+  const fab=document.getElementById('qa-fab');
+  if(!users.length){ if(ov) ov.style.display='none'; if(mn) mn.style.removeProperty('visibility'); if(fab) fab.style.removeProperty('display'); return true; }
   const token=sessionStorage.getItem('tbr_unlocked');
-  if(token && users.some(x=>JSON.stringify({u:x.user,w:x.pass})===token)){ if(ov) ov.style.display='none'; if(mn) mn.style.removeProperty('visibility'); return true; }
+  if(token && users.some(x=>JSON.stringify({u:x.user,w:x.pass})===token)){ if(ov) ov.style.display='none'; if(mn) mn.style.removeProperty('visibility'); if(fab) fab.style.removeProperty('display'); return true; }
   if(ov) ov.style.display='flex';
   if(mn) mn.style.setProperty('visibility','hidden','important');
+  if(fab) fab.style.display='none';
   return false;
 }
 function tryUnlock(){
@@ -3459,6 +3589,7 @@ function tryUnlock(){
     window.scrollTo(0,0);
     const app=document.getElementById('app'); if(app) app.scrollTop=0;
     const mn=document.getElementById('mob-nav'); if(mn) mn.style.removeProperty('visibility');
+    const fab=document.getElementById('qa-fab'); if(fab) fab.style.removeProperty('display');
     document.getElementById('lock-err').style.display='none';
     document.getElementById('lock-user').value='';
     document.getElementById('lock-pass').value='';
