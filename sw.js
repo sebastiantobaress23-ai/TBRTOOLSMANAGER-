@@ -1,9 +1,12 @@
-const CACHE = 'tbr-cache-v23';
+const CACHE = 'tbr-cache-v24';
 
-const PRECACHE = [
+const PRECACHE_SAME = [
   '/',
   '/index.html',
-  '/manifest.json',
+  '/manifest.json'
+];
+
+const PRECACHE_CROSS = [
   'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
@@ -17,9 +20,10 @@ self.addEventListener('message', event => {
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE).then(cache =>
-      Promise.all(PRECACHE.map(url => cache.add(new Request(url, {mode: 'no-cors'})).catch(() => {})))
-    )
+    caches.open(CACHE).then(cache => Promise.all([
+      ...PRECACHE_SAME.map(url => cache.add(url).catch(() => {})),
+      ...PRECACHE_CROSS.map(url => cache.add(new Request(url, {mode: 'no-cors'})).catch(() => {}))
+    ]))
   );
 });
 
@@ -33,13 +37,20 @@ self.addEventListener('activate', event => {
 
 // Network-first: siempre intenta traer la versión más nueva; si falla (sin conexión), usa la caché
 self.addEventListener('fetch', event => {
+  const req = event.request;
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then(resp => {
         const copy = resp.clone();
-        caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        caches.open(CACHE).then(cache => cache.put(req, copy));
         return resp;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() =>
+        caches.match(req).then(cached => {
+          if (cached) return cached;
+          if (req.mode === 'navigate') return caches.match('/index.html');
+          return undefined;
+        })
+      )
   );
 });

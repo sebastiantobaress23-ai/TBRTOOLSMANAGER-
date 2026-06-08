@@ -1298,6 +1298,10 @@ function openQA(){
 function closeQA(){
   document.getElementById('qa-ol').style.display='none';
 }
+function qaGoTo(page){
+  closeQA();
+  setTimeout(()=>navigate(page),80);
+}
 function qaPendingCotsLabel(){
   const cots=DB.get('cotizaciones',[]);
   const pend=cots.filter(o=>o.status!=='cotizada').length;
@@ -1317,11 +1321,15 @@ function qaShowMenu(){
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
       <div><div class="qa-act-t">Repetir última venta</div><div class="qa-act-s">${esc(last.name)} · ${fmtA(last.priceARS)} c/u${last.qty>1?' × '+last.qty:''}</div></div>
     </button>`:''}
-    <button class="qa-act" onclick="gsearchGo(()=>navigate('compra'))">
+    <button class="qa-act" onclick="qaGoTo('compra')">
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
       <div><div class="qa-act-t">Ir a Nueva compra</div><div class="qa-act-s">Cargar productos a la compra en curso</div></div>
     </button>
-    <button class="qa-act" onclick="gsearchGo(()=>navigate('cotizaciones'))">
+    <button class="qa-act" onclick="qaGoTo('orden')">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></div>
+      <div><div class="qa-act-t">Ir a Órdenes de compra</div><div class="qa-act-s">Crear o revisar órdenes de compra</div></div>
+    </button>
+    <button class="qa-act" onclick="qaGoTo('cotizaciones')">
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div><div class="qa-act-t">Ir a Cotizaciones</div><div class="qa-act-s">${qaPendingCotsLabel()}</div></div>
     </button>
