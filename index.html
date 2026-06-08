@@ -648,6 +648,11 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 }
 .fe{display:flex;justify-content:flex-end}
 .fg{display:flex;gap:8px}
+@media(max-width:720px){
+  .prod-tools{flex-direction:column;align-items:flex-start;gap:10px}
+  .prod-tools-fg{flex-wrap:wrap;width:100%;gap:8px}
+  .prod-tools-fg .btn-g,.prod-tools-fg .btn-p{flex:1 1 calc(50% - 4px);text-align:center;white-space:nowrap}
+}
 .fg-w{display:flex;gap:8px;flex-wrap:wrap}
 
 /* FOOTER */
@@ -673,8 +678,12 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
   footer{flex-direction:column;gap:4px;text-align:center}
-  .cat-t,.cat-r{grid-template-columns:1fr 90px 80px 70px}
-  .cat-t .h-code,.cat-r .c-code{display:none}
+  .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
+  .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-r > div:nth-child(4){display:none}
+  .cat-r{align-items:center}
+  .cat-actions{flex-direction:row;justify-content:flex-end;gap:6px;margin-top:6px;grid-column:1/-1}
+  .cat-actions button{padding:5px 9px;font-size:11px}
+  .cat-360-t{display:none}
 }
 
 /* ═══════════════════════════════════════════
@@ -1094,7 +1103,9 @@ function openSimulador(){
   const tceEl=document.getElementById('sim-tce'); if(tceEl) tceEl.value = Math.round(conf.precio||1000);
   const comEl=document.getElementById('sim-com'); if(comEl) comEl.value = s.mlCom??16;
   const envEl=document.getElementById('sim-envio'); if(envEl) envEl.value = s.mlEnv??7500;
-  document.getElementById('sim-modal').style.display='flex';
+  const m=document.getElementById('sim-modal');
+  document.body.appendChild(m); // evita que quede posicionado relativo al contenido scrolleado de #app
+  m.style.display='flex';
   simRecalc();
 }
 function closeSimulador(){const m=document.getElementById('sim-modal');if(m)m.style.display='none';}
@@ -1737,9 +1748,9 @@ function pgCompra() {
     </div>
   </div>
   <div class="card">
-    <div class="fb mb12">
+    <div class="fb mb12 prod-tools">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -2693,7 +2704,7 @@ function pgCat() {
         ${(()=>{const h=c.priceHistory||[];if(!h.length)return '';const prev=h[h.length-1]?.price||0;const cur=c.lastPrice||c.defaultPrice||0;const d=cur-prev;if(!d)return '<span class="trend-eq">sin cambio</span>';return d>0?`<span class="trend-up">▲ ${fmtU(Math.abs(d))}</span>`:`<span class="trend-dn">▼ ${fmtU(Math.abs(d))}</span>`;})()}
       </div>
       <div style="font-size:11px;color:var(--di)">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe"><button class="btn-g btn-sm" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>360</button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
+      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
     </div>`).join('')}
   </div>`}
   <!-- MODAL VISTA 360 -->
