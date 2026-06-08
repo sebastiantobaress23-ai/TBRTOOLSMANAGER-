@@ -501,9 +501,11 @@ body{display:flex;flex-direction:column}
   .pr > .btn-rm{grid-column:4!important;grid-row:1/3!important;align-self:center;width:32px!important;height:32px!important}
   .pr input{height:36px!important;font-size:13px!important;padding:0 8px!important}
   .btn-add-row{height:36px;font-size:11px;margin-top:4px}
-  /* Orden de Compra */
-  .ord-hdr{grid-template-columns:1.4fr 70px 44px 90px 28px!important;gap:5px!important}
-  .ord-row{grid-template-columns:1.4fr 70px 44px 90px 28px!important;gap:5px!important}
+  /* Orden de Compra: 2 filas, igual que .pr, con precio y borrar bien ubicados */
+  .ord-hdr{display:none!important}
+  .ord-row{grid-template-columns:1fr 60px 76px 32px!important;grid-template-rows:36px 36px!important;gap:5px!important}
+  .ord-row > input:nth-child(4){grid-column:3!important;grid-row:2!important;text-align:right!important}
+  .ord-row > .btn-rm{grid-column:4!important;grid-row:1/3!important}
 }
 .btn-rm{width:34px;height:40px;background:transparent;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);color:rgba(255,255,255,.2);font-size:14px;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center}
 .btn-rm:hover{border-color:var(--re);color:var(--re)}
