@@ -366,11 +366,28 @@ body{display:flex;flex-direction:column}
 .gsearch-btn:hover{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
 .gsearch-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px}
 .gsearch-box{width:100%;max-width:560px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
-.qa-fab{position:fixed;right:22px;bottom:22px;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:500;background:rgba(255,255,255,.03);border:1px solid rgba(226,201,126,.22);box-shadow:0 10px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);color:#e2c97e;transition:transform .2s,box-shadow .2s,border-color .2s}
+.qa-fab-wrap{position:fixed;right:22px;bottom:22px;z-index:500;display:flex;flex-direction:column;align-items:flex-end}
+.qa-fab{position:relative;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(226,201,126,.22);box-shadow:0 10px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);color:#e2c97e;transition:transform .2s,box-shadow .2s,border-color .2s}
 .qa-fab::before{content:'';position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.16) 0%,rgba(226,201,126,.05) 45%,rgba(226,201,126,0) 75%);filter:blur(14px);z-index:-1;opacity:.7;transition:opacity .2s}
 .qa-fab:hover{transform:translateY(-2px) scale(1.05);border-color:rgba(226,201,126,.4);box-shadow:0 14px 40px rgba(0,0,0,.6)}
 .qa-fab:hover::before{opacity:1}
-@media(max-width:720px){.qa-fab{right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
+.qa-fab svg{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.qa-fab-wrap.open .qa-fab svg{transform:rotate(45deg)}
+.qa-fab-wrap.open .qa-fab{border-color:rgba(226,201,126,.4)}
+@media(max-width:720px){.qa-fab-wrap{right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
+/* Abanico de acción rápida */
+.qa-fan{display:flex;flex-direction:column;align-items:flex-end;gap:14px;margin-bottom:16px;pointer-events:none}
+.qa-fan.open{pointer-events:auto}
+.qa-mini{display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;opacity:0;transform:translateY(14px) scale(.4);transform-origin:right center;transition:opacity .18s ease,transform .26s cubic-bezier(.34,1.56,.64,1)}
+.qa-fan.open .qa-mini{opacity:1;transform:translateY(0) scale(1)}
+.qa-fan.open .qa-mini:nth-child(1){transition-delay:0s}
+.qa-fan.open .qa-mini:nth-child(2){transition-delay:.05s}
+.qa-fan.open .qa-mini:nth-child(3){transition-delay:.1s}
+.qa-fan.open .qa-mini:nth-child(4){transition-delay:.15s}
+.qa-fan.open .qa-mini:nth-child(5){transition-delay:.2s}
+.qa-mini-ic{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(226,201,126,.28);color:#e2c97e;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);flex-shrink:0;transition:border-color .15s,background .15s}
+.qa-mini:hover .qa-mini-ic{border-color:rgba(226,201,126,.55);background:rgba(226,201,126,.1)}
+.qa-mini-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .qa-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px}
 .qa-box{position:relative;width:100%;max-width:420px;background:rgba(20,20,20,.97);border:1px solid rgba(226,201,126,.16);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;animation:pgFadeIn .18s ease both}
 .qa-box::before{content:'';position:absolute;top:-90px;right:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 40%,rgba(226,201,126,0) 72%);filter:blur(30px);pointer-events:none;z-index:0}
@@ -855,8 +872,32 @@ select{cursor:pointer}
   </div>
 </div>
 
-<div id="qa-fab" class="qa-fab" onclick="openQA()" title="Acción rápida">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+<div id="qa-fab" class="qa-fab-wrap">
+  <div id="qa-fan" class="qa-fan">
+    <button class="qa-mini" id="qa-mini-repeat" style="display:none" onclick="qaFanRepeat()">
+      <span class="qa-mini-lbl" id="qa-mini-repeat-lbl">Repetir venta</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>
+    </button>
+    <button class="qa-mini" onclick="qaFanSale()">
+      <span class="qa-mini-lbl">Registrar venta</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+    </button>
+    <button class="qa-mini" onclick="qaFanGo('compra')">
+      <span class="qa-mini-lbl">Nueva compra</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+    </button>
+    <button class="qa-mini" onclick="qaFanGo('orden')">
+      <span class="qa-mini-lbl">OC</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+    </button>
+    <button class="qa-mini" onclick="qaFanGo('cotizaciones')">
+      <span class="qa-mini-lbl">Cotizaciones</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+    </button>
+  </div>
+  <div class="qa-fab" onclick="toggleQA()" title="Acción rápida">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+  </div>
 </div>
 <div id="qa-ol" class="qa-ol" style="display:none" onclick="if(event.target===this)closeQA()">
   <div class="qa-box">
@@ -1268,50 +1309,46 @@ function runGSearch(qRaw){
    ACCIÓN RÁPIDA — registrar venta o agregar producto sin cambiar de sección
 ═══════════════════════════════════════════ */
 function openQA(){
-  const ol=document.getElementById('qa-ol');
-  ol.style.display='flex';
-  qaShowMenu();
+  document.getElementById('qa-ol').style.display='flex';
 }
 function closeQA(){
   document.getElementById('qa-ol').style.display='none';
 }
-function qaGoTo(page){
-  closeQA();
-  setTimeout(()=>navigate(page),80);
+function toggleQA(){
+  const wrap=document.getElementById('qa-fab');
+  const fan=document.getElementById('qa-fan');
+  const open=!fan.classList.contains('open');
+  if(open) qaFanRefresh();
+  fan.classList.toggle('open',open);
+  wrap.classList.toggle('open',open);
 }
-function qaPendingCotsLabel(){
-  const cots=DB.get('cotizaciones',[]);
-  const pend=cots.filter(o=>o.status!=='cotizada').length;
-  if(!cots.length) return 'Armar una solicitud de cotización';
-  return pend ? `${pend} solicitud${pend>1?'es':''} pendiente${pend>1?'s':''} de cotizar` : 'Todas las solicitudes están cotizadas';
+function closeFan(){
+  document.getElementById('qa-fan').classList.remove('open');
+  document.getElementById('qa-fab').classList.remove('open');
 }
-function qaShowMenu(){
+function qaFanRefresh(){
   const sales=DB.get('sales',[]);
   const last=sales[sales.length-1];
-  const body=document.getElementById('qa-body');
-  body.innerHTML=`<div class="qa-actions">
-    <button class="qa-act" onclick="qaShowSale()">
-      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-      <div><div class="qa-act-t">Registrar venta</div><div class="qa-act-s">Elegí un producto y cargá precio y cantidad</div></div>
-    </button>
-    ${last?`<button class="qa-act" onclick="qaRepeatLastSale()">
-      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
-      <div><div class="qa-act-t">Repetir última venta</div><div class="qa-act-s">${esc(last.name)} · ${fmtA(last.priceARS)} c/u${last.qty>1?' × '+last.qty:''}</div></div>
-    </button>`:''}
-    <button class="qa-act" onclick="qaGoTo('compra')">
-      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
-      <div><div class="qa-act-t">Ir a Nueva compra</div><div class="qa-act-s">Cargar productos a la compra en curso</div></div>
-    </button>
-    <button class="qa-act" onclick="qaGoTo('orden')">
-      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></div>
-      <div><div class="qa-act-t">Ir a Órdenes de compra</div><div class="qa-act-s">Crear o revisar órdenes de compra</div></div>
-    </button>
-    <button class="qa-act" onclick="qaGoTo('cotizaciones')">
-      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <div><div class="qa-act-t">Ir a Cotizaciones</div><div class="qa-act-s">${qaPendingCotsLabel()}</div></div>
-    </button>
-  </div>`;
-  closeQA._mode='menu';
+  const btn=document.getElementById('qa-mini-repeat');
+  if(!btn) return;
+  if(last){
+    btn.style.display='';
+    document.getElementById('qa-mini-repeat-lbl').textContent=`Repetir: ${last.name}`;
+  } else {
+    btn.style.display='none';
+  }
+}
+function qaFanGo(page){
+  closeFan();
+  setTimeout(()=>navigate(page),90);
+}
+function qaFanSale(){
+  closeFan();
+  setTimeout(()=>{ openQA(); qaShowSale(); },140);
+}
+function qaFanRepeat(){
+  closeFan();
+  setTimeout(()=>qaRepeatLastSale(),90);
 }
 function qaShowSale(){
   const cat=DB.get('catalog',[]);
@@ -1327,7 +1364,7 @@ function qaShowSale(){
     </div>
     <div class="iw"><span class="ipre">$</span><input type="number" id="qa-cost" min="0" step="100" placeholder="Costo real c/u (sugerido automático)"></div>
     <div style="display:flex;gap:8px">
-      <button class="btn-g btn-sm" style="flex:1" onclick="qaShowMenu()">‹ Volver</button>
+      <button class="btn-g btn-sm" style="flex:1" onclick="closeQA()">Cancelar</button>
       <button class="btn-p" style="flex:2" onclick="qaSubmitSale()">✅ Registrar venta</button>
     </div>`;
   setTimeout(()=>document.getElementById('qa-prod')?.focus(),50);
@@ -1377,7 +1414,13 @@ document.addEventListener('keydown', e=>{
     if(ol.style.display==='flex') closeGSearch();
     const qol=document.getElementById('qa-ol');
     if(qol && qol.style.display==='flex') closeQA();
+    const fan=document.getElementById('qa-fan');
+    if(fan && fan.classList.contains('open')) closeFan();
   }
+});
+document.addEventListener('click', e=>{
+  const fan=document.getElementById('qa-fan');
+  if(fan && fan.classList.contains('open') && !e.target.closest('#qa-fab')) closeFan();
 });
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
