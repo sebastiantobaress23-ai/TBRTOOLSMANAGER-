@@ -382,6 +382,12 @@ body{display:flex;flex-direction:column}
 .qa-act-ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(226,201,126,.08);border:1px solid rgba(226,201,126,.18);color:#e2c97e;flex-shrink:0}
 .qa-act-t{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ch)}
 .qa-act-s{font-size:11px;color:var(--di);margin-top:1px}
+.help-it{border-bottom:1px solid var(--b1)}
+.help-it:last-child{border-bottom:none}
+.help-q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 4px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--ch);transition:.15s}
+.help-q:hover{color:#e2c97e}
+.help-arrow{color:var(--di);font-size:12px;transition:transform .2s;flex-shrink:0}
+.help-a{font-size:13px;line-height:1.6;color:var(--di);padding:0 4px 16px}
 
 .gsearch-inrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#fff}
 .gsearch-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit}
@@ -3493,10 +3499,52 @@ function pgConfig() {
   <div class="sh mb16">Excel</div>
   <div class="card mb16"><button class="btn-g" onclick="exportAllXLSX()" style="height:42px">⬇ Exportar todo a Excel</button></div>
 
+  <div class="sh mb16">Ayuda</div>
+  <div class="card mb24">
+    <div class="hint mb16">Guía rápida de cada sección de la app: para qué sirve y cómo usarla en tu día a día.</div>
+    <div id="help-list">${helpItems()}</div>
+  </div>
+
   <div class="sh mb16">Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
 </div>`;
+}
+
+const HELP_SECTIONS = [
+  {t:'Dashboard', d:'Pantalla de inicio: resume tu actividad reciente — última compra, ranking de proveedores, evolución del tipo de cambio (TCE) y la ganancia proyectada. Es el primer vistazo del día para saber cómo viene el negocio.'},
+  {t:'Nueva Compra', d:'Acá armás una compra a un proveedor: cargás el modo (USDT/pesos/etc.), precio base, spread, comisiones y flete, agregás los productos y la app calcula automáticamente el costo final y el precio sugerido de venta. Al guardar, la compra pasa al Historial y los productos se suman/actualizan en el Catálogo.'},
+  {t:'Historial', d:'Lista de todas las compras que ya guardaste, con su fecha, productos, tipo de cambio usado y ganancia estimada. Te sirve para revisar compras anteriores, repetirlas o consultar cuánto invertiste y ganaste en cada una.'},
+  {t:'Ventas', d:'Acá registrás cada venta: elegís el producto del catálogo (te sugiere el costo automáticamente), cargás precio y cantidad, y la app calcula la ganancia real al instante. También vas a encontrar un ranking de qué productos te dejan más rentabilidad y el historial completo de ventas.'},
+  {t:'Catálogo', d:'Es la base de productos de tu negocio: nombre, código, último precio y costo, fecha de actualización y la "Vista 360" con el historial de precios y movimientos de cada producto. Se completa solo a medida que cargás compras, pero también podés agregar o editar productos manualmente.'},
+  {t:'Estadísticas', d:'Gráficos y números que muestran cómo evoluciona tu negocio: ventas, ganancias, productos más vendidos y más. Te ayuda a detectar tendencias y tomar mejores decisiones de compra y precio.'},
+  {t:'Publicar ML', d:'Calculadora pensada para armar tus publicaciones de Mercado Libre: a partir del costo del producto, te sugiere el precio de venta considerando comisión, envío y el margen que quieras ganar. Podés guardar las publicaciones para tenerlas a mano.'},
+  {t:'Competencia', d:'Te permite comparar tus precios con los de la competencia para los productos que ya compraste, así podés ajustar tu estrategia de precios y mantenerte competitivo.'},
+  {t:'Orden de Compra', d:'Generá órdenes de compra formales para tus proveedores: elegís los productos y cantidades, la app arma un PDF con el membrete de tu empresa y te deja enviarlo por WhatsApp directo, junto con un mensaje que vos mismo escribís en Configuración.'},
+  {t:'Cotizaciones', d:'Para cuando necesitás pedirle precios a un proveedor antes de comprar: armás la solicitud con los productos que te interesan, se genera un PDF y lo mandás por WhatsApp con tu propio mensaje. Después podés ver el estado de cada solicitud (pendiente, respondida, etc.).'},
+  {t:'Proveedores', d:'Acá gestionás los datos de tus proveedores (nombre, teléfono, configuración de cambio/comisiones). Esta info se usa en Nueva Compra, Órdenes de Compra y Cotizaciones para no tener que cargarla cada vez.'},
+  {t:'Viaje de compras', d:'Pensado para cuando viajás a comprar mercadería: te ayuda a planificar y llevar el control de gastos, productos a buscar y todo lo relacionado al viaje en un solo lugar.'},
+  {t:'Configuración', d:'El centro de ajustes de la app: datos de Mercado Libre (comisión y envío por defecto), datos de tu empresa para los PDFs, los mensajes de WhatsApp para Órdenes de Compra y Cotizaciones, alertas de margen mínimo, backup/sincronización y más. Revisala primero para que el resto de la app funcione con tus datos reales.'},
+  {t:'Botón de Acción rápida (⚡)', d:'El botón flotante que ves en cualquier sección de la app. Te deja registrar una venta, repetir la última venta, o ir directo a Nueva compra, Órdenes de compra o Cotizaciones, sin tener que navegar — pensado para ahorrarte tiempo en las tareas que hacés todos los días.'},
+  {t:'Búsqueda global (🔍 / Ctrl+K)', d:'El buscador que aparece arriba a la derecha te permite encontrar rápidamente productos, compras, proveedores y más, y saltar directo a esa sección sin tener que recorrer todo el menú.'},
+];
+
+function helpItems(){
+  return HELP_SECTIONS.map((h,i)=>`<div class="help-it">
+    <div class="help-q" onclick="toggleHelp(${i})">
+      <span>${esc(h.t)}</span>
+      <span class="help-arrow" id="help-arrow-${i}">▾</span>
+    </div>
+    <div class="help-a" id="help-a-${i}" style="display:none">${esc(h.d)}</div>
+  </div>`).join('');
+}
+function toggleHelp(i){
+  const a=document.getElementById('help-a-'+i);
+  const arr=document.getElementById('help-arrow-'+i);
+  if(!a)return;
+  const open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  if(arr)arr.style.transform=open?'rotate(0deg)':'rotate(180deg)';
 }
 
 function toggleCmMode(){
