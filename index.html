@@ -3456,6 +3456,8 @@ function tryUnlock(){
   if(match){
     sessionStorage.setItem('tbr_unlocked', JSON.stringify({u:match.user,w:match.pass}));
     document.getElementById('lock-ov').style.display='none';
+    window.scrollTo(0,0);
+    const app=document.getElementById('app'); if(app) app.scrollTop=0;
     const mn=document.getElementById('mob-nav'); if(mn) mn.style.removeProperty('visibility');
     document.getElementById('lock-err').style.display='none';
     document.getElementById('lock-user').value='';
@@ -4735,6 +4737,8 @@ if ('serviceWorker' in navigator) {
 }
 
 window.onload = function() {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0,0);
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados)
   if (DB.get('configs') === null) {
     DB.set('configs', []);
