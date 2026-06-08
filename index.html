@@ -382,6 +382,12 @@ body{display:flex;flex-direction:column}
 .qa-act-ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(226,201,126,.08);border:1px solid rgba(226,201,126,.18);color:#e2c97e;flex-shrink:0}
 .qa-act-t{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ch)}
 .qa-act-s{font-size:11px;color:var(--di);margin-top:1px}
+.help-it{border-bottom:1px solid var(--b1)}
+.help-it:last-child{border-bottom:none}
+.help-q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 4px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--ch);transition:.15s}
+.help-q:hover{color:#e2c97e}
+.help-arrow{color:var(--di);font-size:12px;transition:transform .2s;flex-shrink:0}
+.help-a{font-size:13px;line-height:1.6;color:var(--di);padding:0 4px 16px}
 
 .gsearch-inrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#fff}
 .gsearch-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit}
@@ -931,6 +937,7 @@ const DB = {
   set(k, v) {
     try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch {}
     if (navigator.onLine) {
+      _lastWrite = Date.now();
       clearTimeout(DB._t[k]);
       DB._t[k] = setTimeout(()=>fbWrite(k,v), 600);
     } else {
@@ -1297,6 +1304,10 @@ function openQA(){
 function closeQA(){
   document.getElementById('qa-ol').style.display='none';
 }
+function qaGoTo(page){
+  closeQA();
+  setTimeout(()=>navigate(page),80);
+}
 function qaPendingCotsLabel(){
   const cots=DB.get('cotizaciones',[]);
   const pend=cots.filter(o=>o.status!=='cotizada').length;
@@ -1316,11 +1327,15 @@ function qaShowMenu(){
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
       <div><div class="qa-act-t">Repetir última venta</div><div class="qa-act-s">${esc(last.name)} · ${fmtA(last.priceARS)} c/u${last.qty>1?' × '+last.qty:''}</div></div>
     </button>`:''}
-    <button class="qa-act" onclick="gsearchGo(()=>navigate('compra'))">
+    <button class="qa-act" onclick="qaGoTo('compra')">
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
       <div><div class="qa-act-t">Ir a Nueva compra</div><div class="qa-act-s">Cargar productos a la compra en curso</div></div>
     </button>
-    <button class="qa-act" onclick="gsearchGo(()=>navigate('cotizaciones'))">
+    <button class="qa-act" onclick="qaGoTo('orden')">
+      <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></div>
+      <div><div class="qa-act-t">Ir a Órdenes de compra</div><div class="qa-act-s">Crear o revisar órdenes de compra</div></div>
+    </button>
+    <button class="qa-act" onclick="qaGoTo('cotizaciones')">
       <div class="qa-act-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div><div class="qa-act-t">Ir a Cotizaciones</div><div class="qa-act-s">${qaPendingCotsLabel()}</div></div>
     </button>
@@ -3423,18 +3438,18 @@ function pgConfig() {
 
   <div class="sh mb16">Mensajes de WhatsApp</div>
   <div class="card mb24">
-    <div class="info mb16" style="font-size:12px">Personalizá el texto que se envía junto al PDF al compartir una Orden de Compra o Cotización por WhatsApp. Variables disponibles: <code>{numero}</code> <code>{proveedor}</code> <code>{fecha}</code> <code>{items}</code> <code>{total}</code> <code>{ref}</code></div>
+    <div class="info mb16" style="font-size:12px">Escribí el mensaje que querés que se envíe (junto con el PDF adjunto) al compartir una Orden de Compra o Cotización por WhatsApp.</div>
     <div class="mb16">
       <label class="fl">Plantilla — Orden de Compra</label>
-      <textarea id="wa-tpl-oc" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||DEFAULT_WA_TPL_OC)}</textarea>
+      <textarea id="wa-tpl-oc" rows="5" placeholder="Escribí acá el mensaje para Órdenes de Compra…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||'')}</textarea>
     </div>
     <div class="mb16">
       <label class="fl">Plantilla — Solicitud de Cotización</label>
-      <textarea id="wa-tpl-cot" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplCot||DEFAULT_WA_TPL_COT)}</textarea>
+      <textarea id="wa-tpl-cot" rows="5" placeholder="Escribí acá el mensaje para Cotizaciones…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplCot||'')}</textarea>
     </div>
     <div class="fe" style="gap:10px">
-      <button class="btn-p" onclick="saveWaTpl()">Guardar plantillas</button>
-      <button class="btn-g btn-sm" onclick="resetWaTpl()">Restaurar predeterminadas</button>
+      <button class="btn-p" onclick="saveWaTpl()">Guardar mensajes</button>
+      <button class="btn-g btn-sm" onclick="resetWaTpl()">Vaciar</button>
     </div>
   </div>
 
@@ -3484,10 +3499,52 @@ function pgConfig() {
   <div class="sh mb16">Excel</div>
   <div class="card mb16"><button class="btn-g" onclick="exportAllXLSX()" style="height:42px">⬇ Exportar todo a Excel</button></div>
 
+  <div class="sh mb16">Ayuda</div>
+  <div class="card mb24">
+    <div class="hint mb16">Guía rápida de cada sección de la app: para qué sirve y cómo usarla en tu día a día.</div>
+    <div id="help-list">${helpItems()}</div>
+  </div>
+
   <div class="sh mb16">Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
 </div>`;
+}
+
+const HELP_SECTIONS = [
+  {t:'Dashboard', d:'Pantalla de inicio: resume tu actividad reciente — última compra, ranking de proveedores, evolución del tipo de cambio (TCE) y la ganancia proyectada. Es el primer vistazo del día para saber cómo viene el negocio.'},
+  {t:'Nueva Compra', d:'Acá armás una compra a un proveedor: cargás el modo (USDT/pesos/etc.), precio base, spread, comisiones y flete, agregás los productos y la app calcula automáticamente el costo final y el precio sugerido de venta. Al guardar, la compra pasa al Historial y los productos se suman/actualizan en el Catálogo.'},
+  {t:'Historial', d:'Lista de todas las compras que ya guardaste, con su fecha, productos, tipo de cambio usado y ganancia estimada. Te sirve para revisar compras anteriores, repetirlas o consultar cuánto invertiste y ganaste en cada una.'},
+  {t:'Ventas', d:'Acá registrás cada venta: elegís el producto del catálogo (te sugiere el costo automáticamente), cargás precio y cantidad, y la app calcula la ganancia real al instante. También vas a encontrar un ranking de qué productos te dejan más rentabilidad y el historial completo de ventas.'},
+  {t:'Catálogo', d:'Es la base de productos de tu negocio: nombre, código, último precio y costo, fecha de actualización y la "Vista 360" con el historial de precios y movimientos de cada producto. Se completa solo a medida que cargás compras, pero también podés agregar o editar productos manualmente.'},
+  {t:'Estadísticas', d:'Gráficos y números que muestran cómo evoluciona tu negocio: ventas, ganancias, productos más vendidos y más. Te ayuda a detectar tendencias y tomar mejores decisiones de compra y precio.'},
+  {t:'Publicar ML', d:'Calculadora pensada para armar tus publicaciones de Mercado Libre: a partir del costo del producto, te sugiere el precio de venta considerando comisión, envío y el margen que quieras ganar. Podés guardar las publicaciones para tenerlas a mano.'},
+  {t:'Competencia', d:'Te permite comparar tus precios con los de la competencia para los productos que ya compraste, así podés ajustar tu estrategia de precios y mantenerte competitivo.'},
+  {t:'Orden de Compra', d:'Generá órdenes de compra formales para tus proveedores: elegís los productos y cantidades, la app arma un PDF con el membrete de tu empresa y te deja enviarlo por WhatsApp directo, junto con un mensaje que vos mismo escribís en Configuración.'},
+  {t:'Cotizaciones', d:'Para cuando necesitás pedirle precios a un proveedor antes de comprar: armás la solicitud con los productos que te interesan, se genera un PDF y lo mandás por WhatsApp con tu propio mensaje. Después podés ver el estado de cada solicitud (pendiente, respondida, etc.).'},
+  {t:'Proveedores', d:'Acá gestionás los datos de tus proveedores (nombre, teléfono, configuración de cambio/comisiones). Esta info se usa en Nueva Compra, Órdenes de Compra y Cotizaciones para no tener que cargarla cada vez.'},
+  {t:'Viaje de compras', d:'Pensado para cuando viajás a comprar mercadería: te ayuda a planificar y llevar el control de gastos, productos a buscar y todo lo relacionado al viaje en un solo lugar.'},
+  {t:'Configuración', d:'El centro de ajustes de la app: datos de Mercado Libre (comisión y envío por defecto), datos de tu empresa para los PDFs, los mensajes de WhatsApp para Órdenes de Compra y Cotizaciones, alertas de margen mínimo, backup/sincronización y más. Revisala primero para que el resto de la app funcione con tus datos reales.'},
+  {t:'Botón de Acción rápida (⚡)', d:'El botón flotante que ves en cualquier sección de la app. Te deja registrar una venta, repetir la última venta, o ir directo a Nueva compra, Órdenes de compra o Cotizaciones, sin tener que navegar — pensado para ahorrarte tiempo en las tareas que hacés todos los días.'},
+  {t:'Búsqueda global (🔍 / Ctrl+K)', d:'El buscador que aparece arriba a la derecha te permite encontrar rápidamente productos, compras, proveedores y más, y saltar directo a esa sección sin tener que recorrer todo el menú.'},
+];
+
+function helpItems(){
+  return HELP_SECTIONS.map((h,i)=>`<div class="help-it">
+    <div class="help-q" onclick="toggleHelp(${i})">
+      <span>${esc(h.t)}</span>
+      <span class="help-arrow" id="help-arrow-${i}">▾</span>
+    </div>
+    <div class="help-a" id="help-a-${i}" style="display:none">${esc(h.d)}</div>
+  </div>`).join('');
+}
+function toggleHelp(i){
+  const a=document.getElementById('help-a-'+i);
+  const arr=document.getElementById('help-arrow-'+i);
+  if(!a)return;
+  const open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  if(arr)arr.style.transform=open?'rotate(0deg)':'rotate(180deg)';
 }
 
 function toggleCmMode(){
@@ -4366,8 +4423,63 @@ async function shareViaWA(phone, text, pdfDoc, filename){
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
 }
 
+function reportDocBody(period, since, now, ps, sales, emp){
+  const label = period==='week' ? 'Reporte semanal' : 'Reporte mensual';
+  const fecha = now.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const desde = since.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
+  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+
+  const map={};
+  sales.forEach(s=>{
+    const key=(s.code||s.name||'').toLowerCase();
+    if(!map[key]) map[key]={name:s.name,profit:0,units:0};
+    map[key].profit += saleProfit(s);
+    map[key].units += (s.qty||1);
+  });
+  const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
+
+  const rows = top.length ? top.map((t,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${esc(t.name)}</td>
+    <td class="ctr">${t.units}</td>
+    <td class="cright">${fmtA(t.profit)}</td>
+  </tr>`).join('') : `<tr><td colspan="4" class="ctr">Sin ventas registradas en el período.</td></tr>`;
+
+  const html = `<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">${label}</div>
+      <div class="oc-num">${fecha}</div>
+      <div class="oc-date">Desde ${desde}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Compras</div><div class="meta-val">${ps.length} · Invertido ${fmtA(totCompras)}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Ventas</div><div class="meta-val">${sales.length} · ${unidades} unid. · ${fmtA(totVentas)}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Ganancia neta</div><div class="meta-val">${fmtA(totGanancia)}</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Producto</th><th class="ctr">Unid.</th><th class="cright">Ganancia</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="foot-note">TBR TOOLS · ${label} · ${fecha}</div>
+</div>`;
+  return {css: DOC_CSS, html};
+}
+
 async function generateReport(period){
-  await ensureJsPDF();
   const now = new Date();
   const since = new Date(now);
   let label;
@@ -4394,30 +4506,12 @@ async function generateReport(period){
   const fechaStr = now.toLocaleDateString('es-AR');
   const desdeStr = since.toLocaleDateString('es-AR');
 
-  let doc = null;
-  if (!window.__jspdfOffline && typeof window.jspdf !== 'undefined') {
-    const { jsPDF } = window.jspdf;
-    doc = new jsPDF();
-    let y = 20;
-    doc.setFontSize(16); doc.setFont(undefined,'bold');
-    doc.text(label, 14, y); y+=8;
-    doc.setFontSize(10); doc.setFont(undefined,'normal');
-    if (emp.razonSocial) { doc.text(emp.razonSocial, 14, y); y+=6; }
-    doc.text(`Período: ${desdeStr} — ${fechaStr}`, 14, y); y+=9;
-    doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
-    doc.setFont(undefined,'bold'); doc.text('Resumen', 14, y); y+=7;
-    doc.setFont(undefined,'normal');
-    [
-      `Compras realizadas: ${ps.length}  ·  Total invertido: ${fmtA(totCompras)}`,
-      `Ventas registradas: ${sales.length}  ·  Unidades vendidas: ${unidades}`,
-      `Ingresos por ventas: ${fmtA(totVentas)}`,
-      `Ganancia real (neta): ${fmtA(totGanancia)}`,
-    ].forEach(l=>{ doc.text(l, 14, y); y+=6; });
-    y += 4; doc.setLineWidth(0.3); doc.line(14, y, 196, y); y+=8;
-    doc.setFont(undefined,'bold'); doc.text('Top 5 productos más rentables', 14, y); y+=7;
-    doc.setFont(undefined,'normal');
-    if (top.length) top.forEach((t,i)=>{ doc.text(`${i+1}. ${t.name} — ${fmtA(t.profit)} (${t.units} unid.)`, 14, y); y+=6; });
-    else { doc.text('Sin ventas registradas en el período.', 14, y); y+=6; }
+  let pdf = null;
+  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+    const {css, html} = reportDocBody(period, since, now, ps, sales, emp);
+    pdf = await renderBrandedPDF(css, html, label);
+  } else {
+    toast('⚠ No se pudo cargar el generador de PDF — se enviará solo el mensaje de texto.', false);
   }
 
   const text = `📊 *${label}* (${desdeStr} – ${fechaStr})\n\n`+
@@ -4427,11 +4521,11 @@ async function generateReport(period){
     (top.length ? `\n🏆 Top productos:\n`+top.map((t,i)=>`${i+1}. ${t.name} — ${fmtA(t.profit)}`).join('\n') : '');
 
   const filename = `${period==='week'?'reporte-semanal':'reporte-mensual'}-${now.toISOString().slice(0,10)}.pdf`;
-  shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, doc, filename);
+  shareViaWA(emp.tel ? emp.tel.replace(/\D/g,'') : '', text, pdf, filename);
 }
 
-const DEFAULT_WA_TPL_OC = `*Orden de Compra {numero}*\nProveedor: {proveedor}\nFecha: {fecha}{ref}\n\n{items}\n\n*Total: {total}*`;
-const DEFAULT_WA_TPL_COT = `*Solicitud de cotización {numero}*\nProveedor: {proveedor}\nFecha: {fecha}\n\n{items}\n\nPor favor envíenos su cotización indicando el número *{numero}* como referencia. ¡Gracias!`;
+const DEFAULT_WA_TPL_OC = '';
+const DEFAULT_WA_TPL_COT = '';
 function applyTemplate(tpl, vars){
   return tpl.replace(/\{(\w+)\}/g, (m,k)=> vars[k]!==undefined ? vars[k] : m);
 }
@@ -4447,17 +4541,15 @@ function resetWaTpl(){
   delete s.waTplOC; delete s.waTplCot;
   DB.set('settings',s);
   render();
-  toast('Plantillas restauradas a las predeterminadas');
+  toast('Mensajes vaciados');
 }
 async function shareCotWA(id){
   const o=DB.get('cotizaciones',[]).find(x=>x.id===id);
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const fecha=fmtD(o.date);
-  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1}`).join('\n');
   const s=DB.get('settings',{});
-  const txt=applyTemplate(s.waTplCot||DEFAULT_WA_TPL_COT, {numero:o.nro, proveedor:o.proveedor||'—', fecha, items:lines});
+  const txt=s.waTplCot||'';
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = cotDocBody(o);
@@ -4699,13 +4791,8 @@ async function shareOCWA(id){
   if(!o)return;
   const confs=DB.get('configs',[]);
   const phone=(confs.find(c=>c.id===o.proveedorId)?.phone)||'';
-  const sym=o.currency==='ARS'?'$':'US$';
-  const total=o.currency==='ARS'?(o.totalARS||0):(o.totalUSD||0);
-  const fecha=fmtD(o.date);
-  const lines=(o.items||[]).map((p,i)=>`${i+1}. ${p.n||'—'} (${p.c||'—'}) · Cant: ${p.q||1} · ${sym} ${(p.p||0).toFixed(2)}`).join('\n');
-  const ref=o.cotizacionRef?`\nRef. cotización: ${o.cotizacionRef}`:'';
   const s=DB.get('settings',{});
-  const txt=applyTemplate(s.waTplOC||DEFAULT_WA_TPL_OC, {numero:o.nro, proveedor:o.proveedor||'—', fecha, ref, items:lines, total:`${sym} ${total.toFixed(2)}`});
+  const txt=s.waTplOC||'';
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
     const {css, html} = ocDocBody(o);
