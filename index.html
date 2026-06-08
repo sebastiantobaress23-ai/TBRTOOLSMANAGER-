@@ -372,10 +372,12 @@ body{display:flex;flex-direction:column}
 .qa-fab:hover::before{opacity:1}
 @media(max-width:720px){.qa-fab{right:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
 .qa-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px}
-.qa-box{width:100%;max-width:420px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden;animation:pgFadeIn .18s ease both}
-.qa-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
-.qa-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ch);display:flex;align-items:center;gap:8px}
-.qa-body{padding:18px;display:flex;flex-direction:column;gap:12px}
+.qa-box{position:relative;width:100%;max-width:420px;background:rgba(20,20,20,.97);border:1px solid rgba(226,201,126,.16);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;animation:pgFadeIn .18s ease both}
+.qa-box::before{content:'';position:absolute;top:-90px;right:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 40%,rgba(226,201,126,0) 72%);filter:blur(30px);pointer-events:none;z-index:0}
+.qa-hdr{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.qa-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ch);display:flex;align-items:center;gap:10px}
+.qa-title-ic{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(226,201,126,.08);border:1px solid rgba(226,201,126,.22);color:#e2c97e;flex-shrink:0}
+.qa-body{position:relative;z-index:1;padding:18px;display:flex;flex-direction:column;gap:12px}
 .qa-actions{display:flex;flex-direction:column;gap:8px}
 .qa-act{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:.15s;text-align:left}
 .qa-act:hover{background:rgba(226,201,126,.06);border-color:rgba(226,201,126,.22)}
@@ -850,8 +852,8 @@ select{cursor:pointer}
 <div id="qa-ol" class="qa-ol" style="display:none" onclick="if(event.target===this)closeQA()">
   <div class="qa-box">
     <div class="qa-hdr">
-      <div class="qa-title">⚡ Acción rápida</div>
-      <button class="btn-rm" onclick="closeQA()">x</button>
+      <div class="qa-title"><span class="qa-title-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Acción rápida</div>
+      <button class="btn-rm" onclick="closeQA()">✕</button>
     </div>
     <div id="qa-body" class="qa-body"></div>
   </div>
