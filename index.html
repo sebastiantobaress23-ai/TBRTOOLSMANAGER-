@@ -1347,7 +1347,8 @@ function qaFanLayout(){
   // 12 (arriba), todos a la misma distancia del centro del botón principal,
   // repartidos en ángulos parejos a lo largo de ese cuarto de círculo.
   const items=[...document.querySelectorAll('#qa-fan .qa-mini')].filter(b=>b.style.display!=='none');
-  const n=items.length, R=110, labelOut=40;
+  const n=items.length, R=110;
+  const iconR=21, lblGap=10; // radio del círculo (42px/2) y separación visual fija a la etiqueta
   const startDeg=92, endDeg=2; // de las 9 (a un costado) a las 12 (arriba), en arco parejo
   items.forEach((btn,i)=>{
     const t=n>1?i/(n-1):0;
@@ -1358,13 +1359,16 @@ function qaFanLayout(){
     btn.style.setProperty('--dx',dx.toFixed(1)+'px');
     btn.style.setProperty('--dy',dy.toFixed(1)+'px');
     btn.style.setProperty('--dl',(i*0.05).toFixed(2)+'s');
-    // La etiqueta se ubica como un "rayo" más allá del círculo, en la misma
-    // dirección radial respecto del FAB: así cada una apunta hacia su propio
-    // sector del arco y nunca choca con el círculo vecino.
+    // La etiqueta queda siempre a la izquierda del círculo, centrada
+    // verticalmente con él, a una distancia fija (lblGap) de su borde.
+    // Posicionarla según el ancho real evita que el texto choque con el
+    // ícono, algo que sí pasaba al desplazarla en la misma dirección
+    // radial que el botón (los más horizontales se solapaban).
     const lbl=btn.querySelector('.qa-mini-lbl');
     if(lbl){
-      lbl.style.setProperty('--lx',(dx*labelOut/R).toFixed(1)+'px');
-      lbl.style.setProperty('--ly',(dy*labelOut/R).toFixed(1)+'px');
+      const lx=-(iconR+lblGap+lbl.offsetWidth/2);
+      lbl.style.setProperty('--lx',lx.toFixed(1)+'px');
+      lbl.style.setProperty('--ly','0px');
     }
   });
 }
