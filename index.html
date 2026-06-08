@@ -385,7 +385,7 @@ body{display:flex;flex-direction:column}
 .qa-fan.open .qa-mini{opacity:1;transform:translate(var(--dx,0),var(--dy,0)) scale(1);transition-delay:var(--dl,0s)}
 .qa-mini-ic{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(240,236,224,.3);color:#f0ece0;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .15s,background .15s}
 .qa-mini:hover .qa-mini-ic{border-color:rgba(240,236,224,.6);background:rgba(240,236,224,.1)}
-.qa-mini-lbl{position:absolute;right:100%;top:50%;transform:translateY(-50%);margin-right:10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.qa-mini-lbl{position:absolute;left:50%;top:50%;transform:translate(calc(-50% + var(--lx,-86px)),calc(-50% + var(--ly,0px)));font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .qa-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px}
 .qa-box{position:relative;width:100%;max-width:420px;background:rgba(20,20,20,.97);border:1px solid rgba(226,201,126,.16);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;animation:pgFadeIn .18s ease both}
 .qa-box::before{content:'';position:absolute;top:-90px;right:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 40%,rgba(226,201,126,0) 72%);filter:blur(30px);pointer-events:none;z-index:0}
@@ -1335,26 +1335,37 @@ function qaFanRefresh(){
   if(!btn) return;
   if(last){
     btn.style.display='';
-    document.getElementById('qa-mini-repeat-lbl').textContent=`Repetir: ${last.name}`;
+    const shortName=last.name.length>14?last.name.slice(0,14)+'…':last.name;
+    document.getElementById('qa-mini-repeat-lbl').textContent=`Repetir: ${shortName}`;
   } else {
     btn.style.display='none';
   }
 }
 function qaFanLayout(){
-  // Arco curvo alrededor del FAB: el desplazamiento horizontal sigue una curva
-  // de seno (cuarto de círculo) que se abre hacia afuera, mientras el paso
-  // vertical es constante y mayor al diámetro del círculo + margen, así los
-  // círculos y etiquetas nunca se superponen y el conjunto "rodea" el botón
-  // en forma de arco en lugar de subir en línea recta.
+  // Arco circular concéntrico alrededor del FAB, como las posiciones de un
+  // reloj: el primer botón queda a las 9 (a la izquierda) y el último a las
+  // 12 (arriba), todos a la misma distancia del centro del botón principal,
+  // repartidos en ángulos parejos a lo largo de ese cuarto de círculo.
   const items=[...document.querySelectorAll('#qa-fan .qa-mini')].filter(b=>b.style.display!=='none');
-  const n=items.length, vStep=64, dxBase=68, dxRange=64;
+  const n=items.length, R=150, labelOut=95;
+  const startDeg=92, endDeg=2; // de las 9 (a un costado) a las 12 (arriba), en arco parejo
   items.forEach((btn,i)=>{
     const t=n>1?i/(n-1):0;
-    const dx=-(dxBase+dxRange*Math.sin(t*Math.PI/2));
-    const dy=-(i*vStep);
+    const deg=startDeg+(endDeg-startDeg)*t;
+    const rad=deg*Math.PI/180;
+    const dx=-(R*Math.sin(rad));
+    const dy=-(R*Math.cos(rad));
     btn.style.setProperty('--dx',dx.toFixed(1)+'px');
     btn.style.setProperty('--dy',dy.toFixed(1)+'px');
     btn.style.setProperty('--dl',(i*0.05).toFixed(2)+'s');
+    // La etiqueta se ubica como un "rayo" más allá del círculo, en la misma
+    // dirección radial respecto del FAB: así cada una apunta hacia su propio
+    // sector del arco y nunca choca con el círculo vecino.
+    const lbl=btn.querySelector('.qa-mini-lbl');
+    if(lbl){
+      lbl.style.setProperty('--lx',(dx*labelOut/R).toFixed(1)+'px');
+      lbl.style.setProperty('--ly',(dy*labelOut/R).toFixed(1)+'px');
+    }
   });
 }
 function qaFanGo(page){
