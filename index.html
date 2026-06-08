@@ -931,6 +931,7 @@ const DB = {
   set(k, v) {
     try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch {}
     if (navigator.onLine) {
+      _lastWrite = Date.now();
       clearTimeout(DB._t[k]);
       DB._t[k] = setTimeout(()=>fbWrite(k,v), 600);
     } else {
