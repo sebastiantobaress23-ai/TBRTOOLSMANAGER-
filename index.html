@@ -926,6 +926,10 @@ select{cursor:pointer}
       <div class="iw"><input type="password" id="lock-pass" placeholder="Contraseña" autocomplete="current-password" style="text-align:center" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
       <div id="lock-err" style="display:none;font-size:12px;color:var(--re)">Usuario o contraseña incorrectos</div>
       <button class="btn-p" style="width:100%;margin-top:6px" onclick="tryUnlock()">Entrar</button>
+      <button id="lock-bio-btn" class="btn-g" style="width:100%;display:none;align-items:center;justify-content:center;gap:8px" onclick="loginBiometric()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+        <span id="lock-bio-label">Usar Face ID / Touch ID</span>
+      </button>
     </div>
   </div>
 </div>
@@ -3588,6 +3592,7 @@ function pgProveedores() {
 function pgConfig() {
   const s=DB.get('settings',{marginAlert:15,mlCom:16,mlEnv:7500});
   const emp=DB.get('empresa',{});
+  const bio=getBioCred();
   return `<div class="pg">
 
   <div class="sh mb16">Mercado Libre</div>
@@ -3658,6 +3663,20 @@ function pgConfig() {
       </div>`).join('')}
     </div>` : ''}
     <div class="hint mt12">${(s.users||[]).length?`🔐 El acceso está protegido — ${s.users.length===1?'hay 1 usuario configurado':'hay '+s.users.length+' usuarios configurados'}.`:'⚠ Sin usuarios configurados, cualquiera con el link puede entrar y modificar los datos.'}</div>
+    ${(s.users||[]).length ? `<div class="mt16" style="border-top:1px solid rgba(255,255,255,.05);padding-top:14px">
+      <div style="font-size:13px;color:var(--ch);margin-bottom:8px">🆔 Face ID / Touch ID en este teléfono</div>
+      ${bio ? `
+        <div class="hint">Activado en este dispositivo para <b>${esc(bio.user)}</b>.</div>
+        <button class="btn-g btn-sm mt8" onclick="removeBiometric()">Desactivar Face ID</button>
+      ` : `
+        <div class="hint mb8">Vinculá Face ID / Touch ID / huella a un usuario para entrar más rápido y con un factor de seguridad adicional desde este celular. Se configura una sola vez por dispositivo.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="iw" style="max-width:220px"><select id="bio-user-sel">${(s.users||[]).map(u=>`<option value="${u.id}">${esc(u.user)}</option>`).join('')}</select></div>
+          <button class="btn-p btn-sm" onclick="registerBiometric()">Activar Face ID</button>
+        </div>
+        <div class="hint mt8" id="bio-unsupported" style="display:none;color:var(--re)">Tu navegador o dispositivo no soporta Face ID / Touch ID, o estás en HTTP (necesita HTTPS).</div>
+      `}
+    </div>` : ''}
   </div>
 
   <div class="sh mb16">Notificaciones</div>
@@ -3826,6 +3845,7 @@ function checkAccessPin(){
   if(ov) ov.style.display='flex';
   if(mn) mn.style.setProperty('visibility','hidden','important');
   if(fab) fab.style.display='none';
+  updateLockBioBtn();
   return false;
 }
 function tryUnlock(){
@@ -3847,6 +3867,94 @@ function tryUnlock(){
   } else {
     document.getElementById('lock-err').style.display='block';
   }
+}
+/* ═══════════════════════════════════════════
+   FACE ID / TOUCH ID — autenticación biométrica (WebAuthn)
+═══════════════════════════════════════════ */
+function getBioCred(){
+  try { return JSON.parse(localStorage.getItem('tbr_bio')||'null'); } catch { return null; }
+}
+function bioPlatformAvailable(){
+  return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+}
+function b64ToBuf(b64){
+  const bin=atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
+  const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  return buf.buffer;
+}
+function bufToB64(buf){
+  const bytes=new Uint8Array(buf);
+  let bin='';
+  for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function registerBiometric(){
+  const warn=document.getElementById('bio-unsupported');
+  if(warn) warn.style.display='none';
+  if(!bioPlatformAvailable()){ if(warn) warn.style.display='block'; return; }
+  const sel=document.getElementById('bio-user-sel');
+  const s=DB.get('settings',{});
+  const user=(s.users||[]).find(x=>x.id===(sel&&sel.value));
+  if(!user){ toast('Elegí un usuario', false); return; }
+  try{
+    const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if(!ok){ if(warn) warn.style.display='block'; return; }
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=crypto.getRandomValues(new Uint8Array(16));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge, rp:{name:'TBR Tools Manager'},
+      user:{id:userId, name:user.user, displayName:user.user},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred'},
+      timeout:60000
+    }});
+    if(!cred) throw new Error('sin credencial');
+    localStorage.setItem('tbr_bio', JSON.stringify({credId:bufToB64(cred.rawId), user:user.user, pass:user.pass}));
+    toast('Face ID / Touch ID activado 🆔');
+    render();
+  }catch(e){
+    toast('No se pudo activar Face ID / Touch ID', false);
+  }
+}
+function removeBiometric(){
+  confirm2('¿Desactivar Face ID / Touch ID en este dispositivo?',()=>{
+    localStorage.removeItem('tbr_bio');
+    toast('Face ID desactivado');
+    render();
+  },'Desactivar','cm-ok');
+}
+async function loginBiometric(){
+  const bio=getBioCred();
+  if(!bio || !bioPlatformAvailable()) return;
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const cred=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:[{id:b64ToBuf(bio.credId), type:'public-key', transports:['internal']}],
+      userVerification:'required',
+      timeout:60000
+    }});
+    if(!cred) throw new Error('sin credencial');
+    const s=DB.get('settings',{});
+    const users=s.users||[];
+    const match=users.find(x=>x.user===bio.user && x.pass===bio.pass);
+    if(!match){ toast('El usuario vinculado a Face ID ya no existe', false); return; }
+    sessionStorage.setItem('tbr_unlocked', JSON.stringify({u:match.user,w:match.pass}));
+    document.getElementById('lock-ov').style.display='none';
+    window.scrollTo(0,0);
+    const app=document.getElementById('app'); if(app) app.scrollTop=0;
+    const mn=document.getElementById('mob-nav'); if(mn) mn.style.removeProperty('visibility');
+    const fab=document.getElementById('qa-fab'); if(fab) fab.style.removeProperty('display');
+  }catch(e){
+    // el usuario canceló o falló la verificación biométrica
+  }
+}
+function updateLockBioBtn(){
+  const btn=document.getElementById('lock-bio-btn');
+  if(!btn) return;
+  const bio=getBioCred();
+  btn.style.display=(bio && bioPlatformAvailable())?'flex':'none';
 }
 /* ═══════════════════════════════════════════
    NOTIFICACIONES — avisos locales vía service worker
