@@ -434,7 +434,13 @@ body{display:flex;flex-direction:column}
 .nav-hint,.mob-nav-hint{position:sticky;right:0;flex:0 0 auto;display:flex;align-items:center;justify-content:center;pointer-events:none;color:rgba(245,240,228,.55);background:linear-gradient(to right,transparent,rgba(8,8,8,.95) 55%);animation:navHintPulse 1.8s ease-in-out infinite}
 .nav-hint{padding:0 14px 0 28px;font-size:16px}
 .mob-nav-hint{padding:0 10px 0 22px;font-size:15px;height:100%}
+.nav-hint-l,.mob-nav-hint-l{right:auto;left:0;background:linear-gradient(to left,transparent,rgba(8,8,8,.95) 55%);animation-name:navHintPulseL}
+.nav-hint-l{padding:0 28px 0 14px}
+.mob-nav-hint-l{padding:0 22px 0 10px}
 @keyframes navHintPulse{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(3px)}}
+@keyframes navHintPulseL{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(-3px)}}
+html.light .nav-hint,html.light .mob-nav-hint{background:linear-gradient(to right,transparent,rgba(250,250,250,.95) 55%)}
+html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to left,transparent,rgba(250,250,250,.95) 55%)}
 .tab{padding:14px 18px;font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.18);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
 .tab:hover{color:rgba(255,255,255,.55)}
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
@@ -820,6 +826,28 @@ select{cursor:pointer}
 .iw:focus-within{transform:translateY(-1px)}
 .iw{transition:border-color .18s,box-shadow .18s,background .18s,transform .18s}
 
+/* CTA de estados vacíos: nunca partir el texto en dos líneas */
+.btn-go{white-space:nowrap}
+@media(max-width:380px){
+  .btn-go{letter-spacing:2px;font-size:12px;padding-left:22px;padding-right:22px}
+}
+
+/* Accesibilidad: foco visible para navegación por teclado */
+.tab:focus-visible,.mob-tab:focus-visible,.btn-p:focus-visible,.btn-g:focus-visible,.btn-d:focus-visible,.btn-go:focus-visible,.qa-fab:focus-visible,.sort-btn:focus-visible,.compact-btn:focus-visible{
+  outline:2px solid rgba(226,201,126,.55);outline-offset:2px;
+}
+
+/* Movimiento reducido: respetar la preferencia del usuario */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+  .card:hover,.sc:hover,.mc:hover,.qa-fab:hover{transform:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -909,6 +937,7 @@ select{cursor:pointer}
 </div>
 
 <nav class="nav">
+  <div class="nav-hint nav-hint-l">‹</div>
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
   <div class="tab"     data-p="historial"   onclick="navigate('historial')">Historial</div>
@@ -927,6 +956,7 @@ select{cursor:pointer}
 
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mob-nav" id="mob-nav">
+  <div class="mob-nav-hint mob-nav-hint-l">‹</div>
   <button class="mob-tab" data-p="dashboard"   onclick="navigate('dashboard')"><span class="mob-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Inicio</button>
   <button class="mob-tab" data-p="compra"      onclick="navigate('compra')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Compra</button>
   <button class="mob-tab" data-p="historial"   onclick="navigate('historial')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></span>Historial</button>
@@ -1483,14 +1513,16 @@ let _navHintTicking = false;
 let _pageTransition = false;
 function updateNavHints(){
   if (!_navHintPairs) {
-    _navHintPairs = [['nav.nav','.nav-hint'], ['#mob-nav','.mob-nav-hint']]
-      .map(([navSel,hintSel])=>[document.querySelector(navSel), document.querySelector(hintSel)])
-      .filter(([nav,hint])=>nav && hint);
+    _navHintPairs = [['nav.nav','.nav-hint:not(.nav-hint-l)','.nav-hint-l'], ['#mob-nav','.mob-nav-hint:not(.mob-nav-hint-l)','.mob-nav-hint-l']]
+      .map(([navSel,rightSel,leftSel])=>[document.querySelector(navSel), document.querySelector(rightSel), document.querySelector(leftSel)])
+      .filter(([nav,right,left])=>nav && right && left);
   }
-  _navHintPairs.forEach(([nav,hint])=>{
+  _navHintPairs.forEach(([nav,right,left])=>{
     const overflows = nav.scrollWidth > nav.clientWidth + 2;
+    const atStart = nav.scrollLeft <= 2;
     const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
-    hint.style.display = (overflows && !atEnd) ? '' : 'none';
+    right.style.display = (overflows && !atEnd) ? '' : 'none';
+    left.style.display = (overflows && !atStart) ? '' : 'none';
   });
 }
 function requestNavHintUpdate(){
