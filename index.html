@@ -1138,8 +1138,10 @@ const DB = {
         localStorage.setItem('tbr__pending', JSON.stringify(pending));
       }
     } catch {}
+    // Se marca _lastWrite siempre (online u offline) para que fbSync no
+    // pise un cambio recién hecho localmente mientras no hay conexión.
+    _lastWrite = Date.now();
     if (navigator.onLine) {
-      _lastWrite = Date.now();
       clearTimeout(DB._t[k]);
       DB._t[k] = setTimeout(()=>fbWrite(k,v), 600);
     }
