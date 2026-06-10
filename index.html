@@ -4692,6 +4692,7 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
+    <div class="hint mt12">Al agregar desde el catálogo se sugiere un costo estimado en ARS (según el último TCE) — ajustá el precio para definir lo que le vas a cobrar al cliente.</div>
   </div>
 
   <div class="cot-actbar mb16">
@@ -4774,7 +4775,7 @@ function openPedCatModal(){
   m.style.display='flex';
 }
 function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';}
-function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||'');closePedCatModal();}
+function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestSaleCost(c.code,c.name)||'');closePedCatModal();}
 
 function generatePedido() {
   if (!PED.length){toast('Agregá artículos al pedido.',false);return;}
