@@ -5747,7 +5747,7 @@ function onOrdCotRefChange(nro){
   if (!cot || !(cot.items||[]).length) return;
   const loadIt = ORDER.length===0 || confirm('¿Cargar los artículos de la cotización '+nro+' en esta orden? Esto reemplazará los artículos actuales.');
   if (!loadIt) return;
-  ORDER = cot.items.map(it=>({id:uid(), n:it.n||it.name||'', c:it.c||it.code||'', q:it.q||it.qty||1, p:it.p||it.price||0}));
+  ORDER = cot.items.map(it=>({id:uid(), n:it.n||it.name||'', c:it.c||it.code||'', q:it.q||it.qty||1, p:it.precio||0}));
   const list=document.getElementById('ord-list');
   if (list) list.innerHTML = ORDER.length ? ORDER.map(ordRow).join('') : '';
   refreshOrdTotals();
