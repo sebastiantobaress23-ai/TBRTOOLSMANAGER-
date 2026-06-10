@@ -2911,13 +2911,12 @@ function suggestSaleCost(code, name){
   const tce = lastTCE();
   return Math.round((c.lastPrice||c.defaultPrice||0) * tce);
 }
-function suggestSalePrice(code, name){
-  const pubs = DB.get('mlpubs',[]);
-  for (let i=pubs.length-1; i>=0; i--){
-    const pp = (pubs[i].products||[]).find(x=>(code && x.c===code) || (!code && x.n===name));
-    if (pp && pp.precio) return Math.round(pp.precio);
-  }
-  return 0;
+function suggestDirectPrice(code, name){
+  const cost = suggestSaleCost(code, name);
+  if (!cost) return 0;
+  const s = DB.get('settings',{});
+  const margin = s.directMargin!=null ? s.directMargin : 30;
+  return Math.round(cost * (1 + margin/100));
 }
 function fillSaleCost(){
   const sel=document.getElementById('sale-prod');
@@ -4073,6 +4072,18 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Ventas directas (Pedidos)</div>
+  <div class="card mb24">
+    <div class="hint mb16" style="color:var(--si)">Margen que se aplica sobre tu costo para sugerir el precio en "Pedidos / presupuestos para clientes". A diferencia de Mercado Libre, una venta directa no paga comisión ni envío de ML, así que el cálculo es simplemente costo + margen.</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label class="fl">Margen deseado</label>
+        <div class="iw" style="max-width:200px"><input type="number" id="direct-margin" value="${s.directMargin!=null?s.directMargin:30}" min="0" max="500" step="1"><span class="isuf">%</span></div>
+      </div>
+      <button class="btn-p" onclick="saveDirectMargin()" style="height:42px;padding:0 20px">Guardar</button>
+    </div>
+  </div>
+
   <div class="sh mb16">Mi empresa</div>
   <div class="card mb24">
     <div class="cfg-g2">
@@ -4281,6 +4292,7 @@ function saveConf(){
 function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
 function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada');}
+function saveDirectMargin(){const s=DB.get('settings',{});s.directMargin=Math.max(0,parseFloat(document.getElementById('direct-margin').value));if(isNaN(s.directMargin))s.directMargin=30;DB.set('settings',s);toast('Margen guardado');}
 function saveEmpresa(){const emp={razonSocial:document.getElementById('emp-rs').value.trim(),cuit:document.getElementById('emp-cuit').value.trim(),domicilio:document.getElementById('emp-dom').value.trim(),condIVA:document.getElementById('emp-iva').value.trim(),tel:document.getElementById('emp-tel').value.trim(),email:document.getElementById('emp-email').value.trim()};DB.set('empresa',emp);toast('Datos guardados');}
 function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada');}
 function saveGoal(){const v=parseFloat(document.getElementById('goal-m').value);const s=DB.get('settings',{});s.monthlyGoal=v>0?v:0;DB.set('settings',s);toast('Meta guardada');render();}
@@ -5023,7 +5035,7 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
-    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Si el producto tiene una publicación guardada en Mercado Libre se sugiere ese precio de venta; debajo de cada precio te mostramos el costo de referencia (según el último TCE) para que definas tu margen.</div>
+    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se sugiere costo + margen (configurable en Configuración → Ventas directas), sin comisión ni envío de Mercado Libre porque acá no aplican. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
   </div>
 
   <div class="cot-actbar mb16">
@@ -5222,7 +5234,7 @@ function openPedCatModal(){
   m.style.display='flex';
 }
 function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';}
-function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestSalePrice(c.code,c.name)||'');closePedCatModal();}
+function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestDirectPrice(c.code,c.name)||'');closePedCatModal();}
 
 function generatePedido() {
   if (!PED.length){toast('Agregá artículos al pedido.',false);return;}
