@@ -2227,7 +2227,7 @@ function closeScan(){
 function findCatalogByCode(code){
   const norm=(code||'').trim().toLowerCase();
   if(!norm) return null;
-  return DB.get('catalog',[]).find(c=>(c.code||'').trim().toLowerCase()===norm) || null;
+  return DB.get('catalog',[]).find(c=>(c.barcode||'').trim().toLowerCase()===norm || (c.code||'').trim().toLowerCase()===norm) || null;
 }
 function scanForVenta(){
   openScan(code=>{
@@ -2243,9 +2243,9 @@ function scanForVenta(){
 }
 function scanForCatalog(){
   openScan(code=>{
-    const inp=document.getElementById('ce-code');
+    const inp=document.getElementById('ce-barcode');
     if(inp) inp.value=code;
-    toast('Código escaneado: '+code);
+    toast('Código de barras escaneado: '+code);
   });
 }
 function scanForCompra(){
@@ -3168,8 +3168,9 @@ function pgCat() {
     <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">${ic('close')}</button></div>
     <div class="mbody">
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
-      <div><label class="fl">Código</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-code" placeholder="TAGL271532"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
+      <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0"></div></div>
+      <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
       <input type="hidden" id="ce-id">
@@ -3178,17 +3179,17 @@ function pgCat() {
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-id').value='';document.getElementById('cat-edit-modal').style.display='flex';}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-id').value=c.id;document.getElementById('cat-edit-modal').style.display='flex';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-id').value='';document.getElementById('cat-edit-modal').style.display='flex';}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-id').value=c.id;document.getElementById('cat-edit-modal').style.display='flex';}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
 function saveCat(){
-  const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;
+  const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),barcode=document.getElementById('ce-barcode').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;
   const stockRaw=document.getElementById('ce-stock').value;
   const stock=stockRaw===''?undefined:Math.max(0,parseInt(stockRaw)||0);
   if(!name){toast('Ingresá el nombre.',false);return;}
   let cat=DB.get('catalog',[]);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})}:c);
-  else cat.push({id:uid(),name,code,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})});
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})}:c);
+  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
