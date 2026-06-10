@@ -19,7 +19,7 @@
 :root{
   --bg:#0c0c0c; --bg1:#111; --bg2:#161616; --bg3:#1c1c1c; --bg4:#202020;
   --b1:#1e1e1e; --b2:#282828; --b3:#333;
-  --ch:#e8e8e8; --si:#b0b0b0; --di:#555; --mu:#3a3a3a;
+  --ch:#e8e8e8; --si:#b0b0b0; --di:#7a7a7a; --mu:#3a3a3a;
   --gr:#4ade80; --re:#f87171; --ye:#fbbf24;
   --us:#2dd4bf; --ud:#e2c97e; --in:#818cf8;
   --r:8px; --r2:12px;
@@ -273,7 +273,7 @@ body.compact .g4{gap:8px!important}
 html.light{
   --bg:#f0f2f5;--bg1:#fff;--bg2:#fafafa;--bg3:#f4f4f4;--bg4:#eee;
   --b1:#e4e4e4;--b2:#d4d4d4;--b3:#bbb;
-  --ch:#111;--si:#444;--di:#888;--mu:#ccc;
+  --ch:#111;--si:#444;--di:#767676;--mu:#ccc;
   --gr:#16a34a;--re:#dc2626;--ye:#b45309;
   --us:#0891b2;--ud:#92400e;--in:#4338ca;
 }
@@ -615,8 +615,9 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-acts{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap}
 
 /* CATALOGO */
-.cat-t{display:grid;grid-template-columns:1fr 110px 110px 80px 80px;gap:8px;padding:9px 14px;background:#0a0a0a;border-bottom:1px solid var(--b2)}
-.cat-r{display:grid;grid-template-columns:1fr 110px 110px 80px 80px;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--b1);transition:background .1s}
+.cat-price-short{display:none}
+.cat-t{display:grid;grid-template-columns:1fr 90px 110px 96px 84px;gap:8px;padding:9px 14px;background:#0a0a0a;border-bottom:1px solid var(--b2)}
+.cat-r{display:grid;grid-template-columns:1fr 90px 110px 96px 84px;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--b1);transition:background .1s}
 .cat-r:last-child{border-bottom:none}
 .cat-r:hover{background:rgba(255,255,255,.02)}
 
@@ -707,20 +708,26 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 ::-webkit-scrollbar-track{background:#0c0c0c}
 ::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px}
 
+@media(max-width:768px){
+  /* Nav inferior móvil ya brinda navegación y marca; el footer queda oculto para no solaparse con el FAB */
+  footer{display:none}
+}
+
 @media(max-width:720px){
-  .hdr,.nav,footer{padding-left:14px;padding-right:14px}
+  .hdr,.nav{padding-left:14px;padding-right:14px}
   .pg{padding:16px 14px 36px}
   .g2,.g3,.g4,.tce-strip,.cfg-g2,.cfg-g3,.totbar{grid-template-columns:1fr 1fr}
   .ph,.pr{grid-template-columns:1fr 60px 100px 44px 44px 32px}
   .ph .h-code,.pr .p-code{display:none}
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
-  footer{flex-direction:column;gap:4px;text-align:center}
   .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
   .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-r > div:nth-child(4){display:none}
   .cat-r{align-items:center}
   .cat-actions{flex-direction:row;justify-content:flex-end;gap:6px;margin-top:6px;grid-column:1/-1}
   .cat-actions button{padding:5px 9px;font-size:11px}
+  .cat-price-full{display:none}
+  .cat-price-short{display:inline}
   .cat-360-t{display:none}
 }
 
@@ -1424,7 +1431,7 @@ function qaShowSale(){
   const body=document.getElementById('qa-body');
   body.innerHTML=`
     <div class="iw"><select id="qa-prod" onchange="qaFillCost()">
-      <option value="">Elegí un producto del catálogo…</option>
+      <option value="">Elegí un producto…</option>
       ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
     </select></div>
     <div style="display:flex;gap:10px">
@@ -1699,6 +1706,11 @@ const TBRChart = {
     const L=document.documentElement.classList.contains('light');
     return {grid:L?'rgba(0,0,0,.06)':'rgba(255,255,255,.04)', tick:L?'#999':'#444'};
   },
+  _axisLabel(v, range) {
+    if (Math.abs(v)<1000) return Math.round(v);
+    const decimals = range<500 ? 2 : range<5000 ? 1 : 0;
+    return '$'+(v/1000).toFixed(decimals)+'k';
+  },
   line(el, {labels, data, color='#2dd4bf', height=160}) {
     const W=el.offsetWidth||380, H=height;
     const p={t:14,r:14,b:30,l:50};
@@ -1715,7 +1727,7 @@ const TBRChart = {
     const avg=data.reduce((s,v)=>s+v,0)/data.length;
     const yG=Array.from({length:5},(_,i)=>{
       const v=lo+(i/4)*dr, y=(p.t+IH-(i/4)*IH).toFixed(1);
-      const l=v>=1000?('$'+Math.round(v/1000)+'k'):Math.round(v);
+      const l=this._axisLabel(v, dr);
       return `<line x1="${p.l}" y1="${y}" x2="${W-p.r}" y2="${y}" stroke="${s.grid}" stroke-width="1"/>
               <text x="${p.l-5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${s.tick}" font-size="9" font-family="DM Mono,monospace">${l}</text>`;
     }).join('');
@@ -1751,7 +1763,7 @@ const TBRChart = {
       const bw=(IW/data.length)*0.68, off=(IW/data.length)*0.16;
       const yG=Array.from({length:4},(_,i)=>{
         const v=(i/3)*max, y=(p.t+IH-(i/3)*IH).toFixed(1);
-        const l=v>=1000?('$'+Math.round(v/1000)+'k'):Math.round(v);
+        const l=this._axisLabel(v, max);
         return `<line x1="${p.l}" y1="${y}" x2="${W-p.r}" y2="${y}" stroke="${s.grid}" stroke-width="1"/>
                 <text x="${p.l-5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${s.tick}" font-size="9" font-family="DM Mono,monospace">${l}</text>`;
       }).join('');
@@ -2635,7 +2647,7 @@ function pgVentas(){
   <div class="card mb24">
     <div class="fg-w">
       <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div class="iw"><select id="sale-prod" onchange="fillSaleCost()">
-        <option value="">Elegí un producto del catálogo…</option>
+        <option value="">Elegí un producto…</option>
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
       </select></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
@@ -2792,7 +2804,7 @@ function pgCat() {
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
       <div class="ph-l">Nombre</div><div class="ph-l c-code">Código</div>
-      <div class="ph-l" style="text-align:right">Último precio</div>
+      <div class="ph-l" style="text-align:right"><span class="cat-price-full">Último precio</span><span class="cat-price-short">Precio</span></div>
       <div class="ph-l">Actualizado</div><div></div>
     </div>
     ${cat.map(c=>`<div class="cat-r">
@@ -2802,7 +2814,7 @@ function pgCat() {
         <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div>
         ${(()=>{const h=c.priceHistory||[];if(!h.length)return '';const prev=h[h.length-1]?.price||0;const cur=c.lastPrice||c.defaultPrice||0;const d=cur-prev;if(!d)return '<span class="trend-eq">sin cambio</span>';return d>0?`<span class="trend-up">▲ ${fmtU(Math.abs(d))}</span>`:`<span class="trend-dn">▼ ${fmtU(Math.abs(d))}</span>`;})()}
       </div>
-      <div style="font-size:11px;color:var(--di)">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
+      <div style="font-size:11px;color:var(--di);white-space:nowrap">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
       <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
     </div>`).join('')}
   </div>`}
