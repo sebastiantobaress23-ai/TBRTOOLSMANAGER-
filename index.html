@@ -3737,13 +3737,20 @@ async function fetchCompPrice(i, query){
     if (r.ok) d = await r.json();
     else lastErr = 'HTTP '+r.status;
   } catch(e) { lastErr = e.message||'fallo de red/CORS'; }
-  // Si falló (típico: ML no envía cabeceras CORS para fetch directo), reintentar vía proxy CORS público
+  // Si falló (típico: ML no envía cabeceras CORS para fetch directo), reintentar vía proxies CORS públicos
   if (!d) {
     try {
       const r2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {signal:AbortSignal.timeout(10000)});
       if (r2.ok) d = await r2.json();
       else lastErr = 'HTTP '+r2.status+' (proxy)';
     } catch(e) { lastErr = e.message||'fallo de red (proxy)'; }
+  }
+  if (!d) {
+    try {
+      const r3 = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`, {signal:AbortSignal.timeout(10000)});
+      if (r3.ok) d = await r3.json();
+      else lastErr = 'HTTP '+r3.status+' (proxy 2)';
+    } catch(e) { lastErr = e.message||'fallo de red (proxy 2)'; }
   }
   if (!d) { if(el) el.textContent=`No se pudo conectar con Mercado Libre (${lastErr}) — probá el botón "Buscar en Mercado Libre" para verlo manualmente.`; return; }
   const results=(d.results||[]).filter(x=>x.price>0);
@@ -5998,7 +6005,7 @@ after.pedidos = ()=>{};
 ═══════════════════════════════════════════ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
+    navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'}).then(reg => {
       reg.addEventListener('updatefound', () => {
         const sw = reg.installing;
         if (!sw) return;
@@ -6009,6 +6016,8 @@ if ('serviceWorker' in navigator) {
           }
         });
       });
+      // Forzar chequeo de actualización del service worker al abrir la app
+      reg.update().catch(() => {});
     }).catch(() => {});
     let _swRefreshed = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
