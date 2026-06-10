@@ -2944,7 +2944,31 @@ function fillSaleCost(){
   const opt=sel.options[sel.selectedIndex];
   if(!opt||!opt.value) return;
   const [name,code]=opt.value.split('|||');
-  document.getElementById('sale-cost').value = suggestSaleCost(code, name) || '';
+  const cost = suggestSaleCost(code, name);
+  document.getElementById('sale-cost').value = cost || '';
+  const cat=DB.get('catalog',[]);
+  const c=cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+  const price = (c&&c.salePrice) || suggestDirectPrice(code, name);
+  document.getElementById('sale-price').value = price || '';
+  syncSaleMargin('cost');
+}
+// Mantiene sincronizados precio de venta, costo y margen %: al editar el
+// margen se recalcula el precio; al editar precio o costo se recalcula el
+// margen mostrado.
+function syncSaleMargin(source){
+  const priceEl=document.getElementById('sale-price');
+  const costEl=document.getElementById('sale-cost');
+  const marginEl=document.getElementById('sale-margin');
+  if(!priceEl||!costEl||!marginEl) return;
+  const cost=parseFloat(costEl.value)||0;
+  if(source==='margin'){
+    if(!cost) return;
+    const margin=parseFloat(marginEl.value)||0;
+    priceEl.value=Math.round(cost*(1+margin/100));
+  } else {
+    const price=parseFloat(priceEl.value)||0;
+    marginEl.value = cost ? Math.round((price-cost)/cost*100) : '';
+  }
 }
 function addSale(){
   const sel=document.getElementById('sale-prod');
@@ -2974,6 +2998,7 @@ function addSale(){
   document.getElementById('sale-qty').value='1';
   document.getElementById('sale-price').value='';
   document.getElementById('sale-cost').value='';
+  document.getElementById('sale-margin').value='';
   document.getElementById('sale-cliente').value='';
   document.getElementById('sale-tel').value='';
   render();
@@ -3032,8 +3057,9 @@ function pgVentas(){
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
       </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0" oninput="syncSaleMargin('price')"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0" oninput="syncSaleMargin('cost')"></div></div>
+      <div style="flex:0 0 100px;min-width:90px"><label class="fl" style="min-height:28px">Margen %</label><div class="iw"><input type="number" id="sale-margin" min="-100" step="1" placeholder="0" oninput="syncSaleMargin('margin')"><span class="isuf">%</span></div></div>
     </div>
     <div class="fg-w mt12">
       <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" autocomplete="off"></div></div>
@@ -5068,7 +5094,7 @@ function pgPedidos() {
         <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
       </div>
     </div>
-    <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 90px 56px 100px 34px;gap:8px;padding:0 6px 8px">
+    <div class="ord-hdr" style="display:grid;grid-template-columns:1.4fr 85px 50px 150px 34px;gap:8px;padding:0 6px 8px">
       <div class="ph-l">Descripción</div><div class="ph-l">Código</div>
       <div class="ph-l" style="text-align:center">Cant.</div><div class="ph-l" style="text-align:right">Precio (ARS)</div><div></div>
     </div>
@@ -5103,7 +5129,7 @@ function pgPedidos() {
           <div class="iw"><input type="text" id="pedit-cuit" value="${esc(o.cuit||'')}" autocomplete="off"></div></div>
         </div>
       </div>
-      <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 90px 56px 100px 34px;gap:8px;padding:0 6px 8px">
+      <div class="ord-hdr" style="display:grid;grid-template-columns:1.4fr 85px 50px 150px 34px;gap:8px;padding:0 6px 8px">
         <div class="ph-l">Descripción</div><div class="ph-l">Código</div>
         <div class="ph-l" style="text-align:center">Cant.</div><div class="ph-l" style="text-align:right">Precio (ARS)</div><div></div>
       </div>
@@ -5149,7 +5175,7 @@ function pgPedidos() {
 
 function pedRow(p) {
   const cost = suggestSaleCost(p.c, p.n);
-  return `<div class="pr ord-row" id="ped-${p.id}" style="grid-template-columns:2fr 90px 56px 100px 34px">
+  return `<div class="pr ord-row" id="ped-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
@@ -5182,7 +5208,7 @@ function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
 function pedEditRow(p) {
   const cost = suggestSaleCost(p.c, p.n);
-  return `<div class="pr ord-row" id="pedit-${p.id}" style="grid-template-columns:2fr 90px 56px 100px 34px">
+  return `<div class="pr ord-row" id="pedit-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
