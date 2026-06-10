@@ -2167,7 +2167,7 @@ function loadZXing(){
   if (_zxingLoading) return _zxingLoading;
   _zxingLoading = new Promise((resolve, reject)=>{
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@zxing/[email protected]/umd/index.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js';
     s.onload = ()=>resolve();
     s.onerror = ()=>reject(new Error('offline'));
     document.head.appendChild(s);
