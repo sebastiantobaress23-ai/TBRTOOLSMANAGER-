@@ -2829,16 +2829,21 @@ function addSale(){
   const qty=parseInt(document.getElementById('sale-qty').value)||1;
   const price=parseFloat(document.getElementById('sale-price').value)||0;
   const cost=parseFloat(document.getElementById('sale-cost').value)||0;
+  const cliente=document.getElementById('sale-cliente')?.value.trim()||'';
+  const tel=document.getElementById('sale-tel')?.value.trim()||'';
   if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
   const s=DB.get('settings',{});
-  const sale={id:uid(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500};
+  const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500,cliente,tel,pedidoNro:_pedSaleRef||''};
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
-  toast('✅ Venta registrada');
+  _pedSaleRef=null;
+  toast(`✅ Venta ${sale.nro} registrada`);
   document.getElementById('sale-qty').value='1';
   document.getElementById('sale-price').value='';
   document.getElementById('sale-cost').value='';
+  document.getElementById('sale-cliente').value='';
+  document.getElementById('sale-tel').value='';
   render();
 }
 function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
@@ -2877,7 +2882,11 @@ function pgVentas(){
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
     </div>
-    <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados.</div>
+    <div class="fg-w mt12">
+      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455"></div></div>
+    </div>
+    <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.</div>
     <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
   </div>
 
@@ -2898,9 +2907,15 @@ function pgVentas(){
 
   <div class="sh mb16">Historial de ventas</div>
   ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
-    ${sales.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b2)">
-      <div><div style="font-weight:600;font-size:14px">${esc(s.name)} ${s.qty>1?`× ${s.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtD(s.date)} · venta ${fmtA(s.priceARS)} c/u · costo ${fmtA(s.costARS||0)} c/u</div></div>
-      <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
+    ${sales.map(s=>`<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:600;font-size:14px">${esc(s.name)} ${s.qty>1?`× ${s.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)} · venta ${fmtA(s.priceARS)} c/u · costo ${fmtA(s.costARS||0)} c/u${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}</div></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
+      </div>
+      <div class="hi-acts" style="margin-top:8px">
+        <button class="btn-g btn-sm" onclick="reprintSale('${s.id}')">🖨 Comprobante</button>
+        ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
+      </div>
     </div>`).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
@@ -3820,6 +3835,10 @@ function pgConfig() {
       <label class="fl">Plantilla — Pedido / Presupuesto (a clientes)</label>
       <textarea id="wa-tpl-ped" rows="5" placeholder="Escribí acá el mensaje para Pedidos y presupuestos a clientes…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplPed||'')}</textarea>
     </div>
+    <div class="mb16">
+      <label class="fl">Plantilla — Comprobante de venta (a clientes)</label>
+      <textarea id="wa-tpl-venta" rows="5" placeholder="Escribí acá el mensaje para comprobantes de venta a clientes…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplVenta||'')}</textarea>
+    </div>
     <div class="fe" style="gap:10px">
       <button class="btn-p" onclick="saveWaTpl()">Guardar mensajes</button>
       <button class="btn-g btn-sm" onclick="resetWaTpl()">Vaciar</button>
@@ -4385,6 +4404,7 @@ let orderCotRef = ''; // cotización referenciada por la orden actual
 let COT = [];
 let cotConf = null;
 let PED = [];
+let _pedSaleRef = null; // pedido referenciado por la próxima venta (PED-XXX)
 
 /* Numeración correlativa OC-001, OC-002... */
 function nextOCNumber() {
@@ -4411,6 +4431,15 @@ function nextPEDNumber() {
   s.pedCounter = n;
   DB.set('settings', s);
   return 'PED-' + String(n).padStart(3, '0');
+}
+
+/* Numeración correlativa VTA-001, VTA-002... (comprobantes de venta a clientes) */
+function nextVENTANumber() {
+  const s = DB.get('settings', {});
+  const n = (s.ventaCounter || 0) + 1;
+  s.ventaCounter = n;
+  DB.set('settings', s);
+  return 'VTA-' + String(n).padStart(3, '0');
 }
 
 /* ═══════════════════════════════════════════
@@ -4669,6 +4698,7 @@ function pgPedidos() {
 
   return `<div class="pg">
   <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
+  <div class="info mb16" style="font-size:12px">Circuito: <b>Generar presupuesto</b> (queda como "Cotización enviada") → cuando el cliente confirma, marcá <b>"Cliente confirmó pedido"</b> → <b>"En preparación"</b> → al entregar, <b>"Entregado / Cobrado"</b> pasa el pedido a Ventas para registrar el cobro, quedando referenciado por su número.</div>
 
   <div class="card mb16">
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
@@ -4818,6 +4848,7 @@ function pedToVenta(id){
   o.status='entregado';
   DB.set('pedidos',peds);
   navigate('ventas');
+  _pedSaleRef=o.nro;
   const item=(o.items||[])[0];
   if(item){
     const sel=document.getElementById('sale-prod');
@@ -4833,6 +4864,10 @@ function pedToVenta(id){
     if(qtyEl) qtyEl.value=item.q||1;
     if(priceEl) priceEl.value=item.p||'';
   }
+  const cEl=document.getElementById('sale-cliente');
+  const tEl=document.getElementById('sale-tel');
+  if(cEl) cEl.value=o.cliente||'';
+  if(tEl) tEl.value=o.tel||'';
   if((o.items||[]).length>1) toast(`${o.nro}: completá manualmente ${o.items.length-1} artículo(s) más en Ventas.`, true, 5500);
   else toast(`${o.nro}: revisá y registrá la venta.`, true, 4000);
 }
@@ -4992,6 +5027,120 @@ async function sharePedWA(id){
     toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
   }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
+}
+
+/* Comprobante de venta para el cliente (PDF + reimpresión + WhatsApp) */
+function ventaDocBody(s){
+  const emp = DB.get('empresa',{});
+  const fecha = new Date(s.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const subtotal = (s.qty||1)*(s.priceARS||0);
+  const html = `<div class="doc">
+  <div class="doc-head">
+    <div class="brand">
+      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
+      <p>CUIT: ${esc(emp.cuit||'—')}</p>
+      <p>${esc(emp.domicilio||'')}</p>
+      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+    </div>
+    <div class="doc-badge">
+      <div class="oc-label">Comprobante de venta</div>
+      <div class="oc-num">${esc(s.nro||'—')}</div>
+      <div class="oc-date">${fecha}</div>
+    </div>
+  </div>
+  <div class="doc-meta">
+    <div class="meta-item"><div class="meta-lbl">Cliente</div><div class="meta-val">${esc(s.cliente||'—')}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${s.qty||1} u.</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>Descripción</th><th>Código</th>
+      <th class="ctr">Cant.</th><th class="cright">P. Unit.</th><th class="cright">Subtotal</th>
+    </tr></thead>
+    <tbody><tr>
+      <td class="num">1</td>
+      <td>${esc(s.name||'—')}</td>
+      <td>${esc(s.code||'—')}</td>
+      <td class="ctr">${s.qty||1}</td>
+      <td class="cright">$ ${(s.priceARS||0).toFixed(2)}</td>
+      <td class="cright">$ ${subtotal.toFixed(2)}</td>
+    </tr></tbody>
+  </table>
+  <div class="doc-totals">
+    <div class="totals-box">
+      <div class="tot-row main"><span>TOTAL</span><span>$ ${subtotal.toFixed(2)}</span></div>
+    </div>
+  </div>
+  <div class="foot-note">TBR TOOLS · ${esc(s.nro||'')}${s.pedidoNro?' · '+esc(s.pedidoNro):''}</div>
+</div>`;
+  return {css: DOC_CSS, html};
+}
+
+function reprintSale(id){
+  const s=DB.get('sales',[]).find(x=>x.id===id);
+  if(!s)return;
+  const {html} = ventaDocBody(s);
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(s.nro||'Comprobante')} · TBR TOOLS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4;margin:12mm}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padding:0}
+.toolbar{background:#f0f0f0;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;border-radius:6px}
+.toolbar span{font-size:13px;color:#555}
+.btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
+.btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
+.brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
+.brand p{font-size:10px;color:#666;margin:1px 0}
+.doc-badge{text-align:right}
+.doc-badge .oc-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.doc-badge .oc-num{font-size:24px;font-weight:900;color:#111;letter-spacing:1px}
+.doc-badge .oc-date{font-size:11px;color:#666;margin-top:2px}
+.doc-meta{display:flex;gap:0;border-bottom:1px solid #ddd;background:#fafafa}
+.meta-item{flex:1;padding:8px 16px;border-right:1px solid #ddd}
+.meta-item:last-child{border-right:none}
+.meta-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:2px}
+.meta-val{font-size:12px;font-weight:600;color:#111}
+table{width:100%;border-collapse:collapse}
+thead th{background:#111;color:#fff;padding:7px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+tbody tr:nth-child(even){background:#f9f9f9}
+tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+.num{color:#999;font-size:11px;width:28px}
+.ctr{text-align:center}
+.cright{text-align:right;font-family:monospace}
+.doc-totals{padding:10px 16px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd}
+.totals-box{width:240px}
+.tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111;display:flex;justify-content:space-between}
+.foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+@media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
+</style></head><body>
+<div class="toolbar">
+  <span>📄 ${esc(s.nro||'Comprobante')} · comprobante de venta</span>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+</div>
+${html}
+</body></html>`);
+  w.document.close();
+}
+
+async function shareSaleWA(id){
+  const s=DB.get('sales',[]).find(x=>x.id===id);
+  if(!s)return;
+  const phone=(s.tel||'').replace(/\D/g,'');
+  const settings=DB.get('settings',{});
+  const txt=settings.waTplVenta||'';
+  let pdf = null;
+  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+    const {css, html} = ventaDocBody(s);
+    pdf = await renderBrandedPDF(css, html, s.nro||'comprobante');
+  } else {
+    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+  }
+  shareViaWA(phone, txt, pdf, `${s.nro||'comprobante'}.pdf`);
 }
 
 /* ═══════════════════════════════════════════
@@ -5356,12 +5505,13 @@ function saveWaTpl(){
   s.waTplOC=document.getElementById('wa-tpl-oc').value||'';
   s.waTplCot=document.getElementById('wa-tpl-cot').value||'';
   s.waTplPed=document.getElementById('wa-tpl-ped').value||'';
+  s.waTplVenta=document.getElementById('wa-tpl-venta').value||'';
   DB.set('settings',s);
   toast('Plantillas guardadas ✅');
 }
 function resetWaTpl(){
   const s=DB.get('settings',{});
-  delete s.waTplOC; delete s.waTplCot; delete s.waTplPed;
+  delete s.waTplOC; delete s.waTplCot; delete s.waTplPed; delete s.waTplVenta;
   DB.set('settings',s);
   render();
   toast('Mensajes vaciados');
