@@ -3190,7 +3190,7 @@ function pgCat() {
       <div class="ph-l">Actualizado</div><div></div>
     </div>
     ${cat.map(c=>`<div class="cat-r">
-      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:${c.stock<=0?'var(--re)':c.stock<=2?'var(--ye)':'var(--di)'}">Stock: ${c.stock}</div>`:''}</div>
+      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:${c.stock<=0?'var(--re)':c.stock<=2?'var(--ye)':'var(--di)'}">Stock: ${c.stock}</div>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
         <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div>
@@ -3234,27 +3234,45 @@ function pgCat() {
     <div class="mbody">
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
       <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
-      <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0"></div></div>
+      <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0" oninput="updateCeCostHint()"></div></div>
       <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
+      <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0"></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px" title="Sugerir según costo + margen deseado">Sugerir</button></div></div>
+      <div class="hint">Es lo que le cobrás al cliente en Pedidos. "Sugerir" lo calcula con tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>) más el margen deseado de Configuración → Ventas directas.</div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
     </div></div>
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-id').value='';document.getElementById('cat-edit-modal').style.display='flex';}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-id').value=c.id;document.getElementById('cat-edit-modal').style.display='flex';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-id').value='';updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
+function updateCeCostHint(){
+  const usd=parseFloat(document.getElementById('ce-price').value)||0;
+  const cost=Math.round(usd*lastTCE());
+  const hint=document.getElementById('ce-cost-hint');
+  if(hint) hint.textContent=fmtA(cost);
+}
+function sugerirVenta(){
+  const usd=parseFloat(document.getElementById('ce-price').value)||0;
+  const cost=Math.round(usd*lastTCE());
+  if(!cost){toast('Ingresá primero el precio USD para calcular el costo.',false);return;}
+  const s=DB.get('settings',{});
+  const margin=s.directMargin!=null?s.directMargin:30;
+  document.getElementById('ce-saleprice').value=Math.round(cost*(1+margin/100));
+}
 function saveCat(){
   const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),barcode=document.getElementById('ce-barcode').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;
   const stockRaw=document.getElementById('ce-stock').value;
   const stock=stockRaw===''?undefined:Math.max(0,parseInt(stockRaw)||0);
+  const salePriceRaw=document.getElementById('ce-saleprice').value;
+  const salePrice=salePriceRaw===''?undefined:Math.max(0,parseFloat(salePriceRaw)||0);
   if(!name){toast('Ingresá el nombre.',false);return;}
   let cat=DB.get('catalog',[]);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})}:c);
-  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})});
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined})}:c);
+  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
@@ -4076,7 +4094,7 @@ function pgConfig() {
 
   <div class="sh mb16">Ventas directas (Pedidos)</div>
   <div class="card mb24">
-    <div class="hint mb16" style="color:var(--si)">Margen que se aplica sobre tu costo para sugerir el precio en "Pedidos / presupuestos para clientes". A diferencia de Mercado Libre, una venta directa no paga comisión ni envío de ML, así que el cálculo es simplemente costo + margen.</div>
+    <div class="hint mb16" style="color:var(--si)">Margen que usa el botón "Sugerir" al definir el "Precio de venta" de un producto en el Catálogo (costo + este margen). A diferencia de Mercado Libre, una venta directa no paga comisión ni envío de ML, así que el cálculo es simplemente costo + margen. También se usa como respaldo en Pedidos para productos sin precio de venta cargado en el Catálogo.</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:140px">
         <label class="fl">Margen deseado</label>
@@ -5037,7 +5055,7 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
-    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se sugiere costo + margen (configurable en Configuración → Ventas directas), sin comisión ni envío de Mercado Libre porque acá no aplican. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
+    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se usa el "Precio de venta" definido en cada producto (Catálogo → editar producto); si no lo cargaste, se sugiere costo + margen de Configuración → Ventas directas. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
   </div>
 
   <div class="cot-actbar mb16">
@@ -5116,7 +5134,7 @@ function pedRow(p) {
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
-    <div style="min-width:0"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
+    <div style="min-width:0;align-self:start"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPed('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -5149,7 +5167,7 @@ function pedEditRow(p) {
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
-    <div style="min-width:0"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
+    <div style="min-width:0;align-self:start"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPedEditItem('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -5236,7 +5254,7 @@ function openPedCatModal(){
   m.style.display='flex';
 }
 function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';}
-function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestDirectPrice(c.code,c.name)||'');closePedCatModal();}
+function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,(c.salePrice||suggestDirectPrice(c.code,c.name))||'');closePedCatModal();}
 
 function generatePedido() {
   if (!PED.length){toast('Agregá artículos al pedido.',false);return;}
