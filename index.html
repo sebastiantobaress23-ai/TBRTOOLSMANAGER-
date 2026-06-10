@@ -5457,7 +5457,19 @@ window.onload = function() {
     if (dn) dn.style.display = 'none';
   }
   checkAccessPin();
-  navigate('dashboard');
+  // App Shortcuts (mantener presionado el ícono): ?page=ventas, ?page=compra, ?page=ventas&scan=1
+  const validPages=['dashboard','compra','historial','ventas','catalogo','stats','publicar','competencia','config','orden','cotizaciones','proveedores','viaje'];
+  const params=new URLSearchParams(location.search);
+  const shortcutPage=params.get('page');
+  if (shortcutPage && validPages.includes(shortcutPage)) {
+    navigate(shortcutPage);
+    if (params.get('scan')==='1' && shortcutPage==='ventas') {
+      setTimeout(()=>scanForVenta(), 600);
+    }
+    history.replaceState(null,'',location.pathname);
+  } else {
+    navigate('dashboard');
+  }
   setupNavHints();
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
