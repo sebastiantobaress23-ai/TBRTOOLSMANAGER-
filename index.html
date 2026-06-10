@@ -1197,7 +1197,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
 let _lastWrite = 0;
 async function fbSync() {
@@ -1239,24 +1239,43 @@ async function fbSync() {
   } catch { setSyncDot(false); }
 }
 
-/* Sincronización inicial bloqueante: solo se ejecuta cuando el dispositivo
-   no tiene NINGÚN dato local (instalación nueva o navegador en incógnito).
-   Evita que se inicialicen valores por defecto (sin usuarios/PIN, contadores
-   en cero, etc.) y se suban a Firebase pisando los datos reales antes de
-   que llegue la primera sincronización. */
+/* Sincronización inicial: se ejecuta SIEMPRE al cargar la app, antes de
+   inicializar valores por defecto. Restaura por clave (no todo o nada):
+   - si una clave está vacía localmente (null, [] u {} ) y en Firebase hay
+     datos, se restaura esa clave puntual (recupera proveedores, catálogo,
+     Face ID, etc. si se perdieron localmente sin afectar el resto).
+   - para 'settings', además completa los campos que falten localmente
+     (usuarios/PIN, comisión y envío de Mercado Libre, margen directo, meta
+     mensual, etc.) sin pisar los valores que ya existen en el dispositivo.
+   No toca claves con cambios locales aún no confirmados (tbr__pending),
+   para no perder ediciones recientes hechas sin conexión. */
 async function initialSyncIfFresh() {
-  if (DB.get('settings') !== null) return;
   if (!navigator.onLine) return;
   try {
-    const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(6000)});
+    const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(8000)});
     if (!r.ok) return;
     const d = await r.json();
     if (!d) return;
+    const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+    let restored = false;
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
-      try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); } catch {}
+      if (pending.includes(k)) continue;
+      const local = DB.get(k);
+      const isEmptyArr = Array.isArray(local) && local.length===0 && Array.isArray(d[k]) && d[k].length>0;
+      const isEmptyObj = local && typeof local==='object' && !Array.isArray(local) && Object.keys(local).length===0 && d[k] && typeof d[k]==='object';
+      if (local===null || isEmptyArr || isEmptyObj) {
+        try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); restored = true; } catch {}
+        continue;
+      }
+      if (k==='settings' && typeof local==='object' && !Array.isArray(local) && typeof d[k]==='object') {
+        const merged = {...d[k], ...local};
+        if (JSON.stringify(merged) !== JSON.stringify(local)) {
+          try { localStorage.setItem('tbr_settings', JSON.stringify(merged)); restored = true; } catch {}
+        }
+      }
     }
-    _lastWrite = Date.now();
+    if (restored) _lastWrite = Date.now();
   } catch {}
 }
 
@@ -4379,7 +4398,7 @@ function tryUnlock(){
    FACE ID / TOUCH ID — autenticación biométrica (WebAuthn)
 ═══════════════════════════════════════════ */
 function getBioCred(){
-  try { return JSON.parse(localStorage.getItem('tbr_bio')||'null'); } catch { return null; }
+  return DB.get('bio');
 }
 function bioPlatformAvailable(){
   return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
@@ -4417,7 +4436,7 @@ async function registerBiometric(){
       timeout:60000
     }});
     if(!cred) throw new Error('sin credencial');
-    localStorage.setItem('tbr_bio', JSON.stringify({credId:bufToB64(cred.rawId), user:user.user, pass:user.pass}));
+    DB.set('bio', {credId:bufToB64(cred.rawId), user:user.user, pass:user.pass});
     toast('Face ID / Touch ID activado 🆔');
     render();
   }catch(e){
@@ -4426,7 +4445,7 @@ async function registerBiometric(){
 }
 function removeBiometric(){
   confirm2('¿Desactivar Face ID / Touch ID en este dispositivo?',()=>{
-    localStorage.removeItem('tbr_bio');
+    DB.del('bio');
     toast('Face ID desactivado');
     render();
   },'Desactivar','cm-ok');
@@ -6609,12 +6628,16 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados)
+  // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados).
+  // Se escriben directo en localStorage (sin pasar por DB.set) para no subir
+  // estos valores por defecto a Firebase: si la sincronización inicial falló
+  // por estar offline, esto evita pisar los datos reales de otros dispositivos
+  // con valores en blanco.
   if (DB.get('configs') === null) {
-    DB.set('configs', []);
+    try { localStorage.setItem('tbr_configs', JSON.stringify([])); } catch {}
   }
   if (DB.get('settings') === null) {
-    DB.set('settings', {marginAlert: 15, mlCom: 16, mlEnv: 7500});
+    try { localStorage.setItem('tbr_settings', JSON.stringify({marginAlert: 15, mlCom: 16, mlEnv: 7500})); } catch {}
   } else {
     // Migrar mlCom/mlEnv desde el primer proveedor a settings si no existen aún
     const s = DB.get('settings', {});
@@ -6627,7 +6650,7 @@ window.onload = async function() {
     }
   }
   if (DB.get('empresa') === null) {
-    DB.set('empresa', {});
+    try { localStorage.setItem('tbr_empresa', JSON.stringify({})); } catch {}
   }
   initTheme();
   initCompact();
