@@ -1297,6 +1297,17 @@ function smartAlerts() {
         if (diff >= 8) alerts.push({icon:'📈', kind:'price', text:`El costo de "${c.name}" subió ${diff.toFixed(0)}% respecto a la compra anterior (${fmtU(prev)} → ${fmtU(c.lastPrice)}).`});
       }
     }
+    if (c.stock!=null) {
+      if (c.stock<=0) alerts.push({icon:'🚫', kind:'nostock', text:`"${c.name}" está sin stock.`});
+      else if (c.stock<=2) alerts.push({icon:'⚠️', kind:'lowstock', text:`"${c.name}" tiene poco stock (${c.stock} unidad${c.stock===1?'':'es'}).`});
+    }
+  });
+  const peds = DB.get('pedidos',[]);
+  peds.forEach(o=>{
+    if (o.status==='entregado'||o.status==='cancelado') return;
+    const days = Math.floor((now - new Date(o.date).getTime())/86400000);
+    if (o.status==='cotizacion' && days>=3) alerts.push({icon:'📨', kind:'pedido', text:`${o.nro} (${o.cliente}): cotización enviada hace ${days} días sin confirmar.`});
+    if (o.status==='preparacion' && days>=5) alerts.push({icon:'📦', kind:'pedido', text:`${o.nro} (${o.cliente}): en preparación hace ${days} días.`});
   });
   return alerts.slice(0,6);
 }
@@ -2669,8 +2680,9 @@ function savePurchase() {
       if (ex.lastPrice && ex.lastPrice !== newPrice) hist.push({price:ex.lastPrice,date:ex.lastUpdated});
       ex.priceHistory = hist.slice(-5);
       ex.lastPrice=newPrice;ex.lastUpdated=new Date().toISOString();
+      if (ex.stock!=null) ex.stock = ex.stock + (p.q||0);
     } else {
-      cat.push({id:uid(),name:p.n,code:p.c||'',defaultPrice:newPrice,lastPrice:newPrice,priceHistory:[],lastUpdated:new Date().toISOString()});
+      cat.push({id:uid(),name:p.n,code:p.c||'',defaultPrice:newPrice,lastPrice:newPrice,priceHistory:[],lastUpdated:new Date().toISOString(),stock:p.q||0});
     }
   });
   DB.set('catalog',cat);
@@ -2837,6 +2849,13 @@ function addSale(){
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
+  // Descontar stock si el producto lleva control de stock
+  const cat=DB.get('catalog',[]);
+  const ci=cat.find(c=>code?c.code===code:c.name===name);
+  if(ci && ci.stock!=null){
+    ci.stock -= qty;
+    DB.set('catalog',cat);
+  }
   _pedSaleRef=null;
   toast(`✅ Venta ${sale.nro} registrada`);
   document.getElementById('sale-qty').value='1';
@@ -3046,7 +3065,7 @@ function pgCat() {
       <div class="ph-l">Actualizado</div><div></div>
     </div>
     ${cat.map(c=>`<div class="cat-r">
-      <div style="font-weight:600">${esc(c.name)}</div>
+      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:${c.stock<=0?'var(--re)':c.stock<=2?'var(--ye)':'var(--di)'}">Stock: ${c.stock}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
         <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div>
@@ -3069,16 +3088,27 @@ function pgCat() {
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
       <div><label class="fl">Código</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-code" placeholder="TAGL271532"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">📷</button></div></div>
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0"></div></div>
+      <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
+      <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
     </div></div>
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-price').value='';document.getElementById('ce-id').value='';document.getElementById('cat-edit-modal').style.display='flex';}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-id').value=c.id;document.getElementById('cat-edit-modal').style.display='flex';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-id').value='';document.getElementById('cat-edit-modal').style.display='flex';}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-id').value=c.id;document.getElementById('cat-edit-modal').style.display='flex';}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
-function saveCat(){const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;if(!name){toast('Ingresá el nombre.',false);return;}let cat=DB.get('catalog',[]);if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString()}:c);else cat.push({id:uid(),name,code,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString()});DB.set('catalog',cat);closeCatEdit();render();}
+function saveCat(){
+  const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;
+  const stockRaw=document.getElementById('ce-stock').value;
+  const stock=stockRaw===''?undefined:Math.max(0,parseInt(stockRaw)||0);
+  if(!name){toast('Ingresá el nombre.',false);return;}
+  let cat=DB.get('catalog',[]);
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})}:c);
+  else cat.push({id:uid(),name,code,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{})});
+  DB.set('catalog',cat);closeCatEdit();render();
+}
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
 
 /* ═══════════════════════════════════════════
@@ -4690,8 +4720,8 @@ function reprintCot(id){
 /* ═══════════════════════════════════════════
    PEDIDOS — Cotizaciones y pedidos para clientes (fuera de Mercado Libre)
 ═══════════════════════════════════════════ */
-const PED_STATUS_LABEL = {cotizacion:'Cotización enviada',confirmado:'Pendiente de preparación',preparacion:'En preparación',entregado:'Entregado / Cobrado'};
-const PED_STATUS_COLOR = {cotizacion:'var(--ye)',confirmado:'var(--ye)',preparacion:'var(--us)',entregado:'var(--gr)'};
+const PED_STATUS_LABEL = {cotizacion:'Cotización enviada',confirmado:'Pendiente de preparación',preparacion:'En preparación',entregado:'Entregado / Cobrado',cancelado:'Cancelado'};
+const PED_STATUS_COLOR = {cotizacion:'var(--ye)',confirmado:'var(--ye)',preparacion:'var(--us)',entregado:'var(--gr)',cancelado:'var(--re)'};
 
 function pgPedidos() {
   const cat  = DB.get('catalog',[]);
@@ -4750,6 +4780,7 @@ function pgPedidos() {
         ${o.status==='cotizacion'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','confirmado')">✓ Cliente confirmó pedido</button>`:''}
         ${o.status==='confirmado'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','preparacion')">📦 En preparación</button>`:''}
         ${o.status==='preparacion'?`<button class="btn-g btn-sm" onclick="pedToVenta('${o.id}')">✅ Entregado / Cobrado</button>`:''}
+        ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">✕ Cancelar</button>`:''}
         <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">🖨 Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
         <button class="btn-d" onclick="delPed('${o.id}')">🗑 Borrar</button>
@@ -4838,6 +4869,7 @@ function advancePed(id,newStatus){
   render();
   toast(`${o.nro}: ${PED_STATUS_LABEL[newStatus]||newStatus} ✅`);
 }
+function cancelPed(id){confirm2('¿Cancelar este pedido? Quedará en el historial como cancelado.',()=>advancePed(id,'cancelado'),'Cancelar pedido','cm-ok');}
 function delPed(id){confirm2('¿Borrar este pedido?',()=>{DB.set('pedidos',DB.get('pedidos',[]).filter(o=>o.id!==id));render();});}
 
 /* Marca el pedido como Entregado/Cobrado y pre-carga el formulario de Ventas
