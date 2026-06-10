@@ -2196,7 +2196,7 @@ async function openScan(callback){
   status.textContent='Apuntá la cámara al código de barras del producto.';
   try{
     _scanReader = new ZXing.BrowserMultiFormatReader();
-    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    const devices = await _scanReader.listVideoInputDevices();
     const backCam = devices.find(d=>/back|rear|trasera|environment/i.test(d.label)) || devices[devices.length-1];
     _scanReader.decodeFromVideoDevice(backCam?.deviceId||null, 'scan-video', (result, err)=>{
       if(result){
