@@ -34,5 +34,25 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva venta",
+      "short_name": "Venta",
+      "description": "Registrar una venta",
+      "url": "/?page=ventas"
+    },
+    {
+      "name": "Nueva compra",
+      "short_name": "Compra",
+      "description": "Cargar una nueva compra",
+      "url": "/?page=compra"
+    },
+    {
+      "name": "Escanear código",
+      "short_name": "Escanear",
+      "description": "Escanear un código de barras para registrar una venta",
+      "url": "/?page=ventas&scan=1"
+    }
   ]
 }
