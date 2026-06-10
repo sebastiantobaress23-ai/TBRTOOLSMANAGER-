@@ -483,12 +483,12 @@ html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to 
 .pg{max-width:1060px;margin:0 auto;padding:26px 32px 48px}
 
 /* SECTION HEADING */
-.sh{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:rgba(226,201,126,.4);margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.sh{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;letter-spacing:4.5px;text-transform:uppercase;color:rgba(226,201,126,.55);margin-bottom:16px;display:flex;align-items:center;gap:14px}
 .sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.06),transparent);min-width:24px}
 .sh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent)}
 
 /* CARD */
-.card{background:linear-gradient(145deg,rgba(20,20,20,1),rgba(11,11,11,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:22px;box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+.card{background:radial-gradient(circle at 88% -8%,rgba(226,201,126,.035),transparent 50%),linear-gradient(145deg,rgba(20,20,20,1),rgba(11,11,11,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:22px;box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
 
 /* GRIDS */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -797,7 +797,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 
 /* Botones: realce y feedback táctil más agradable */
 .btn-p,.btn-g,.btn-d{position:relative;overflow:hidden}
-.btn-p:hover{border-color:rgba(226,201,126,.35);box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 0 1px rgba(226,201,126,.08);transform:translateY(-1px)}
+.btn-p:hover{border-color:rgba(226,201,126,.35);color:rgba(245,234,207,.95);box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 0 1px rgba(226,201,126,.08);transform:translateY(-1px)}
 .btn-p:active,.btn-g:active,.btn-d:active{transform:translateY(0) scale(.98)}
 .btn-g:hover{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.03)}
 .btn-d:hover{filter:brightness(1.15)}
