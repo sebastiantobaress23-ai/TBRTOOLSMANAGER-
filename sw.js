@@ -1,4 +1,4 @@
-const CACHE = 'tbr-cache-v34';
+const CACHE = 'tbr-cache-v35';
 
 const PRECACHE_SAME = [
   '/',
@@ -12,7 +12,7 @@ const PRECACHE_CROSS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/zxing-library/0.20.0/index.min.js'
+  'https://cdn.jsdelivr.net/npm/@zxing/[email protected]/umd/index.min.js'
 ];
 
 self.addEventListener('message', event => {
