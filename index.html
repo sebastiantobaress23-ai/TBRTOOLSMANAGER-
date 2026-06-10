@@ -1283,6 +1283,15 @@ const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// Encabezado de marca para documentos imprimibles (OC, cotizaciones, pedidos, ventas, reportes):
+// solo muestra los datos de la empresa que estén realmente cargados, sin placeholders vacíos.
+function empBrandHTML(emp){
+  const line2 = [emp.condIVA, emp.tel?('Tel: '+emp.tel):'', emp.email].filter(Boolean).join(' · ');
+  return `<h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>`
+    + (emp.cuit?`<p>CUIT: ${esc(emp.cuit)}</p>`:'')
+    + (emp.domicilio?`<p>${esc(emp.domicilio)}</p>`:'')
+    + (line2?`<p>${esc(line2)}</p>`:'');
+}
 const ICONS = {
   close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   check: '<polyline points="20 6 9 17 4 12"/>',
@@ -4483,6 +4492,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .firma p{font-size:10px;color:#666}
 .firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
@@ -4493,10 +4513,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 <div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Orden de Compra</div>
@@ -4509,6 +4526,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Compra</div><div class="meta-val">${esc(p.name||'—')}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${totalItems} ítems · ${totalUnits} u.</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -4520,6 +4538,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL ${currency}</span><span>${currSym} ${totalNet.toFixed(2)}</span></div>
@@ -4796,6 +4815,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .firma p{font-size:10px;color:#666}
 .firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
@@ -4806,10 +4836,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 <div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Solicitud de Cotización</div>
@@ -4822,6 +4849,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -4829,6 +4857,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
@@ -5221,6 +5250,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .totals-box{width:240px}
 .tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111;display:flex;justify-content:space-between}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
@@ -5231,10 +5271,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 <div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Presupuesto</div>
@@ -5248,6 +5285,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -5255,6 +5293,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
@@ -5282,10 +5321,7 @@ function pedDocBody(o){
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Presupuesto</div>
@@ -5299,6 +5335,7 @@ function pedDocBody(o){
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -5306,6 +5343,7 @@ function pedDocBody(o){
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
@@ -5350,10 +5388,7 @@ function ventaDocBody(s){
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Comprobante de venta</div>
@@ -5367,6 +5402,7 @@ function ventaDocBody(s){
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${items.length} ítems · ${totalUnits} u.</div></div>
     ${s.pedidoNro?`<div class="meta-item"><div class="meta-lbl">Ref. pedido</div><div class="meta-val">${esc(s.pedidoNro)}</div></div>`:''}
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -5374,6 +5410,7 @@ function ventaDocBody(s){
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
@@ -5420,6 +5457,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .totals-box{width:240px}
 .tot-row.main{border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px;font-weight:900;font-size:14px;color:#111;display:flex;justify-content:space-between}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
@@ -5653,6 +5701,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .firma p{font-size:10px;color:#666}
 .firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 `;
 
 function ocDocBody(o){
@@ -5672,10 +5731,7 @@ function ocDocBody(o){
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Orden de Compra</div>
@@ -5689,6 +5745,7 @@ function ocDocBody(o){
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
     ${o.cotizacionRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(o.cotizacionRef)}</div></div>`:''}
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -5696,6 +5753,7 @@ function ocDocBody(o){
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
@@ -5724,10 +5782,7 @@ function cotDocBody(o){
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Solicitud de Cotización</div>
@@ -5740,6 +5795,7 @@ function cotDocBody(o){
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -5747,6 +5803,7 @@ function cotDocBody(o){
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
@@ -5867,10 +5924,7 @@ function reportDocBody(period, since, now, ps, sales, emp){
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">${label}</div>
@@ -5883,12 +5937,14 @@ function reportDocBody(period, since, now, ps, sales, emp){
     <div class="meta-item"><div class="meta-lbl">Ventas</div><div class="meta-val">${sales.length} · ${unidades} unid. · ${fmtA(totVentas)}</div></div>
     <div class="meta-item"><div class="meta-lbl">Ganancia neta</div><div class="meta-val">${fmtA(totGanancia)}</div></div>
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Producto</th><th class="ctr">Unid.</th><th class="cright">Ganancia</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  </div>
   <div class="foot-note">TBR TOOLS · ${label} · ${fecha}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -6165,6 +6221,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .firma p{font-size:10px;color:#666}
 .firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
@@ -6175,10 +6242,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 <div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Orden de Compra</div>
@@ -6192,6 +6256,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
     ${o.cotizacionRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(o.cotizacionRef)}</div></div>`:''}
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -6199,6 +6264,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
@@ -6311,6 +6377,17 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 .firma p{font-size:10px;color:#666}
 .firma strong{color:#333;display:block;font-size:11px;margin-bottom:2px}
 .foot-note{text-align:center;padding:6px;font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #eee}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .doc-head{flex-direction:column;gap:10px}
+  .doc-badge{text-align:left}
+  .doc-meta{flex-direction:column}
+  .meta-item{border-right:none;border-bottom:1px solid #ddd}
+  table{min-width:560px}
+  thead th,tbody td{padding:6px 8px;font-size:11px}
+  .doc-footer{flex-direction:column;gap:16px}
+  .firma{width:100%}
+}
 @media print{
   body{padding:0}
   .toolbar{display:none!important}
@@ -6325,10 +6402,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 <div class="doc">
   <div class="doc-head">
     <div class="brand">
-      <h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>
-      <p>CUIT: ${esc(emp.cuit||'—')}</p>
-      <p>${esc(emp.domicilio||'')}</p>
-      <p>${esc(emp.condIVA||'')} · Tel: ${esc(emp.tel||'')} · ${esc(emp.email||'')}</p>
+      ${empBrandHTML(emp)}
     </div>
     <div class="doc-badge">
       <div class="oc-label">Orden de Compra</div>
@@ -6342,6 +6416,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${ORDER.length} ítems · ${ORDER.reduce((s,p)=>s+(p.q||1),0)} u.</div></div>
     ${cotRef?`<div class="meta-item"><div class="meta-lbl">Ref. cotización</div><div class="meta-val">${esc(cotRef)}</div></div>`:''}
   </div>
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
@@ -6349,6 +6424,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
+  </div>
   <div class="doc-totals">
     <div class="totals-box">
       <div class="tot-row main"><span>TOTAL USD</span><span>US$ ${totalUSD.toFixed(2)}</span></div>
