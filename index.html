@@ -472,11 +472,11 @@ html.light body::before{
 }
 
 /* NAV */
-.nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5)}
+.nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5);position:relative}
 .nav::-webkit-scrollbar{display:none}
-.nav-hint,.mob-nav-hint{position:sticky;right:0;flex:0 0 auto;display:flex;align-items:center;justify-content:center;pointer-events:none;color:rgba(245,240,228,.55);background:linear-gradient(to right,transparent,rgba(8,8,8,.95) 55%);animation:navHintPulse 1.8s ease-in-out infinite;visibility:hidden}
+.nav-hint,.mob-nav-hint{position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:rgba(245,240,228,.55);background:linear-gradient(to right,transparent,rgba(8,8,8,.95) 55%);animation:navHintPulse 1.8s ease-in-out infinite;visibility:hidden}
 .nav-hint{padding:0 14px 0 28px;font-size:16px}
-.mob-nav-hint{padding:0 10px 0 22px;font-size:15px;height:100%}
+.mob-nav-hint{padding:0 10px 0 22px;font-size:15px}
 .nav-hint-l,.mob-nav-hint-l{right:auto;left:0;background:linear-gradient(to left,transparent,rgba(8,8,8,.95) 55%);animation-name:navHintPulseL}
 .nav-hint-l{padding:0 28px 0 14px}
 .mob-nav-hint-l{padding:0 22px 0 10px}
