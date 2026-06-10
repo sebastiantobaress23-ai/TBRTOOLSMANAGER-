@@ -987,17 +987,22 @@ const DB = {
   },
   set(k, v) {
     try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch {}
+    // Marcar como pendiente de confirmar en Firebase. Se saca de la lista
+    // recién cuando fbWrite confirma el guardado remoto, así si la app se
+    // cierra antes de que termine el guardado (debounce de 600ms) no se
+    // pierde el cambio: en la próxima carga se reintenta antes de traer
+    // datos remotos, evitando que fbSync pise lo nuevo con lo viejo.
+    try {
+      const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+      if (!pending.includes(k)) {
+        pending.push(k);
+        localStorage.setItem('tbr__pending', JSON.stringify(pending));
+      }
+    } catch {}
     if (navigator.onLine) {
       _lastWrite = Date.now();
       clearTimeout(DB._t[k]);
       DB._t[k] = setTimeout(()=>fbWrite(k,v), 600);
-    } else {
-      // Guardar como pendiente para subir cuando vuelva internet
-      try {
-        const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
-        if (!pending.includes(k)) pending.push(k);
-        localStorage.setItem('tbr__pending', JSON.stringify(pending));
-      } catch {}
     }
   },
   del(k) {
@@ -1020,6 +1025,10 @@ async function fbWrite(k, v) {
     }
 
     _lastWrite = Date.now();
+    try {
+      const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]').filter(x=>x!==k);
+      localStorage.setItem('tbr__pending', JSON.stringify(pending));
+    } catch {}
 
   } catch (err) {
     console.error('Firebase error', err);
@@ -1035,7 +1044,6 @@ window.addEventListener('online', async () => {
       const v = DB.get(k);
       if (v !== null) await fbWrite(k, v);
     }
-    localStorage.removeItem('tbr__pending');
   } catch {}
   fbSync();
 });
@@ -1044,6 +1052,16 @@ window.addEventListener('offline', () => setSyncDot(false));
 let _lastWrite = 0;
 async function fbSync() {
   if (Date.now()-_lastWrite < 3000) return;
+  // Antes de traer datos remotos, subir cualquier cambio local que haya
+  // quedado sin confirmar (p.ej. la app se cerró antes del debounce de
+  // fbWrite), para no pisarlo con una versión vieja de Firebase.
+  try {
+    const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+    for (const k of pending) {
+      const v = DB.get(k);
+      if (v !== null) await fbWrite(k, v);
+    }
+  } catch {}
   try {
     const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(5000)});
     if (!r.ok) return;
