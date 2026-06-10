@@ -1196,7 +1196,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes'];
 
 let _lastWrite = 0;
 async function fbSync() {
@@ -4866,6 +4866,7 @@ function pgPedidos() {
   const cat  = DB.get('catalog',[]);
   const peds = DB.get('pedidos',[]).slice().reverse();
   const sales = DB.get('sales',[]);
+  const clientes = DB.get('clientes',[]);
 
   return `<div class="pg">
   <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
@@ -4874,10 +4875,15 @@ function pgPedidos() {
   <div class="card mb16">
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
       <div style="flex:1;min-width:200px"><label class="fl mb8">Cliente</label>
-      <div class="iw"><input type="text" id="ped-cliente" placeholder="Nombre del cliente" autocomplete="off"></div></div>
+      <div class="iw"><input type="text" id="ped-cliente" placeholder="Nombre del cliente" list="ped-clientes-list" autocomplete="off" oninput="onPedClienteInput(this.value)"></div>
+      <datalist id="ped-clientes-list">${clientes.map(c=>`<option value="${esc(c.nombre)}">`).join('')}</datalist>
+      </div>
       <div style="flex:1;min-width:160px"><label class="fl mb8">Teléfono (WhatsApp)</label>
       <div class="iw"><input type="text" id="ped-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl mb8">CUIT / DNI</label>
+      <div class="iw"><input type="text" id="ped-cuit" placeholder="Ej: 20304050607" autocomplete="off"></div></div>
     </div>
+    <div class="hint mt12">Al elegir un cliente ya cargado se completan automáticamente su teléfono y CUIT/DNI guardados.</div>
   </div>
 
   <div class="card mb16">
@@ -4974,6 +4980,30 @@ function updPed(id,k,v) {
   else x[k]=v;
 }
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
+function onPedClienteInput(name){
+  const norm=(name||'').trim().toLowerCase();
+  if(!norm)return;
+  const c=DB.get('clientes',[]).find(x=>(x.nombre||'').trim().toLowerCase()===norm);
+  if(!c)return;
+  const tel=document.getElementById('ped-tel');
+  const cuit=document.getElementById('ped-cuit');
+  if(tel && !tel.value) tel.value=c.tel||'';
+  if(cuit && !cuit.value) cuit.value=c.cuit||'';
+}
+function saveCliente(nombre,tel,cuit){
+  const norm=(nombre||'').trim().toLowerCase();
+  if(!norm)return;
+  const clientes=DB.get('clientes',[]);
+  const existing=clientes.find(c=>(c.nombre||'').trim().toLowerCase()===norm);
+  if(existing){
+    existing.nombre=nombre.trim();
+    if(tel) existing.tel=tel;
+    if(cuit) existing.cuit=cuit;
+  } else {
+    clientes.push({id:uid(),nombre:nombre.trim(),tel:tel||'',cuit:cuit||''});
+  }
+  DB.set('clientes',clientes);
+}
 function openPedCatModal(){
   const cat=DB.get('catalog',[]);
   const m=document.getElementById('ped-cat-modal');
@@ -4989,12 +5019,14 @@ function generatePedido() {
   if (!PED.length){toast('Agregá artículos al pedido.',false);return;}
   const cliente=document.getElementById('ped-cliente')?.value.trim();
   const tel=document.getElementById('ped-tel')?.value.trim();
+  const cuit=document.getElementById('ped-cuit')?.value.trim();
   if(!cliente){toast('Ingresá el nombre del cliente.',false);return;}
   const nro=nextPEDNumber();
-  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',items:PED.map(p=>({...p})),status:'cotizacion'};
+  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',cuit:cuit||'',items:PED.map(p=>({...p})),status:'cotizacion'};
   const peds=DB.get('pedidos',[]);
   peds.push(record);
   DB.set('pedidos',peds);
+  saveCliente(cliente,tel,cuit);
   _lastWrite=Date.now();
   toast(`${nro} guardado`);
   pedPrintDoc(record,false);
@@ -5122,6 +5154,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   </div>
   <div class="doc-meta">
     <div class="meta-item"><div class="meta-lbl">Cliente</div><div class="meta-val">${esc(o.cliente||'—')}</div></div>
+    ${o.cuit?`<div class="meta-item"><div class="meta-lbl">CUIT/DNI</div><div class="meta-val">${esc(o.cuit)}</div></div>`:''}
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
@@ -5172,6 +5205,7 @@ function pedDocBody(o){
   </div>
   <div class="doc-meta">
     <div class="meta-item"><div class="meta-lbl">Cliente</div><div class="meta-val">${esc(o.cliente||'—')}</div></div>
+    ${o.cuit?`<div class="meta-item"><div class="meta-lbl">CUIT/DNI</div><div class="meta-val">${esc(o.cuit)}</div></div>`:''}
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
   </div>
