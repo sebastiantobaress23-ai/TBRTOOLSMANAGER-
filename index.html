@@ -952,7 +952,6 @@ select{cursor:pointer}
   <div class="hdr-sep"></div>
   <div class="hdr-txt">Business Manager</div>
   <div class="hdr-right">
-    <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">🌙</button>
     <div id="sync-dot" class="sync-dot" style="opacity:.4" title="Sincronización Firebase"></div>
     <div id="offline-badge" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ye);background:#1a1000;border:1px solid #3a2800;border-radius:4px;padding:3px 8px">OFFLINE</div>
     <button id="gsearch-btn" class="gsearch-btn" onclick="openGSearch()" title="Buscar (Ctrl+K)">
@@ -2327,7 +2326,8 @@ function setFleteReal(v) {
 /* ── THEME ── */
 function toggleTheme() {
   const light = document.documentElement.classList.toggle('light');
-  document.getElementById('theme-btn').textContent = light ? '☀️' : '🌙';
+  const b = document.getElementById('theme-btn');
+  if (b) b.textContent = light ? '☀️ Modo claro' : '🌙 Modo oscuro';
   try { localStorage.setItem('tbr_theme', light ? 'light' : 'dark'); } catch(e){}
 }
 function initTheme() {
@@ -2335,7 +2335,7 @@ function initTheme() {
     if (localStorage.getItem('tbr_theme') === 'light') {
       document.documentElement.classList.add('light');
       const b = document.getElementById('theme-btn');
-      if (b) b.textContent = '☀️';
+      if (b) b.textContent = '☀️ Modo claro';
     }
   } catch(e){}
 }
@@ -3612,7 +3612,19 @@ function pgConfig() {
   const s=DB.get('settings',{marginAlert:15,mlCom:16,mlEnv:7500});
   const emp=DB.get('empresa',{});
   const bio=getBioCred();
+  const isLight=document.documentElement.classList.contains('light');
   return `<div class="pg">
+
+  <div class="sh mb16">Apariencia</div>
+  <div class="card mb24">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;color:var(--ch)">Tema de la app</div>
+        <div class="hint">Cambiá entre modo oscuro y modo claro.</div>
+      </div>
+      <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">${isLight?'☀️ Modo claro':'🌙 Modo oscuro'}</button>
+    </div>
+  </div>
 
   <div class="sh mb16">Mercado Libre</div>
   <div class="card mb24">
