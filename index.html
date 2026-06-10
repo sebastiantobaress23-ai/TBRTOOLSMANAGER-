@@ -314,8 +314,6 @@ html.light .cm-box{background:#fff;border-color:#ddd}
 html.light .alert-y{background:#fffbeb;border-color:#fbbf24;color:#92400e}
 html.light .info{background:#f0f9ff;border-color:#bae6fd;color:#075985}
 html.light .rtw{border-color:#e0e0e0}
-html.light .btn-go{background:linear-gradient(135deg,#222,#333)!important;color:#fff!important}
-html.light .btn-go:hover{background:linear-gradient(135deg,#111,#222)!important}
 html.light .btn-add-row{border-color:#ccc;color:#888}
 html.light .cat-r{border-bottom-color:#eee}
 html.light .hi-hdr:hover{background:#f5f5f5}
@@ -386,14 +384,14 @@ html.light body::before{
 @media (prefers-reduced-motion: reduce){body::before{animation:none}}
 
 /* HEADER */
-.hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(255,255,255,.05);padding:0 32px;height:68px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
+.hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(226,201,126,.12);padding:0 32px;height:76px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
 .hdr{isolation:isolate}
 .hdr-logo-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hdr-logo-wrap::before{content:'';position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 35%,rgba(226,201,126,0) 70%);filter:blur(26px);opacity:.65;transition:opacity .3s,transform .3s;z-index:-1}
 .hdr-logo-wrap:hover::before{opacity:1;transform:scale(1.12)}
 .hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
-.hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .3s,letter-spacing .3s}
+.hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:6px;text-transform:uppercase;color:rgba(226,201,126,.5);transition:color .3s,letter-spacing .3s}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:14px}
 .gsearch-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:rgba(255,255,255,.45);cursor:pointer;transition:.2s}
 .gsearch-btn:hover{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)}
@@ -474,8 +472,8 @@ html.light body::before{
 @keyframes navHintPulseL{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:1;transform:translateX(-3px)}}
 html.light .nav-hint,html.light .mob-nav-hint{background:linear-gradient(to right,transparent,rgba(250,250,250,.95) 55%)}
 html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to left,transparent,rgba(250,250,250,.95) 55%)}
-.tab{padding:14px 18px;font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.18);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
-.tab:hover{color:rgba(255,255,255,.55)}
+.tab{padding:16px 20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
+.tab:hover{color:rgba(255,255,255,.6)}
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
 
 /* CONTENT */
@@ -486,7 +484,7 @@ html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to 
 .pg{max-width:1060px;margin:0 auto;padding:26px 32px 48px}
 
 /* SECTION HEADING */
-.sh{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.sh{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:rgba(226,201,126,.4);margin-bottom:16px;display:flex;align-items:center;gap:14px}
 .sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.06),transparent);min-width:24px}
 .sh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent)}
 
@@ -508,7 +506,7 @@ html.light .sc-hero{background:linear-gradient(145deg,#fff,#f5f5f5)!important;bo
 /* STAT CARDS */
 .sc{background:linear-gradient(145deg,rgba(20,20,20,1),rgba(12,12,12,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden}
 .sc-l{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px}
-.sc-v{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.5px;line-height:1}
+.sc-v{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.5px;line-height:1}
 .sc-v.g{color:var(--gr)}.sc-v.y{color:var(--ye)}.sc-v.u{color:var(--us)}.sc-v.d{color:var(--ud)}
 .sc-s{font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px}
 
@@ -583,8 +581,8 @@ html.light .sc-hero{background:linear-gradient(145deg,#fff,#f5f5f5)!important;bo
 .tot-v{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.3px}
 
 /* BUTTONS */
-.btn-go{width:100%;height:52px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,220,220,.95));color:#060606;border:none;border-radius:12px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all .22s cubic-bezier(.22,.61,.36,1);box-shadow:0 2px 20px rgba(255,255,255,.12),0 1px 0 rgba(255,255,255,.2)}
-.btn-go:hover{background:linear-gradient(135deg,#fff,#ebebeb);transform:translateY(-2px);box-shadow:0 6px 32px rgba(255,255,255,.22)}
+.btn-go{width:100%;height:52px;background:linear-gradient(135deg,#f0dca3,var(--ud));color:#1c1404;border:none;border-radius:12px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all .22s cubic-bezier(.22,.61,.36,1);box-shadow:0 2px 24px rgba(226,201,126,.25),0 1px 0 rgba(255,255,255,.3)}
+.btn-go:hover{background:linear-gradient(135deg,#f6e6b8,#ecd591);transform:translateY(-2px);box-shadow:0 6px 32px rgba(226,201,126,.4)}
 .btn-go:active{transform:translateY(0)}
 .btn-p{background:linear-gradient(135deg,rgba(28,28,28,1),rgba(18,18,18,1));border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.85);border-radius:var(--r);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;padding:9px 18px;transition:all .18s;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .btn-p:hover{background:linear-gradient(135deg,rgba(36,36,36,1),rgba(24,24,24,1));border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
@@ -802,9 +800,9 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 .iw:focus-within{box-shadow:0 0 0 3px rgba(45,212,191,.08)}
 
 /* Tabs de escritorio: indicador con gradiente */
-.tab.on{color:rgba(226,201,126,.95)!important}
+.tab.on{color:rgba(226,201,126,.95)!important;background:linear-gradient(180deg,rgba(226,201,126,.09),transparent 70%)}
 .tab{position:relative}
-.tab.on::after{content:'';position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px}
+.tab.on::after{content:'';position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px;box-shadow:0 0 8px rgba(226,201,126,.5)}
 
 /* Header con leve resplandor */
 .hdr{background:linear-gradient(180deg,rgba(18,18,18,1),rgba(8,8,8,1))}
