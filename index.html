@@ -472,14 +472,6 @@ html.light body::before{
 /* NAV */
 .nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5);position:relative}
 .nav::-webkit-scrollbar{display:none}
-.nav-hint,.mob-nav-hint{position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:rgba(245,240,228,.55);background:linear-gradient(to right,transparent,rgba(8,8,8,.95) 55%);opacity:.7;visibility:hidden}
-.nav-hint{padding:0 14px 0 28px;font-size:16px}
-.mob-nav-hint{padding:0 10px 0 22px;font-size:15px}
-.nav-hint-l,.mob-nav-hint-l{right:auto;left:0;background:linear-gradient(to left,transparent,rgba(8,8,8,.95) 55%)}
-.nav-hint-l{padding:0 28px 0 14px}
-.mob-nav-hint-l{padding:0 22px 0 10px}
-html.light .nav-hint,html.light .mob-nav-hint{background:linear-gradient(to right,transparent,rgba(250,250,250,.95) 55%)}
-html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to left,transparent,rgba(250,250,250,.95) 55%)}
 .tab{padding:16px 20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
 .tab:hover{color:rgba(255,255,255,.6)}
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
@@ -1030,7 +1022,6 @@ select{cursor:pointer}
 </div>
 
 <nav class="nav">
-  <div class="nav-hint nav-hint-l">‹</div>
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
   <div class="tab"     data-p="historial"   onclick="navigate('historial')">Historial</div>
@@ -1046,12 +1037,10 @@ select{cursor:pointer}
   <div class="tab"     data-p="clientes"    onclick="navigate('clientes')">Clientes</div>
   <div class="tab"     data-p="viaje"       onclick="navigate('viaje')">Viaje de compras</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
-  <div class="nav-hint">›</div>
 </nav>
 
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mob-nav" id="mob-nav">
-  <div class="mob-nav-hint mob-nav-hint-l">‹</div>
   <button class="mob-tab" data-p="dashboard"   onclick="navigate('dashboard')"><span class="mob-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Inicio</button>
   <button class="mob-tab" data-p="compra"      onclick="navigate('compra')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Compra</button>
   <button class="mob-tab" data-p="historial"   onclick="navigate('historial')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></span>Historial</button>
@@ -1067,7 +1056,6 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
   <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
-  <div class="mob-nav-hint">›</div>
 </nav>
 
 <div id="app"></div>
@@ -1720,40 +1708,9 @@ function navigate(p) {
   _pageTransition = true;
   render();
   window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(updateNavHints, 350);
 }
 
-let _navHintPairs = null;
-let _navHintTicking = false;
 let _pageTransition = false;
-function updateNavHints(){
-  if (!_navHintPairs) {
-    _navHintPairs = [['nav.nav','.nav-hint:not(.nav-hint-l)','.nav-hint-l'], ['#mob-nav','.mob-nav-hint:not(.mob-nav-hint-l)','.mob-nav-hint-l']]
-      .map(([navSel,rightSel,leftSel])=>[document.querySelector(navSel), document.querySelector(rightSel), document.querySelector(leftSel)])
-      .filter(([nav,right,left])=>nav && right && left);
-  }
-  _navHintPairs.forEach(([nav,right,left])=>{
-    const overflows = nav.scrollWidth > nav.clientWidth + 2;
-    const atStart = nav.scrollLeft <= 2;
-    const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
-    right.style.visibility = (overflows && !atEnd) ? 'visible' : 'hidden';
-    left.style.visibility = (overflows && !atStart) ? 'visible' : 'hidden';
-  });
-}
-function requestNavHintUpdate(){
-  if (_navHintTicking) return;
-  _navHintTicking = true;
-  requestAnimationFrame(()=>{ updateNavHints(); _navHintTicking = false; });
-}
-function setupNavHints(){
-  _navHintPairs = null;
-  ['nav.nav','#mob-nav'].forEach(sel=>{
-    const nav = document.querySelector(sel);
-    if (nav) nav.addEventListener('scroll', requestNavHintUpdate, {passive:true});
-  });
-  window.addEventListener('resize', requestNavHintUpdate);
-  updateNavHints();
-}
 
 function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
@@ -1769,7 +1726,6 @@ function render() {
       app.style.animation = '';
     }
     after[PAGE]?.();
-    requestNavHintUpdate();
   }
   else {
     // Build desincronizado (el navegador tiene una versión vieja sin esta página): forzar actualización limpia
@@ -6530,7 +6486,6 @@ window.onload = async function() {
   } else {
     navigate('dashboard');
   }
-  setupNavHints();
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
