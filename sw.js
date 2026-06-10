@@ -1,4 +1,4 @@
-const CACHE = 'tbr-cache-v42';
+const CACHE = 'tbr-cache-v43';
 
 const PRECACHE_SAME = [
   '/',
@@ -39,6 +39,12 @@ self.addEventListener('activate', event => {
 // Network-first: siempre intenta traer la versión más nueva; si falla (sin conexión), usa la caché
 self.addEventListener('fetch', event => {
   const req = event.request;
+  const url = new URL(req.url);
+  // Dejar pasar sin intervenir las peticiones a APIs externas (ej: Mercado Libre, proxies CORS)
+  // que no forman parte del precache, para que la página maneje sus propios errores de red/CORS.
+  if (url.origin !== self.location.origin && !PRECACHE_CROSS.includes(req.url)) {
+    return;
+  }
   event.respondWith(
     fetch(req)
       .then(resp => {
