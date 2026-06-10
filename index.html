@@ -550,6 +550,7 @@ html.light .record-val{color:#92400e}
 .pr .ef{font-family:'DM Mono',monospace;font-size:11px;color:var(--us);text-align:right;height:auto;line-height:1.2;display:none}
 .pr .ef:not(:empty){display:block}
 .pr-wrap{display:flex;flex-direction:column;gap:3px}
+.ped-cost-ref{font-size:9px;color:var(--di);margin-top:3px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
 @media(max-width:640px){
   .pg{padding-left:14px;padding-right:14px}
   /* Grids responsive */
@@ -1277,6 +1278,7 @@ function parseARS(v){
   return parseFloat(norm)||0;
 }
 const fmtA = n=> '$ '+Math.round(+n||0).toLocaleString('es-AR');
+const fmtAk = n=> { const v=+n||0; return v>=1000 ? '$'+(v/1000).toFixed(1).replace('.0','')+'k' : fmtA(v); };
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
@@ -5114,7 +5116,7 @@ function pedRow(p) {
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
-    <div><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div style="font-size:10px;color:var(--di);margin-top:2px;text-align:right">costo ref. ${fmtA(cost)}</div>`:''}</div>
+    <div style="min-width:0"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPed('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -5147,7 +5149,7 @@ function pedEditRow(p) {
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
-    <div><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div style="font-size:10px;color:var(--di);margin-top:2px;text-align:right">costo ref. ${fmtA(cost)}</div>`:''}</div>
+    <div style="min-width:0"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPedEditItem('${p.id}')">${ic('close')}</button>
   </div>`;
 }
