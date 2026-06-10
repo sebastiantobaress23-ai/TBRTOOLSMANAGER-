@@ -2845,7 +2845,7 @@ function addSale(){
   const tel=document.getElementById('sale-tel')?.value.trim()||'';
   if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
   const s=DB.get('settings',{});
-  const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500,cliente,tel,pedidoNro:_pedSaleRef||''};
+  const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500,cliente,tel};
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
@@ -2856,7 +2856,6 @@ function addSale(){
     ci.stock -= qty;
     DB.set('catalog',cat);
   }
-  _pedSaleRef=null;
   toast(`✅ Venta ${sale.nro} registrada`);
   document.getElementById('sale-qty').value='1';
   document.getElementById('sale-price').value='';
@@ -2866,7 +2865,25 @@ function addSale(){
   render();
 }
 function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
+/* Normaliza una venta (registro clásico de un solo producto, o factura con varios ítems) a un array de ítems */
+function saleItems(s){
+  if (Array.isArray(s.items)) return s.items;
+  return [{n:s.name, c:s.code||'', q:s.qty||1, p:s.priceARS||0, cost:s.costARS||0}];
+}
+function itemProfit(s, it){
+  const com = it.p*(it.q||1)*((s.mlCom??16)/100);
+  return it.p*(it.q||1) - com - (it.cost||0)*(it.q||1);
+}
+function saleRevenue(s){
+  return saleItems(s).reduce((a,it)=>a+it.p*(it.q||1),0);
+}
+function saleUnits(s){
+  return saleItems(s).reduce((a,it)=>a+(it.q||1),0);
+}
 function saleProfit(s){
+  if (Array.isArray(s.items)) {
+    return saleItems(s).reduce((a,it)=>a+itemProfit(s,it),0) - (s.mlEnv??0);
+  }
   const com = (s.priceARS * (s.mlCom??16)/100);
   const unitNet = s.priceARS - com - (s.mlEnv??0) - (s.costARS||0);
   return unitNet * (s.qty||1);
@@ -2874,18 +2891,21 @@ function saleProfit(s){
 function pgVentas(){
   const sales = DB.get('sales',[]).slice().reverse();
   const cat = DB.get('catalog',[]);
-  const totalRev = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totalRev = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const totalUnits = sales.reduce((a,s)=>a+(s.qty||1),0);
+  const totalUnits = sales.reduce((a,s)=>a+saleUnits(s),0);
 
   // Ranking de rentabilidad por producto
   const map={};
   sales.forEach(s=>{
-    const key=(s.code||s.name||'').toLowerCase();
-    if(!map[key]) map[key]={name:s.name,code:s.code,units:0,revenue:0,profit:0};
-    map[key].units += (s.qty||1);
-    map[key].revenue += s.priceARS*(s.qty||1);
-    map[key].profit += saleProfit(s);
+    saleItems(s).forEach(it=>{
+      const key=(it.c||it.n||'').toLowerCase();
+      if(!map[key]) map[key]={name:it.n,code:it.c,units:0,revenue:0,profit:0};
+      map[key].units += (it.q||1);
+      map[key].revenue += it.p*(it.q||1);
+      // Ventas clásicas (un solo producto): el envío se descontaba por unidad, igual que en saleProfit()
+      map[key].profit += itemProfit(s,it) - (Array.isArray(s.items)?0:(s.mlEnv??0)*(it.q||1));
+    });
   });
   const ranking = Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
 
@@ -2926,16 +2946,26 @@ function pgVentas(){
 
   <div class="sh mb16">Historial de ventas</div>
   ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
-    ${sales.map(s=>`<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
+    ${sales.map(s=>{
+      const items=saleItems(s);
+      const multi=items.length>1;
+      const titulo = multi ? `${items.length} artículos` : `${esc(items[0].n)}${items[0].q>1?` × ${items[0].q}`:''}`;
+      const detalle = `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)}${!multi?` · venta ${fmtA(items[0].p)} c/u · costo ${fmtA(items[0].cost||0)} c/u`:''}${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}`;
+      return `<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-weight:600;font-size:14px">${esc(s.name)} ${s.qty>1?`× ${s.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)} · venta ${fmtA(s.priceARS)} c/u · costo ${fmtA(s.costARS||0)} c/u${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}</div></div>
+        <div><div style="font-weight:600;font-size:14px">${titulo}</div><div style="font-size:11px;color:var(--di)">${detalle}</div></div>
         <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
       </div>
+      ${multi?`<div style="overflow-x:auto;margin-top:10px">
+        <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
+        <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>`:''}
       <div class="hi-acts" style="margin-top:8px">
         <button class="btn-g btn-sm" onclick="reprintSale('${s.id}')">🖨 Comprobante</button>
         ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
       </div>
-    </div>`).join('')}
+    </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
 }
@@ -4477,7 +4507,6 @@ let orderCotRef = ''; // cotización referenciada por la orden actual
 let COT = [];
 let cotConf = null;
 let PED = [];
-let _pedSaleRef = null; // pedido referenciado por la próxima venta (PED-XXX)
 
 /* Numeración correlativa OC-001, OC-002... */
 function nextOCNumber() {
@@ -4769,10 +4798,11 @@ const PED_STATUS_COLOR = {cotizacion:'var(--ye)',confirmado:'var(--ye)',preparac
 function pgPedidos() {
   const cat  = DB.get('catalog',[]);
   const peds = DB.get('pedidos',[]).slice().reverse();
+  const sales = DB.get('sales',[]);
 
   return `<div class="pg">
   <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
-  <div class="info mb16" style="font-size:12px">Circuito: <b>Generar presupuesto</b> (queda como "Cotización enviada") → cuando el cliente confirma, marcá <b>"Cliente confirmó pedido"</b> → <b>"En preparación"</b> → al entregar, <b>"Entregado / Cobrado"</b> pasa el pedido a Ventas para registrar el cobro, quedando referenciado por su número.</div>
+  <div class="info mb16" style="font-size:12px">Circuito: <b>Generar presupuesto</b> (queda como "Cotización enviada") → cuando el cliente confirma, marcá <b>"Cliente confirmó pedido"</b> → <b>"En preparación"</b> → al entregar, <b>"Entregado / Cobrado"</b> genera automáticamente el comprobante de venta (factura) en Ventas con todos los artículos del pedido, referenciando este presupuesto.</div>
 
   <div class="card mb16">
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
@@ -4826,6 +4856,7 @@ function pgPedidos() {
         ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">✕ Cancelar</button>`:''}
         <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">🖨 Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
+        ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">🧾 Comprobante de venta</button>`:'';})()}
         <button class="btn-d" onclick="delPed('${o.id}')">🗑 Borrar</button>
       </div>
     </div>
@@ -4915,37 +4946,37 @@ function advancePed(id,newStatus){
 function cancelPed(id){confirm2('¿Cancelar este pedido? Quedará en el historial como cancelado.',()=>advancePed(id,'cancelado'),'Cancelar pedido','cm-ok');}
 function delPed(id){confirm2('¿Borrar este pedido?',()=>{DB.set('pedidos',DB.get('pedidos',[]).filter(o=>o.id!==id));render();});}
 
-/* Marca el pedido como Entregado/Cobrado y pre-carga el formulario de Ventas
-   (el usuario confirma manualmente "Registrar venta" para no duplicar datos) */
+/* Marca el pedido como Entregado/Cobrado y genera automáticamente el comprobante
+   de venta (factura) con todos los artículos del pedido, referenciándolo */
 function pedToVenta(id){
   const peds=DB.get('pedidos',[]);
   const o=peds.find(x=>x.id===id);
   if(!o)return;
   o.status='entregado';
   DB.set('pedidos',peds);
-  navigate('ventas');
-  _pedSaleRef=o.nro;
-  const item=(o.items||[])[0];
-  if(item){
-    const sel=document.getElementById('sale-prod');
-    if(sel){
-      const match=[...sel.options].find(opt=>{
-        const [n,c]=opt.value.split('|||');
-        return item.c ? c===item.c : n===item.n;
-      });
-      if(match){ sel.value=match.value; fillSaleCost(); }
-    }
-    const qtyEl=document.getElementById('sale-qty');
-    const priceEl=document.getElementById('sale-price');
-    if(qtyEl) qtyEl.value=item.q||1;
-    if(priceEl) priceEl.value=item.p||'';
-  }
-  const cEl=document.getElementById('sale-cliente');
-  const tEl=document.getElementById('sale-tel');
-  if(cEl) cEl.value=o.cliente||'';
-  if(tEl) tEl.value=o.tel||'';
-  if((o.items||[]).length>1) toast(`${o.nro}: completá manualmente ${o.items.length-1} artículo(s) más en Ventas.`, true, 5500);
-  else toast(`${o.nro}: revisá y registrá la venta.`, true, 4000);
+
+  const s=DB.get('settings',{});
+  const cat=DB.get('catalog',[]);
+  const items=(o.items||[]).map(p=>{
+    const ci=cat.find(c=>p.c?c.code===p.c:c.name===p.n);
+    return {n:p.n, c:p.c||'', q:p.q||1, p:p.p||0, cost: ci?suggestSaleCost(ci.code,ci.name):0};
+  });
+  const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),cliente:o.cliente||'',tel:o.tel||'',pedidoNro:o.nro,items,mlCom:s.mlCom??16,mlEnv:s.mlEnv??7500};
+  const sales=DB.get('sales',[]);
+  sales.push(sale);
+  DB.set('sales',sales);
+
+  // Descontar stock de los artículos que lo llevan
+  items.forEach(it=>{
+    const ci=cat.find(c=>it.c?c.code===it.c:c.name===it.n);
+    if(ci && ci.stock!=null) ci.stock -= it.q;
+  });
+  DB.set('catalog',cat);
+
+  _lastWrite=Date.now();
+  toast(`✅ ${sale.nro} generada a partir de ${o.nro}`);
+  ventaPrintDoc(sale,false);
+  render();
 }
 
 function pedPrintDoc(o, reprint) {
@@ -5105,11 +5136,21 @@ async function sharePedWA(id){
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 
-/* Comprobante de venta para el cliente (PDF + reimpresión + WhatsApp) */
+/* Comprobante de venta / factura para el cliente (PDF + reimpresión + WhatsApp) */
 function ventaDocBody(s){
   const emp = DB.get('empresa',{});
   const fecha = new Date(s.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
-  const subtotal = (s.qty||1)*(s.priceARS||0);
+  const items = saleItems(s);
+  const totalUnits = items.reduce((a,it)=>a+(it.q||1),0);
+  const total = items.reduce((a,it)=>a+(it.q||1)*(it.p||0),0);
+  const rows = items.map((it,i)=>`<tr>
+      <td class="num">${i+1}</td>
+      <td>${esc(it.n||'—')}</td>
+      <td>${esc(it.c||'—')}</td>
+      <td class="ctr">${it.q||1}</td>
+      <td class="cright">$ ${(it.p||0).toFixed(2)}</td>
+      <td class="cright">$ ${((it.q||1)*(it.p||0)).toFixed(2)}</td>
+    </tr>`).join('');
   const html = `<div class="doc">
   <div class="doc-head">
     <div class="brand">
@@ -5127,25 +5168,19 @@ function ventaDocBody(s){
   <div class="doc-meta">
     <div class="meta-item"><div class="meta-lbl">Cliente</div><div class="meta-val">${esc(s.cliente||'—')}</div></div>
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
-    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${s.qty||1} u.</div></div>
+    <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${items.length} ítems · ${totalUnits} u.</div></div>
+    ${s.pedidoNro?`<div class="meta-item"><div class="meta-lbl">Ref. pedido</div><div class="meta-val">${esc(s.pedidoNro)}</div></div>`:''}
   </div>
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
       <th class="ctr">Cant.</th><th class="cright">P. Unit.</th><th class="cright">Subtotal</th>
     </tr></thead>
-    <tbody><tr>
-      <td class="num">1</td>
-      <td>${esc(s.name||'—')}</td>
-      <td>${esc(s.code||'—')}</td>
-      <td class="ctr">${s.qty||1}</td>
-      <td class="cright">$ ${(s.priceARS||0).toFixed(2)}</td>
-      <td class="cright">$ ${subtotal.toFixed(2)}</td>
-    </tr></tbody>
+    <tbody>${rows}</tbody>
   </table>
   <div class="doc-totals">
     <div class="totals-box">
-      <div class="tot-row main"><span>TOTAL</span><span>$ ${subtotal.toFixed(2)}</span></div>
+      <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
     </div>
   </div>
   <div class="foot-note">TBR TOOLS · ${esc(s.nro||'')}${s.pedidoNro?' · '+esc(s.pedidoNro):''}</div>
@@ -5153,9 +5188,7 @@ function ventaDocBody(s){
   return {css: DOC_CSS, html};
 }
 
-function reprintSale(id){
-  const s=DB.get('sales',[]).find(x=>x.id===id);
-  if(!s)return;
+function ventaPrintDoc(s, reprint){
   const {html} = ventaDocBody(s);
   const w = window.open('','_blank','width=900,height=700');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(s.nro||'Comprobante')} · TBR TOOLS</title>
@@ -5194,13 +5227,19 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${esc(s.nro||'Comprobante')} · comprobante de venta</span>
+  <span>📄 ${esc(s.nro||'Comprobante')} ${reprint?'· copia para reimprimir':'listo para enviar al cliente'}</span>
   <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
   <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
 </div>
 ${html}
 </body></html>`);
   w.document.close();
+}
+
+function reprintSale(id){
+  const s=DB.get('sales',[]).find(x=>x.id===id);
+  if(!s)return;
+  ventaPrintDoc(s,true);
 }
 
 async function shareSaleWA(id){
