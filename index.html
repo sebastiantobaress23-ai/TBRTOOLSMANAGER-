@@ -1088,6 +1088,20 @@ select{cursor:pointer}
   </div>
 </div>
 
+<!-- ESCÁNER DE CÓDIGO DE BARRAS -->
+<div id="scan-modal" class="mol" style="display:none" onclick="if(event.target===this)closeScan()">
+  <div class="mbox" style="max-width:480px">
+    <div class="mhdr">Escanear código de barras<button class="btn-rm" onclick="closeScan()">✕</button></div>
+    <div class="mbody">
+      <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;line-height:0">
+        <video id="scan-video" autoplay playsinline muted style="width:100%;display:block;max-height:320px;object-fit:cover"></video>
+        <div style="position:absolute;left:8%;right:8%;top:30%;bottom:30%;border:2px solid rgba(226,201,126,.65);border-radius:8px;pointer-events:none;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+      </div>
+      <div id="scan-status" class="hint mt12">Apuntá la cámara al código de barras del producto.</div>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="ft">TBR Tools · Business Manager</div>
   <div class="ft">Developed by TBR Tools · v5.0</div>
@@ -1933,7 +1947,7 @@ function pgCompra() {
   <div class="card">
     <div class="fb mb12 prod-tools">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">📷 Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -2052,6 +2066,101 @@ function prodRow(p) {
     </div>
     <button class="btn-rm" onclick="rmP('${p.id}')">✕</button>
   </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   ESCÁNER DE CÓDIGO DE BARRAS (ZXing)
+═══════════════════════════════════════════ */
+let _zxingLoading = null;
+function loadZXing(){
+  if (window.ZXing) return Promise.resolve();
+  if (_zxingLoading) return _zxingLoading;
+  _zxingLoading = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/zxing-library/0.20.0/index.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('offline'));
+    document.head.appendChild(s);
+  });
+  return _zxingLoading;
+}
+let _scanReader = null;
+let _scanCallback = null;
+async function openScan(callback){
+  const modal=document.getElementById('scan-modal');
+  const status=document.getElementById('scan-status');
+  if(!modal) return;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast('Tu navegador no soporta la cámara para escanear.',false);
+    return;
+  }
+  _scanCallback=callback;
+  modal.style.display='flex';
+  status.textContent='Cargando lector…';
+  try{
+    await loadZXing();
+  }catch(e){
+    status.textContent='No se pudo cargar el lector (sin conexión). Probá de nuevo con internet.';
+    return;
+  }
+  status.textContent='Apuntá la cámara al código de barras del producto.';
+  try{
+    _scanReader = new ZXing.BrowserMultiFormatReader();
+    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    const backCam = devices.find(d=>/back|rear|trasera|environment/i.test(d.label)) || devices[devices.length-1];
+    _scanReader.decodeFromVideoDevice(backCam?.deviceId||null, 'scan-video', (result, err)=>{
+      if(result){
+        const code=result.getText();
+        const cb=_scanCallback;
+        closeScan();
+        if(cb) cb(code);
+      }
+    });
+  }catch(e){
+    status.textContent='No se pudo acceder a la cámara. Revisá los permisos del navegador.';
+  }
+}
+function closeScan(){
+  const modal=document.getElementById('scan-modal');
+  if(modal) modal.style.display='none';
+  if(_scanReader){ try{_scanReader.reset();}catch(e){} _scanReader=null; }
+  _scanCallback=null;
+}
+function findCatalogByCode(code){
+  const norm=(code||'').trim().toLowerCase();
+  if(!norm) return null;
+  return DB.get('catalog',[]).find(c=>(c.code||'').trim().toLowerCase()===norm) || null;
+}
+function scanForVenta(){
+  openScan(code=>{
+    const match=findCatalogByCode(code);
+    const sel=document.getElementById('sale-prod');
+    if(!match){ toast(`No se encontró ningún producto con el código ${code}.`,false); return; }
+    if(sel){
+      sel.value=`${match.name}|||${match.code||''}`;
+      fillSaleCost();
+      toast('Producto encontrado: '+match.name);
+    }
+  });
+}
+function scanForCatalog(){
+  openScan(code=>{
+    const inp=document.getElementById('ce-code');
+    if(inp) inp.value=code;
+    toast('Código escaneado: '+code);
+  });
+}
+function scanForCompra(){
+  openScan(code=>{
+    const match=findCatalogByCode(code);
+    if(match){
+      addProd(match.name, match.code||code, 1, match.lastPrice||match.defaultPrice||'');
+      toast('Producto identificado: '+match.name);
+    }else{
+      addProd('', code);
+      toast('Código escaneado (no está en el catálogo) — completá nombre y precio.');
+    }
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -2725,10 +2834,10 @@ function pgVentas(){
   <div class="sh mb16">Registrar venta</div>
   <div class="card mb24">
     <div class="fg-w">
-      <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div class="iw"><select id="sale-prod" onchange="fillSaleCost()">
+      <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
         <option value="">Elegí un producto…</option>
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
-      </select></div></div>
+      </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">📷</button></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
@@ -2908,7 +3017,7 @@ function pgCat() {
     <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">✕</button></div>
     <div class="mbody">
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
-      <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
+      <div><label class="fl">Código</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-code" placeholder="TAGL271532"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">📷</button></div></div>
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0"></div></div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
