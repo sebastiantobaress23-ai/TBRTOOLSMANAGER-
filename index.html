@@ -2911,6 +2911,14 @@ function suggestSaleCost(code, name){
   const tce = lastTCE();
   return Math.round((c.lastPrice||c.defaultPrice||0) * tce);
 }
+function suggestSalePrice(code, name){
+  const pubs = DB.get('mlpubs',[]);
+  for (let i=pubs.length-1; i>=0; i--){
+    const pp = (pubs[i].products||[]).find(x=>(code && x.c===code) || (!code && x.n===name));
+    if (pp && pp.precio) return Math.round(pp.precio);
+  }
+  return 0;
+}
 function fillSaleCost(){
   const sel=document.getElementById('sale-prod');
   const opt=sel.options[sel.selectedIndex];
@@ -5015,7 +5023,7 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
-    <div class="hint mt12">Al agregar desde el catálogo se sugiere un costo estimado en ARS (según el último TCE) — ajustá el precio para definir lo que le vas a cobrar al cliente.</div>
+    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Si el producto tiene una publicación guardada en Mercado Libre se sugiere ese precio de venta; debajo de cada precio te mostramos el costo de referencia (según el último TCE) para que definas tu margen.</div>
   </div>
 
   <div class="cot-actbar mb16">
@@ -5089,11 +5097,12 @@ function pgPedidos() {
 }
 
 function pedRow(p) {
+  const cost = suggestSaleCost(p.c, p.n);
   return `<div class="pr ord-row" id="ped-${p.id}" style="grid-template-columns:2fr 90px 56px 100px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
-    <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="0" oninput="updPed('${p.id}','p',this.value)"></div>
+    <div><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div style="font-size:10px;color:var(--di);margin-top:2px;text-align:right">costo ref. ${fmtA(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPed('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -5121,11 +5130,12 @@ function updPed(id,k,v) {
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
 function pedEditRow(p) {
+  const cost = suggestSaleCost(p.c, p.n);
   return `<div class="pr ord-row" id="pedit-${p.id}" style="grid-template-columns:2fr 90px 56px 100px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
-    <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="0" oninput="updPedEditItem('${p.id}','p',this.value)"></div>
+    <div><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div style="font-size:10px;color:var(--di);margin-top:2px;text-align:right">costo ref. ${fmtA(cost)}</div>`:''}</div>
     <button class="btn-rm" onclick="rmPedEditItem('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -5212,7 +5222,7 @@ function openPedCatModal(){
   m.style.display='flex';
 }
 function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';}
-function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestSaleCost(c.code,c.name)||'');closePedCatModal();}
+function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,suggestSalePrice(c.code,c.name)||'');closePedCatModal();}
 
 function generatePedido() {
   if (!PED.length){toast('Agregá artículos al pedido.',false);return;}
