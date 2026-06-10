@@ -980,7 +980,11 @@ select{cursor:pointer}
     </button>
     <button class="qa-mini" onclick="qaFanGo('cotizaciones')">
       <span class="qa-mini-lbl">Cotizaciones</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+    </button>
+    <button class="qa-mini" onclick="qaFanSim()">
+      <span class="qa-mini-lbl">Simulador de ganancias</span>
+      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l4-8z"/><line x1="9" y1="11" x2="15" y2="11"/></svg></span>
     </button>
   </div>
   <div class="qa-fab" onclick="toggleQA()" title="Acción rápida">
@@ -995,6 +999,18 @@ select{cursor:pointer}
     </div>
     <div id="qa-body" class="qa-body"></div>
   </div>
+</div>
+<div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
+  <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
+  <div class="mbody">
+    <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
+    <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
+    <div><label class="fl">Tipo de cambio (TCE)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-tce" min="0" step="10" value="1000" oninput="simRecalc()"></div></div>
+    <div><label class="fl">Margen deseado (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-margen" min="0" step="1" value="30" oninput="simRecalc()"></div></div>
+    <div><label class="fl">Comisión Mercado Libre (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-com" min="0" step="1" value="16" oninput="simRecalc()"></div></div>
+    <div><label class="fl">Envío (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-envio" min="0" step="100" value="7500" oninput="simRecalc()"></div></div>
+    <div id="sim-result" class="card mb16" style="margin-top:16px;padding:16px"></div>
+  </div></div>
 </div>
 
 <nav class="nav">
@@ -1480,6 +1496,10 @@ function qaFanRepeat(){
   closeFan();
   setTimeout(()=>qaRepeatLastSale(),90);
 }
+function qaFanSim(){
+  closeFan();
+  setTimeout(()=>openSimulador(),140);
+}
 function qaShowSale(){
   const cat=DB.get('catalog',[]);
   const body=document.getElementById('qa-body');
@@ -1691,26 +1711,7 @@ function pgDash() {
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   return `<div class="pg">
-  <div class="dash-hdr mb20">
-    <div class="sh" style="margin:0">Resumen general</div>
-    <div class="dash-hdr-acts">
-      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
-      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
-      <button class="btn-g btn-sm" onclick="openSimulador()">🧪 Simulador de ganancias</button>
-    </div>
-  </div>
-  <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
-    <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
-    <div class="mbody">
-      <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
-      <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
-      <div><label class="fl">Tipo de cambio (TCE)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-tce" min="0" step="10" value="1000" oninput="simRecalc()"></div></div>
-      <div><label class="fl">Margen deseado (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-margen" min="0" step="1" value="30" oninput="simRecalc()"></div></div>
-      <div><label class="fl">Comisión Mercado Libre (%)</label><div class="iw"><span class="ipre">%</span><input type="number" id="sim-com" min="0" step="1" value="16" oninput="simRecalc()"></div></div>
-      <div><label class="fl">Envío (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sim-envio" min="0" step="100" value="7500" oninput="simRecalc()"></div></div>
-      <div id="sim-result" class="card mb16" style="margin-top:16px;padding:16px"></div>
-    </div></div>
-  </div>
+  <div class="sh mb20">Resumen general</div>
   <div class="sc-hero mb20">
     <div>
       <div class="sc-l">Total invertido</div>
@@ -3017,7 +3018,13 @@ function pgStats() {
   const tce=ps.length?ps.reduce((s,p)=>s+(p.r?.TCE||0),0)/ps.length:0;
   const usdt=ps.reduce((s,p)=>s+(p.r?.up||0),0);
   return `<div class="pg">
-  <div class="sh mb24">Estadísticas</div>
+  <div class="dash-hdr mb24">
+    <div class="sh" style="margin:0">Estadísticas</div>
+    <div class="dash-hdr-acts">
+      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
+      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
+    </div>
+  </div>
   <div class="g4 mb24">
     <div class="sc"><div class="sc-l">Total invertido</div><div class="sc-v g">${fmtA(tot)}</div><div class="sc-s">${ps.length} compras</div></div>
     <div class="sc"><div class="sc-l">Ganancia proyectada</div><div class="sc-v y">${fmtA(gan)}</div><div class="sc-s">según márgenes</div></div>
