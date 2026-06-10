@@ -673,6 +673,10 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-body{display:none;padding:0 20px 16px;border-top:1px solid var(--b2)}
 .hi-body.open{display:block}
 .hi-acts{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap}
+.hi-acts-ped{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.hi-act-main{width:100%;text-align:center}
+.hi-acts-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hi-acts-danger{padding-top:8px;border-top:1px solid var(--b2)}
 
 /* CATALOGO */
 .cat-price-short{display:none}
@@ -2243,6 +2247,14 @@ function scanForVenta(){
     }
   });
 }
+function scanForPed(){
+  openScan(code=>{
+    const match=findCatalogByCode(code);
+    if(!match){ toast(`No se encontró ningún producto con el código ${code}.`,false); return; }
+    addPedFromCat(match.id);
+    toast('Producto agregado: '+match.name);
+  });
+}
 function scanForCatalog(){
   openScan(code=>{
     const inp=document.getElementById('ce-barcode');
@@ -2976,8 +2988,8 @@ function pgVentas(){
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
     </div>
     <div class="fg-w mt12">
-      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente"></div></div>
-      <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" autocomplete="off"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
     </div>
     <div class="hint mt12">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML y envío configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.</div>
     <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
@@ -4428,7 +4440,7 @@ function printOrden(id) {
   toast(`${nro} guardada en Órdenes de compra`);
 
   const w = window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nro} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
@@ -4742,7 +4754,7 @@ function cotPrintDoc(o, reprint) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.nro} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
@@ -4862,9 +4874,9 @@ function pgPedidos() {
   <div class="card mb16">
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
       <div style="flex:1;min-width:200px"><label class="fl mb8">Cliente</label>
-      <div class="iw"><input type="text" id="ped-cliente" placeholder="Nombre del cliente"></div></div>
+      <div class="iw"><input type="text" id="ped-cliente" placeholder="Nombre del cliente" autocomplete="off"></div></div>
       <div style="flex:1;min-width:160px"><label class="fl mb8">Teléfono (WhatsApp)</label>
-      <div class="iw"><input type="text" id="ped-tel" placeholder="Ej: 5491122334455"></div></div>
+      <div class="iw"><input type="text" id="ped-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
     </div>
   </div>
 
@@ -4873,6 +4885,7 @@ function pgPedidos() {
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatModal()">Del catálogo</button>`:''}
+        <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
       </div>
     </div>
     <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 90px 56px 100px 34px;gap:8px;padding:0 6px 8px">
@@ -4904,15 +4917,19 @@ function pgPedidos() {
         <tbody>${(o.items||[]).map(p=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr">${fmtA(p.p||0)}</td><td class="tr">${fmtA((p.q||1)*(p.p||0))}</td></tr>`).join('')}</tbody>
         </table>
       </div>
-      <div class="hi-acts">
-        ${o.status==='cotizacion'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','confirmado')">${ic('check')} Cliente confirmó pedido</button>`:''}
-        ${o.status==='confirmado'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
-        ${o.status==='preparacion'?`<button class="btn-g btn-sm" onclick="pedToVenta('${o.id}')">${ic('check')} Entregado / Cobrado</button>`:''}
-        ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar</button>`:''}
-        <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
-        <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
-        ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
-        <button class="btn-d" onclick="delPed('${o.id}')">${ic('trash')} Borrar</button>
+      <div class="hi-acts-ped">
+        ${o.status==='cotizacion'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','confirmado')">${ic('check')} Cliente confirmó pedido</button>`:''}
+        ${o.status==='confirmado'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
+        ${o.status==='preparacion'?`<button class="btn-p btn-sm hi-act-main" onclick="pedToVenta('${o.id}')">${ic('check')} Entregado / Cobrado</button>`:''}
+        <div class="hi-acts-row">
+          <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
+          <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
+          ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
+        </div>
+        <div class="hi-acts-row hi-acts-danger">
+          ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar pedido</button>`:''}
+          <button class="btn-d" onclick="delPed('${o.id}')">${ic('trash')} Borrar</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -5049,7 +5066,7 @@ function pedPrintDoc(o, reprint) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.nro} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
@@ -5246,7 +5263,7 @@ function ventaDocBody(s){
 function ventaPrintDoc(s, reprint){
   const {html} = ventaDocBody(s);
   const w = window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(s.nro||'Comprobante')} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(s.nro||'Comprobante')} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
@@ -5852,7 +5869,7 @@ function reprintOC(id) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${o.nro} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
@@ -5998,7 +6015,7 @@ function printOrdenNew() {
   </tr>`).join('');
 
   const w=window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nro} · TBR TOOLS</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4;margin:12mm}
