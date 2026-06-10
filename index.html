@@ -707,15 +707,19 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 ::-webkit-scrollbar-track{background:#0c0c0c}
 ::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px}
 
+@media(max-width:768px){
+  /* Nav inferior móvil ya brinda navegación y marca; el footer queda oculto para no solaparse con el FAB */
+  footer{display:none}
+}
+
 @media(max-width:720px){
-  .hdr,.nav,footer{padding-left:14px;padding-right:14px}
+  .hdr,.nav{padding-left:14px;padding-right:14px}
   .pg{padding:16px 14px 36px}
   .g2,.g3,.g4,.tce-strip,.cfg-g2,.cfg-g3,.totbar{grid-template-columns:1fr 1fr}
   .ph,.pr{grid-template-columns:1fr 60px 100px 44px 44px 32px}
   .ph .h-code,.pr .p-code{display:none}
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
-  footer{flex-direction:column;gap:4px;text-align:center}
   .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
   .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-r > div:nth-child(4){display:none}
   .cat-r{align-items:center}
