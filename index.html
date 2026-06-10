@@ -1431,7 +1431,7 @@ function qaShowSale(){
   const body=document.getElementById('qa-body');
   body.innerHTML=`
     <div class="iw"><select id="qa-prod" onchange="qaFillCost()">
-      <option value="">Elegí un producto del catálogo…</option>
+      <option value="">Elegí un producto…</option>
       ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
     </select></div>
     <div style="display:flex;gap:10px">
@@ -2647,7 +2647,7 @@ function pgVentas(){
   <div class="card mb24">
     <div class="fg-w">
       <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div class="iw"><select id="sale-prod" onchange="fillSaleCost()">
-        <option value="">Elegí un producto del catálogo…</option>
+        <option value="">Elegí un producto…</option>
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
       </select></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
