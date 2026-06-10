@@ -3729,20 +3729,30 @@ async function fetchCompPrice(i, query){
   const el=document.getElementById('cmp-auto-'+i);
   if(!query){ if(el) el.textContent='Sin nombre/código para buscar.'; return; }
   if(el) el.textContent='Buscando en Mercado Libre…';
+  const apiUrl = `https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(query)}&limit=10`;
+  let d = null, lastErr = '';
+  // Intento directo (funciona si ML responde con CORS habilitado)
   try {
-    const r = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(query)}&limit=10`, {signal:AbortSignal.timeout(8000)});
-    if(!r.ok) throw new Error('http '+r.status);
-    const d = await r.json();
-    const results=(d.results||[]).filter(x=>x.price>0);
-    if(!results.length){ if(el) el.textContent='No se encontraron publicaciones de la competencia para comparar.'; return; }
-    const best=results.reduce((a,b)=>a.price<b.price?a:b);
-    const inp=document.getElementById('cmp-comp-'+i);
-    if(inp){ inp.value=Math.round(best.price); cmpCalc(i,inp); }
-    const title=(best.title||'').slice(0,60);
-    if(el) el.innerHTML=`Mejor precio encontrado: <b style="color:var(--ch)">${fmtA(best.price)}</b> — <a href="${esc(best.permalink||'#')}" target="_blank" style="color:var(--ch)">${esc(title)}${(best.title||'').length>60?'…':''}</a>`;
-  } catch(e) {
-    if(el) el.textContent='No se pudo conectar con Mercado Libre — probá el botón "Buscar en Mercado Libre" para verlo manualmente.';
+    const r = await fetch(apiUrl, {signal:AbortSignal.timeout(8000)});
+    if (r.ok) d = await r.json();
+    else lastErr = 'HTTP '+r.status;
+  } catch(e) { lastErr = e.message||'fallo de red/CORS'; }
+  // Si falló (típico: ML no envía cabeceras CORS para fetch directo), reintentar vía proxy CORS público
+  if (!d) {
+    try {
+      const r2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`, {signal:AbortSignal.timeout(10000)});
+      if (r2.ok) d = await r2.json();
+      else lastErr = 'HTTP '+r2.status+' (proxy)';
+    } catch(e) { lastErr = e.message||'fallo de red (proxy)'; }
   }
+  if (!d) { if(el) el.textContent=`No se pudo conectar con Mercado Libre (${lastErr}) — probá el botón "Buscar en Mercado Libre" para verlo manualmente.`; return; }
+  const results=(d.results||[]).filter(x=>x.price>0);
+  if(!results.length){ if(el) el.textContent='No se encontraron publicaciones de la competencia para comparar.'; return; }
+  const best=results.reduce((a,b)=>a.price<b.price?a:b);
+  const inp=document.getElementById('cmp-comp-'+i);
+  if(inp){ inp.value=Math.round(best.price); cmpCalc(i,inp); }
+  const title=(best.title||'').slice(0,60);
+  if(el) el.innerHTML=`Mejor precio encontrado: <b style="color:var(--ch)">${fmtA(best.price)}</b> — <a href="${esc(best.permalink||'#')}" target="_blank" style="color:var(--ch)">${esc(title)}${(best.title||'').length>60?'…':''}</a>`;
 }
 
 /* ═══════════════════════════════════════════
