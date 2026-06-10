@@ -1196,7 +1196,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs'];
 
 let _lastWrite = 0;
 async function fbSync() {
@@ -2763,9 +2763,11 @@ function savePurchase() {
       if (ex.lastPrice && ex.lastPrice !== newPrice) hist.push({price:ex.lastPrice,date:ex.lastUpdated});
       ex.priceHistory = hist.slice(-5);
       ex.lastPrice=newPrice;ex.lastUpdated=new Date().toISOString();
-      if (ex.stock!=null) ex.stock = ex.stock + (p.q||0);
+      if (ex.stock!=null && p.q) { ex.stock = ex.stock + p.q; logStockMov(ex, p.q, 'compra'); }
     } else {
-      cat.push({id:uid(),name:p.n,code:p.c||'',defaultPrice:newPrice,lastPrice:newPrice,priceHistory:[],lastUpdated:new Date().toISOString(),stock:p.q||0});
+      const nc={id:uid(),name:p.n,code:p.c||'',defaultPrice:newPrice,lastPrice:newPrice,priceHistory:[],lastUpdated:new Date().toISOString(),stock:p.q||0};
+      cat.push(nc);
+      if (p.q) logStockMov(nc, p.q, 'compra');
     }
   });
   DB.set('catalog',cat);
@@ -2937,6 +2939,7 @@ function addSale(){
   const ci=cat.find(c=>code?c.code===code:c.name===name);
   if(ci && ci.stock!=null){
     ci.stock -= qty;
+    logStockMov(ci, -qty, 'venta');
     DB.set('catalog',cat);
   }
   toast(`Venta ${sale.nro} registrada`);
@@ -3169,7 +3172,7 @@ function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)retu
 function pgCat() {
   const cat=DB.get('catalog',[]);
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -3186,9 +3189,31 @@ function pgCat() {
         ${(()=>{const h=(c.priceHistory||[]).map(x=>x.price);const cur=c.lastPrice||c.defaultPrice||0;const data=[...h,cur];return data.length>=2?`<div class="cat-spark">${sparkline(data,'#e2c97e',56,16)}</div>`:'';})()}
       </div>
       <div style="font-size:11px;color:var(--di);white-space:nowrap">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">${ic('edit')}</button><button class="btn-d" onclick="delCat('${c.id}')">${ic('close')}</button></div>
+      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button>${c.stock!=null?`<button class="btn-g btn-sm" title="Ajustar stock" onclick="openStockAdj('${c.id}')">${ic('scale')}</button>`:''}<button class="btn-g btn-sm" onclick="editCat('${c.id}')">${ic('edit')}</button><button class="btn-d" onclick="delCat('${c.id}')">${ic('close')}</button></div>
     </div>`).join('')}
   </div>`}
+  <!-- MODAL MOVIMIENTOS DE STOCK -->
+  <div id="stock-movs-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockMovs()">
+    <div class="mbox" style="max-width:640px"><div class="mhdr"><span>Movimientos de stock</span><button class="btn-rm" onclick="closeStockMovs()">${ic('close')}</button></div>
+    <div class="mbody" id="stock-movs-body"></div></div>
+  </div>
+  <!-- MODAL AJUSTE MANUAL DE STOCK -->
+  <div id="stock-adj-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockAdj()">
+    <div class="mbox"><div class="mhdr"><span>Ajustar stock</span><button class="btn-rm" onclick="closeStockAdj()">${ic('close')}</button></div>
+    <div class="mbody">
+      <div class="mb16" style="font-weight:600" id="adj-prod-name"></div>
+      <div><label class="fl">Cantidad</label><div class="iw"><input type="number" id="adj-qty" placeholder="Ej: -1 o 5" step="1"></div></div>
+      <div class="hint">Usá un número negativo para restar (rotura, pérdida) y positivo para sumar (conteo encontró más stock del registrado).</div>
+      <div class="mt12"><label class="fl">Motivo</label><div class="iw"><select id="adj-reason">
+        <option value="conteo">Conteo físico</option>
+        <option value="rotura">Rotura / daño</option>
+        <option value="perdida">Pérdida / robo</option>
+        <option value="otro">Otro</option>
+      </select></div></div>
+      <input type="hidden" id="adj-id">
+      <button class="btn-go" style="margin-top:8px" onclick="saveStockAdj()">Guardar ajuste</button>
+    </div></div>
+  </div>
   <!-- MODAL VISTA 360 -->
   <div id="prod360-modal" class="mol" style="display:none" onclick="if(event.target===this)closeProd360()">
     <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()">${ic('close')}</button></div>
@@ -3224,6 +3249,52 @@ function saveCat(){
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
+
+/* ═══════════════════════════════════════════
+   MOVIMIENTOS DE STOCK — historial + ajuste manual
+═══════════════════════════════════════════ */
+const STOCK_MOV_REASONS = {
+  compra:'Compra', venta:'Venta', pedido:'Pedido entregado',
+  conteo:'Conteo físico', rotura:'Rotura / daño', perdida:'Pérdida / robo', otro:'Ajuste manual'
+};
+function logStockMov(c, delta, reason){
+  if (!delta) return;
+  const movs = DB.get('stockMovs',[]);
+  movs.push({id:uid(), date:new Date().toISOString(), prodId:c.id, name:c.name||'', code:c.code||'', delta, reason, stock:c.stock??0});
+  DB.set('stockMovs', movs.slice(-500));
+}
+function openStockAdj(id){
+  const c=DB.get('catalog',[]).find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('adj-prod-name').textContent=c.name+(c.stock!=null?` (stock actual: ${c.stock})`:'');
+  document.getElementById('adj-id').value=id;
+  document.getElementById('adj-qty').value='';
+  document.getElementById('adj-reason').value='conteo';
+  document.getElementById('stock-adj-modal').style.display='flex';
+}
+function closeStockAdj(){document.getElementById('stock-adj-modal').style.display='none';}
+function saveStockAdj(){
+  const id=document.getElementById('adj-id').value;
+  const delta=parseInt(document.getElementById('adj-qty').value);
+  const reason=document.getElementById('adj-reason').value;
+  if(!delta){toast('Ingresá una cantidad distinta de cero (positiva para sumar, negativa para restar).',false);return;}
+  const cat=DB.get('catalog',[]);
+  const c=cat.find(x=>x.id===id);
+  if(!c)return;
+  c.stock=Math.max(0,(c.stock||0)+delta);
+  DB.set('catalog',cat);
+  logStockMov(c, delta, reason);
+  closeStockAdj();render();toast('Stock ajustado');
+}
+function openStockMovs(){
+  const movs=DB.get('stockMovs',[]).slice().reverse().slice(0,100);
+  const body=document.getElementById('stock-movs-body');
+  body.innerHTML = movs.length ? `<div style="overflow-x:auto"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Motivo</th><th class="tc2">Cant.</th><th class="tc2">Saldo</th></tr></thead>
+    <tbody>${movs.map(m=>`<tr><td class="tn">${fmtD(m.date)}</td><td class="tn">${esc(m.name)}${m.code?` <span style="color:var(--di);font-size:11px">(${esc(m.code)})</span>`:''}</td><td class="tc">${STOCK_MOV_REASONS[m.reason]||m.reason}</td><td class="tc2" style="color:${m.delta>0?'var(--gr)':'var(--re)'}">${m.delta>0?'+':''}${m.delta}</td><td class="tc2">${m.stock}</td></tr>`).join('')}</tbody></table></div>`
+    : `<div class="empty">Todavía no hay movimientos de stock registrados.</div>`;
+  document.getElementById('stock-movs-modal').style.display='flex';
+}
+function closeStockMovs(){document.getElementById('stock-movs-modal').style.display='none';}
 
 /* ═══════════════════════════════════════════
    VISTA 360 — Línea de tiempo del producto + detector de oportunidades
@@ -5201,7 +5272,7 @@ function pedToVenta(id){
   // Descontar stock de los artículos que lo llevan
   items.forEach(it=>{
     const ci=cat.find(c=>it.c?c.code===it.c:c.name===it.n);
-    if(ci && ci.stock!=null) ci.stock -= it.q;
+    if(ci && ci.stock!=null){ ci.stock -= it.q; logStockMov(ci, -it.q, 'pedido'); }
   });
   DB.set('catalog',cat);
 
