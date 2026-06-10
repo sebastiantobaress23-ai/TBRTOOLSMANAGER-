@@ -1047,6 +1047,7 @@ select{cursor:pointer}
   <div class="tab"     data-p="orden"       onclick="navigate('orden')">Orden de Compra</div>
   <div class="tab"     data-p="cotizaciones" onclick="navigate('cotizaciones')">Cotiz. Proveedores</div>
   <div class="tab"     data-p="proveedores"  onclick="navigate('proveedores')">Proveedores</div>
+  <div class="tab"     data-p="clientes"    onclick="navigate('clientes')">Clientes</div>
   <div class="tab"     data-p="viaje"       onclick="navigate('viaje')">Viaje de compras</div>
   <div class="tab"     data-p="config"      onclick="navigate('config')">Config</div>
   <div class="nav-hint">›</div>
@@ -1065,6 +1066,7 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="publicar"    onclick="navigate('publicar')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>ML</button>
   <button class="mob-tab" data-p="competencia" onclick="navigate('competencia')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Compet.</button>
   <button class="mob-tab" data-p="proveedores" onclick="navigate('proveedores')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Proveed.</button>
+  <button class="mob-tab" data-p="clientes"    onclick="navigate('clientes')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Clientes</button>
   <button class="mob-tab" data-p="viaje" onclick="navigate('viaje')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>Viaje</button>
   <button class="mob-tab" data-p="orden"       onclick="navigate('orden')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>OC</button>
   <button class="mob-tab" data-p="cotizaciones" onclick="navigate('cotizaciones')"><span class="mob-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Cotiz.</button>
@@ -1504,12 +1506,13 @@ let CH   = {};
 let fleteReal = null; // override flete para esta compra (null = usar el de la config)
 let histSearch = '';  // búsqueda en historial
 let histSort = 'date'; // 'date','ars','gan','tce'
+let cliSearch = '';  // búsqueda en clientes
 const DRAFT_KEY = 'tbr_draft_v2';
 
 /* ═══════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════ */
-const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',pedidos:'rgba(226,201,126,.6)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)'};
+const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',pedidos:'rgba(226,201,126,.6)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)',clientes:'rgba(244,114,182,.6)'};
 function openGSearch(){
   const ol=document.getElementById('gsearch-ol');
   ol.style.display='flex';
@@ -1696,6 +1699,7 @@ document.addEventListener('click', e=>{
 function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
+  if (PAGE !== p && PAGE === 'clientes') { cliSearch = ''; }
   PAGE = p;
   document.querySelectorAll('.tab,.mob-tab').forEach(t=>{
     const active = t.dataset.p===p;
@@ -1750,7 +1754,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,pedidos:pgPedidos,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,viaje:pgViaje};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,pedidos:pgPedidos,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,clientes:pgClientes,viaje:pgViaje};
   if (fns[PAGE]) {
     app.innerHTML = fns[PAGE]();
     if (_pageTransition) {
@@ -4574,6 +4578,8 @@ let orderCotRef = ''; // cotización referenciada por la orden actual
 let COT = [];
 let cotConf = null;
 let PED = [];
+let _pedEditId = null;
+let _pedEditItems = [];
 
 /* Numeración correlativa OC-001, OC-002... */
 function nextOCNumber() {
@@ -4917,7 +4923,29 @@ function pgPedidos() {
       <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · <span style="color:${PED_STATUS_COLOR[o.status]||'var(--di)'}">${PED_STATUS_LABEL[o.status]||o.status}</span></div></div>
       <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
     </div>
-    <div class="hi-body" id="ped${i}">
+    <div class="hi-body${_pedEditId===o.id?' open':''}" id="ped${i}">
+      ${_pedEditId===o.id?`
+      <div class="card mb16" style="margin-top:12px">
+        <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
+          <div style="flex:1;min-width:160px"><label class="fl mb8">Cliente</label>
+          <div class="iw"><input type="text" id="pedit-cliente" value="${esc(o.cliente||'')}" autocomplete="off"></div></div>
+          <div style="flex:1;min-width:140px"><label class="fl mb8">Teléfono (WhatsApp)</label>
+          <div class="iw"><input type="text" id="pedit-tel" value="${esc(o.tel||'')}" autocomplete="off"></div></div>
+          <div style="flex:1;min-width:140px"><label class="fl mb8">CUIT / DNI</label>
+          <div class="iw"><input type="text" id="pedit-cuit" value="${esc(o.cuit||'')}" autocomplete="off"></div></div>
+        </div>
+      </div>
+      <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 90px 56px 100px 34px;gap:8px;padding:0 6px 8px">
+        <div class="ph-l">Descripción</div><div class="ph-l">Código</div>
+        <div class="ph-l" style="text-align:center">Cant.</div><div class="ph-l" style="text-align:right">Precio (ARS)</div><div></div>
+      </div>
+      <div id="pedit-list">${_pedEditItems.map(pedEditRow).join('')}</div>
+      <button class="btn-add-row" onclick="addPedEditRow()">+ Agregar artículo</button>
+      <div class="hi-acts-row" style="margin-top:12px">
+        <button class="btn-p btn-sm" onclick="savePedEdit('${o.id}')">${ic('save')} Guardar cambios</button>
+        <button class="btn-g btn-sm" onclick="cancelPedEdit()">Cancelar edición</button>
+      </div>
+      `:`
       <div style="overflow-x:auto;margin-top:12px">
         <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio</th><th class="tr">Subtotal</th></tr></thead>
         <tbody>${(o.items||[]).map(p=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr">${fmtA(p.p||0)}</td><td class="tr">${fmtA((p.q||1)*(p.p||0))}</td></tr>`).join('')}</tbody>
@@ -4928,6 +4956,7 @@ function pgPedidos() {
         ${o.status==='confirmado'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
         ${o.status==='preparacion'?`<button class="btn-p btn-sm hi-act-main" onclick="pedToVenta('${o.id}')">${ic('check')} Entregado / Cobrado</button>`:''}
         <div class="hi-acts-row">
+          ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" onclick="editPed('${o.id}')">${ic('edit')} Editar</button>`:''}
           <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
           <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
           ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
@@ -4937,6 +4966,7 @@ function pgPedidos() {
           <button class="btn-d" onclick="delPed('${o.id}')">${ic('trash')} Borrar</button>
         </div>
       </div>
+      `}
     </div>
   </div>`;
   }).join('')}
@@ -4980,6 +5010,66 @@ function updPed(id,k,v) {
   else x[k]=v;
 }
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
+
+function pedEditRow(p) {
+  return `<div class="pr ord-row" id="pedit-${p.id}" style="grid-template-columns:2fr 90px 56px 100px 34px">
+    <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
+    <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
+    <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
+    <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="0" oninput="updPedEditItem('${p.id}','p',this.value)"></div>
+    <button class="btn-rm" onclick="rmPedEditItem('${p.id}')">${ic('close')}</button>
+  </div>`;
+}
+function addPedEditRow() {
+  const id=uid();_pedEditItems.push({id,n:'',c:'',q:1,p:0});
+  const list=document.getElementById('pedit-list');
+  if (list) list.insertAdjacentHTML('beforeend',pedEditRow(_pedEditItems[_pedEditItems.length-1]));
+}
+function rmPedEditItem(id) {
+  _pedEditItems=_pedEditItems.filter(x=>x.id!==id);
+  const el=document.getElementById('pedit-'+id);
+  if(el)el.remove();
+}
+function updPedEditItem(id,k,v) {
+  const x=_pedEditItems.find(x=>x.id===id);
+  if(!x)return;
+  if(k==='q') x.q=parseInt(v)||1;
+  else if(k==='p') x.p=parseFloat(v)||0;
+  else x[k]=v;
+}
+function editPed(id){
+  const o=DB.get('pedidos',[]).find(x=>x.id===id);
+  if(!o)return;
+  _pedEditId=id;
+  _pedEditItems=(o.items||[]).map(p=>({...p,id:p.id||uid()}));
+  render();
+}
+function cancelPedEdit(){
+  _pedEditId=null;
+  _pedEditItems=[];
+  render();
+}
+function savePedEdit(id){
+  if(!_pedEditItems.length){toast('El pedido debe tener al menos un artículo.',false);return;}
+  const cliente=document.getElementById('pedit-cliente')?.value.trim();
+  if(!cliente){toast('Ingresá el nombre del cliente.',false);return;}
+  const tel=document.getElementById('pedit-tel')?.value.trim()||'';
+  const cuit=document.getElementById('pedit-cuit')?.value.trim()||'';
+  const peds=DB.get('pedidos',[]);
+  const o=peds.find(x=>x.id===id);
+  if(!o)return;
+  o.cliente=cliente;
+  o.tel=tel;
+  o.cuit=cuit;
+  o.items=_pedEditItems.map(({id,...rest})=>({...rest}));
+  DB.set('pedidos',peds);
+  saveCliente(cliente,tel,cuit);
+  _lastWrite=Date.now();
+  _pedEditId=null;
+  _pedEditItems=[];
+  toast(`${o.nro} actualizado`);
+  render();
+}
 function onPedClienteInput(name){
   const norm=(name||'').trim().toLowerCase();
   if(!norm)return;
@@ -5363,6 +5453,139 @@ async function shareSaleWA(id){
   }
   shareViaWA(phone, txt, pdf, `${s.nro||'comprobante'}.pdf`);
 }
+
+/* ═══════════════════════════════════════════
+   CLIENTES — Ficha y historial por cliente
+═══════════════════════════════════════════ */
+function pgClientes() {
+  const clientes = DB.get('clientes',[]);
+  const filtered = cliSearch ? clientes.filter(c=>(c.nombre||'').toLowerCase().includes(cliSearch)) : clientes;
+  const list = filtered.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+
+  return `<div class="pg">
+  <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
+    <div style="flex:1;min-width:200px">
+      <div class="sh" style="margin-bottom:4px">Clientes</div>
+      <div style="font-size:13px;color:var(--di)">Datos de contacto e historial de pedidos por cliente.</div>
+    </div>
+    <button class="btn-p" onclick="openCli()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
+  </div>
+
+  ${clientes.length>0?`<div class="iw mb16"><input type="text" placeholder="Buscar cliente..." value="${esc(cliSearch)}" oninput="setCliSearch(this.value)"></div>`:''}
+
+  <div id="cli-list">${cliListHTML(list)}</div>
+
+  <!-- MODAL CLIENTE -->
+  <div id="cli-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCli()">
+    <div class="mbox">
+      <div class="mhdr"><span id="cli-title">Nuevo cliente</span><button class="btn-rm" onclick="closeCli()">${ic('close')}</button></div>
+      <div class="mbody">
+        <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="cli-nombre" placeholder="Nombre del cliente" autocomplete="off"></div></div>
+        <div><label class="fl">Teléfono (WhatsApp)</label><div class="iw"><input type="text" id="cli-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
+        <div><label class="fl">CUIT / DNI</label><div class="iw"><input type="text" id="cli-cuit" placeholder="Ej: 20304050607" autocomplete="off"></div></div>
+        <input type="hidden" id="cli-id">
+        <button class="btn-go" style="margin-top:8px" onclick="saveCli()">Guardar cliente</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function cliListHTML(list) {
+  if (!list.length) return `<div class="card" style="text-align:center;padding:40px 20px">
+    <div style="margin-bottom:12px">${ic('user',32)}</div>
+    <div class="empty-title">${cliSearch?'Sin resultados':'Sin clientes'}</div>
+    <div class="empty-sub">${cliSearch?`No hay clientes para "${esc(cliSearch)}".`:'Los clientes se guardan automáticamente al generar un pedido, o agregalos manualmente.'}</div>
+    ${cliSearch?'':`<button class="btn-p" onclick="openCli()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear cliente</button>`}
+   </div>`;
+
+  const peds = DB.get('pedidos',[]);
+  const sales = DB.get('sales',[]);
+
+  return list.map((c,i)=>{
+    const nameKey = (c.nombre||'').trim().toLowerCase();
+    const cliPeds = peds.filter(o=>(o.cliente||'').trim().toLowerCase()===nameKey).slice().reverse();
+    const cliSales = sales.filter(s=>(s.cliente||'').trim().toLowerCase()===nameKey);
+    const total = cliSales.reduce((a,s)=>a+saleRevenue(s),0);
+    return `<div class="hi">
+    <div class="hi-hdr" onclick="toggleHi('cli${i}')">
+      <div><div class="hi-n">${esc(c.nombre)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
+      <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">comprado</div></div>
+    </div>
+    <div class="hi-body" id="cli${i}">
+      <div class="hi-acts-row" style="margin-top:12px">
+        ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--ch)">${waIcon()}WhatsApp</a>`:''}
+        <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
+        <button class="btn-d" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
+      </div>
+      ${cliPeds.length?`<div class="ph-l mt12 mb8">Historial de pedidos</div>
+        ${cliPeds.map(o=>{
+          const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+          return `<div class="mc" style="cursor:pointer" onclick="navigateToPed('${o.id}')">
+            <div style="flex:1">
+              <div class="mc-n">${esc(o.nro)}</div>
+              <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · <span style="color:${PED_STATUS_COLOR[o.status]||'var(--di)'}">${PED_STATUS_LABEL[o.status]||o.status}</span></div>
+            </div>
+            <div class="hi-v">${fmtA(t)}</div>
+          </div>`;
+        }).join('')}`:'<div class="empty mt12">Sin pedidos registrados.</div>'}
+    </div>
+  </div>`;
+  }).join('');
+}
+
+function setCliSearch(v) {
+  cliSearch = v.toLowerCase();
+  const clientes = DB.get('clientes',[]);
+  const filtered = cliSearch ? clientes.filter(c=>(c.nombre||'').toLowerCase().includes(cliSearch)) : clientes;
+  const list = filtered.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  const container = document.getElementById('cli-list');
+  if (container) container.innerHTML = cliListHTML(list);
+}
+
+function navigateToPed(id) {
+  navigate('pedidos');
+  setTimeout(()=>{
+    const peds = DB.get('pedidos',[]).slice().reverse();
+    const idx = peds.findIndex(o=>o.id===id);
+    if (idx<0) return;
+    const el = document.getElementById('ped'+idx);
+    if (el) {
+      if (!el.classList.contains('open')) toggleHi('ped'+idx);
+      el.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  },100);
+}
+
+function openCli(id){
+  if(!document.getElementById('cli-modal')){navigate('clientes');setTimeout(()=>openCli(id),100);return;}
+  const c=id?DB.get('clientes',[]).find(x=>x.id===id):null;
+  document.getElementById('cli-title').textContent=c?'Editar cliente':'Nuevo cliente';
+  document.getElementById('cli-nombre').value=c?.nombre||'';
+  document.getElementById('cli-tel').value=c?.tel||'';
+  document.getElementById('cli-cuit').value=c?.cuit||'';
+  document.getElementById('cli-id').value=c?.id||'';
+  document.getElementById('cli-modal').style.display='flex';
+}
+function closeCli(){const m=document.getElementById('cli-modal');if(m)m.style.display='none';}
+function saveCli(){
+  const nombre=document.getElementById('cli-nombre').value.trim();
+  if(!nombre){toast('Ingresá el nombre del cliente.',false);return;}
+  const tel=document.getElementById('cli-tel').value.trim();
+  const cuit=document.getElementById('cli-cuit').value.trim();
+  const id=document.getElementById('cli-id').value;
+  let clientes=DB.get('clientes',[]);
+  if(id){
+    const c=clientes.find(x=>x.id===id);
+    if(c){c.nombre=nombre;c.tel=tel;c.cuit=cuit;}
+  } else {
+    if(clientes.some(c=>(c.nombre||'').trim().toLowerCase()===nombre.toLowerCase())){toast('Ya existe un cliente con ese nombre.',false);return;}
+    clientes.push({id:uid(),nombre,tel,cuit});
+  }
+  DB.set('clientes',clientes);
+  closeCli();render();toast('Cliente guardado');
+}
+function delCli(id){confirm2('¿Eliminar este cliente? El historial de pedidos no se borra.',()=>{DB.set('clientes',DB.get('clientes',[]).filter(c=>c.id!==id));render();});}
 
 /* ═══════════════════════════════════════════
    PDF + COMPARTIR POR WHATSAPP (con archivo adjunto cuando es posible)
