@@ -1187,6 +1187,10 @@ window.addEventListener('online', async () => {
 });
 window.addEventListener('offline', () => setSyncDot(false));
 
+// Claves que se sincronizan con Firebase (deben listarse todas las que se
+// guardan con DB.set para que viajen entre dispositivos)
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates'];
+
 let _lastWrite = 0;
 async function fbSync() {
   if (Date.now()-_lastWrite < 3000) return;
@@ -1206,21 +1210,46 @@ async function fbSync() {
     const d = await r.json();
     if (!d) return;
     let changed = false;
-    for (const k of ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','sales','trip']) {
+    let settingsChanged = false;
+    for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(d[k])) {
         try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); } catch {}
         changed = true;
+        if (k==='settings') settingsChanged = true;
       }
     }
     if (changed) {
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
       if (!typing) render();
+      // Si cambió la configuración de usuarios/PIN, re-evaluar el bloqueo
+      if (settingsChanged) checkAccessPin();
       setSyncDot(true);
     }
   } catch { setSyncDot(false); }
+}
+
+/* Sincronización inicial bloqueante: solo se ejecuta cuando el dispositivo
+   no tiene NINGÚN dato local (instalación nueva o navegador en incógnito).
+   Evita que se inicialicen valores por defecto (sin usuarios/PIN, contadores
+   en cero, etc.) y se suban a Firebase pisando los datos reales antes de
+   que llegue la primera sincronización. */
+async function initialSyncIfFresh() {
+  if (DB.get('settings') !== null) return;
+  if (!navigator.onLine) return;
+  try {
+    const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(6000)});
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d) return;
+    for (const k of FB_SYNC_KEYS) {
+      if (d[k]==null) continue;
+      try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); } catch {}
+    }
+    _lastWrite = Date.now();
+  } catch {}
 }
 
 function setSyncDot(ok) {
@@ -5770,7 +5799,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-window.onload = function() {
+window.onload = async function() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0,0);
   // Favicon: reusar el logo del header (evita duplicar el base64 en <head>)
@@ -5781,6 +5810,10 @@ window.onload = function() {
     favicon.href = hdrLogo.src;
     document.head.appendChild(favicon);
   }
+  // Si el dispositivo no tiene datos locales (instalación nueva / incógnito),
+  // traer primero lo que haya en Firebase antes de inicializar valores por
+  // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
+  await initialSyncIfFresh();
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados)
   if (DB.get('configs') === null) {
     DB.set('configs', []);
