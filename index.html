@@ -146,7 +146,7 @@ html.light .mob-tab.on{color:rgba(160,130,60,.95)}
 }
 
 /* ── PAGE ACCENT ── */
-.hdr-accent{height:2px;position:absolute;bottom:0;left:0;right:0;transition:background .3s}
+.hdr-accent{height:2px;position:absolute;bottom:0;left:0;right:0;transition:background .3s,box-shadow .3s}
 .hdr{position:relative;overflow:hidden}
 
 /* ── BETTER EMPTY STATES ── */
@@ -277,7 +277,7 @@ html.light{
   --gr:#16a34a;--re:#dc2626;--ye:#b45309;
   --us:#0891b2;--ud:#92400e;--in:#4338ca;
 }
-html.light body,html.light #app{background:var(--bg)}
+html.light body{background:var(--bg)}
 html.light .hdr{background:linear-gradient(180deg,#fff,#f8f8f8);border-bottom-color:var(--b2);box-shadow:0 2px 12px rgba(0,0,0,.07)}
 html.light .nav{background:#fafafa;border-bottom-color:var(--b1)}
 html.light .tab{color:#aaa}
@@ -295,6 +295,18 @@ html.light thead th{background:#333!important;color:#fff!important}
 html.light tbody tr{border-bottom-color:#eee}
 html.light tbody td{color:#333}
 html.light .totbar .tot{background:#f5f5f5;border-color:#e0e0e0}
+html.light .sh,html.light .sc-l{color:rgba(0,0,0,.32)}
+html.light .sc-s{color:rgba(0,0,0,.28)}
+html.light .hdr-txt{color:rgba(0,0,0,.32)}
+html.light .hdr-sep{background:linear-gradient(180deg,transparent,rgba(0,0,0,.12),transparent)}
+html.light .tot-l{color:rgba(0,0,0,.32)}
+html.light .btn-rm{border-color:var(--b2);color:rgba(0,0,0,.35)}
+html.light .btn-add-row{background:rgba(0,0,0,.015);border-color:rgba(0,0,0,.15);color:rgba(0,0,0,.4)}
+html.light .btn-d{color:rgba(0,0,0,.35)}
+html.light .gsearch-btn{border-color:var(--b2);background:rgba(0,0,0,.02);color:rgba(0,0,0,.45)}
+html.light .gsearch-btn:hover{color:#000;border-color:var(--b3);background:rgba(0,0,0,.05)}
+html.light .hdr img{mix-blend-mode:multiply;filter:none}
+html.light .hi-n,html.light :where(.sc-v){color:var(--ch)}
 html.light .tce-strip{background:transparent}
 html.light .tce-strip .sc{background:#f5f5f5!important;border-color:#e0e0e0!important}
 html.light .mol .mbox{background:#fff;border-color:#e0e0e0}
@@ -350,7 +362,28 @@ html.light .hi-hdr:hover{background:#f5f5f5}
 /* ── R-WRAP ANIMATION ── */
 #r-wrap{transition:opacity .2s ease}
 
-body{display:flex;flex-direction:column}
+body{display:flex;flex-direction:column;position:relative}
+
+/* AMBIENT GLOW: atmósfera sutil detrás del contenido, oro + turquesa de marca */
+body::before{
+  content:'';position:fixed;inset:-10vh -10vw;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(226,201,126,.07), transparent 38%),
+    radial-gradient(circle at 92% 18%, rgba(45,212,191,.05), transparent 36%),
+    radial-gradient(circle at 50% 105%, rgba(226,201,126,.04), transparent 42%);
+  animation:ambientDrift 36s ease-in-out infinite alternate;
+}
+html.light body::before{
+  background:
+    radial-gradient(circle at 12% -8%, rgba(226,201,126,.10), transparent 38%),
+    radial-gradient(circle at 92% 18%, rgba(8,145,178,.06), transparent 36%),
+    radial-gradient(circle at 50% 105%, rgba(226,201,126,.06), transparent 42%);
+}
+@keyframes ambientDrift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(0,-2.5%,0) scale(1.06)}
+}
+@media (prefers-reduced-motion: reduce){body::before{animation:none}}
 
 /* HEADER */
 .hdr{background:linear-gradient(180deg,rgba(16,16,16,1),rgba(9,9,9,1));border-bottom:1px solid rgba(255,255,255,.05);padding:0 32px;height:68px;display:flex;align-items:center;gap:18px;flex-shrink:0;box-shadow:0 4px 40px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.04)}
@@ -446,7 +479,7 @@ html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to 
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
 
 /* CONTENT */
-#app{flex:1;background:#0c0c0c;animation:pgFadeIn .28s ease both}
+#app{flex:1;position:relative;z-index:1;animation:pgFadeIn .28s ease both}
 @keyframes pgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes numPulse{0%{transform:scale(1);text-shadow:none}30%{transform:scale(1.12);text-shadow:0 0 16px currentColor}100%{transform:scale(1);text-shadow:none}}
 .num-pulse{display:inline-block;animation:numPulse .5s ease}
@@ -464,6 +497,13 @@ html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to 
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* HERO KPI: destaca el dato principal del dashboard */
+.sc-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 30px;background:linear-gradient(145deg,rgba(74,222,128,.08),rgba(20,20,20,1) 65%);border:1px solid rgba(255,255,255,.05);border-left:3px solid var(--gr);border-radius:var(--r2);box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
+.sc-hero-val{font-size:48px!important;text-shadow:0 0 32px rgba(74,222,128,.4)}
+.sc-hero-spark{flex-shrink:0;opacity:.9}
+.sc-hero-spark svg{width:140px;height:56px}
+html.light .sc-hero{background:linear-gradient(145deg,#fff,#f5f5f5)!important;border-color:var(--b1)!important}
 
 /* STAT CARDS */
 .sc{background:linear-gradient(145deg,rgba(20,20,20,1),rgba(12,12,12,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden}
@@ -498,6 +538,9 @@ html.light .nav-hint-l,html.light .mob-nav-hint-l{background:linear-gradient(to 
   .g3{grid-template-columns:1fr 1fr!important}
   .g4{grid-template-columns:1fr 1fr!important;gap:8px!important}
   .sc{padding:14px 16px}
+  .sc-hero{padding:18px 20px;gap:12px}
+  .sc-hero-val{font-size:32px!important}
+  .sc-hero-spark svg{width:90px;height:40px}
   /* Header oculto en mobile */
   .ph{display:none!important}
   /* Producto: 2 filas */
@@ -1508,7 +1551,11 @@ function navigate(p) {
     if (active) t.scrollIntoView({inline:'center', block:'nearest'});
   });
   const acc = document.getElementById('hdr-accent');
-  if (acc) acc.style.background = PAGE_COLORS[p]||'transparent';
+  if (acc) {
+    const c = PAGE_COLORS[p]||'transparent';
+    acc.style.background = c;
+    acc.style.boxShadow = c==='transparent' ? 'none' : `0 0 16px 1px ${c}`;
+  }
   _pageTransition = true;
   render();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1653,13 +1700,15 @@ function pgDash() {
       <div id="sim-result" class="card mb16" style="margin-top:16px;padding:16px"></div>
     </div></div>
   </div>
-  <div class="g4 mb20">
-    <div class="sc accent-g">
+  <div class="sc-hero mb20">
+    <div>
       <div class="sc-l">Total invertido</div>
-      <div class="sc-v g">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
+      <div class="sc-v g sc-hero-val">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
       <div class="sc-s">${ps.length} compra${ps.length!==1?'s':''} · ${fmtU(totU)}</div>
-      ${sparkline(spTot,'#4ade80')}
     </div>
+    <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
+  </div>
+  <div class="g3 mb20">
     <div class="sc accent-y">
       <div class="sc-l">Ganancia proyectada</div>
       <div class="sc-v y">${gan?`<span class="count-val" data-target="${gan}">${fmtA(gan)}</span>`:'—'}</div>
