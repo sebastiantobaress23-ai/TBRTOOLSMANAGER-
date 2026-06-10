@@ -503,6 +503,20 @@ html.light body::before{
 .sc-hero-spark svg{width:140px;height:56px}
 html.light .sc-hero{background:radial-gradient(circle at 88% -8%,rgba(146,64,14,.05),transparent 45%),linear-gradient(145deg,#fff,#f5f5f5)!important;border-color:var(--b1)!important}
 
+/* META DEL MES: anillo de progreso animado */
+.goal-card{display:flex;align-items:center;gap:24px;padding:20px 26px}
+.goal-ring-wrap{position:relative;flex-shrink:0;width:108px;height:108px}
+.goal-ring{transform:rotate(-90deg)}
+.goal-ring-bg{fill:none;stroke:var(--b2);stroke-width:8}
+.goal-ring-fill{fill:none;stroke:var(--ud);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)}
+.goal-ring-wrap.complete .goal-ring-fill{filter:drop-shadow(0 0 7px rgba(226,201,126,.65))}
+.goal-ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.goal-ring-pct{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;color:var(--ud)}
+.goal-info{flex:1;min-width:0}
+.goal-amounts{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:600;color:var(--ch);margin:4px 0;letter-spacing:-.2px}
+.goal-sep{color:var(--di);margin:0 2px}
+@media (max-width:560px){.goal-card{flex-direction:column;text-align:center;gap:14px}}
+
 /* RÉCORDS: tarjetas con acento dorado */
 .record-card{background:linear-gradient(145deg,rgba(226,201,126,.06),rgba(20,20,20,1) 65%);border:1px solid rgba(226,201,126,.15);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
 .record-icon{font-size:20px;margin-bottom:6px}
@@ -1796,6 +1810,35 @@ function pgDash() {
   const spTot  = ps.slice(-8).map(p=>p.r?.ars||0);
   const spGan  = ps.slice(-8).map(p=>purchaseGain(p));
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
+  const settings = DB.get('settings',{});
+  const goal = parseFloat(settings.monthlyGoal)||0;
+  let goalCard = '';
+  if (goal > 0) {
+    const now = new Date();
+    const curMonth = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
+                        .reduce((a,p)=>a+(p.r?.ars||0),0);
+    const pct = Math.round((curMonth/goal)*100);
+    const ratio = Math.min(curMonth/goal, 1);
+    const C = 2*Math.PI*52;
+    const offset = C*(1-ratio);
+    const done = pct >= 100;
+    goalCard = `<div class="card goal-card mb20">
+      <div class="goal-ring-wrap${done?' complete':''}">
+        <svg class="goal-ring" width="120" height="120" viewBox="0 0 120 120">
+          <circle class="goal-ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="goal-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-offset="${offset.toFixed(2)}"/>
+        </svg>
+        <div class="goal-ring-label">
+          <div class="goal-ring-pct">${pct}%</div>
+        </div>
+      </div>
+      <div class="goal-info">
+        <div class="sc-l">Meta del mes</div>
+        <div class="goal-amounts">${fmtA(curMonth)} <span class="goal-sep">/</span> ${fmtA(goal)}</div>
+        <div class="sc-s">${done?'¡Meta alcanzada! 🎉':`Faltan ${fmtA(Math.max(goal-curMonth,0))} para llegar`}</div>
+      </div>
+    </div>`;
+  }
   return `<div class="pg">
   <div class="sh mb20">Resumen general</div>
   <div class="sc-hero mb20">
@@ -1806,6 +1849,7 @@ function pgDash() {
     </div>
     <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
   </div>
+  ${goalCard}
   <div class="g3 mb20">
     <div class="sc accent-y">
       <div class="sc-l">Ganancia proyectada</div>
@@ -1962,6 +2006,14 @@ after.dashboard = ()=>{
     if(tceEl) TBRChart.line(tceEl,{labels,data:ps.map(p=>p.r?.TCE||0),color:'#2dd4bf',height:160});
     if(ganEl) TBRChart.bar(ganEl,{labels,data:ps.map(p=>purchaseGain(p)),colors:'#fbbf24',height:160});
   },50);
+  // Anillo de progreso "Meta del mes": animar el llenado
+  const goalRing = document.querySelector('.goal-ring-fill');
+  if (goalRing) {
+    const target = goalRing.dataset.offset;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      goalRing.style.strokeDashoffset = target;
+    }));
+  }
   // Count-up animation
   document.querySelectorAll('.count-val').forEach(el=>{
     const target=parseFloat(el.dataset.target)||0;
@@ -3986,6 +4038,10 @@ function pgConfig() {
       <div style="flex:1"><label class="fl">Margen mínimo para alertas</label><div class="iw" style="max-width:200px"><input type="number" id="alert-m" value="${s.marginAlert||15}" min="0" max="100"><span class="isuf">%</span></div><div class="hint">Si publicás con menos margen la calculadora te avisa.</div></div>
       <button class="btn-p" onclick="saveAlert()">Guardar</button>
     </div>
+    <div class="mt16" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid var(--b1);padding-top:16px">
+      <div style="flex:1"><label class="fl">Meta de compras del mes</label><div class="iw" style="max-width:200px"><span class="ipre">ARS</span><input type="number" id="goal-m" value="${s.monthlyGoal||''}" min="0" step="10000" placeholder="Ej: 500000"></div><div class="hint">Se muestra como anillo de progreso en el Dashboard. Dejalo vacío para ocultarlo.</div></div>
+      <button class="btn-p" onclick="saveGoal()">Guardar</button>
+    </div>
   </div>
 
   <div class="card mb24">
@@ -4148,6 +4204,7 @@ function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.se
 function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada');}
 function saveEmpresa(){const emp={razonSocial:document.getElementById('emp-rs').value.trim(),cuit:document.getElementById('emp-cuit').value.trim(),domicilio:document.getElementById('emp-dom').value.trim(),condIVA:document.getElementById('emp-iva').value.trim(),tel:document.getElementById('emp-tel').value.trim(),email:document.getElementById('emp-email').value.trim()};DB.set('empresa',emp);toast('Datos guardados');}
 function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada');}
+function saveGoal(){const v=parseFloat(document.getElementById('goal-m').value);const s=DB.get('settings',{});s.monthlyGoal=v>0?v:0;DB.set('settings',s);toast('Meta guardada');render();}
 function addUser(){
   const u=(document.getElementById('new-user').value||'').trim();
   const w=(document.getElementById('new-pass').value||'').trim();
