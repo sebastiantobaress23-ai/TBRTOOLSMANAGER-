@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.__xlsxOffline=true"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="window.__jspdfOffline=true"></script>
 <style>
+.icon{display:inline-block}
 :root{
   --bg:#0c0c0c; --bg1:#111; --bg2:#161616; --bg3:#1c1c1c; --bg4:#202020;
   --b1:#1e1e1e; --b2:#282828; --b3:#333;
@@ -1010,13 +1011,13 @@ select{cursor:pointer}
   <div class="qa-box">
     <div class="qa-hdr">
       <div class="qa-title"><span class="qa-title-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Acción rápida</div>
-      <button class="btn-rm" onclick="closeQA()">✕</button>
+      <button class="btn-rm" onclick="closeQA()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div id="qa-body" class="qa-body"></div>
   </div>
 </div>
 <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
-  <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()">✕</button></div>
+  <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
   <div class="mbody">
     <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
     <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
@@ -1072,7 +1073,7 @@ select{cursor:pointer}
 <!-- CONFIRM MODAL -->
 <div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
   <div class="mbox" style="max-width:540px">
-    <div class="mhdr">Cargar productos desde foto<button class="btn-rm" onclick="closeOcrModal()">✕</button></div>
+    <div class="mhdr">Cargar productos desde foto<button class="btn-rm" onclick="closeOcrModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="mbody">
       <div id="ocr-status" style="font-size:13px;color:var(--di);margin-bottom:14px">Procesando imagen…</div>
       <div id="ocr-progress" style="height:8px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:16px"><div id="ocr-bar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,var(--us),var(--ch));transition:width .25s"></div></div>
@@ -1097,7 +1098,7 @@ select{cursor:pointer}
 <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
 <div id="scan-modal" class="mol" style="display:none" onclick="if(event.target===this)closeScan()">
   <div class="mbox" style="max-width:480px">
-    <div class="mhdr">Escanear código de barras<button class="btn-rm" onclick="closeScan()">✕</button></div>
+    <div class="mhdr">Escanear código de barras<button class="btn-rm" onclick="closeScan()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="mbody">
       <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;line-height:0">
         <video id="scan-video" autoplay playsinline muted style="width:100%;display:block;max-height:320px;object-fit:cover"></video>
@@ -1274,6 +1275,49 @@ const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ICONS = {
+  close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  arrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  alert: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  printer: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+  bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  trendUp: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  sun: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v2a4 4 0 0 0 4 4M19 4h2v2a4 4 0 0 1-4 4"/>',
+  package: '<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  coin: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+  exchange: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
+  send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  medal: '<circle cx="12" cy="15" r="6"/><path d="M9 9 7 2h10l-2 7"/>',
+  clipboard: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  scale: '<path d="M16 16l3-8 3 8c-2 1-4 1-6 0M2 16l3-8 3 8c-2 1-4 1-6 0M7 21h10M12 3v18M3 7h18"/>',
+  undo: '<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  bulb: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .8 1.7v.6h6.4v-.6c0-.7.3-1.3.8-1.7A7 7 0 0 0 12 2z"/>',
+  star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  store: '<path d="M3 9l1-5h16l1 5M3 9v10a1 1 0 0 0 1 1h4v-6h8v6h4a1 1 0 0 0 1-1V9M3 9h18"/>',
+  dollar: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  arrowsH: '<polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" y1="12" x2="22" y2="12"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  receipt: '<path d="M4 2h16v20l-3-2-3 2-3-2-3 2-3-2-1 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/>',
+  barChart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'
+};
+function ic(name, size=14, extraStyle=''){
+  return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0${extraStyle?';'+extraStyle:''}">${ICONS[name]||''}</svg>`;
+}
 const calcEf=(l,b1,b2)=> (+l||0)*(1-(+b1||0)/100)*(1-(+b2||0)/100);
 
 /* Ganancia real de una compra: costo + envío + comisión = ganancia.
@@ -1294,20 +1338,20 @@ function smartAlerts() {
       const prev = hist[hist.length-1].price;
       if (prev > 0) {
         const diff = (c.lastPrice - prev)/prev*100;
-        if (diff >= 8) alerts.push({icon:'📈', kind:'price', text:`El costo de "${c.name}" subió ${diff.toFixed(0)}% respecto a la compra anterior (${fmtU(prev)} → ${fmtU(c.lastPrice)}).`});
+        if (diff >= 8) alerts.push({icon:ic('trendUp'), kind:'price', text:`El costo de "${c.name}" subió ${diff.toFixed(0)}% respecto a la compra anterior (${fmtU(prev)} → ${fmtU(c.lastPrice)}).`});
       }
     }
     if (c.stock!=null) {
-      if (c.stock<=0) alerts.push({icon:'🚫', kind:'nostock', text:`"${c.name}" está sin stock.`});
-      else if (c.stock<=2) alerts.push({icon:'⚠️', kind:'lowstock', text:`"${c.name}" tiene poco stock (${c.stock} unidad${c.stock===1?'':'es'}).`});
+      if (c.stock<=0) alerts.push({icon:ic('ban'), kind:'nostock', text:`"${c.name}" está sin stock.`});
+      else if (c.stock<=2) alerts.push({icon:ic('alert'), kind:'lowstock', text:`"${c.name}" tiene poco stock (${c.stock} unidad${c.stock===1?'':'es'}).`});
     }
   });
   const peds = DB.get('pedidos',[]);
   peds.forEach(o=>{
     if (o.status==='entregado'||o.status==='cancelado') return;
     const days = Math.floor((now - new Date(o.date).getTime())/86400000);
-    if (o.status==='cotizacion' && days>=3) alerts.push({icon:'📨', kind:'pedido', text:`${o.nro} (${o.cliente}): cotización enviada hace ${days} días sin confirmar.`});
-    if (o.status==='preparacion' && days>=5) alerts.push({icon:'📦', kind:'pedido', text:`${o.nro} (${o.cliente}): en preparación hace ${days} días.`});
+    if (o.status==='cotizacion' && days>=3) alerts.push({icon:ic('send'), kind:'pedido', text:`${o.nro} (${o.cliente}): cotización enviada hace ${days} días sin confirmar.`});
+    if (o.status==='preparacion' && days>=5) alerts.push({icon:ic('package'), kind:'pedido', text:`${o.nro} (${o.cliente}): en preparación hace ${days} días.`});
   });
   return alerts.slice(0,6);
 }
@@ -1406,7 +1450,7 @@ function supplierRanking() {
 function pgProveedoresRanking() {
   const rk = supplierRanking();
   if (!rk.length) return '';
-  const medals=['🥇','🥈','🥉'];
+  const medals=[ic('medal',16,'color:#ffd700'),ic('medal',16,'color:#c0c0c0'),ic('medal',16,'color:#cd7f32')];
   return `<div class="mb20">
     <div class="sh mb16">Ranking de proveedores</div>
     <div style="display:flex;flex-direction:column;gap:8px">
@@ -1586,7 +1630,7 @@ function qaShowSale(){
     <div class="iw"><span class="ipre">$</span><input type="number" id="qa-cost" min="0" step="100" placeholder="Costo real c/u (sugerido automático)"></div>
     <div style="display:flex;gap:8px">
       <button class="btn-g btn-sm" style="flex:1" onclick="closeQA()">Cancelar</button>
-      <button class="btn-p" style="flex:2" onclick="qaSubmitSale()">✅ Registrar venta</button>
+      <button class="btn-p" style="flex:2" onclick="qaSubmitSale()">${ic('check')} Registrar venta</button>
     </div>`;
   setTimeout(()=>document.getElementById('qa-prod')?.focus(),50);
 }
@@ -1614,7 +1658,7 @@ function qaRegisterSale(data){
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
-  toast('✅ Venta registrada');
+  toast('Venta registrada');
   closeQA();
   if (PAGE==='ventas') render();
 }
@@ -1755,7 +1799,7 @@ function toast(msg, ok=true, ms=2500) {
     el.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:12px 22px;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;z-index:9999;transition:opacity .3s,transform .3s;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;align-items:center;gap:8px';
     document.body.appendChild(el);
   }
-  el.innerHTML = ok ? `<span class="toast-check">✓</span> ${msg}` : `⚠ ${msg}`;
+  el.innerHTML = ok ? `<span class="toast-check">${ic('check')}</span> ${msg}` : `${ic('alert')} ${msg}`;
   el.style.color = ok ? 'var(--gr)' : 'var(--re)';
   el.style.borderColor = ok ? 'rgba(74,222,128,.3)' : 'rgba(248,113,113,.3)';
   el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)';
@@ -1973,7 +2017,7 @@ function pgCompra() {
   const modeColor = conf.mode==='ars'?'var(--ye)':conf.mode==='pesos'?'var(--in)':'var(--us)';
   const modeTxt   = conf.mode==='ars'?'PESOS ARS':conf.mode==='pesos'?'PESOS+USD':'USDT';
   return `<div class="pg">
-  ${hasDraft?`<div class="draft-banner fade-up"><p>📋 <strong>Borrador recuperado</strong> · ${PP.length} producto${PP.length>1?'s':''} guardado${PP.length>1?'s':''}. ¿Continuás donde dejaste?</p><button class="btn-d" onclick="discardDraft()">✕ Descartar</button></div>`:''}
+  ${hasDraft?`<div class="draft-banner fade-up"><p>${ic('clipboard')} <strong>Borrador recuperado</strong> · ${PP.length} producto${PP.length>1?'s':''} guardado${PP.length>1?'s':''}. ¿Continuás donde dejaste?</p><button class="btn-d" onclick="discardDraft()">${ic('close')} Descartar</button></div>`:''}
   <div class="sh mb16">Nueva compra</div>
   ${confs.length>0?`<div class="fb mb16"><div class="sh" style="margin:0;flex:1">Configuración activa</div><div class="iw" style="width:240px;margin-left:16px"><select id="conf-sel" onchange="switchConf(this.value)">${confs.map(c=>`<option value="${c.id}" ${c.id===s.activeConfig?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>`:'<div class="info mb16">Sin proveedores. <span class="link" onclick="navigate(\'config\')">Crear una →</span></div>'}
   <div class="card mb16" style="padding:12px 18px">
@@ -1993,7 +2037,7 @@ function pgCompra() {
   <div class="card">
     <div class="fb mb12 prod-tools">
       <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
-      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">📂 Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">💾 Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">📷 Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">📸 Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">${ic('folder')} Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">${ic('save')} Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">${ic('camera')} Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">${ic('camera')} Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -2043,17 +2087,17 @@ function pgCompra() {
     </div>
     <div class="savebar mt16">
       <div style="flex:1"><input type="text" id="pname" placeholder="Nombre de la compra (ej: Mayo 2026)" style="width:100%"></div>
-      <button class="btn-p" onclick="savePurchase()" style="height:42px;white-space:nowrap;flex-shrink:0">💾 Guardar</button>
+      <button class="btn-p" onclick="savePurchase()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar</button>
     </div>
     <textarea id="pnotes" class="notes-ta" placeholder="Notas (ej: llegó en 5 días, proveedor cambió precios…)"></textarea>
   </div>
   <!-- MODAL CATÁLOGO -->
   <div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCatModal()">✕</button></div>
+    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
     <div id="cat-modal-body" class="mbody"></div></div>
   </div>
   <div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
-    <div class="mbox"><div class="mhdr">Plantillas de compra<button class="btn-rm" onclick="closeTplModal()">✕</button></div>
+    <div class="mbox"><div class="mhdr">Plantillas de compra<button class="btn-rm" onclick="closeTplModal()">${ic('close')}</button></div>
     <div id="tpl-modal-body" class="mbody"></div></div>
   </div>
 </div>`;
@@ -2110,7 +2154,7 @@ function prodRow(p) {
       <div class="ef" id="ef-${p.id}">${(p.b1||p.b2)?'→ '+ef.toFixed(2):''}</div>
       ${chips?`<div style="display:flex;flex-wrap:wrap">${chips}</div>`:''}
     </div>
-    <button class="btn-rm" onclick="rmP('${p.id}')">✕</button>
+    <button class="btn-rm" onclick="rmP('${p.id}')">${ic('close')}</button>
   </div>`;
 }
 
@@ -2285,7 +2329,7 @@ function ocrAddLine(i){
   const price = parseFloat(document.getElementById(`ocr-price-${i}`)?.value)||0;
   if (!name) { toast('Ingresá un nombre.',false); return; }
   addProd(name, '', 1, price, 0, 0);
-  toast(`✅ "${name}" agregado a la compra`);
+  toast(`"${name}" agregado a la compra`);
 }
 function addProd(n='',c='',q=1,lista='',b1=0,b2=0) {
   const id = uid();
@@ -2396,7 +2440,7 @@ function renderResults(c) {
   const isA=conf.mode==='ars', isP=conf.mode==='pesos';
   // Tiles
   document.getElementById('tce-tiles').innerHTML = isA?`
-    <div class="tbox main"><div class="tx-l" style="color:var(--ye)">🪙 MODO PESOS ARS · Multiplicador</div><div class="tx-v big y">${(+TCE||0).toFixed(4)}×</div><div class="tx-s">por cada $ de producto</div></div>
+    <div class="tbox main"><div class="tx-l" style="color:var(--ye)">${ic('coin')} MODO PESOS ARS · Multiplicador</div><div class="tx-v big y">${(+TCE||0).toFixed(4)}×</div><div class="tx-s">por cada $ de producto</div></div>
     <div class="tbox"><div class="tx-l">Total ARS</div><div class="tx-v g">${fmtA(at)}</div><div class="tx-s">mercadería + comisión + flete</div></div>
     <div class="tbox"><div class="tx-l" style="color:var(--ye)">ARS productos</div><div class="tx-v y">${fmtA(up)}</div><div class="tx-s">precio neto proveedor</div></div>
     <div class="tbox"><div class="tx-l">Com. + flete</div><div class="tx-v csi">${fmtA(at-up)}</div><div class="tx-s">costo adicional</div></div>`
@@ -2486,7 +2530,7 @@ function setThemeColorMeta(light) {
 function toggleTheme() {
   const light = document.documentElement.classList.toggle('light');
   const b = document.getElementById('theme-btn');
-  if (b) b.textContent = light ? '☀️ Modo claro' : '🌙 Modo oscuro';
+  if (b) b.innerHTML = light ? ic('sun')+' Modo claro' : ic('moon')+' Modo oscuro';
   setThemeColorMeta(light);
   try { localStorage.setItem('tbr_theme', light ? 'light' : 'dark'); } catch(e){}
 }
@@ -2495,7 +2539,7 @@ function initTheme() {
     if (localStorage.getItem('tbr_theme') === 'light') {
       document.documentElement.classList.add('light');
       const b = document.getElementById('theme-btn');
-      if (b) b.textContent = '☀️ Modo claro';
+      if (b) b.innerHTML = ic('sun')+' Modo claro';
       setThemeColorMeta(true);
     }
   } catch(e){}
@@ -2606,11 +2650,11 @@ function renderBreakEven(calc) {
   }).filter(r=>r.gn>0);
   if (!rows.length) return '';
   return `<div class="be-card">
-    <div class="be-title">⚖ Punto de equilibrio · unidades a vender para recuperar inversión</div>
+    <div class="be-title">${ic('scale')} Punto de equilibrio · unidades a vender para recuperar inversión</div>
     ${rows.map(r=>`<div class="be-row">
       <span style="min-width:120px;font-size:12px;color:var(--ch)">${esc(r.name)}</span>
       <div class="be-bar-wrap"><div class="be-bar" style="width:${r.pct}%;background:${r.color}"></div></div>
-      <span style="font-family:'DM Mono',monospace;font-size:12px;color:${r.color};min-width:90px;text-align:right">${r.be!==null?(r.be<=r.q?r.be+' de '+r.q+' u.':`>${r.q} u. ⚠`):'—'}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:${r.color};min-width:90px;text-align:right">${r.be!==null?(r.be<=r.q?r.be+' de '+r.q+' u.':`>${r.q} u. ${ic('alert')}`):'—'}</span>
     </div>`).join('')}
   </div>`;
 }
@@ -2698,7 +2742,7 @@ function savePurchase() {
   clearDraft();
   _lastWrite=Date.now();
   PP=[];CALC=null;
-  toast('✅ Compra guardada');
+  toast('Compra guardada');
   setTimeout(()=>navigate('historial'),800);
 }
 
@@ -2724,7 +2768,7 @@ function saveAsTemplate() {
   const tpls = DB.get('templates',[]);
   tpls.push({id:uid(), name:nm, date:new Date().toISOString(), products:PP.map(p=>({n:p.n,c:p.c,q:p.q,lista:p.lista,b1:p.b1||0,b2:p.b2||0}))});
   DB.set('templates',tpls);
-  toast(`✅ Plantilla "${nm}" guardada`);
+  toast(`Plantilla "${nm}" guardada`);
   render();
 }
 function openTplModal() {
@@ -2734,7 +2778,7 @@ function openTplModal() {
   if(!m||!b)return;
   b.innerHTML = tpls.length===0 ? '<div class="empty">Sin plantillas guardadas.</div>' : tpls.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)">
     <div><div style="font-weight:600">${esc(t.name)}</div><div style="font-size:11px;color:var(--di)">${t.products.length} producto${t.products.length!==1?'s':''} · ${fmtD(t.date)}</div></div>
-    <div class="fg"><button class="btn-p btn-sm" onclick="loadTemplate('${t.id}')">+ Cargar</button><button class="btn-d" onclick="delTemplate('${t.id}')">🗑</button></div>
+    <div class="fg"><button class="btn-p btn-sm" onclick="loadTemplate('${t.id}')">+ Cargar</button><button class="btn-d" onclick="delTemplate('${t.id}')">${ic('trash')}</button></div>
   </div>`).join('');
   m.style.display='flex';
 }
@@ -2744,7 +2788,7 @@ function loadTemplate(id) {
   if (!t) return;
   t.products.forEach(p=>addProd(p.n,p.c,p.q,p.lista,p.b1||0,p.b2||0));
   closeTplModal();
-  toast(`✅ Plantilla "${t.name}" cargada`);
+  toast(`Plantilla "${t.name}" cargada`);
 }
 function delTemplate(id){confirm2('¿Borrar esta plantilla?',()=>{DB.set('templates',DB.get('templates',[]).filter(t=>t.id!==id));closeTplModal();toast('Plantilla borrada');});}
 
@@ -2768,11 +2812,11 @@ function histCard(p, idx, badges=[]) {
         <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
       </div>
       <div class="hi-acts">
-        <button class="btn-g btn-sm" onclick="printOrden('${p.id}')">🖨 OC</button>
+        <button class="btn-g btn-sm" onclick="printOrden('${p.id}')">${ic('printer')} OC</button>
         <button class="btn-g btn-sm" onclick="exportOneXLSX('${p.id}')">⬇ Excel</button>
         <button class="btn-g btn-sm" onclick="duplicatePurchase('${p.id}')">⎘ Duplicar</button>
-        <button class="btn-g btn-sm" onclick="reusar('${p.id}')">↩ Reusar</button>
-        <button class="btn-d" onclick="delPurchase('${p.id}')">🗑 Borrar</button>
+        <button class="btn-g btn-sm" onclick="reusar('${p.id}')">${ic('undo')} Reusar</button>
+        <button class="btn-d" onclick="delPurchase('${p.id}')">${ic('trash')} Borrar</button>
       </div>
     </div>
   </div>`;
@@ -2856,7 +2900,7 @@ function addSale(){
     ci.stock -= qty;
     DB.set('catalog',cat);
   }
-  toast(`✅ Venta ${sale.nro} registrada`);
+  toast(`Venta ${sale.nro} registrada`);
   document.getElementById('sale-qty').value='1';
   document.getElementById('sale-price').value='';
   document.getElementById('sale-cost').value='';
@@ -2916,7 +2960,7 @@ function pgVentas(){
       <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
         <option value="">Elegí un producto…</option>
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
-      </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">📷</button></div></div>
+      </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0"></div></div>
@@ -2939,7 +2983,7 @@ function pgVentas(){
   <div class="sh mb16">Ranking de rentabilidad por producto</div>
   ${ranking.length ? `<div class="card mb24" style="padding:0;overflow:hidden">
     ${ranking.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
-      <div><div style="font-weight:600;font-size:14px">${i===0?'🏆 ':''}${esc(r.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${r.units} unidad${r.units!==1?'es':''} vendida${r.units!==1?'s':''} · margen real ${r.marginPct.toFixed(1)}%</div></div>
+      <div><div style="font-weight:600;font-size:14px">${i===0?ic('trophy',14)+' ':''}${esc(r.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${r.units} unidad${r.units!==1?'es':''} vendida${r.units!==1?'s':''} · margen real ${r.marginPct.toFixed(1)}%</div></div>
       <div style="text-align:right"><div style="font-weight:700;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div><div style="font-size:11px;color:var(--di)">de ${fmtA(r.revenue)}</div></div>
     </div>`).join('')}
   </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
@@ -2954,7 +2998,7 @@ function pgVentas(){
       return `<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><div style="font-weight:600;font-size:14px">${titulo}</div><div style="font-size:11px;color:var(--di)">${detalle}</div></div>
-        <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">✕</button></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">${ic('close')}</button></div>
       </div>
       ${multi?`<div style="overflow-x:auto;margin-top:10px">
         <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
@@ -2962,7 +3006,7 @@ function pgVentas(){
         </table>
       </div>`:''}
       <div class="hi-acts" style="margin-top:8px">
-        <button class="btn-g btn-sm" onclick="reprintSale('${s.id}')">🖨 Comprobante</button>
+        <button class="btn-g btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
         ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
       </div>
     </div>`;}).join('')}
@@ -3028,7 +3072,7 @@ function pgViaje(){
   const overBudget = t.budgetUSD>0 && totalUSD > t.budgetUSD;
 
   return `<div class="pg">
-  <div class="fb mb16"><div class="sh" style="margin:0;flex:1">Viaje de compras</div>${t.items.length?`<button class="btn-d btn-sm" onclick="clearTrip()">🗑 Vaciar lista</button>`:''}</div>
+  <div class="fb mb16"><div class="sh" style="margin:0;flex:1">Viaje de compras</div>${t.items.length?`<button class="btn-d btn-sm" onclick="clearTrip()">${ic('trash')} Vaciar lista</button>`:''}</div>
   <div class="info mb20" style="font-size:12px">Armá tu lista de compra antes de viajar: cargá presupuesto, productos estimados y tipo de cambio. Funciona 100% offline — todo se guarda en el dispositivo.</div>
 
   <div class="card mb20">
@@ -3041,7 +3085,7 @@ function pgViaje(){
 
   <div class="g4 mb20">
     <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">${t.tce?'≈ '+fmtA(totalARS):'cargá un tipo de cambio para ver en ARS'}</div></div>
-    <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?'⚠ excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?ic('alert')+' excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
     <div class="sc accent-u"><div class="sc-l">Ya comprado (marcado)</div><div class="sc-v u">${fmtU(checkedUSD)}</div><div class="sc-s">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div></div>
     <div class="sc accent-d"><div class="sc-l">Tipo de cambio</div><div class="sc-v">${t.tce?fmtA(t.tce):'—'}</div><div class="sc-s">usado para la conversión</div></div>
   </div>
@@ -3071,7 +3115,7 @@ function pgViaje(){
     ${t.items.map(i=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--b2);${i.checked?'opacity:.5':''}">
       <input type="checkbox" ${i.checked?'checked':''} onchange="toggleTripItem('${i.id}')" style="width:18px;height:18px;accent-color:var(--ud);cursor:pointer">
       <div style="flex:1"><div style="font-weight:600;font-size:14px;${i.checked?'text-decoration:line-through':''}">${esc(i.name)} ${i.qty>1?`× ${i.qty}`:''}</div><div style="font-size:11px;color:var(--di)">${fmtU(i.priceUSD)} c/u · total ${fmtU(i.priceUSD*i.qty)} ${t.tce?'· ≈ '+fmtA(i.priceUSD*i.qty*t.tce):''}</div></div>
-      <button class="btn-rm" onclick="delTripItem('${i.id}')">✕</button>
+      <button class="btn-rm" onclick="delTripItem('${i.id}')">${ic('close')}</button>
     </div>`).join('')}
   </div>` : emptyState(EMPTY_ICONS.catalog,'Lista vacía','Agregá los productos que\npensás comprar en tu próximo viaje.')}
 </div>`;
@@ -3103,20 +3147,20 @@ function pgCat() {
         ${(()=>{const h=(c.priceHistory||[]).map(x=>x.price);const cur=c.lastPrice||c.defaultPrice||0;const data=[...h,cur];return data.length>=2?`<div class="cat-spark">${sparkline(data,'#e2c97e',56,16)}</div>`:'';})()}
       </div>
       <div style="font-size:11px;color:var(--di);white-space:nowrap">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">✏</button><button class="btn-d" onclick="delCat('${c.id}')">✕</button></div>
+      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">${ic('edit')}</button><button class="btn-d" onclick="delCat('${c.id}')">${ic('close')}</button></div>
     </div>`).join('')}
   </div>`}
   <!-- MODAL VISTA 360 -->
   <div id="prod360-modal" class="mol" style="display:none" onclick="if(event.target===this)closeProd360()">
-    <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()">✕</button></div>
+    <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()">${ic('close')}</button></div>
     <div id="prod360-body" class="mbody"></div></div>
   </div>
   <!-- MODAL -->
   <div id="cat-edit-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatEdit()">
-    <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">✕</button></div>
+    <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">${ic('close')}</button></div>
     <div class="mbody">
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
-      <div><label class="fl">Código</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-code" placeholder="TAGL271532"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">📷</button></div></div>
+      <div><label class="fl">Código</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-code" placeholder="TAGL271532"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0"></div></div>
       <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
@@ -3177,10 +3221,10 @@ function prod360Opportunity(events) {
   if (avgPrev<=0) return null;
   const diff = (last.costoUSD - avgPrev)/avgPrev*100;
   if (diff <= -8) {
-    return {kind:'buy', msg:`💡 Oportunidad de compra: el último costo (US$ ${last.costoUSD.toFixed(2)}) bajó ${Math.abs(diff).toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)}). Buen momento para reabastecer.`};
+    return {kind:'buy', msg:`${ic('bulb')} Oportunidad de compra: el último costo (US$ ${last.costoUSD.toFixed(2)}) bajó ${Math.abs(diff).toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)}). Buen momento para reabastecer.`};
   }
   if (diff >= 12) {
-    return {kind:'warn', msg:`⚠ El costo subió ${diff.toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)} → US$ ${last.costoUSD.toFixed(2)}). Revisá tu margen antes de volver a comprar.`};
+    return {kind:'warn', msg:`${ic('alert')} El costo subió ${diff.toFixed(1)}% vs. el promedio histórico (US$ ${avgPrev.toFixed(2)} → US$ ${last.costoUSD.toFixed(2)}). Revisá tu margen antes de volver a comprar.`};
   }
   return null;
 }
@@ -3223,17 +3267,17 @@ function statsRecords(ps) {
   if (!ps.length) return '';
   const cards = [];
   const maxInv = ps.reduce((a,b)=>(b.r?.ars||0)>(a.r?.ars||0)?b:a, ps[0]);
-  cards.push({icon:'🏆',lbl:'Compra más grande',val:fmtA(maxInv.r?.ars||0),sub:maxInv.name||'—'});
+  cards.push({icon:ic('trophy',16),lbl:'Compra más grande',val:fmtA(maxInv.r?.ars||0),sub:maxInv.name||'—'});
   const maxGan = ps.reduce((a,b)=>purchaseGain(b)>purchaseGain(a)?b:a, ps[0]);
-  cards.push({icon:'📈',lbl:'Mayor ganancia',val:fmtA(purchaseGain(maxGan)),sub:maxGan.name||'—'});
+  cards.push({icon:ic('trendUp',16),lbl:'Mayor ganancia',val:fmtA(purchaseGain(maxGan)),sub:maxGan.name||'—'});
   const withTce = ps.filter(p=>p.r?.TCE);
   if (withTce.length) {
     const minTce = withTce.reduce((a,b)=>(b.r.TCE)<(a.r.TCE)?b:a, withTce[0]);
-    cards.push({icon:'💱',lbl:'Mejor TCE obtenido',val:fmtA(minTce.r.TCE),sub:minTce.name||'—'});
+    cards.push({icon:ic('exchange',16),lbl:'Mejor TCE obtenido',val:fmtA(minTce.r.TCE),sub:minTce.name||'—'});
   }
   const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
   const topProd = Object.entries(pm).sort((a,b)=>b[1]-a[1])[0];
-  if (topProd) cards.push({icon:'⭐',lbl:'Producto más comprado',val:topProd[0],sub:`${topProd[1]} unidades en total`});
+  if (topProd) cards.push({icon:ic('star',16),lbl:'Producto más comprado',val:topProd[0],sub:`${topProd[1]} unidades en total`});
   return `<div class="sh mb16">Récords</div>
   <div class="g4 mb24">
     ${cards.map(c=>`<div class="record-card">
@@ -3311,7 +3355,7 @@ function _mlCards(products, glbCom, glbEnv) {
     const gn  = pr*(1-glbCom/100)-p.cu-env;
     const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
     const rmBtn = ML.srcType==='manual'
-      ? `<button class="btn-rm" onclick="mlRmManualProd('${p.id}')" title="Quitar artículo">✕</button>` : '';
+      ? `<button class="btn-rm" onclick="mlRmManualProd('${p.id}')" title="Quitar artículo">${ic('close')}</button>` : '';
     return `<div class="ml-card" id="mlc-${p.id}">
       <div class="ml-card-top">
         <div>
@@ -3333,7 +3377,7 @@ function _mlCards(products, glbCom, glbEnv) {
         </div>
         ${ML.mode==='clasico'
           ?`<div class="ml-card-field"><label>Envío ML $</label><input type="number" value="${env}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`
-          :`<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">✓ Full incluido</div></div>`}
+          :`<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">${ic('check')} Full incluido</div></div>`}
         <div class="ml-card-field">
           <label>Com. ML %</label>
           <input type="number" value="${glbCom}" min="0" max="30" step="0.5" data-mlcid="${p.id}" data-mlcu="${p.cu}" class="ml-com-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
@@ -3402,12 +3446,12 @@ function pgML() {
   <!-- ── FUENTE ── -->
   <div class="sh mb12" style="font-size:9px">FUENTE DE COSTOS</div>
   <div class="ml-src-bar mb20">
-    ${CALC&&CALC.v.length?`<button class="ml-src-btn${ML.srcType==='calc'?' on':''}" onclick="mlSetSrc('calc',null)">✦ Compra actual</button>`:''}
+    ${CALC&&CALC.v.length?`<button class="ml-src-btn${ML.srcType==='calc'?' on':''}" onclick="mlSetSrc('calc',null)">${ic('star')} Compra actual</button>`:''}
     <select class="ml-select" onchange="mlSetSrc('purchase',this.value)">
       <option value="">— Elegir compra guardada —</option>
       ${ps.slice().reverse().map(p=>`<option value="${p.id}"${ML.srcId===p.id&&ML.srcType==='purchase'?' selected':''}>${esc(p.name||'Sin nombre')} · ${fmtD(p.date)} · TCE ${fmtA(p.r?.TCE||0)}</option>`).join('')}
     </select>
-    <button class="ml-src-btn${ML.srcType==='manual'?' on':''}" onclick="mlSetSrc('manual',null)">✏ Manual</button>
+    <button class="ml-src-btn${ML.srcType==='manual'?' on':''}" onclick="mlSetSrc('manual',null)">${ic('edit')} Manual</button>
   </div>
 
   <!-- ── FORMULARIO MANUAL ── -->
@@ -3445,7 +3489,7 @@ function pgML() {
     <div class="empty-title">Sin productos cargados</div>
     <div class="empty-sub">${ML.srcType==='manual'
       ?'Completá el formulario de arriba y hacé clic en + Agregar artículo.'
-      :'Elegí una compra guardada, calculá una compra nueva, o usá el modo ✏ Manual.'}</div>
+      :`Elegí una compra guardada, calculá una compra nueva, o usá el modo ${ic('edit')} Manual.`}</div>
   </div>`:`
 
   <!-- ── MODALIDAD ── -->
@@ -3484,7 +3528,7 @@ function pgML() {
   <!-- ── GUARDAR PUBLICACIÓN ── -->
   <div class="savebar mt16">
     <div style="flex:1"><input type="text" id="ml-pub-name" placeholder="Nombre de esta publicación (ej: Taladros Junio 2026)" style="width:100%"></div>
-    <button class="btn-p" onclick="mlSavePub()" style="height:42px;white-space:nowrap;flex-shrink:0">💾 Guardar publicación</button>
+    <button class="btn-p" onclick="mlSavePub()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar publicación</button>
   </div>`}
 
   <!-- ── PUBLICACIONES GUARDADAS ── -->
@@ -3519,7 +3563,7 @@ function pgML() {
           </tr>`).join('')}</tbody></table>
         </div>
         <div class="hi-acts">
-          <button class="btn-d" onclick="mlDelPub('${pub.id}')">🗑 Borrar</button>
+          <button class="btn-d" onclick="mlDelPub('${pub.id}')">${ic('trash')} Borrar</button>
         </div>
       </div>
     </div>`).join('')}
@@ -3598,7 +3642,7 @@ function mlSavePub() {
   pubs.push(pub);
   DB.set('mlpubs', pubs);
   _lastWrite = Date.now();
-  toast('✅ Publicación guardada');
+  toast('Publicación guardada');
   render();
 }
 
@@ -3729,7 +3773,7 @@ function pgComp() {
       <div id="cmp-r-${i}" style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--di);padding-bottom:8px"></div>
     </div>
     <div class="fg-w" style="align-items:center;gap:10px;margin-top:10px">
-      <button class="btn-g btn-sm" data-q="${esc([p.n,p.c].filter(Boolean).join(' '))}" onclick="fetchCompPrice(${i},this.dataset.q)">🔍 Traer mejor precio de ML automáticamente</button>
+      <button class="btn-g btn-sm" data-q="${esc([p.n,p.c].filter(Boolean).join(' '))}" onclick="fetchCompPrice(${i},this.dataset.q)">${ic('search')} Traer mejor precio de ML automáticamente</button>
     </div>
     <div id="cmp-auto-${i}" class="hint mt12"></div>
     <a style="display:inline-flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ch);text-decoration:none;margin-top:10px;padding:6px 12px;border:1px solid rgba(226,201,126,.28);border-radius:7px;background:rgba(226,201,126,.06);transition:background .15s,border-color .15s" onmouseover="this.style.background='rgba(226,201,126,.12)';this.style.borderColor='rgba(226,201,126,.5)'" onmouseout="this.style.background='rgba(226,201,126,.06)';this.style.borderColor='rgba(226,201,126,.28)'" href="https://listado.mercadolibre.com.ar/${encodeURIComponent([p.n,p.c].filter(Boolean).join(' '))}" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.5 2 6 4 5 6.5c-.6 1.5-.5 2.8 0 3.7-1.8.6-3 2.1-3 4.3 0 3 2.7 5 6 5h.3c.7 1.6 2.4 2.5 3.7 2.5s3-.9 3.7-2.5h.3c3.3 0 6-2 6-5 0-2.2-1.2-3.7-3-4.3.5-.9.6-2.2 0-3.7C18 4 15.5 2 12 2zm0 2c2.4 0 4.2 1.4 4.9 3.2.4 1 .2 1.7-.1 2.1-.5.6-1.4.7-2.3.7H9.5c-.9 0-1.8-.1-2.3-.7-.3-.4-.5-1.1-.1-2.1C7.8 5.4 9.6 4 12 4z"/></svg>Buscar en Mercado Libre</a>
@@ -3750,7 +3794,7 @@ function cmpCalc(i,inp){
   const el=document.getElementById('cmp-r-'+i);
   if(!el||!c)return;
   const d=tu-c;const p=((d/c)*100).toFixed(1);
-  el.innerHTML=d<0?`<span style="color:var(--gr)">✅ Sos ${fmtA(Math.abs(d))} más barato (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">Tu precio es ${fmtA(d)} más caro (${p}%)</span>`;
+  el.innerHTML=d<0?`<span style="color:var(--gr)">${ic('check')} Sos ${fmtA(Math.abs(d))} más barato (${Math.abs(p)}%)</span>`:`<span style="color:var(--re)">Tu precio es ${fmtA(d)} más caro (${p}%)</span>`;
 }
 
 /* Busca en Mercado Libre el precio más bajo entre publicaciones similares
@@ -3810,7 +3854,7 @@ function pgProveedores() {
 
   ${confs.length===0
     ? `<div class="card" style="text-align:center;padding:40px 20px">
-        <div style="font-size:32px;margin-bottom:12px">🏪</div>
+        <div style="margin-bottom:12px">${ic('store',32)}</div>
         <div class="empty-title">Sin proveedores</div>
         <div class="empty-sub">Creá tu primer proveedor para empezar a calcular compras.</div>
         <button class="btn-p" onclick="openConf()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear proveedor</button>
@@ -3836,8 +3880,8 @@ function pgProveedores() {
       </div>
       <div class="fg" style="flex-shrink:0">
         ${!isActive?`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`:''}
-        <button class="btn-g btn-sm" onclick="openConf('${c.id}')">✏</button>
-        <button class="btn-d" onclick="delConf('${c.id}')">✕</button>
+        <button class="btn-g btn-sm" onclick="openConf('${c.id}')">${ic('edit')}</button>
+        <button class="btn-d" onclick="delConf('${c.id}')">${ic('close')}</button>
       </div>
     </div>`;
       }).join('')}
@@ -3845,7 +3889,7 @@ function pgProveedores() {
   <!-- MODAL PROVEEDOR -->
   <div id="conf-modal" class="mol" style="display:none" onclick="if(event.target===this)closeConf()">
     <div class="mbox">
-      <div class="mhdr"><span id="conf-title">Nuevo proveedor</span><button class="btn-rm" onclick="closeConf()">✕</button></div>
+      <div class="mhdr"><span id="conf-title">Nuevo proveedor</span><button class="btn-rm" onclick="closeConf()">${ic('close')}</button></div>
       <div class="mbody">
         <div><label class="fl">Nombre del proveedor</label><div class="iw"><input type="text" id="cm-name" placeholder="Ej: Importador A · China"></div></div>
         <div><label class="fl">WhatsApp del proveedor</label><div class="iw"><input type="text" id="cm-phone" placeholder="Ej: 5491122334455 (con código de país, sin + ni espacios)"></div></div>
@@ -3890,7 +3934,7 @@ function pgConfig() {
         <div style="font-size:13px;color:var(--ch)">Tema de la app</div>
         <div class="hint">Cambiá entre modo oscuro y modo claro.</div>
       </div>
-      <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">${isLight?'☀️ Modo claro':'🌙 Modo oscuro'}</button>
+      <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">${isLight?ic('sun')+' Modo claro':ic('moon')+' Modo oscuro'}</button>
     </div>
   </div>
 
@@ -3965,11 +4009,11 @@ function pgConfig() {
     </div>
     ${(s.users||[]).length ? `<div class="mt16" style="display:flex;flex-direction:column;gap:8px">
       ${(s.users||[]).map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px">
-        <div style="font-size:13px;color:var(--ch)">👤 ${esc(u.user)}</div>
-        <button class="btn-rm" onclick="delUser('${u.id}')">✕</button>
+        <div style="font-size:13px;color:var(--ch)">${ic('user')} ${esc(u.user)}</div>
+        <button class="btn-rm" onclick="delUser('${u.id}')">${ic('close')}</button>
       </div>`).join('')}
     </div>` : ''}
-    <div class="hint mt12">${(s.users||[]).length?`🔐 El acceso está protegido — ${s.users.length===1?'hay 1 usuario configurado':'hay '+s.users.length+' usuarios configurados'}.`:'⚠ Sin usuarios configurados, cualquiera con el link puede entrar y modificar los datos.'}</div>
+    <div class="hint mt12">${(s.users||[]).length?`${ic('lock')} El acceso está protegido — ${s.users.length===1?'hay 1 usuario configurado':'hay '+s.users.length+' usuarios configurados'}.`:`${ic('alert')} Sin usuarios configurados, cualquiera con el link puede entrar y modificar los datos.`}</div>
     ${(s.users||[]).length ? `<div class="mt16" style="border-top:1px solid rgba(255,255,255,.05);padding-top:14px">
       <div style="font-size:13px;color:var(--ch);margin-bottom:8px">🆔 Face ID / Touch ID en este teléfono</div>
       ${bio ? `
@@ -3990,15 +4034,15 @@ function pgConfig() {
   <div class="card mb24">
     <div class="info mb16" style="font-size:12px">Activá los avisos para enterarte al instante de alertas inteligentes nuevas (subas de precio, productos para reponer) y cuando alcances tu meta mensual — aunque tengas la app en segundo plano.</div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <button class="btn-p" id="notif-btn" onclick="enableNotifications()">${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'🔔 Notificaciones activadas':'🔔 Activar notificaciones'}</button>
+      <button class="btn-p" id="notif-btn" onclick="enableNotifications()">${(typeof Notification!=='undefined'&&Notification.permission==='granted')?ic('bell')+' Notificaciones activadas':ic('bell')+' Activar notificaciones'}</button>
       ${(typeof Notification!=='undefined'&&Notification.permission==='granted')?'<button class="btn-g btn-sm" onclick="testNotification()">Enviar prueba</button>':''}
     </div>
-    <div class="hint mt12">${(typeof Notification!=='undefined'&&Notification.permission==='denied')?'⚠ Bloqueaste los permisos de notificación en el navegador — habilitalos manualmente desde la configuración del sitio para poder activarlas.':''}</div>
+    <div class="hint mt12">${(typeof Notification!=='undefined'&&Notification.permission==='denied')?`${ic('alert')} Bloqueaste los permisos de notificación en el navegador — habilitalos manualmente desde la configuración del sitio para poder activarlas.`:''}</div>
   </div>
 
   <div class="sh mb16">Backup y sincronización</div>
   <div class="card mb16">
-    <div class="info mb16" style="font-size:12px"><span style="color:var(--ch)">Antes de actualizar la app:</span> exportá el backup, actualizá, importá.<br><span style="color:var(--ch)">iPhone ↔ Notebook:</span> exportá en un dispositivo → AirDrop/iCloud → importá en el otro.</div>
+    <div class="info mb16" style="font-size:12px"><span style="color:var(--ch)">Antes de actualizar la app:</span> exportá el backup, actualizá, importá.<br><span style="color:var(--ch)">iPhone ${ic('arrowsH')} Notebook:</span> exportá en un dispositivo → AirDrop/iCloud → importá en el otro.</div>
     <div class="fg-w">
       <button class="btn-p" onclick="exportBackup()" style="flex:1;min-width:160px;height:42px">⬇ Exportar backup (.json)</button>
       <button class="btn-g" id="import-btn" onclick="importBackup()" style="flex:1;min-width:160px;height:42px">⬆ Importar backup</button>
@@ -4015,7 +4059,7 @@ function pgConfig() {
   </div>
 
   <div class="sh mb16">Zona de peligro</div>
-  <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">🗑 Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
+  <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">${ic('trash')} Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
 </div>`;
 }
@@ -4067,7 +4111,7 @@ function toggleCmMode(){
 }
 
 let _boni=[];
-function renderBoni(){const l=document.getElementById('boni-list');if(!l)return;l.innerHTML=_boni.map((b,i)=>`<div style="display:flex;gap:8px;align-items:center"><input type="text" value="${esc(b.name)}" placeholder="Nombre" style="flex:1;height:36px;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:0 10px;color:var(--ch);font-size:13px;outline:none" oninput="_boni[${i}].name=this.value"><div class="iw" style="width:90px"><input type="number" value="${b.pct}" min="0" max="100" step="0.5" oninput="_boni[${i}].pct=parseFloat(this.value)||0"><span class="isuf">%</span></div><button class="btn-rm" onclick="_boni.splice(${i},1);renderBoni()">✕</button></div>`).join('');}
+function renderBoni(){const l=document.getElementById('boni-list');if(!l)return;l.innerHTML=_boni.map((b,i)=>`<div style="display:flex;gap:8px;align-items:center"><input type="text" value="${esc(b.name)}" placeholder="Nombre" style="flex:1;height:36px;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:0 10px;color:var(--ch);font-size:13px;outline:none" oninput="_boni[${i}].name=this.value"><div class="iw" style="width:90px"><input type="number" value="${b.pct}" min="0" max="100" step="0.5" oninput="_boni[${i}].pct=parseFloat(this.value)||0"><span class="isuf">%</span></div><button class="btn-rm" onclick="_boni.splice(${i},1);renderBoni()">${ic('close')}</button></div>`).join('');}
 function addBoni(){_boni.push({name:'',pct:0});renderBoni();}
 
 function openConf(id){
@@ -4109,13 +4153,13 @@ function saveConf(){
   DB.set('configs',cs);
   const s=DB.get('settings',{});
   if(!s.activeConfig){s.activeConfig=conf.id;DB.set('settings',s);}
-  closeConf();render();toast('Proveedor guardado ✅');
+  closeConf();render();toast('Proveedor guardado');
 }
 function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
-function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada ✅');}
-function saveEmpresa(){const emp={razonSocial:document.getElementById('emp-rs').value.trim(),cuit:document.getElementById('emp-cuit').value.trim(),domicilio:document.getElementById('emp-dom').value.trim(),condIVA:document.getElementById('emp-iva').value.trim(),tel:document.getElementById('emp-tel').value.trim(),email:document.getElementById('emp-email').value.trim()};DB.set('empresa',emp);toast('Datos guardados ✅');}
-function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada ✅');}
+function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada');}
+function saveEmpresa(){const emp={razonSocial:document.getElementById('emp-rs').value.trim(),cuit:document.getElementById('emp-cuit').value.trim(),domicilio:document.getElementById('emp-dom').value.trim(),condIVA:document.getElementById('emp-iva').value.trim(),tel:document.getElementById('emp-tel').value.trim(),email:document.getElementById('emp-email').value.trim()};DB.set('empresa',emp);toast('Datos guardados');}
+function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada');}
 function addUser(){
   const u=(document.getElementById('new-user').value||'').trim();
   const w=(document.getElementById('new-pass').value||'').trim();
@@ -4127,7 +4171,7 @@ function addUser(){
   s.users=users;
   DB.set('settings',s);
   sessionStorage.removeItem('tbr_unlocked');
-  toast('Usuario agregado 🔐');
+  toast('Usuario agregado');
   render();
 }
 function delUser(id){
@@ -4269,9 +4313,9 @@ function updateLockBioBtn(){
 function notifySupported(){ return typeof Notification !== 'undefined' && 'serviceWorker' in navigator; }
 function enableNotifications(){
   if (!notifySupported()) { toast('Tu navegador no soporta notificaciones.', false); return; }
-  if (Notification.permission === 'granted') { toast('Las notificaciones ya están activadas 🔔'); return; }
+  if (Notification.permission === 'granted') { toast('Las notificaciones ya están activadas'); return; }
   Notification.requestPermission().then(perm=>{
-    if (perm === 'granted') { toast('🔔 Notificaciones activadas'); checkAndNotify(true); }
+    if (perm === 'granted') { toast('Notificaciones activadas'); checkAndNotify(true); }
     else toast('No se otorgaron permisos de notificación.', false);
     render();
   });
@@ -4370,7 +4414,7 @@ function printOrden(id) {
   ocs.push(ocRecord);
   DB.set('ordenes', ocs);
   _lastWrite = Date.now();
-  toast(`✅ ${nro} guardada en Órdenes de compra`);
+  toast(`${nro} guardada en Órdenes de compra`);
 
   const w = window.open('','_blank','width=900,height=700');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nro} · TBR TOOLS</title>
@@ -4415,9 +4459,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${nro} listo para imprimir</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${nro} listo para imprimir</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 <div class="doc">
   <div class="doc-head">
@@ -4474,7 +4518,7 @@ function exportBackup(){
 }
 function importBackup(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.purchases&&!d.catalog&&!d.configs)throw new Error('Inválido');if(d.purchases)DB.set('purchases',d.purchases);if(d.catalog)DB.set('catalog',d.catalog);if(d.configs)DB.set('configs',d.configs);if(d.settings)DB.set('settings',d.settings);if(d.empresa)DB.set('empresa',d.empresa);render();toast('✅ Backup importado');}catch{toast('❌ Archivo inválido',false);}};r.readAsText(f);};inp.click();
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.purchases&&!d.catalog&&!d.configs)throw new Error('Inválido');if(d.purchases)DB.set('purchases',d.purchases);if(d.catalog)DB.set('catalog',d.catalog);if(d.configs)DB.set('configs',d.configs);if(d.settings)DB.set('settings',d.settings);if(d.empresa)DB.set('empresa',d.empresa);render();toast('Backup importado');}catch{toast('Archivo inválido',false);}};r.readAsText(f);};inp.click();
 }
 function exportOneXLSX(id){
   if(window.__xlsxOffline||typeof XLSX==='undefined'){toast('Excel no disponible sin conexión a internet',false);return;}
@@ -4585,7 +4629,7 @@ function pgCotizaciones() {
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="printCotizacion()">🖨 Generar e imprimir solicitud</button>
+    <button class="btn-p cot-act-main" onclick="printCotizacion()">${ic('printer')} Generar e imprimir solicitud</button>
     <button class="btn-g cot-act-sec" onclick="clearCot()">Limpiar</button>
   </div>
 
@@ -4603,17 +4647,17 @@ function pgCotizaciones() {
         </table>
       </div>
       <div class="hi-acts">
-        <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?'✓ Pendiente':'✓ Cotizada'}</button>
-        <button class="btn-g btn-sm" onclick="reprintCot('${o.id}')">🖨 Reimprimir</button>
+        <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?ic('check')+' Pendiente':ic('check')+' Cotizada'}</button>
+        <button class="btn-g btn-sm" onclick="reprintCot('${o.id}')">${ic('printer')} Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareCotWA('${o.id}')">${waIcon()}WhatsApp</button>
-        <button class="btn-d" onclick="delCot('${o.id}')">🗑 Borrar</button>
+        <button class="btn-d" onclick="delCot('${o.id}')">${ic('trash')} Borrar</button>
       </div>
     </div>
   </div>`).join('')}
   </div>`:''}
 
   <div id="cot-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCotCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCotCatModal()">✕</button></div>
+    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCotCatModal()">${ic('close')}</button></div>
     <div id="cot-cat-body" class="mbody"></div></div>
   </div>
 </div>`;
@@ -4624,7 +4668,7 @@ function cotRow(p) {
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updCot('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updCot('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updCot('${p.id}','q',this.value)" onchange="updCot('${p.id}','q',this.value)">
-    <button class="btn-rm" onclick="rmCot('${p.id}')">✕</button>
+    <button class="btn-rm" onclick="rmCot('${p.id}')">${ic('close')}</button>
   </div>`;
 }
 function addCotRow(n='',c='',q=1) {
@@ -4726,9 +4770,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${o.nro} ${reprint?'· copia para reimprimir':'listo para enviar al proveedor'}</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${o.nro} ${reprint?'· copia para reimprimir':'listo para enviar al proveedor'}</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 <div class="doc">
   <div class="doc-head">
@@ -4778,7 +4822,7 @@ function printCotizacion() {
   cots.push(record);
   DB.set('cotizaciones',cots);
   _lastWrite=Date.now();
-  toast(`✅ ${nro} guardada`);
+  toast(`${nro} guardada`);
   cotPrintDoc(record,false);
   COT=[];
   render();
@@ -4830,7 +4874,7 @@ function pgPedidos() {
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="generatePedido()">📄 Generar presupuesto</button>
+    <button class="btn-p cot-act-main" onclick="generatePedido()">${ic('fileText')} Generar presupuesto</button>
     <button class="btn-g cot-act-sec" onclick="clearPed()">Limpiar</button>
   </div>
 
@@ -4850,14 +4894,14 @@ function pgPedidos() {
         </table>
       </div>
       <div class="hi-acts">
-        ${o.status==='cotizacion'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','confirmado')">✓ Cliente confirmó pedido</button>`:''}
-        ${o.status==='confirmado'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','preparacion')">📦 En preparación</button>`:''}
-        ${o.status==='preparacion'?`<button class="btn-g btn-sm" onclick="pedToVenta('${o.id}')">✅ Entregado / Cobrado</button>`:''}
-        ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">✕ Cancelar</button>`:''}
-        <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">🖨 Reimprimir</button>
+        ${o.status==='cotizacion'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','confirmado')">${ic('check')} Cliente confirmó pedido</button>`:''}
+        ${o.status==='confirmado'?`<button class="btn-g btn-sm" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
+        ${o.status==='preparacion'?`<button class="btn-g btn-sm" onclick="pedToVenta('${o.id}')">${ic('check')} Entregado / Cobrado</button>`:''}
+        ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar</button>`:''}
+        <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
-        ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">🧾 Comprobante de venta</button>`:'';})()}
-        <button class="btn-d" onclick="delPed('${o.id}')">🗑 Borrar</button>
+        ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
+        <button class="btn-d" onclick="delPed('${o.id}')">${ic('trash')} Borrar</button>
       </div>
     </div>
   </div>`;
@@ -4865,7 +4909,7 @@ function pgPedidos() {
   </div>`:''}
 
   <div id="ped-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closePedCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closePedCatModal()">✕</button></div>
+    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closePedCatModal()">${ic('close')}</button></div>
     <div id="ped-cat-body" class="mbody"></div></div>
   </div>
 </div>`;
@@ -4877,7 +4921,7 @@ function pedRow(p) {
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
     <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="0" oninput="updPed('${p.id}','p',this.value)"></div>
-    <button class="btn-rm" onclick="rmPed('${p.id}')">✕</button>
+    <button class="btn-rm" onclick="rmPed('${p.id}')">${ic('close')}</button>
   </div>`;
 }
 function addPedRow(n='',c='',q=1,p='') {
@@ -4924,7 +4968,7 @@ function generatePedido() {
   peds.push(record);
   DB.set('pedidos',peds);
   _lastWrite=Date.now();
-  toast(`✅ ${nro} guardado`);
+  toast(`${nro} guardado`);
   pedPrintDoc(record,false);
   PED=[];
   render();
@@ -4941,7 +4985,7 @@ function advancePed(id,newStatus){
   o.status=newStatus;
   DB.set('pedidos',peds);
   render();
-  toast(`${o.nro}: ${PED_STATUS_LABEL[newStatus]||newStatus} ✅`);
+  toast(`${o.nro}: ${PED_STATUS_LABEL[newStatus]||newStatus}`);
 }
 function cancelPed(id){confirm2('¿Cancelar este pedido? Quedará en el historial como cancelado.',()=>advancePed(id,'cancelado'),'Cancelar pedido','cm-ok');}
 function delPed(id){confirm2('¿Borrar este pedido?',()=>{DB.set('pedidos',DB.get('pedidos',[]).filter(o=>o.id!==id));render();});}
@@ -4974,7 +5018,7 @@ function pedToVenta(id){
   DB.set('catalog',cat);
 
   _lastWrite=Date.now();
-  toast(`✅ ${sale.nro} generada a partir de ${o.nro}`);
+  toast(`${sale.nro} generada a partir de ${o.nro}`);
   ventaPrintDoc(sale,false);
   render();
 }
@@ -5030,9 +5074,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${o.nro} ${reprint?'· copia para reimprimir':'listo para enviar al cliente'}</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${o.nro} ${reprint?'· copia para reimprimir':'listo para enviar al cliente'}</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 <div class="doc">
   <div class="doc-head">
@@ -5131,7 +5175,7 @@ async function sharePedWA(id){
     const {css, html} = pedDocBody(o);
     pdf = await renderBrandedPDF(css, html, o.nro);
   } else {
-    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+    toast('No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
   }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
@@ -5227,9 +5271,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${esc(s.nro||'Comprobante')} ${reprint?'· copia para reimprimir':'listo para enviar al cliente'}</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${esc(s.nro||'Comprobante')} ${reprint?'· copia para reimprimir':'listo para enviar al cliente'}</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 ${html}
 </body></html>`);
@@ -5253,7 +5297,7 @@ async function shareSaleWA(id){
     const {css, html} = ventaDocBody(s);
     pdf = await renderBrandedPDF(css, html, s.nro||'comprobante');
   } else {
-    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+    toast('No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
   }
   shareViaWA(phone, txt, pdf, `${s.nro||'comprobante'}.pdf`);
 }
@@ -5492,7 +5536,7 @@ async function shareViaWA(phone, text, pdfDoc, filename){
       try { await navigator.clipboard?.writeText(text); } catch {}
       try {
         await navigator.share({files:[file]});
-        toast('📄 PDF compartido — el texto quedó copiado, pegalo en el chat', true, 4000);
+        toast('PDF compartido — el texto quedó copiado, pegalo en el chat', true, 4000);
         return;
       }
       catch(e){ if (e?.name==='AbortError') return; }
@@ -5503,7 +5547,7 @@ async function shareViaWA(phone, text, pdfDoc, filename){
     const a = document.createElement('a'); a.href=u; a.download=filename; a.click();
     URL.revokeObjectURL(u);
     try { await navigator.clipboard?.writeText(text); } catch {}
-    toast('📄 PDF descargado y texto copiado — adjuntalo en WhatsApp desde "Archivos" y pegá el texto', true, 5000);
+    toast('PDF descargado y texto copiado — adjuntalo en WhatsApp desde "Archivos" y pegá el texto', true, 5000);
   }
   const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
   window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
@@ -5597,7 +5641,7 @@ async function generateReport(period){
     const {css, html} = reportDocBody(period, since, now, ps, sales, emp);
     pdf = await renderBrandedPDF(css, html, label);
   } else {
-    toast('⚠ No se pudo cargar el generador de PDF — se enviará solo el mensaje de texto.', false);
+    toast('No se pudo cargar el generador de PDF — se enviará solo el mensaje de texto.', false);
   }
 
   const text = `📊 *${label}* (${desdeStr} – ${fechaStr})\n\n`+
@@ -5622,7 +5666,7 @@ function saveWaTpl(){
   s.waTplPed=document.getElementById('wa-tpl-ped').value||'';
   s.waTplVenta=document.getElementById('wa-tpl-venta').value||'';
   DB.set('settings',s);
-  toast('Plantillas guardadas ✅');
+  toast('Plantillas guardadas');
 }
 function resetWaTpl(){
   const s=DB.get('settings',{});
@@ -5643,7 +5687,7 @@ async function shareCotWA(id){
     const {css, html} = cotDocBody(o);
     pdf = await renderBrandedPDF(css, html, o.nro);
   } else {
-    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+    toast('No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
   }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
@@ -5699,7 +5743,7 @@ function pgOrden() {
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="printOrdenNew()">🖨 Generar e imprimir orden</button>
+    <button class="btn-p cot-act-main" onclick="printOrdenNew()">${ic('printer')} Generar e imprimir orden</button>
     <button class="btn-g cot-act-sec" onclick="clearOrder()">Limpiar</button>
   </div>
 
@@ -5717,14 +5761,14 @@ function pgOrden() {
         <tbody>${(o.items||[]).map(p=>{const sym=o.currency==='ARS'?'$':'US$';return `<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">${sym} ${(p.p||0).toFixed(2)}</td><td class="tr tm cch">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`;}).join('')}</tbody>
         </table>
       </div>
-      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">🖨 Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">🗑 Borrar</button></div>
+      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
 
   <!-- Modal catálogo para orden -->
   <div id="ord-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOrdCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeOrdCatModal()">✕</button></div>
+    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeOrdCatModal()">${ic('close')}</button></div>
     <div id="ord-cat-body" class="mbody"></div></div>
   </div>
 </div>`;
@@ -5736,7 +5780,7 @@ function ordRow(p) {
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updOrd('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updOrd('${p.id}','q',this.value)" onchange="updOrd('${p.id}','q',this.value)">
     <input type="number" value="${p.p||''}" placeholder="0.00 USD" step="0.5" min="0" style="text-align:right" oninput="updOrd('${p.id}','p',this.value)" onchange="updOrd('${p.id}','p',this.value)">
-    <button class="btn-rm" onclick="rmOrd('${p.id}')">✕</button>
+    <button class="btn-rm" onclick="rmOrd('${p.id}')">${ic('close')}</button>
   </div>`;
 }
 
@@ -5839,9 +5883,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 @media print{body{padding:0}.toolbar{display:none!important}.doc{border:none}}
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${o.nro} · copia para reimprimir</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${o.nro} · copia para reimprimir</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 <div class="doc">
   <div class="doc-head">
@@ -5897,7 +5941,7 @@ async function shareOCWA(id){
     const {css, html} = ocDocBody(o);
     pdf = await renderBrandedPDF(css, html, o.nro);
   } else {
-    toast('⚠ No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
+    toast('No se pudo cargar el generador de PDF (revisá tu conexión) — se enviará solo el texto', false, 4500);
   }
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
@@ -5930,7 +5974,7 @@ function printOrdenNew() {
   ocs.push(ocRecord);
   DB.set('ordenes',ocs);
   _lastWrite=Date.now();
-  toast(`✅ ${nro} guardada en historial`);
+  toast(`${nro} guardada en historial`);
   orderCotRef='';
 
   const items=ORDER.map((p,i)=>`<tr>
@@ -5989,9 +6033,9 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 }
 </style></head><body>
 <div class="toolbar">
-  <span>📄 ${nro} listo para imprimir</span>
-  <button class="btn-print" onclick="window.print()">🖨 Imprimir / PDF</button>
-  <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+  <span>${ic('fileText')} ${nro} listo para imprimir</span>
+  <button class="btn-print" onclick="window.print()">${ic('printer')} Imprimir / PDF</button>
+  <button class="btn-close" onclick="window.close()">${ic('close')} Cerrar</button>
 </div>
 <div class="doc">
   <div class="doc-head">
