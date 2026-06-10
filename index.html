@@ -2207,7 +2207,15 @@ async function openScan(callback){
       }
     });
   }catch(e){
-    status.textContent='No se pudo acceder a la cámara. Revisá los permisos del navegador.';
+    const msgs={
+      NotAllowedError:'Permiso de cámara denegado. Activalo en los ajustes del navegador/app para este sitio y volvé a intentar.',
+      PermissionDeniedError:'Permiso de cámara denegado. Activalo en los ajustes del navegador/app para este sitio y volvé a intentar.',
+      NotFoundError:'No se encontró ninguna cámara en este dispositivo.',
+      NotReadableError:'La cámara está siendo usada por otra aplicación.',
+      OverconstrainedError:'No se pudo configurar la cámara solicitada.',
+      SecurityError:'La página no está en un contexto seguro (HTTPS), por eso el navegador bloquea la cámara.'
+    };
+    status.textContent = msgs[e?.name] || `No se pudo acceder a la cámara (${e?.name||'error'}: ${e?.message||e}).`;
   }
 }
 function closeScan(){
