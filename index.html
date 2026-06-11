@@ -5824,6 +5824,21 @@ function reprintPed(id){
   if(!o)return;
   pedPrintDoc(o,true);
 }
+function duplicatePed(id){
+  const o=DB.get('pedidos',[]).find(x=>x.id===id);
+  if(!o)return;
+  PED=(o.items||[]).map(p=>({...p,id:uid()}));
+  navigate('pedidos');
+  setTimeout(()=>{
+    const cliEl=document.getElementById('ped-cliente');
+    const telEl=document.getElementById('ped-tel');
+    const cuitEl=document.getElementById('ped-cuit');
+    if(cliEl) cliEl.value=o.cliente||'';
+    if(telEl) telEl.value=o.tel||'';
+    if(cuitEl) cuitEl.value=o.cuit||'';
+  },50);
+  toast('Pedido cargado para repetir');
+}
 function advancePed(id,newStatus){
   const peds=DB.get('pedidos',[]);
   const o=peds.find(x=>x.id===id);
@@ -6242,6 +6257,7 @@ function cliListHTML(list) {
               <div class="mc-n">${esc(o.nro)}</div>
               <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · <span style="color:${PED_STATUS_COLOR[o.status]||'var(--di)'}">${PED_STATUS_LABEL[o.status]||o.status}</span></div>
             </div>
+            <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
             <div class="hi-v">${fmtA(t)}</div>
           </div>`;
         }).join('')}`:'<div class="empty mt12">Sin pedidos registrados.</div>'}
