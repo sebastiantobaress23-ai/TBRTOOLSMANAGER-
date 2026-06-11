@@ -3540,7 +3540,10 @@ function syncCeMargin(source){
     priceEl.value=Math.round(cost*(1+margin/100));
   } else {
     const price=parseFloat(priceEl.value)||0;
-    marginEl.value = cost ? Math.round((price-cost)/cost*100) : '';
+    // Si todavía no hay precio de venta cargado, dejamos el margen vacío en
+    // vez de calcular -100% (precio 0 vs costo), para que "Sugerir" use el
+    // margen por defecto de Configuración → Ventas directas.
+    marginEl.value = (cost && price) ? Math.round((price-cost)/cost*100) : '';
   }
 }
 function sugerirVenta(){
