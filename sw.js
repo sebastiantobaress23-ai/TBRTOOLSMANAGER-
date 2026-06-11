@@ -1,4 +1,4 @@
-const CACHE = 'tbr-cache-v87';
+const CACHE = 'tbr-cache-v88';
 
 const PRECACHE_SAME = [
   '/',

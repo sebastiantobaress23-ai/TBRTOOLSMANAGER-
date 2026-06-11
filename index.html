@@ -695,6 +695,8 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi{background:linear-gradient(145deg,var(--bg2),#131313);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .hi-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s}
 .hi-hdr:hover{background:rgba(255,255,255,.025);border-radius:var(--r)}
+.hi-hdr-l{display:flex;align-items:center;gap:14px;min-width:0}
+.cli-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0;color:var(--ud);background:linear-gradient(145deg,rgba(226,201,126,.18),rgba(226,201,126,.04));border:1px solid rgba(226,201,126,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .hi-n{font-weight:700;font-size:15px;margin-bottom:4px;color:rgba(255,255,255,.9)}
 .hi-d{font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
 .hi-v{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--gr);text-align:right}
@@ -1388,6 +1390,7 @@ const fmtAk = n=> { const v=+n||0; return v>=1000 ? '$'+(v/1000).toFixed(1).repl
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+const cliInitials = n=> (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 // Encabezado de marca para documentos imprimibles (OC, cotizaciones, pedidos, ventas, reportes):
 // solo muestra los datos de la empresa que estén realmente cargados, sin placeholders vacíos.
@@ -2300,17 +2303,19 @@ after.dashboard = ()=>{
       goalRing.style.strokeDashoffset = target;
     }));
   }
-  // Count-up animation
+  animateCountUps();
+};
+function animateCountUps(){
   document.querySelectorAll('.count-val').forEach(el=>{
     const target=parseFloat(el.dataset.target)||0;
     const dur=800, step=16; let cur=0, el2=0;
     const t=setInterval(()=>{
       el2+=step; cur=target*(el2/dur);
       if(el2>=dur){cur=target;clearInterval(t);}
-      el.textContent='$'+Math.round(cur).toLocaleString('es-AR');
+      el.textContent=fmtA(cur);
     },step);
   });
-};
+}
 
 /* ═══════════════════════════════════════════
    NUEVA COMPRA
@@ -6240,8 +6245,11 @@ function cliListHTML(list) {
     const total = cliSales.reduce((a,s)=>a+saleRevenue(s),0);
     return `<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('cli${i}')">
-      <div><div class="hi-n">${esc(c.nombre)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
-      <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">comprado</div></div>
+      <div class="hi-hdr-l">
+        <div class="cli-avatar">${esc(cliInitials(c.nombre))}</div>
+        <div><div class="hi-n">${esc(c.nombre)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
+      </div>
+      <div><div class="hi-v">${total?`<span class="count-val" data-target="${total}">${fmtA(total)}</span>`:fmtA(0)}</div><div class="hi-t">comprado</div></div>
     </div>
     <div class="hi-body" id="cli${i}">
       <div class="hi-acts-row" style="margin-top:12px">
@@ -7143,6 +7151,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 after.orden = ()=>{};
 after.cotizaciones = ()=>{};
 after.pedidos = ()=>{};
+after.clientes = ()=>{ animateCountUps(); };
 
 /* ═══════════════════════════════════════════
    INIT
