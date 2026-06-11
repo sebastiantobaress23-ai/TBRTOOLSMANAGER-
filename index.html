@@ -33,6 +33,11 @@ html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;fon
 .badge-g{background:rgba(74,222,128,.15);color:var(--gr);border:1px solid rgba(74,222,128,.3)}
 .badge-y{background:rgba(251,191,36,.15);color:var(--ye);border:1px solid rgba(251,191,36,.3)}
 .badge-d{background:rgba(226,201,126,.15);color:var(--ud);border:1px solid rgba(226,201,126,.3)}
+.badge-r{background:rgba(248,113,113,.15);color:var(--re);border:1px solid rgba(248,113,113,.3)}
+/* Chip de stock: además de mostrar el estado, es un botón que abre el ajuste manual */
+.stock-chip{margin:4px 0 0;cursor:pointer;font-family:'Barlow Condensed',sans-serif;transition:filter .15s,transform .15s}
+.stock-chip:hover{filter:brightness(1.25)}
+.stock-chip:active{transform:scale(.96)}
 
 /* ── TABLE ROW HOVER ── */
 tbody tr{transition:background .12s}
@@ -3548,7 +3553,7 @@ function pgCat() {
       <div class="ph-l">Actualizado</div><div></div>
     </div>
     ${cat.map(c=>`<div class="cat-r">
-      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:${c.stock<=0?'var(--re)':c.stock<=2?'var(--ye)':'var(--di)'}">Stock: ${c.stock}</div>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
+      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<button class="badge stock-chip ${c.stock<=0?'badge-r':c.stock<=2?'badge-y':'badge-g'}" onclick="openStockAdj('${c.id}')" title="Tocá para ajustar el stock">${c.stock<=0?'Sin stock':c.stock<=2?`Stock bajo: ${c.stock}`:`Stock: ${c.stock}`}</button>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
         <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div>
@@ -3556,7 +3561,7 @@ function pgCat() {
         ${(()=>{const h=(c.priceHistory||[]).map(x=>x.price);const cur=c.lastPrice||c.defaultPrice||0;const data=[...h,cur];return data.length>=2?`<div class="cat-spark">${sparkline(data,'#e2c97e',56,16)}</div>`:'';})()}
       </div>
       <div style="font-size:11px;color:var(--di);white-space:nowrap">${c.lastUpdated?fmtD(c.lastUpdated):'—'}</div>
-      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button>${c.stock!=null?`<button class="btn-g btn-sm" title="Ajustar stock" onclick="openStockAdj('${c.id}')">${ic('scale')}</button>`:''}<button class="btn-g btn-sm" onclick="editCat('${c.id}')">${ic('edit')}</button><button class="btn-d" onclick="delCat('${c.id}')">${ic('close')}</button></div>
+      <div class="fg fe cat-actions"><button class="btn-g btn-sm cat-360" title="Vista 360" onclick="openProd360('${c.id}')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="cat-360-t">360</span></button><button class="btn-g btn-sm" onclick="editCat('${c.id}')">${ic('edit')}</button><button class="btn-d" onclick="delCat('${c.id}')">${ic('close')}</button></div>
     </div>`).join('')}
   </div>`}
   <!-- MODAL MOVIMIENTOS DE STOCK -->
@@ -3569,8 +3574,13 @@ function pgCat() {
     <div class="mbox"><div class="mhdr"><span>Ajustar stock</span><button class="btn-rm" onclick="closeStockAdj()">${ic('close')}</button></div>
     <div class="mbody">
       <div class="mb16" style="font-weight:600" id="adj-prod-name"></div>
-      <div><label class="fl">Cantidad</label><div class="iw"><input type="number" id="adj-qty" placeholder="Ej: -1 o 5" step="1"></div></div>
-      <div class="hint">Usá un número negativo para restar (rotura, pérdida) y positivo para sumar (conteo encontró más stock del registrado).</div>
+      <div class="ch-tg" id="adj-dir-tg">
+        <button type="button" class="ch-tg-btn active" data-dir="add" onclick="setAdjDir('add')">+ Sumar</button>
+        <button type="button" class="ch-tg-btn" data-dir="sub" onclick="setAdjDir('sub')">− Restar</button>
+      </div>
+      <input type="hidden" id="adj-dir" value="add">
+      <div class="mt12"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="adj-qty" placeholder="Ej: 5" step="1" min="1"></div></div>
+      <div class="hint" id="adj-hint">Sumá si recibiste mercadería extra o un conteo encontró más stock del registrado.</div>
       <div class="mt12"><label class="fl">Motivo</label><div class="iw"><select id="adj-reason">
         <option value="conteo">Conteo físico</option>
         <option value="rotura">Rotura / daño</option>
@@ -3683,14 +3693,26 @@ function openStockAdj(id){
   document.getElementById('adj-id').value=id;
   document.getElementById('adj-qty').value='';
   document.getElementById('adj-reason').value='conteo';
+  setAdjDir('add');
   document.getElementById('stock-adj-modal').style.display='flex';
 }
 function closeStockAdj(){document.getElementById('stock-adj-modal').style.display='none';}
+// Alterna entre sumar y restar stock: evita que el usuario tenga que recordar
+// usar números negativos para descontar unidades.
+function setAdjDir(dir){
+  document.getElementById('adj-dir').value=dir;
+  document.querySelectorAll('#adj-dir-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.dir===dir));
+  document.getElementById('adj-hint').textContent = dir==='sub'
+    ? 'Restá si hubo rotura, pérdida o robo, o si un conteo encontró menos stock del registrado.'
+    : 'Sumá si recibiste mercadería extra o un conteo encontró más stock del registrado.';
+}
 function saveStockAdj(){
   const id=document.getElementById('adj-id').value;
-  const delta=parseInt(document.getElementById('adj-qty').value);
+  const dir=document.getElementById('adj-dir').value;
+  const qty=parseInt(document.getElementById('adj-qty').value);
   const reason=document.getElementById('adj-reason').value;
-  if(!delta){toast('Ingresá una cantidad distinta de cero (positiva para sumar, negativa para restar).',false);return;}
+  if(!qty || qty<=0){toast('Ingresá una cantidad mayor a cero.',false);return;}
+  const delta=dir==='sub'?-qty:qty;
   const cat=DB.get('catalog',[]);
   const c=cat.find(x=>x.id===id);
   if(!c)return;
