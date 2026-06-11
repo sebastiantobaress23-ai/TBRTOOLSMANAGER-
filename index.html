@@ -3070,6 +3070,16 @@ function setSaleChannel(ch){
     ? 'Venta directa: la rentabilidad real es precio − costo, sin descontar comisión ni envío de Mercado Libre.'
     : `El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y envío (${fmtA(s.mlEnv??7500)}) configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.`;
 }
+// Si el nombre ingresado coincide con un cliente ya guardado, completa su
+// teléfono automáticamente (igual que en Pedidos).
+function onSaleClienteInput(name){
+  const norm=(name||'').trim().toLowerCase();
+  if(!norm) return;
+  const c=DB.get('clientes',[]).find(x=>(x.nombre||'').trim().toLowerCase()===norm);
+  if(!c) return;
+  const tel=document.getElementById('sale-tel');
+  if(tel && !tel.value) tel.value=c.tel||'';
+}
 function addSale(){
   const sel=document.getElementById('sale-prod');
   const opt=sel.options[sel.selectedIndex];
@@ -3085,6 +3095,7 @@ function addSale(){
   const s=DB.get('settings',{});
   const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,channel,cliente,tel};
   if(channel==='ml'){ sale.mlCom=s.mlCom??16; sale.mlEnv=s.mlEnv??7500; }
+  if(cliente) saveCliente(cliente,tel);
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
@@ -3143,6 +3154,7 @@ function saleProfit(s){
 function pgVentas(){
   const sales = DB.get('sales',[]).slice().reverse();
   const cat = DB.get('catalog',[]);
+  const clientes = DB.get('clientes',[]);
   const s = DB.get('settings',{});
   const totalRev = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
@@ -3172,17 +3184,19 @@ function pgVentas(){
       </div><input type="hidden" id="sale-channel" value="ml"></div>
     </div>
     <div class="fg-w mt12">
-      <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
+      <div style="flex:2;min-width:200px"><label class="fl" style="min-height:28px">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
         <option value="">Elegí un producto…</option>
         ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
       </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
-      <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
+      <div style="flex:1;min-width:90px"><label class="fl" style="min-height:28px">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0" oninput="syncSaleMargin('price')"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0" oninput="syncSaleMargin('cost')"></div></div>
       <div style="flex:0 0 100px;min-width:90px"><label class="fl" style="min-height:28px">Margen %</label><div class="iw"><input type="number" id="sale-margin" min="-100" step="1" placeholder="0" oninput="syncSaleMargin('margin')"><span class="isuf">%</span></div></div>
     </div>
     <div class="fg-w mt12">
-      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" autocomplete="off"></div></div>
+      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" list="sale-clientes-list" autocomplete="off" oninput="onSaleClienteInput(this.value)"></div>
+      <datalist id="sale-clientes-list">${clientes.map(c=>`<option value="${esc(c.nombre)}">`).join('')}</datalist>
+      </div>
       <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
     </div>
     <div class="hint mt12" id="sale-channel-hint">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y envío (${fmtA(s.mlEnv??7500)}) configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.</div>
