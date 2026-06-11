@@ -34,10 +34,17 @@ html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;fon
 .badge-y{background:rgba(251,191,36,.15);color:var(--ye);border:1px solid rgba(251,191,36,.3)}
 .badge-d{background:rgba(226,201,126,.15);color:var(--ud);border:1px solid rgba(226,201,126,.3)}
 .badge-r{background:rgba(248,113,113,.15);color:var(--re);border:1px solid rgba(248,113,113,.3)}
+.badge-u{background:rgba(45,212,191,.15);color:var(--us);border:1px solid rgba(45,212,191,.3)}
+.badge-ic{display:inline-flex;align-items:center;gap:4px}
 /* Chip de stock: además de mostrar el estado, es un botón que abre el ajuste manual */
 .stock-chip{margin:4px 0 0;cursor:pointer;font-family:'Barlow Condensed',sans-serif;transition:filter .15s,transform .15s}
 .stock-chip:hover{filter:brightness(1.25)}
 .stock-chip:active{transform:scale(.96)}
+.stock-bar{width:64px;height:4px;border-radius:2px;background:var(--b2);overflow:hidden;margin:6px 0 0}
+.stock-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.22,.61,.36,1)}
+.stock-bar-fill.g{background:var(--gr)}
+.stock-bar-fill.y{background:var(--ye)}
+.stock-bar-fill.r{background:var(--re)}
 
 /* ── TABLE ROW HOVER ── */
 tbody tr{transition:background .12s}
@@ -3605,7 +3612,7 @@ function pgCat() {
       <div class="ph-l">Actualizado</div><div></div>
     </div>
     ${cat.map(c=>`<div class="cat-r">
-      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<button class="badge stock-chip ${c.stock<=0?'badge-r':c.stock<=2?'badge-y':'badge-g'}" onclick="openStockAdj('${c.id}')" title="Tocá para ajustar el stock">${c.stock<=0?'Sin stock':c.stock<=2?`Stock bajo: ${c.stock}`:`Stock: ${c.stock}`}</button>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
+      <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<button class="badge stock-chip ${c.stock<=0?'badge-r':c.stock<=2?'badge-y':'badge-g'}" onclick="openStockAdj('${c.id}')" title="Tocá para ajustar el stock">${c.stock<=0?'Sin stock':c.stock<=2?`Stock bajo: ${c.stock}`:`Stock: ${c.stock}`}</button><div class="stock-bar"><div class="stock-bar-fill ${c.stock<=0?'r':c.stock<=2?'y':'g'}" style="width:${Math.max(4,Math.min(100,c.stock/10*100))}%"></div></div>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
         <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--us)">${fmtU(c.lastPrice||c.defaultPrice||0)}</div>
@@ -5565,7 +5572,11 @@ function reprintCot(id){
    PEDIDOS — Cotizaciones y pedidos para clientes (fuera de Mercado Libre)
 ═══════════════════════════════════════════ */
 const PED_STATUS_LABEL = {cotizacion:'Cotización enviada',confirmado:'Pendiente de preparación',preparacion:'En preparación',entregado:'Entregado / Cobrado',cancelado:'Cancelado'};
-const PED_STATUS_COLOR = {cotizacion:'var(--ye)',confirmado:'var(--ye)',preparacion:'var(--us)',entregado:'var(--gr)',cancelado:'var(--re)'};
+const PED_STATUS_ICON = {cotizacion:'send',confirmado:'clipboard',preparacion:'package',entregado:'check',cancelado:'ban'};
+const PED_STATUS_BADGE = {cotizacion:'y',confirmado:'y',preparacion:'u',entregado:'g',cancelado:'r'};
+function pedStatusBadge(status){
+  return `<span class="badge badge-ic badge-${PED_STATUS_BADGE[status]||'d'}">${ic(PED_STATUS_ICON[status]||'clipboard',10)}${PED_STATUS_LABEL[status]||status}</span>`;
+}
 
 function pgPedidos() {
   const cat  = DB.get('catalog',[]);
@@ -5619,7 +5630,7 @@ function pgPedidos() {
     const total=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
     return `<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('ped${i}')">
-      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · <span style="color:${PED_STATUS_COLOR[o.status]||'var(--di)'}">${PED_STATUS_LABEL[o.status]||o.status}</span></div></div>
+      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
       <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
     </div>
     <div class="hi-body${_pedEditId===o.id?' open':''}" id="ped${i}">
@@ -6263,7 +6274,7 @@ function cliListHTML(list) {
           return `<div class="mc" style="cursor:pointer" onclick="navigateToPed('${o.id}')">
             <div style="flex:1">
               <div class="mc-n">${esc(o.nro)}</div>
-              <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · <span style="color:${PED_STATUS_COLOR[o.status]||'var(--di)'}">${PED_STATUS_LABEL[o.status]||o.status}</span></div>
+              <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div>
             </div>
             <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
             <div class="hi-v">${fmtA(t)}</div>
