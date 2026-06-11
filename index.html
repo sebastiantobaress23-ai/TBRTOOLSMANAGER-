@@ -543,6 +543,10 @@ html.light .record-val{color:#92400e}
 .ph{display:grid;grid-template-columns:2fr 100px 56px 1fr 34px;gap:8px;padding:0 6px 8px}
 .ph-l{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr{display:grid;grid-template-columns:2fr 100px 56px 1fr 34px;gap:8px;align-items:center;margin-bottom:8px}
+/* Filas con costo de referencia debajo del precio (Pedidos): alinear todas
+   las celdas arriba para que el input de precio quede a la misma altura
+   que los demás campos, en vez de centrarse contra una celda más alta. */
+.pr.ord-row{align-items:start}
 .pr input{height:40px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 12px;color:rgba(255,255,255,.88);font-family:'Barlow',sans-serif;font-size:14px;width:100%;outline:none;transition:all .18s}
 .pr input:focus{border-color:rgba(226,201,126,.5);box-shadow:0 0 0 3px rgba(226,201,126,.07);background:rgba(22,22,22,1)}
 .pr input::placeholder{color:var(--mu)}
