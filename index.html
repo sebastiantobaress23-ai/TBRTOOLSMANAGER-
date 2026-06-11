@@ -5294,6 +5294,7 @@ function pgCotizaciones() {
       </div>
       <div class="hi-acts">
         <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?ic('check')+' Pendiente':ic('check')+' Cotizada'}</button>
+        ${o.status==='cotizada'?`<button class="btn-p btn-sm" onclick="cotToOrden('${esc(o.nro)}')">${ic('fileText')} Crear orden de compra</button>`:''}
         <button class="btn-g btn-sm" onclick="reprintCot('${o.id}')">${ic('printer')} Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareCotWA('${o.id}')">${waIcon()}WhatsApp</button>
         <button class="btn-d" onclick="delCot('${o.id}')">${ic('trash')} Borrar</button>
@@ -5361,6 +5362,18 @@ function markCotQuoted(id){
   o.status = o.status==='cotizada' ? 'pendiente' : 'cotizada';
   DB.set('cotizaciones',cots);
   render();
+}
+
+/* Lleva los precios cotizados de una cotización directamente a una nueva orden de compra,
+   sin tener que volver a tipear los artículos en la pantalla de Órdenes */
+function cotToOrden(nro){
+  const cot=DB.get('cotizaciones',[]).find(c=>c.nro===nro);
+  if(!cot||!(cot.items||[]).length){toast('Esta cotización no tiene artículos.',false);return;}
+  orderCotRef=nro;
+  orderConf=cot.proveedorId||orderConf;
+  ORDER=cot.items.map(it=>({id:uid(),n:it.n||'',c:it.c||'',q:it.q||1,p:it.precio||0}));
+  navigate('orden');
+  toast(`Artículos de ${nro} cargados en la orden de compra`);
 }
 function delCot(id){confirm2('¿Borrar esta solicitud?',()=>{DB.set('cotizaciones',DB.get('cotizaciones',[]).filter(o=>o.id!==id));render();});}
 
@@ -6694,7 +6707,7 @@ function pgOrden() {
   <div class="sh mb16">Órdenes generadas</div>
   ${ocs.map((o,i)=>`<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('oc${i}')">
-      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos${o.cotizacionRef?` · Ref: ${esc(o.cotizacionRef)}`:''}</div></div>
+      <div><div class="hi-n">${esc(o.nro)} · ${esc(o.proveedor)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos${o.cotizacionRef?` · Ref: ${esc(o.cotizacionRef)}`:''} · ${o.recibida?'<span style="color:var(--gr)">Recibida</span>':'<span style="color:var(--ye)">Pendiente de recepción</span>'}</div></div>
       <div><div class="hi-v" style="color:${o.currency==='ARS'?'var(--ye)':'var(--us)'}">${o.currency==='ARS'?fmtA(o.totalARS||0):fmtU(o.totalUSD||0)}</div><div class="hi-t">total ${o.currency||'USD'}</div></div>
     </div>
     <div class="hi-body" id="oc${i}">
@@ -6703,7 +6716,9 @@ function pgOrden() {
         <tbody>${(o.items||[]).map(p=>{const sym=o.currency==='ARS'?'$':'US$';return `<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr tm csi">${sym} ${(p.p||0).toFixed(2)}</td><td class="tr tm cch">${sym} ${((p.q||1)*(p.p||0)).toFixed(2)}</td></tr>`;}).join('')}</tbody>
         </table>
       </div>
-      <div class="hi-acts"><button class="btn-g" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
+      <div class="hi-acts">
+        ${!o.recibida?`<button class="btn-p" onclick="loadOCToCompra('${o.id}')">${ic('package')} Recibida → Cargar en Compra</button>`:''}
+        <button class="btn-g" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
@@ -6898,6 +6913,20 @@ async function shareOCWA(id){
   shareViaWA(phone, txt, pdf, `${o.nro}.pdf`);
 }
 function delOC(id){confirm2('¿Borrar esta orden?',()=>{DB.set('ordenes',DB.get('ordenes',[]).filter(o=>o.id!==id));render();});}
+
+/* Lleva los artículos de una orden de compra ya recibida a la pantalla de Compra,
+   para registrar el ingreso (flete, cotización, etc.), actualizar costos y sumar stock */
+function loadOCToCompra(id){
+  const ocs=DB.get('ordenes',[]);
+  const o=ocs.find(x=>x.id===id);
+  if(!o)return;
+  if(!(o.items||[]).length){toast('Esta orden no tiene artículos.',false);return;}
+  o.items.forEach(p=>addProd(p.n,p.c,p.q,p.p,0,0));
+  o.recibida=true;
+  DB.set('ordenes',ocs);
+  navigate('compra');
+  toast(`Artículos de ${o.nro} cargados en Compra. Completá el flete/cotización y guardá para sumar stock y costos.`);
+}
 function openOrdCatModal(){
   const cat=DB.get('catalog',[]);
   const m=document.getElementById('ord-cat-modal');
