@@ -1859,7 +1859,22 @@ document.addEventListener('click', e=>{
   const fan=document.getElementById('qa-fan');
   if(fan && fan.classList.contains('open') && !e.target.closest('#qa-fab')) closeFan();
 });
+// Cierra cualquier modal/overlay persistente (Acción rápida, Simulador,
+// escáner, búsqueda global, confirmaciones, abanico del FAB, etc.) que haya
+// quedado abierto al cambiar de sección. Estos overlays viven fuera de #app
+// y no se eliminan al re-renderizar la página, así que si quedan abiertos
+// (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
+// scroll y los toques de la sección nueva, dando la sensación de que la app
+// "se traba".
+function closeAllOverlays(){
+  document.querySelectorAll('.mol, .qa-ol, .gsearch-ol, .cm-ol').forEach(el=>{
+    if(el.id!=='lock-ov' && el.style.display==='flex') el.style.display='none';
+  });
+  _confirmCb=null;
+  closeFan();
+}
 function navigate(p) {
+  closeAllOverlays();
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
   if (PAGE !== p && PAGE === 'clientes') { cliSearch = ''; }
