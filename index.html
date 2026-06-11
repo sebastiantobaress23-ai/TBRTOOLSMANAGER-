@@ -604,6 +604,13 @@ html.light .record-val{color:#92400e}
   .ord-row{grid-template-columns:1fr 60px 76px 32px!important;grid-template-rows:36px 36px!important;gap:5px!important}
   .ord-row > input:nth-child(4){grid-column:3!important;grid-row:2!important;text-align:right!important}
   .ord-row > .btn-rm{grid-column:4!important;grid-row:1/3!important}
+  /* Pedidos: el precio (con prefijo $ y costo de referencia) ocupa su propia fila */
+  .ped-row{grid-template-columns:1fr 60px 32px!important;grid-template-rows:36px 36px auto!important}
+  .ped-row > input:nth-child(1){grid-column:1/3!important;grid-row:1!important}
+  .ped-row > input:nth-child(2){grid-column:1!important;grid-row:2!important}
+  .ped-row > input:nth-child(3){grid-column:2!important;grid-row:2!important}
+  .ped-row > div:nth-child(4){grid-column:1/3!important;grid-row:3!important;align-self:center!important;margin-top:2px}
+  .ped-row > .btn-rm{grid-column:3!important;grid-row:1/4!important}
 }
 .btn-rm{width:34px;height:40px;background:transparent;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);color:rgba(255,255,255,.2);font-size:14px;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center}
 .btn-rm:hover{border-color:var(--re);color:var(--re)}
@@ -5415,7 +5422,7 @@ function pgPedidos() {
 
 function pedRow(p) {
   const cost = suggestSaleCost(p.c, p.n);
-  return `<div class="pr ord-row" id="ped-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
+  return `<div class="pr ord-row ped-row" id="ped-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
@@ -5448,7 +5455,7 @@ function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
 function pedEditRow(p) {
   const cost = suggestSaleCost(p.c, p.n);
-  return `<div class="pr ord-row" id="pedit-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
+  return `<div class="pr ord-row ped-row" id="pedit-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
