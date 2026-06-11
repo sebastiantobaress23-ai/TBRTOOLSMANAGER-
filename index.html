@@ -28,6 +28,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh}
 
+/* ── SEARCH HIGHLIGHT ── */
+.hl{background:rgba(226,201,126,.28);color:var(--ud);border-radius:3px;padding:0 1px;font-weight:700}
+
 /* ── BADGES ── */
 .badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
 .badge-g{background:rgba(74,222,128,.15);color:var(--gr);border:1px solid rgba(74,222,128,.3)}
@@ -1399,6 +1402,13 @@ const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
 const cliInitials = n=> (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function highlight(text, query){
+  const safe = esc(text);
+  if (!query) return safe;
+  const idx = safe.toLowerCase().indexOf(esc(query).toLowerCase());
+  if (idx < 0) return safe;
+  return safe.slice(0,idx)+'<mark class="hl">'+safe.slice(idx,idx+query.length)+'</mark>'+safe.slice(idx+query.length);
+}
 // Encabezado de marca para documentos imprimibles (OC, cotizaciones, pedidos, ventas, reportes):
 // solo muestra los datos de la empresa que estén realmente cargados, sin placeholders vacíos.
 function empBrandHTML(emp){
@@ -3139,7 +3149,7 @@ function histCard(p, idx, badges=[]) {
   return `<div class="hi">
     <div class="hi-hdr" onclick="toggleHi('${idx}')">
       <div>
-        <div class="hi-n">${esc(p.name||'Sin nombre')}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
+        <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
         <div class="hi-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div>
       </div>
       <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">Gan. proyectada · ${fmtA(purchaseGain(p))}</div></div>
@@ -6258,7 +6268,7 @@ function cliListHTML(list) {
     <div class="hi-hdr" onclick="toggleHi('cli${i}')">
       <div class="hi-hdr-l">
         <div class="cli-avatar">${esc(cliInitials(c.nombre))}</div>
-        <div><div class="hi-n">${esc(c.nombre)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
+        <div><div class="hi-n">${highlight(c.nombre,cliSearch)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
       </div>
       <div><div class="hi-v">${total?`<span class="count-val" data-target="${total}">${fmtA(total)}</span>`:fmtA(0)}</div><div class="hi-t">comprado</div></div>
     </div>
