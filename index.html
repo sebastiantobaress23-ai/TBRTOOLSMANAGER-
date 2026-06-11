@@ -1727,20 +1727,29 @@ function qaShowSale(){
   const cat=DB.get('catalog',[]);
   const body=document.getElementById('qa-body');
   body.innerHTML=`
-    <div class="ch-tg" id="qa-channel-tg">
-      <button type="button" class="ch-tg-btn active" data-ch="ml" onclick="setQaChannel('ml')">Mercado Libre</button>
-      <button type="button" class="ch-tg-btn" data-ch="directa" onclick="setQaChannel('directa')">Venta directa</button>
+    <div>
+      <label class="fl">Canal de venta</label>
+      <div class="ch-tg" id="qa-channel-tg">
+        <button type="button" class="ch-tg-btn active" data-ch="ml" onclick="setQaChannel('ml')">Mercado Libre</button>
+        <button type="button" class="ch-tg-btn" data-ch="directa" onclick="setQaChannel('directa')">Venta directa</button>
+      </div>
+      <input type="hidden" id="qa-channel" value="ml">
     </div>
-    <input type="hidden" id="qa-channel" value="ml">
-    <div class="iw"><select id="qa-prod" onchange="qaFillCost()">
-      <option value="">Elegí un producto…</option>
-      ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
-    </select></div>
+    <div>
+      <label class="fl">Producto</label>
+      <div class="iw"><select id="qa-prod" onchange="qaFillCost()">
+        <option value="">Elegí un producto…</option>
+        ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+      </select></div>
+    </div>
     <div style="display:flex;gap:10px">
-      <div class="iw" style="flex:1"><input type="number" id="qa-qty" value="1" min="1" step="1" placeholder="Cant."></div>
-      <div class="iw" style="flex:1.4"><span class="ipre">$</span><input type="number" id="qa-price" min="0" step="100" placeholder="Precio venta c/u"></div>
+      <div style="flex:1"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="qa-qty" value="1" min="1" step="1" placeholder="Cant."></div></div>
+      <div style="flex:1.4"><label class="fl">Precio de venta (c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="qa-price" min="0" step="100" placeholder="0"></div></div>
     </div>
-    <div class="iw"><span class="ipre">$</span><input type="number" id="qa-cost" min="0" step="100" placeholder="Costo real c/u (sugerido automático)"></div>
+    <div>
+      <label class="fl" style="opacity:.6">Costo real c/u (sugerido automático)</label>
+      <div class="iw"><span class="ipre">$</span><input type="number" id="qa-cost" min="0" step="100" placeholder="0"></div>
+    </div>
     <div style="display:flex;gap:8px">
       <button class="btn-g btn-sm" style="flex:1" onclick="closeQA()">Cancelar</button>
       <button class="btn-p" style="flex:2" onclick="qaSubmitSale()">${ic('check')} Registrar venta</button>
@@ -1752,6 +1761,7 @@ function setQaChannel(ch){
   if(!input) return;
   input.value=ch;
   document.querySelectorAll('#qa-channel-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.ch===ch));
+  qaSuggestPrice();
 }
 function qaFillCost(){
   const sel=document.getElementById('qa-prod');
@@ -1759,6 +1769,25 @@ function qaFillCost(){
   if(!opt||!opt.value) return;
   const [name,code]=opt.value.split('|||');
   document.getElementById('qa-cost').value = suggestSaleCost(code, name) || '';
+  qaSuggestPrice();
+}
+// Sugiere el precio de venta del producto elegido según el canal actual: en
+// "Venta directa" usa el precio de venta del catálogo (o costo + margen
+// directo), igual que en el formulario completo de Ventas. En "Mercado
+// Libre" no hay un precio sugerido (depende de la publicación), así que no
+// se modifica lo que haya cargado el usuario.
+function qaSuggestPrice(){
+  const channel=document.getElementById('qa-channel')?.value==='directa'?'directa':'ml';
+  if(channel!=='directa') return;
+  const sel=document.getElementById('qa-prod');
+  const opt=sel?.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  const [name,code]=opt.value.split('|||');
+  const cat=DB.get('catalog',[]);
+  const c=cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+  const price=(c&&c.salePrice) || suggestDirectPrice(code, name);
+  const priceEl=document.getElementById('qa-price');
+  if(priceEl) priceEl.value = price || '';
 }
 function qaSubmitSale(){
   const sel=document.getElementById('qa-prod');
