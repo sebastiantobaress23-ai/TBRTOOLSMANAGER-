@@ -2928,7 +2928,7 @@ function savePurchase() {
   CALC.v.forEach(p=>{
     if (!p.n) return;
     const newPrice = p.lista||p.p;
-    const ex=cat.find(c=>p.c&&c.code===p.c);
+    const ex=cat.find(c=>(p.c && c.code===p.c) || (!p.c && c.name===p.n));
     if (ex) {
       const hist = ex.priceHistory||[];
       if (ex.lastPrice && ex.lastPrice !== newPrice) hist.push({price:ex.lastPrice,date:ex.lastUpdated});
