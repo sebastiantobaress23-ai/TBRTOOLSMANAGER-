@@ -2091,6 +2091,37 @@ function pgDash() {
       </div>
     </div>`;
   }
+
+  // Resumen de ventas del mes en curso, para que el dashboard no muestre solo el lado de compras
+  const sales = DB.get('sales',[]);
+  const now2 = new Date();
+  const salesMonth = sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now2.getFullYear()&&d.getMonth()===now2.getMonth();});
+  const ventasMes = salesMonth.reduce((a,s)=>a+saleRevenue(s),0);
+  const gananciaVentasMes = salesMonth.reduce((a,s)=>a+saleProfit(s),0);
+  const unidadesMes = salesMonth.reduce((a,s)=>a+saleUnits(s),0);
+  const last8Sales = sales.slice(-8);
+  const spVentas = last8Sales.map(saleRevenue);
+  const spGanVentas = last8Sales.map(saleProfit);
+  const ventasSection = sales.length ? `<div class="sh mb16">Ventas</div>
+  <div class="g3 mb20">
+    <div class="sc accent-g">
+      <div class="sc-l">Ventas del mes</div>
+      <div class="sc-v g">${ventasMes?`<span class="count-val" data-target="${ventasMes}">${fmtA(ventasMes)}</span>`:'—'}</div>
+      <div class="sc-s">${salesMonth.length} venta${salesMonth.length!==1?'s':''} este mes</div>
+      ${sparkline(spVentas,'#4ade80')}
+    </div>
+    <div class="sc accent-y">
+      <div class="sc-l">Ganancia del mes</div>
+      <div class="sc-v y">${gananciaVentasMes?`<span class="count-val" data-target="${gananciaVentasMes}">${fmtA(gananciaVentasMes)}</span>`:'—'}</div>
+      <div class="sc-s">según ventas registradas</div>
+      ${sparkline(spGanVentas,'#fbbf24')}
+    </div>
+    <div class="sc accent-u">
+      <div class="sc-l">Unidades vendidas</div>
+      <div class="sc-v u">${unidadesMes||'—'}</div>
+      <div class="sc-s">en el mes actual</div>
+    </div>
+  </div>` : '';
   return `<div class="pg">
   <div class="sh mb20">Resumen general</div>
   <div class="sc-hero mb20">
@@ -2102,6 +2133,7 @@ function pgDash() {
     <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
   </div>
   ${goalCard}
+  <div class="sh mb16">Compras</div>
   <div class="g3 mb20">
     <div class="sc accent-y">
       <div class="sc-l">Ganancia proyectada</div>
@@ -2122,6 +2154,7 @@ function pgDash() {
       ${sparkline(spTce,'#e2c97e')}
     </div>
   </div>
+  ${ventasSection}
   ${smartAlertsCard()}
   <div class="g2 mb20">
     <div>
