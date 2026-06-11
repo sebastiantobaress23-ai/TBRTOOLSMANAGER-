@@ -2195,7 +2195,7 @@ const TBRChart = {
       <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       ${dots}${xG}</svg>`;
   },
-  bar(el, {labels, data, colors, horizontal=false, height=160}) {
+  bar(el, {labels, data, colors, horizontal=false, height=160, valueFmt}) {
     const W=el.offsetWidth||380, H=height;
     const p=horizontal?{t:6,r:130,b:6,l:6}:{t:12,r:12,b:30,l:50};
     const IW=W-p.l-p.r, IH=H-p.t-p.b;
@@ -2226,8 +2226,9 @@ const TBRChart = {
         const bw=((v/max)*IW).toFixed(1);
         const col=pal[i%pal.length];
         const short=labels[i].length>16?labels[i].slice(0,15)+'…':labels[i];
+        const vLbl=valueFmt?valueFmt(v):v;
         return `<rect x="${p.l}" y="${by}" width="${bw}" height="${bh.toFixed(1)}" fill="${col}" rx="3" opacity="0.8"/>
-                <text x="${(p.l+parseFloat(bw)+6).toFixed(1)}" y="${(parseFloat(by)+bh/2).toFixed(1)}" dominant-baseline="middle" fill="${s.tick}" font-size="10" font-family="Barlow Condensed,sans-serif">${short} (${v})</text>`;
+                <text x="${(p.l+parseFloat(bw)+6).toFixed(1)}" y="${(parseFloat(by)+bh/2).toFixed(1)}" dominant-baseline="middle" fill="${s.tick}" font-size="10" font-family="Barlow Condensed,sans-serif">${short} (${vLbl})</text>`;
       }).join('');
       el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
     }
@@ -3334,16 +3335,9 @@ function saleProfit(s){
   const unitNet = s.priceARS - com - (s.mlEnv??0) - (s.costARS||0);
   return unitNet * (s.qty||1);
 }
-function pgVentas(){
-  const sales = DB.get('sales',[]).slice().reverse();
-  const cat = DB.get('catalog',[]);
-  const clientes = DB.get('clientes',[]);
-  const s = DB.get('settings',{});
-  const totalRev = sales.reduce((a,s)=>a+saleRevenue(s),0);
-  const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const totalUnits = sales.reduce((a,s)=>a+saleUnits(s),0);
-
-  // Ranking de rentabilidad por producto
+// Ranking de rentabilidad por producto a partir de las ventas registradas.
+// Lo usan tanto la página de Ventas como Estadísticas.
+function salesProductRanking(sales){
   const map={};
   sales.forEach(s=>{
     saleItems(s).forEach(it=>{
@@ -3355,7 +3349,19 @@ function pgVentas(){
       map[key].profit += itemProfit(s,it) - (Array.isArray(s.items)||s.channel==='directa'?0:(s.mlEnv??0)*(it.q||1));
     });
   });
-  const ranking = Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
+  return Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
+}
+function pgVentas(){
+  const sales = DB.get('sales',[]).slice().reverse();
+  const cat = DB.get('catalog',[]);
+  const clientes = DB.get('clientes',[]);
+  const s = DB.get('settings',{});
+  const totalRev = sales.reduce((a,s)=>a+saleRevenue(s),0);
+  const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
+  const totalUnits = sales.reduce((a,s)=>a+saleUnits(s),0);
+
+  // Ranking de rentabilidad por producto
+  const ranking = salesProductRanking(sales);
 
   return `<div class="pg">
   <div class="sh mb16">Registrar venta</div>
@@ -3834,16 +3840,49 @@ function statsRecords(ps) {
     </div>`).join('')}
   </div>`;
 }
+function salesRecords(sales) {
+  if (!sales.length) return '';
+  const cards = [];
+  const maxRev = sales.reduce((a,b)=>saleRevenue(b)>saleRevenue(a)?b:a, sales[0]);
+  cards.push({icon:ic('trophy',16),lbl:'Venta más grande',val:fmtA(saleRevenue(maxRev)),sub:saleItems(maxRev).map(it=>it.n).join(', ')||'—'});
+  const maxProfit = sales.reduce((a,b)=>saleProfit(b)>saleProfit(a)?b:a, sales[0]);
+  cards.push({icon:ic('trendUp',16),lbl:'Venta más rentable',val:fmtA(saleProfit(maxProfit)),sub:saleItems(maxProfit).map(it=>it.n).join(', ')||'—'});
+  const ranking = salesProductRanking(sales);
+  const topUnits = ranking.slice().sort((a,b)=>b.units-a.units)[0];
+  if (topUnits) cards.push({icon:ic('star',16),lbl:'Producto más vendido',val:topUnits.name||'—',sub:`${topUnits.units} unidades en total`});
+  if (ranking.length) cards.push({icon:ic('exchange',16),lbl:'Mejor margen',val:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].marginPct.toFixed(1)+'%',sub:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].name||'—'});
+  return `<div class="sh mb16">Récords de ventas</div>
+  <div class="g4 mb24">
+    ${cards.map(c=>`<div class="record-card">
+      <div class="record-icon">${c.icon}</div>
+      <div class="sc-l">${c.lbl}</div>
+      <div class="record-val">${esc(c.val)}</div>
+      <div class="sc-s">${esc(c.sub)}</div>
+    </div>`).join('')}
+  </div>`;
+}
 
 /* ═══════════════════════════════════════════
    ESTADÍSTICAS
 ═══════════════════════════════════════════ */
 function pgStats() {
   const ps=DB.get('purchases',[]);
+  const sales=DB.get('sales',[]);
   const tot=ps.reduce((s,p)=>s+(p.r?.ars||0),0);
   const gan=ps.reduce((s,p)=>s+purchaseGain(p),0);
   const tce=ps.length?ps.reduce((s,p)=>s+(p.r?.TCE||0),0)/ps.length:0;
   const usdt=ps.reduce((s,p)=>s+(p.r?.up||0),0);
+  const salesRev=sales.reduce((a,s)=>a+saleRevenue(s),0);
+  const salesProfitTot=sales.reduce((a,s)=>a+saleProfit(s),0);
+  const salesUnits=sales.reduce((a,s)=>a+saleUnits(s),0);
+  const salesMarginPct=salesRev>0?salesProfitTot/salesRev*100:0;
+  const ranking=salesProductRanking(sales);
+  const byChannel={ml:{rev:0,profit:0},directa:{rev:0,profit:0}};
+  sales.forEach(s=>{
+    const ch=s.channel==='directa'?'directa':'ml';
+    byChannel[ch].rev+=saleRevenue(s);
+    byChannel[ch].profit+=saleProfit(s);
+  });
   return `<div class="pg">
   <div class="dash-hdr mb24">
     <div class="sh" style="margin:0">Estadísticas</div>
@@ -3852,6 +3891,7 @@ function pgStats() {
       <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
     </div>
   </div>
+  <div class="sh mb16">Compras</div>
   <div class="g4 mb24">
     <div class="sc"><div class="sc-l">Total invertido</div><div class="sc-v g">${fmtA(tot)}</div><div class="sc-s">${ps.length} compras</div></div>
     <div class="sc"><div class="sc-l">Ganancia proyectada</div><div class="sc-v y">${fmtA(gan)}</div><div class="sc-s">según márgenes</div></div>
@@ -3864,22 +3904,52 @@ function pgStats() {
     <div class="card chart-card"><div class="sh mb12" style="font-size:9px">TCE POR COMPRA</div><div id="ch-tce2" style="width:100%;min-height:200px"></div></div>
     <div class="card chart-card"><div class="sh mb12" style="font-size:9px">ARS INVERTIDO</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
   </div>
-  <div class="card chart-card mb20"><div class="sh mb12" style="font-size:9px">PRODUCTOS MÁS COMPRADOS</div><div id="ch-prods" style="width:100%;min-height:100px"></div></div>`}
+  <div class="card chart-card mb24"><div class="sh mb12" style="font-size:9px">PRODUCTOS MÁS COMPRADOS</div><div id="ch-prods" style="width:100%;min-height:100px"></div></div>`}
+  <div class="sh mb16">Ventas</div>
+  ${!sales.length?emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá ventas para ver\nsu rentabilidad real aquí.'):`
+  <div class="g4 mb24">
+    <div class="sc"><div class="sc-l">Ventas totales</div><div class="sc-v g">${fmtA(salesRev)}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''}</div></div>
+    <div class="sc"><div class="sc-l">Ganancia real</div><div class="sc-v y">${fmtA(salesProfitTot)}</div><div class="sc-s">neta de comisiones y envíos</div></div>
+    <div class="sc"><div class="sc-l">Unidades vendidas</div><div class="sc-v">${salesUnits}</div><div class="sc-s">en ${sales.length} venta${sales.length!==1?'s':''}</div></div>
+    <div class="sc"><div class="sc-l">Margen promedio</div><div class="sc-v u">${salesMarginPct.toFixed(1)}%</div><div class="sc-s">ganancia / facturado</div></div>
+  </div>
+  ${salesRecords(sales)}
+  <div class="g2 mb20">
+    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">VENTAS POR CANAL</div><div id="ch-channel" style="width:100%;min-height:140px"></div></div>
+    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">PRODUCTOS MÁS RENTABLES</div><div id="ch-top-profit" style="width:100%;min-height:140px"></div></div>
+  </div>`}
 </div>`;
 }
 after.stats=()=>{
   const ps=DB.get('purchases',[]);
-  if(ps.length<2) return;
-  const labels=ps.map((p,i)=>p.name||'C'+(i+1));
+  const sales=DB.get('sales',[]);
   setTimeout(()=>{
-    const c1=document.getElementById('ch-tce2');
-    const c2=document.getElementById('ch-ars');
-    const c3=document.getElementById('ch-prods');
-    if(c1) TBRChart.line(c1,{labels,data:ps.map(p=>p.r?.TCE||0),color:'#2dd4bf',height:200});
-    if(c2) TBRChart.bar(c2,{labels,data:ps.map(p=>p.r?.ars||0),colors:'#4ade80',height:200});
-    const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
-    const sorted=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,8);
-    if(c3&&sorted.length) TBRChart.bar(c3,{labels:sorted.map(x=>x[0]),data:sorted.map(x=>x[1]),horizontal:true,height:Math.max(100,sorted.length*36+20)});
+    if(ps.length>=2){
+      const labels=ps.map((p,i)=>p.name||'C'+(i+1));
+      const c1=document.getElementById('ch-tce2');
+      const c2=document.getElementById('ch-ars');
+      const c3=document.getElementById('ch-prods');
+      if(c1) TBRChart.line(c1,{labels,data:ps.map(p=>p.r?.TCE||0),color:'#2dd4bf',height:200});
+      if(c2) TBRChart.bar(c2,{labels,data:ps.map(p=>p.r?.ars||0),colors:'#4ade80',height:200});
+      const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
+      const sorted=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      if(c3&&sorted.length) TBRChart.bar(c3,{labels:sorted.map(x=>x[0]),data:sorted.map(x=>x[1]),horizontal:true,height:Math.max(100,sorted.length*36+20)});
+    }
+    if(sales.length){
+      const cChannel=document.getElementById('ch-channel');
+      if(cChannel){
+        const byChannel={ml:{rev:0,profit:0},directa:{rev:0,profit:0}};
+        sales.forEach(s=>{
+          const ch=s.channel==='directa'?'directa':'ml';
+          byChannel[ch].rev+=saleRevenue(s);
+          byChannel[ch].profit+=saleProfit(s);
+        });
+        TBRChart.bar(cChannel,{labels:['Mercado Libre','Venta directa'],data:[byChannel.ml.rev,byChannel.directa.rev],horizontal:true,height:140,valueFmt:fmtA});
+      }
+      const cTop=document.getElementById('ch-top-profit');
+      const ranking=salesProductRanking(sales).slice(0,8);
+      if(cTop&&ranking.length) TBRChart.bar(cTop,{labels:ranking.map(r=>r.name||'?'),data:ranking.map(r=>r.profit),horizontal:true,height:Math.max(140,ranking.length*36+20),valueFmt:fmtA});
+    }
   },50);
 };
 
