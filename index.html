@@ -94,6 +94,8 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.92)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 #toast{position:fixed;bottom:28px;left:50%;background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:12px 20px 12px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;align-items:center;gap:10px;overflow:hidden;animation:toastIn .35s cubic-bezier(.22,.61,.36,1) both}
 #toast.out{animation:toastIn .25s ease reverse both}
+#toast .toast-undo{background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:5px 12px;font:inherit;letter-spacing:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+#toast .toast-undo:active{background:rgba(255,255,255,.12)}
 .toast-icon{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;flex-shrink:0}
 .toast-icon.ok{background:rgba(74,222,128,.15);color:var(--gr)}
 .toast-icon.err{background:rgba(248,113,113,.15);color:var(--re)}
@@ -175,9 +177,17 @@ html.light .mob-tab.on{color:rgba(160,130,60,.95)}
 
 /* ── BETTER EMPTY STATES ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;gap:12px}
-.empty-icon{opacity:.2}
+@keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes emptyFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.empty-icon{opacity:.2;animation:emptyFloat 3.6s ease-in-out infinite}
 .empty-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--si)}
 .empty-sub{font-family:'Barlow',sans-serif;font-size:13px;color:var(--di);text-align:center;max-width:220px;line-height:1.6}
+.empty-state>*{animation:emptyFadeIn .5s cubic-bezier(.22,.61,.36,1) both}
+.empty-state .empty-icon{animation:emptyFadeIn .5s cubic-bezier(.22,.61,.36,1) both, emptyFloat 3.6s ease-in-out .5s infinite}
+.empty-state>*:nth-child(2){animation-delay:.08s}
+.empty-state>*:nth-child(3){animation-delay:.14s}
+.empty-state>*:nth-child(4){animation-delay:.2s}
+@media(prefers-reduced-motion:reduce){.empty-icon{animation:none}.empty-state>*{animation:none}}
 
 /* ── COMPACT MODE ── */
 body.compact .pg{padding-top:14px;padding-bottom:28px}
@@ -547,6 +557,14 @@ html.light body::before{
 }
 @media(prefers-reduced-motion:reduce){.confetti-piece{display:none}}
 
+/* ── OFFLINE BANNER ── */
+@keyframes offlineDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+@keyframes offlineUp{from{transform:translateY(0)}to{transform:translateY(-100%)}}
+#offline-banner{position:fixed;top:0;left:0;right:0;z-index:9997;display:flex;align-items:center;justify-content:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 9px) 14px 9px;background:linear-gradient(135deg,#3a2800,#1a1000);border-bottom:1px solid rgba(226,201,126,.25);color:var(--ye);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transform:translateY(-100%);animation:offlineDown .4s cubic-bezier(.22,.61,.36,1) both}
+#offline-banner.out{animation:offlineUp .35s cubic-bezier(.4,0,1,1) both}
+#offline-banner svg{flex-shrink:0;animation:pulse 2s infinite}
+@media(prefers-reduced-motion:reduce){#offline-banner{animation:none}#offline-banner.out{animation:none;transform:translateY(-100%)}#offline-banner svg{animation:none}}
+
 /* ── PULL TO REFRESH ── */
 .ptr-indicator{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translate(-50%,-60px);width:38px;height:38px;border-radius:50%;background:#141414;border:1px solid rgba(226,201,126,.25);display:flex;align-items:center;justify-content:center;color:var(--ud);z-index:9998;opacity:0;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:opacity .2s}
 .ptr-indicator.visible{opacity:1}
@@ -794,6 +812,16 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .cat-t{display:grid;grid-template-columns:1fr 90px 110px 96px 84px;gap:8px;padding:9px 14px;background:#0a0a0a;border-bottom:1px solid var(--b2)}
 .cat-r{display:grid;grid-template-columns:1fr 90px 110px 96px 84px;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--b1);transition:background .1s;animation:pgFadeIn .35s cubic-bezier(.22,.61,.36,1) both}
 .cat-r:last-child{border-bottom:none}
+
+/* ── DRAG TO REORDER (Catálogo) ── */
+.btn-g.on{background:var(--ud);border-color:var(--ud);color:#1a1206}
+html.light .btn-g.on{background:#92400e;border-color:#92400e;color:#fff}
+.cat-r.reorder-on{grid-template-columns:28px 1fr 90px 110px 96px 84px}
+.cat-drag-handle{display:flex;align-items:center;justify-content:center;color:var(--di);cursor:grab;touch-action:none;-webkit-tap-highlight-color:transparent;padding:6px 0}
+.cat-drag-handle:active{cursor:grabbing;color:var(--ud)}
+.cat-r.reorder-on{transition:transform .18s cubic-bezier(.22,.61,.36,1),background .1s}
+.cat-r.cat-dragging{position:relative;z-index:50;background:rgba(226,201,126,.08);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:none!important;border-radius:8px}
+html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 .cat-r:hover{background:rgba(255,255,255,.02)}
 
 /* CONFIG */
@@ -915,7 +943,10 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
   .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
+  .cat-r.reorder-on{grid-template-columns:24px 1fr 92px}
   .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-r > div:nth-child(4){display:none}
+  .cat-r.reorder-on .c-code,.cat-r.reorder-on>div:nth-child(5){display:none}
+  .cat-r.reorder-on>div:nth-child(4){display:block}
   .cat-r{align-items:center}
   .cat-actions{flex-direction:row;justify-content:flex-end;gap:6px;margin-top:6px;grid-column:1/-1}
   .cat-actions button{padding:5px 9px;font-size:11px}
@@ -923,6 +954,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .cat-price-short{display:inline}
   .cat-spark{display:none}
   .cat-360-t{display:none}
+  .cat-reorder-t{display:none}
 }
 
 /* ═══════════════════════════════════════════
@@ -1201,6 +1233,7 @@ select{cursor:pointer}
   <button class="mob-tab" data-p="config"      onclick="navigate('config')"><span class="mob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Config</button>
 </nav>
 
+<div id="offline-banner" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>Sin conexión</div>
 <div id="ptr-indicator" class="ptr-indicator"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
 <div id="asheet-ol" class="mol" style="display:none" onclick="if(event.target===this)closeActionSheet()">
   <div class="mbox" style="max-width:380px">
@@ -1480,6 +1513,25 @@ function setSyncDot(ok) {
   if (d) d.className = ok ? 'sync-dot' : 'sync-dot sync-off';
   const b = document.getElementById('offline-badge');
   if (b) b.style.display = navigator.onLine ? 'none' : 'block';
+  updateOfflineBanner();
+}
+
+let _wasOffline = false;
+function updateOfflineBanner() {
+  const el = document.getElementById('offline-banner');
+  if (!el) return;
+  if (!navigator.onLine) {
+    _wasOffline = true;
+    el.classList.remove('out');
+    el.style.display = 'flex';
+  } else if (_wasOffline) {
+    _wasOffline = false;
+    if (el.style.display !== 'none') {
+      el.classList.add('out');
+      el.addEventListener('animationend', ()=>{ el.style.display='none'; el.classList.remove('out'); }, {once:true});
+      toast('Conexión restablecida');
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -1536,6 +1588,7 @@ const ICONS = {
   package: '<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
   coin: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
   exchange: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  grip: '<circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/>',
   lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   ban: '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
@@ -2263,6 +2316,8 @@ window.addEventListener('scroll', ()=>{
 
 let _pageTransition = false;
 let _navDir = null;
+let catReorderMode = false;
+function toggleCatReorder(){ catReorderMode = !catReorderMode; render(); }
 
 function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
@@ -2319,6 +2374,47 @@ function haptic(pattern=10){
   if(navigator.vibrate) try{ navigator.vibrate(pattern); }catch{}
 }
 
+/* ── SONIDOS SUTILES DE INTERFAZ (Web Audio, sin assets externos) ── */
+function uiSoundsEnabled(){
+  return localStorage.getItem('tbr_ui_sounds') !== 'off';
+}
+function toggleUiSounds(){
+  const on = uiSoundsEnabled();
+  localStorage.setItem('tbr_ui_sounds', on ? 'off' : 'on');
+  const b = document.getElementById('sound-btn');
+  if (b) b.innerHTML = !on ? ic('zap')+' Activado' : ic('zap')+' Desactivado';
+  if (!on) playSound('ok');
+}
+let _audioCtx = null;
+function playSound(type='ok'){
+  if (!uiSoundsEnabled()) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if (_audioCtx.state==='suspended') _audioCtx.resume();
+    const ctx = _audioCtx;
+    const now = ctx.currentTime;
+    const tones = {
+      ok:    [[660,0],[990,.07]],
+      err:   [[220,0],[160,.09]],
+      tap:   [[440,0]],
+      open:  [[523,0],[784,.05]],
+      close: [[784,0],[523,.05]]
+    }[type] || [[660,0]];
+    tones.forEach(([freq,delay])=>{
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.value=freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t=now+delay;
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(.08,t+.01);
+      gain.gain.exponentialRampToValueAtTime(.0001,t+.16);
+      osc.start(t); osc.stop(t+.18);
+    });
+  } catch {}
+}
+
 /* ── CONFETTI ── */
 function fireConfetti(){
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2347,9 +2443,11 @@ function openActionSheet(title, actions){
     `<button class="asheet-action${a.danger?' danger':''}" onclick="closeActionSheet();${a.fn}">${a.icon||''}<span>${esc(a.label)}</span></button>`
   ).join('');
   document.getElementById('asheet-ol').style.display='flex';
+  playSound('open');
 }
 function closeActionSheet(){
   document.getElementById('asheet-ol').style.display='none';
+  playSound('close');
 }
 function openActionSheetFor(el){
   const type=el.dataset.lp, id=el.dataset.id;
@@ -2385,6 +2483,90 @@ function openActionSheetFor(el){
   } else return;
   openActionSheet(title, actions);
 }
+/* ── DRAG TO REORDER (Catálogo) ── */
+(function(){
+  let dragEl=null, container=null, rows=[], startY=0, startIdx=0, currentIdx=0, rowH=0;
+  document.addEventListener('touchstart', e=>{
+    const handle=e.target.closest('.cat-drag-handle');
+    if(!handle) return;
+    dragEl=handle.closest('.cat-r');
+    if(!dragEl) return;
+    container=dragEl.parentElement;
+    rows=[...container.querySelectorAll('.cat-r')];
+    startIdx=currentIdx=rows.indexOf(dragEl);
+    startY=e.touches[0].clientY;
+    rowH=dragEl.getBoundingClientRect().height;
+    dragEl.classList.add('cat-dragging');
+    haptic(10);
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!dragEl) return;
+    e.preventDefault();
+    const dy=e.touches[0].clientY-startY;
+    dragEl.style.transform=`translateY(${dy}px)`;
+    const newIdx=Math.max(0,Math.min(rows.length-1, startIdx+Math.round(dy/rowH)));
+    if(newIdx!==currentIdx){
+      currentIdx=newIdx;
+      rows.forEach((r,i)=>{
+        if(r===dragEl) return;
+        if(currentIdx>startIdx && i>startIdx && i<=currentIdx) r.style.transform=`translateY(${-rowH}px)`;
+        else if(currentIdx<startIdx && i<startIdx && i>=currentIdx) r.style.transform=`translateY(${rowH}px)`;
+        else r.style.transform='';
+      });
+      haptic(5);
+    }
+  }, {passive:false});
+  document.addEventListener('touchend', ()=>{
+    if(!dragEl) return;
+    dragEl.classList.remove('cat-dragging');
+    dragEl.style.transform='';
+    rows.forEach(r=>{ if(r!==dragEl) r.style.transform=''; });
+    if(currentIdx!==startIdx){
+      const cat=DB.get('catalog',[]);
+      const [item]=cat.splice(startIdx,1);
+      cat.splice(currentIdx,0,item);
+      DB.set('catalog',cat);
+      haptic(15);
+    }
+    dragEl=null;
+    render();
+  });
+})();
+/* ── SWIPE HORIZONTAL ENTRE PESTAÑAS ── */
+(function(){
+  let startX=0, startY=0, tracking=false, swiping=false;
+  const THRESH=70;
+  document.addEventListener('touchstart', e=>{
+    tracking=false;
+    if(catReorderMode) return;
+    if(e.target.closest('.hi-swipe-content,[data-lp],.cat-drag-handle,.mol,.qa-fab-wrap,.qa-ol,.qa-fan,input,textarea,select,.nav,.mob-tab,[style*="overflow-x"],.tbl-wrap,.rtw,.gsearch-ol,.cm-ol')) return;
+    const app=document.getElementById('app');
+    if(!app || !app.contains(e.target)) return;
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    tracking=true; swiping=false;
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!tracking) return;
+    const dx=e.touches[0].clientX-startX, dy=e.touches[0].clientY-startY;
+    if(!swiping){
+      if(Math.abs(dy)>Math.abs(dx)){ tracking=false; return; }
+      if(Math.abs(dx)<10) return;
+      swiping=true;
+    }
+  }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if(!tracking || !swiping){ tracking=false; swiping=false; return; }
+    const dx=e.changedTouches[0].clientX-startX;
+    tracking=false; swiping=false;
+    if(Math.abs(dx)<THRESH) return;
+    const idx=PAGE_ORDER.indexOf(PAGE);
+    if(idx<0) return;
+    if(dx<0 && idx<PAGE_ORDER.length-1){ haptic(10); navigate(PAGE_ORDER[idx+1]); }
+    else if(dx>0 && idx>0){ haptic(10); navigate(PAGE_ORDER[idx-1]); }
+  });
+})();
+
 /* Long-press (≈520ms) sobre tarjetas con [data-lp] abre el menú de acciones */
 (function(){
   let timer=null, moved=false, sx=0, sy=0, target=null;
@@ -2414,19 +2596,31 @@ function openActionSheetFor(el){
 function waIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M16.004 2.667c-7.363 0-13.333 5.97-13.333 13.333 0 2.353.615 4.65 1.784 6.667L2.67 29.333l6.823-1.784a13.27 13.27 0 0 0 6.51 1.658h.006c7.362 0 13.332-5.97 13.332-13.333S23.366 2.667 16.004 2.667zm0 24.4a11 11 0 0 1-5.61-1.535l-.402-.24-4.05 1.06 1.082-3.95-.262-.405a10.97 10.97 0 0 1-1.687-5.864c0-6.083 4.95-11.033 11.034-11.033 2.948 0 5.717 1.148 7.8 3.232a10.96 10.96 0 0 1 3.23 7.804c0 6.083-4.95 11.033-11.033 11.033zm6.05-8.27c-.332-.166-1.96-.967-2.263-1.077-.304-.11-.526-.166-.747.166s-.857 1.077-1.05 1.298c-.193.222-.387.25-.718.083-.332-.166-1.4-.516-2.667-1.645-.985-.879-1.65-1.964-1.844-2.296-.193-.332-.02-.51.146-.675.15-.149.332-.388.498-.582.166-.193.221-.332.332-.554.11-.222.055-.416-.028-.583-.083-.166-.747-1.8-1.024-2.465-.27-.648-.544-.56-.747-.57-.193-.01-.415-.012-.637-.012s-.582.083-.886.416c-.304.332-1.16 1.133-1.16 2.764s1.188 3.206 1.353 3.428c.166.222 2.337 3.567 5.66 5.001.79.341 1.407.545 1.888.697.793.252 1.514.217 2.084.131.636-.095 1.96-.801 2.236-1.575.276-.774.276-1.437.193-1.575-.083-.139-.304-.222-.636-.388z"/></svg>`;
 }
-function toast(msg, ok=true, ms=2500) {
+function toast(msg, ok=true, ms=2500, undo=null) {
   let el = document.getElementById('toast');
   if (el) { el.remove(); }
   el=document.createElement('div');
   el.id='toast';
   el.style.color = ok ? 'var(--gr)' : 'var(--re)';
   el.style.borderColor = ok ? 'rgba(74,222,128,.3)' : 'rgba(248,113,113,.3)';
-  el.innerHTML = `<span class="toast-icon ${ok?'ok':'err'}">${ok?`<span class="toast-check">${ic('check')}</span>`:ic('alert')}</span><span class="toast-msg">${msg}</span><span class="toast-bar" style="animation-duration:${ms}ms"></span>`;
+  const undoBtn = undo ? `<button class="toast-undo" id="toast-undo-btn">Deshacer</button>` : '';
+  el.innerHTML = `<span class="toast-icon ${ok?'ok':'err'}">${ok?`<span class="toast-check">${ic('check')}</span>`:ic('alert')}</span><span class="toast-msg">${msg}</span>${undoBtn}<span class="toast-bar" style="animation-duration:${ms}ms"></span>`;
   document.body.appendChild(el);
+  playSound(ok?'ok':'err');
+  if (undo) {
+    document.getElementById('toast-undo-btn').onclick = () => {
+      clearTimeout(el._t);
+      el.removeEventListener('animationend', el._outHandler);
+      el.remove();
+      haptic(10);
+      undo();
+    };
+  }
   clearTimeout(el._t);
+  el._outHandler = ()=>el.remove();
   el._t = setTimeout(()=>{
     el.classList.add('out');
-    el.addEventListener('animationend', ()=>el.remove(), {once:true});
+    el.addEventListener('animationend', el._outHandler, {once:true});
   }, ms);
 }
 
@@ -4014,8 +4208,9 @@ function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)retu
 ═══════════════════════════════════════════ */
 function pgCat() {
   const cat=DB.get('catalog',[]);
+  const ro=catReorderMode;
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button><button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -4023,7 +4218,8 @@ function pgCat() {
       <div class="ph-l" style="text-align:right"><span class="cat-price-full">Último precio</span><span class="cat-price-short">Precio</span></div>
       <div class="ph-l">Actualizado</div><div></div>
     </div>
-    ${cat.map((c,i)=>`<div class="cat-r" data-lp="cat" data-id="${c.id}"${stg(i)}>
+    ${cat.map((c,i)=>`<div class="cat-r${ro?' reorder-on':''}" ${ro?'':`data-lp="cat"`} data-id="${c.id}" data-idx="${i}"${stg(i)}>
+      ${ro?`<div class="cat-drag-handle">${ic('grip')}</div>`:''}
       <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<button class="badge stock-chip ${c.stock<=0?'badge-r':c.stock<=2?'badge-y':'badge-g'}" onclick="openStockAdj('${c.id}')" title="Tocá para ajustar el stock">${c.stock<=0?'Sin stock':c.stock<=2?`Stock bajo: ${c.stock}`:`Stock: ${c.stock}`}</button><div class="stock-bar"><div class="stock-bar-fill ${c.stock<=0?'r':c.stock<=2?'y':'g'}" style="width:${Math.max(4,Math.min(100,c.stock/10*100))}%"></div></div>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
@@ -4142,7 +4338,21 @@ function saveCat(){
   else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
-function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{DB.set('catalog',DB.get('catalog',[]).filter(c=>c.id!==id));render();});}
+function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
+  const cat=DB.get('catalog',[]);
+  const idx=cat.findIndex(c=>c.id===id);
+  if(idx<0) return;
+  const [removed]=cat.splice(idx,1);
+  DB.set('catalog',cat);
+  render();
+  toast('Producto eliminado',true,4000,()=>{
+    const c2=DB.get('catalog',[]);
+    c2.splice(idx,0,removed);
+    DB.set('catalog',c2);
+    render();
+    toast('Producto restaurado');
+  });
+});}
 
 /* ═══════════════════════════════════════════
    MOVIMIENTOS DE STOCK — historial + ajuste manual
@@ -5029,6 +5239,16 @@ function pgConfig() {
         <div class="hint">Cambiá entre modo oscuro y modo claro.</div>
       </div>
       <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme(event)" title="Cambiar tema claro/oscuro">${isLight?ic('sun')+' Modo claro':ic('moon')+' Modo oscuro'}</button>
+    </div>
+  </div>
+
+  <div class="card mb24">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;color:var(--ch)">Sonidos de interfaz</div>
+        <div class="hint">Pequeños sonidos al guardar, confirmar o eliminar.</div>
+      </div>
+      <button id="sound-btn" class="theme-btn" style="margin-left:0" onclick="toggleUiSounds()" title="Activar/desactivar sonidos">${uiSoundsEnabled()?ic('zap')+' Activado':ic('zap')+' Desactivado'}</button>
     </div>
   </div>
 
@@ -6283,7 +6503,21 @@ function advancePed(id,newStatus){
   toast(`${o.nro}: ${PED_STATUS_LABEL[newStatus]||newStatus}`);
 }
 function cancelPed(id){confirm2('¿Cancelar este pedido? Quedará en el historial como cancelado.',()=>advancePed(id,'cancelado'),'Cancelar pedido','cm-ok');}
-function delPed(id){confirm2('¿Borrar este pedido?',()=>{DB.set('pedidos',DB.get('pedidos',[]).filter(o=>o.id!==id));render();});}
+function delPed(id){confirm2('¿Borrar este pedido?',()=>{
+  const peds=DB.get('pedidos',[]);
+  const idx=peds.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  const [removed]=peds.splice(idx,1);
+  DB.set('pedidos',peds);
+  render();
+  toast('Pedido eliminado',true,4000,()=>{
+    const p2=DB.get('pedidos',[]);
+    p2.splice(idx,0,removed);
+    DB.set('pedidos',p2);
+    render();
+    toast('Pedido restaurado');
+  });
+});}
 
 /* Marca el pedido como Entregado/Cobrado y genera automáticamente el comprobante
    de venta (factura) con todos los artículos del pedido, referenciándolo */
@@ -6762,7 +6996,21 @@ function saveCli(){
   DB.set('clientes',clientes);
   closeCli();render();toast('Cliente guardado');
 }
-function delCli(id){confirm2('¿Eliminar este cliente? El historial de pedidos no se borra.',()=>{DB.set('clientes',DB.get('clientes',[]).filter(c=>c.id!==id));render();});}
+function delCli(id){confirm2('¿Eliminar este cliente? El historial de pedidos no se borra.',()=>{
+  const clis=DB.get('clientes',[]);
+  const idx=clis.findIndex(c=>c.id===id);
+  if(idx<0) return;
+  const [removed]=clis.splice(idx,1);
+  DB.set('clientes',clis);
+  render();
+  toast('Cliente eliminado',true,4000,()=>{
+    const c2=DB.get('clientes',[]);
+    c2.splice(idx,0,removed);
+    DB.set('clientes',c2);
+    render();
+    toast('Cliente restaurado');
+  });
+});}
 
 /* ═══════════════════════════════════════════
    PDF + COMPARTIR POR WHATSAPP (con archivo adjunto cuando es posible)
@@ -7659,6 +7907,7 @@ window.onload = async function() {
   }
   initTheme();
   initCompact();
+  updateOfflineBanner();
   // Force mobile nav visibility on small screens (iOS Safari fix)
   // !important no funciona en inline styles via JS, usar setProperty
   if (window.innerWidth <= 768 || screen.width <= 768) {
