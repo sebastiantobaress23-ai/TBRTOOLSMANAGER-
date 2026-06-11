@@ -3348,29 +3348,54 @@ function pgCat() {
       <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
-      <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0"></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px" title="Sugerir según costo + margen deseado">Sugerir</button></div></div>
-      <div class="hint">Es lo que le cobrás al cliente en Pedidos. "Sugerir" lo calcula con tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>) más el margen deseado de Configuración → Ventas directas.</div>
+      <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 90px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px" title="Sugerir según costo + margen">Sugerir</button></div></div>
+      <div class="hint">Es lo que le cobrás al cliente en Pedidos. El campo "%" es el margen sobre tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>): cambialo para recalcular el precio, o editá el precio y se recalcula el margen. "Sugerir" usa el margen de Configuración → Ventas directas si no cargaste uno propio acá.</div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
     </div></div>
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-id').value='';updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
 function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
-function updateCeCostHint(){
+function ceCost(){
   const usd=parseFloat(document.getElementById('ce-price').value)||0;
-  const cost=Math.round(usd*lastTCE());
+  return Math.round(usd*lastTCE());
+}
+function updateCeCostHint(){
+  const cost=ceCost();
   const hint=document.getElementById('ce-cost-hint');
   if(hint) hint.textContent=fmtA(cost);
+  syncCeMargin('cost');
+}
+// Mantiene sincronizados precio de venta y margen % del producto: al editar
+// el margen se recalcula el precio según el costo actual; al editar el
+// precio (o cambiar el costo) se recalcula el margen mostrado.
+function syncCeMargin(source){
+  const priceEl=document.getElementById('ce-saleprice');
+  const marginEl=document.getElementById('ce-margin');
+  if(!priceEl||!marginEl) return;
+  const cost=ceCost();
+  if(source==='margin'){
+    if(!cost) return;
+    const margin=parseFloat(marginEl.value)||0;
+    priceEl.value=Math.round(cost*(1+margin/100));
+  } else {
+    const price=parseFloat(priceEl.value)||0;
+    marginEl.value = cost ? Math.round((price-cost)/cost*100) : '';
+  }
 }
 function sugerirVenta(){
-  const usd=parseFloat(document.getElementById('ce-price').value)||0;
-  const cost=Math.round(usd*lastTCE());
+  const cost=ceCost();
   if(!cost){toast('Ingresá primero el precio USD para calcular el costo.',false);return;}
-  const s=DB.get('settings',{});
-  const margin=s.directMargin!=null?s.directMargin:30;
+  const marginEl=document.getElementById('ce-margin');
+  let margin=parseFloat(marginEl.value);
+  if(isNaN(margin)){
+    const s=DB.get('settings',{});
+    margin=s.directMargin!=null?s.directMargin:30;
+    marginEl.value=margin;
+  }
   document.getElementById('ce-saleprice').value=Math.round(cost*(1+margin/100));
 }
 function saveCat(){
