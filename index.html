@@ -424,9 +424,19 @@ html.light body::before{
 .qa-fan.open{pointer-events:auto}
 .qa-mini{position:absolute;left:0;top:0;width:42px;height:42px;margin:-21px 0 0 -21px;background:transparent;border:none;padding:0;cursor:pointer;display:block;opacity:0;transform:translate(0,0) scale(.3);transition:opacity .16s ease,transform .3s cubic-bezier(.34,1.56,.64,1);transition-delay:0s}
 .qa-fan.open .qa-mini{opacity:1;transform:translate(var(--dx,0),var(--dy,0)) scale(1);transition-delay:var(--dl,0s)}
-.qa-mini-ic{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(240,236,224,.3);color:#f0ece0;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .15s,background .15s}
+.qa-mini-ic{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(240,236,224,.3);color:#f0ece0;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .15s,background .15s,transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
 .qa-mini:hover .qa-mini-ic{border-color:rgba(240,236,224,.6);background:rgba(240,236,224,.1)}
 .qa-mini-lbl{position:absolute;left:50%;top:50%;transform:translate(calc(-100% + var(--lx,-33px)),calc(-50% + var(--ly,0px)));font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+/* Acción principal del abanico (Registrar venta): más grande y con acento dorado para destacarla del resto */
+.qa-mini.qa-mini-primary{width:58px;height:58px;margin:-29px 0 0 -29px}
+.qa-mini.qa-mini-primary .qa-mini-ic{background:var(--ud);border-color:var(--ud);color:#1a1206;box-shadow:0 10px 30px rgba(226,201,126,.38),inset 0 1px 0 rgba(255,255,255,.35)}
+.qa-mini.qa-mini-primary:hover .qa-mini-ic{transform:scale(1.06);box-shadow:0 12px 36px rgba(226,201,126,.55),inset 0 1px 0 rgba(255,255,255,.4)}
+.qa-mini.qa-mini-primary .qa-mini-lbl{color:var(--ud);font-weight:800;border-color:rgba(226,201,126,.35)}
+/* Accesos a otras secciones: más chicos y atenuados para no competir con la acción principal */
+.qa-mini.qa-mini-nav{width:38px;height:38px;margin:-19px 0 0 -19px}
+.qa-mini.qa-mini-nav .qa-mini-ic{background:rgba(20,20,20,.85);border-color:rgba(240,236,224,.12);color:rgba(240,236,224,.55)}
+.qa-mini.qa-mini-nav:hover .qa-mini-ic{color:#f0ece0;border-color:rgba(240,236,224,.4);background:rgba(240,236,224,.1)}
+.qa-mini.qa-mini-nav .qa-mini-lbl{font-size:9px;opacity:.75;padding:5px 8px}
 .qa-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px}
 .qa-box{position:relative;width:100%;max-width:420px;background:rgba(20,20,20,.97);border:1px solid rgba(226,201,126,.16);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;animation:pgFadeIn .18s ease both}
 .qa-box::before{content:'';position:absolute;top:-90px;right:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(226,201,126,.1) 0%,rgba(226,201,126,.04) 40%,rgba(226,201,126,0) 72%);filter:blur(30px);pointer-events:none;z-index:0}
@@ -991,33 +1001,33 @@ select{cursor:pointer}
 <div id="qa-fan-bd" class="qa-fan-bd" onclick="closeFan()"></div>
 <div id="qa-fab" class="qa-fab-wrap">
   <div id="qa-fan" class="qa-fan">
+    <button class="qa-mini qa-mini-primary" onclick="qaFanSale()">
+      <span class="qa-mini-lbl">Registrar venta</span>
+      <span class="qa-mini-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+    </button>
     <button class="qa-mini" id="qa-mini-repeat" style="display:none" onclick="qaFanRepeat()">
       <span class="qa-mini-lbl" id="qa-mini-repeat-lbl">Repetir venta</span>
       <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span>
     </button>
-    <button class="qa-mini" onclick="qaFanSale()">
-      <span class="qa-mini-lbl">Registrar venta</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-    </button>
-    <button class="qa-mini" onclick="qaFanGo('compra')">
+    <button class="qa-mini qa-mini-nav" onclick="qaFanGo('compra')">
       <span class="qa-mini-lbl">Nueva compra</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+      <span class="qa-mini-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
     </button>
-    <button class="qa-mini" onclick="qaFanGo('orden')">
+    <button class="qa-mini qa-mini-nav" onclick="qaFanGo('orden')">
       <span class="qa-mini-lbl">Orden de compra</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+      <span class="qa-mini-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
     </button>
-    <button class="qa-mini" onclick="qaFanGo('cotizaciones')">
+    <button class="qa-mini qa-mini-nav" onclick="qaFanGo('cotizaciones')">
       <span class="qa-mini-lbl">Cotiz. Proveedores</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="qa-mini-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
     </button>
-    <button class="qa-mini" onclick="qaFanGo('pedidos')">
+    <button class="qa-mini qa-mini-nav" onclick="qaFanGo('pedidos')">
       <span class="qa-mini-lbl">Pedidos</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg></span>
+      <span class="qa-mini-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg></span>
     </button>
-    <button class="qa-mini" onclick="qaFanSim()">
+    <button class="qa-mini qa-mini-nav" onclick="qaFanSim()">
       <span class="qa-mini-lbl">Simulador de ganancias</span>
-      <span class="qa-mini-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l4-8z"/><line x1="9" y1="11" x2="15" y2="11"/></svg></span>
+      <span class="qa-mini-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l4-8z"/><line x1="9" y1="11" x2="15" y2="11"/></svg></span>
     </button>
   </div>
   <div class="qa-fab" onclick="toggleQA()" title="Acción rápida">
@@ -1694,15 +1704,23 @@ function qaFanLayout(){
   // queda pegada a la izquierda de su propio ícono, a la misma altura, así
   // siempre se identifica claramente a qué botón pertenece y nunca se separan
   // ni se solapan, sea cual sea el tamaño de pantalla o la cantidad de ítems.
+  // El radio de cada ícono varía según su jerarquía visual (principal, normal
+  // o accesos secundarios más chicos), así que el espaciado se calcula acorde
+  // al tamaño real de cada botón en vez de usar un paso fijo.
   const items=[...document.querySelectorAll('#qa-fan .qa-mini')].filter(b=>b.style.display!=='none');
-  const spacing=58, iconR=21, gap=12;
+  const fabR=27, gap=10;
+  const radiusOf=btn=>btn.classList.contains('qa-mini-primary')?29:btn.classList.contains('qa-mini-nav')?19:21;
+  let cum=fabR;
   items.forEach((btn,i)=>{
+    const r=radiusOf(btn);
+    cum+=gap+r;
     btn.style.setProperty('--dx','0px');
-    btn.style.setProperty('--dy',(-(spacing*(i+1))).toFixed(1)+'px');
+    btn.style.setProperty('--dy',(-cum).toFixed(1)+'px');
     btn.style.setProperty('--dl',(i*0.05).toFixed(2)+'s');
+    cum+=r;
     const lbl=btn.querySelector('.qa-mini-lbl');
     if(lbl){
-      lbl.style.setProperty('--lx',(-(iconR+gap)).toFixed(1)+'px');
+      lbl.style.setProperty('--lx',(-(r+12)).toFixed(1)+'px');
       lbl.style.setProperty('--ly','0px');
     }
   });
@@ -1771,21 +1789,17 @@ function qaFillCost(){
   document.getElementById('qa-cost').value = suggestSaleCost(code, name) || '';
   qaSuggestPrice();
 }
-// Sugiere el precio de venta del producto elegido según el canal actual: en
+// Sugiere el precio de venta del producto elegido según el canal actual:
 // "Venta directa" usa el precio de venta del catálogo (o costo + margen
-// directo), igual que en el formulario completo de Ventas. En "Mercado
-// Libre" no hay un precio sugerido (depende de la publicación), así que no
-// se modifica lo que haya cargado el usuario.
+// directo); "Mercado Libre" calcula costo + margen + comisión ML + envío,
+// igual que en el formulario completo de Ventas.
 function qaSuggestPrice(){
   const channel=document.getElementById('qa-channel')?.value==='directa'?'directa':'ml';
-  if(channel!=='directa') return;
   const sel=document.getElementById('qa-prod');
   const opt=sel?.options[sel.selectedIndex];
   if(!opt||!opt.value) return;
   const [name,code]=opt.value.split('|||');
-  const cat=DB.get('catalog',[]);
-  const c=cat.find(x=>(code && x.code===code) || (!code && x.name===name));
-  const price=(c&&c.salePrice) || suggestDirectPrice(code, name);
+  const price=suggestSalePrice(code, name, channel);
   const priceEl=document.getElementById('qa-price');
   if(priceEl) priceEl.value = price || '';
 }
@@ -3053,6 +3067,31 @@ function suggestDirectPrice(code, name){
   const margin = s.directMargin!=null ? s.directMargin : 30;
   return Math.round(cost * (1 + margin/100));
 }
+// Precio sugerido para ventas por Mercado Libre: además del costo y el margen
+// directo, suma la comisión de ML y el costo de envío configurados, de modo
+// que la ganancia neta (precio - comisión% - envío - costo) sea equivalente
+// al margen directo. Misma fórmula que se usa en el Cotizador.
+function suggestMLPrice(code, name){
+  const cost = suggestSaleCost(code, name);
+  if (!cost) return 0;
+  const s = DB.get('settings',{});
+  const margin = s.directMargin!=null ? s.directMargin : 30;
+  const com = s.mlCom!=null ? s.mlCom : 16;
+  const env = s.mlEnv!=null ? s.mlEnv : 7500;
+  return Math.round(cost*(1+margin/100)/(1-com/100) + env);
+}
+// Sugiere el precio de venta según el canal: en "Venta directa" usa el precio
+// de venta cargado en el catálogo (o costo + margen directo); en "Mercado
+// Libre" calcula costo + margen + comisión + envío, ya que el precio del
+// catálogo no contempla esos descuentos.
+function suggestSalePrice(code, name, channel){
+  if(channel==='directa'){
+    const cat=DB.get('catalog',[]);
+    const c=cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+    return (c&&c.salePrice) || suggestDirectPrice(code, name);
+  }
+  return suggestMLPrice(code, name);
+}
 function fillSaleCost(){
   const sel=document.getElementById('sale-prod');
   const opt=sel.options[sel.selectedIndex];
@@ -3060,9 +3099,8 @@ function fillSaleCost(){
   const [name,code]=opt.value.split('|||');
   const cost = suggestSaleCost(code, name);
   document.getElementById('sale-cost').value = cost || '';
-  const cat=DB.get('catalog',[]);
-  const c=cat.find(x=>(code && x.code===code) || (!code && x.name===name));
-  const price = (c&&c.salePrice) || suggestDirectPrice(code, name);
+  const channel=document.getElementById('sale-channel')?.value==='directa'?'directa':'ml';
+  const price = suggestSalePrice(code, name, channel);
   document.getElementById('sale-price').value = price || '';
   syncSaleMargin('cost');
 }
@@ -3093,11 +3131,24 @@ function setSaleChannel(ch){
   input.value=ch;
   document.querySelectorAll('#sale-channel-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.ch===ch));
   const hint=document.getElementById('sale-channel-hint');
-  if(!hint) return;
-  const s=DB.get('settings',{});
-  hint.textContent = ch==='directa'
-    ? 'Venta directa: la rentabilidad real es precio − costo, sin descontar comisión ni envío de Mercado Libre.'
-    : `El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y envío (${fmtA(s.mlEnv??7500)}) configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.`;
+  if(hint){
+    const s=DB.get('settings',{});
+    hint.textContent = ch==='directa'
+      ? 'Venta directa: la rentabilidad real es precio − costo, sin descontar comisión ni envío de Mercado Libre.'
+      : `El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y envío (${fmtA(s.mlEnv??7500)}) configurados. Si cargás cliente/teléfono podés enviarle el comprobante por WhatsApp.`;
+  }
+  // Recalcula el precio sugerido del producto elegido para el nuevo canal
+  // (directa = costo + margen; ML = costo + margen + comisión + envío).
+  const sel=document.getElementById('sale-prod');
+  const opt=sel?.options[sel.selectedIndex];
+  if(opt&&opt.value){
+    const [name,code]=opt.value.split('|||');
+    const priceEl=document.getElementById('sale-price');
+    if(priceEl){
+      priceEl.value = suggestSalePrice(code, name, ch) || '';
+      syncSaleMargin('cost');
+    }
+  }
 }
 // Si el nombre ingresado coincide con un cliente ya guardado, completa su
 // teléfono automáticamente (igual que en Pedidos).
