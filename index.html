@@ -868,7 +868,9 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 /* Tabs de escritorio: indicador con gradiente */
 .tab.on{color:rgba(226,201,126,.95)!important;background:linear-gradient(180deg,rgba(226,201,126,.09),transparent 70%)}
 .tab{position:relative}
-.tab.on::after{content:'';position:absolute;left:14px;right:14px;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px;box-shadow:0 0 8px rgba(226,201,126,.5)}
+.nav-indicator{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:linear-gradient(90deg,transparent,rgba(226,201,126,.9),transparent);border-radius:2px;box-shadow:0 0 8px rgba(226,201,126,.5);pointer-events:none;transition:transform .35s cubic-bezier(.22,.61,.36,1),width .35s cubic-bezier(.22,.61,.36,1)}
+.nav-indicator.no-anim{transition:none}
+@media (prefers-reduced-motion: reduce){.nav-indicator{transition:none}}
 
 /* Header con leve resplandor */
 .hdr{background:linear-gradient(180deg,rgba(18,18,18,1),rgba(8,8,8,1))}
@@ -1075,6 +1077,7 @@ select{cursor:pointer}
 </div>
 
 <nav class="nav">
+  <div class="nav-indicator no-anim" id="nav-indicator"></div>
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
   <div class="tab"     data-p="historial"   onclick="navigate('historial')">Historial</div>
@@ -1985,6 +1988,7 @@ function navigate(p) {
     t.classList.toggle('on',active);
     if (active) t.scrollIntoView({inline:'center', block:'nearest'});
   });
+  updateNavIndicator();
   const acc = document.getElementById('hdr-accent');
   if (acc) {
     const c = PAGE_COLORS[p]||'transparent';
@@ -1995,6 +1999,21 @@ function navigate(p) {
   render();
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+function updateNavIndicator(){
+  const nav = document.querySelector('.nav');
+  const ind = document.getElementById('nav-indicator');
+  const active = nav?.querySelector('.tab.on');
+  if(!nav||!ind||!active) return;
+  ind.style.width = active.offsetWidth+'px';
+  ind.style.transform = `translateX(${active.offsetLeft}px)`;
+  requestAnimationFrame(()=>ind.classList.remove('no-anim'));
+}
+window.addEventListener('resize', ()=>{
+  const ind = document.getElementById('nav-indicator');
+  if(ind) ind.classList.add('no-anim');
+  updateNavIndicator();
+});
 
 let _pageTransition = false;
 
