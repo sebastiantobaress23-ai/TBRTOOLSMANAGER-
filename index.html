@@ -3204,11 +3204,19 @@ function suggestDirectPrice(code, name){
   const margin = s.directMargin!=null ? s.directMargin : 30;
   return Math.round(cost * (1 + margin/100));
 }
-// Precio sugerido para ventas por Mercado Libre: además del costo y el margen
-// directo, suma la comisión de ML y el costo de envío configurados, de modo
-// que la ganancia neta (precio - comisión% - envío - costo) sea equivalente
-// al margen directo. Misma fórmula que se usa en el Cotizador.
+// Precio sugerido para ventas por Mercado Libre: si el producto tiene una
+// publicación guardada (Publicar ML), se usa el precio ya calculado ahí
+// (con su margen/comisión/envío personalizados). Si no, se calcula con costo
+// + margen directo + comisión + envío configurados, de modo que la ganancia
+// neta (precio - comisión% - envío - costo) sea equivalente al margen
+// directo. Misma fórmula que se usa en el Cotizador.
 function suggestMLPrice(code, name){
+  const key=(code||name||'').toLowerCase();
+  const pubs=DB.get('mlpubs',[]);
+  for(let i=pubs.length-1;i>=0;i--){
+    const pp=(pubs[i].products||[]).find(p=>(p.c||p.n||'').toLowerCase()===key);
+    if(pp && pp.precio) return Math.round(pp.precio);
+  }
   const cost = suggestSaleCost(code, name);
   if (!cost) return 0;
   const s = DB.get('settings',{});
