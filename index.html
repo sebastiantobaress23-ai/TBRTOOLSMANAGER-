@@ -1124,6 +1124,64 @@ select{cursor:pointer}
    STORAGE — localStorage primario + Firebase
 ═══════════════════════════════════════════ */
 const FB = 'https://tbr-tools-manager-default-rtdb.firebaseio.com/tbr';
+const FB_API_KEY = 'AIzaSyCH9N-fRsuTmJYxaiUBFML8EjhLKAnXDsM';
+
+// Autenticación anónima de Firebase: permite que las reglas de la base de
+// datos exijan "auth != null" sin pedirle login al usuario. El token se
+// guarda en localStorage y se reutiliza/renueva automáticamente.
+let _authToken = null;
+let _authPromise = null;
+async function ensureAuth() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('tbr__auth')||'null');
+    if (stored && stored.idToken && stored.exp && stored.exp - Date.now() > 60000) {
+      _authToken = stored.idToken;
+      return _authToken;
+    }
+  } catch {}
+  if (_authPromise) return _authPromise;
+  _authPromise = (async () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('tbr__auth')||'null');
+      let d = null;
+      if (stored && stored.refreshToken) {
+        const r = await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_API_KEY}`, {
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded'},
+          body:`grant_type=refresh_token&refresh_token=${encodeURIComponent(stored.refreshToken)}`
+        });
+        if (r.ok) {
+          const j = await r.json();
+          d = {idToken:j.id_token, refreshToken:j.refresh_token, expiresIn:j.expires_in};
+        }
+      }
+      if (!d) {
+        const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB_API_KEY}`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({returnSecureToken:true})
+        });
+        if (!r.ok) return null;
+        const j = await r.json();
+        d = {idToken:j.idToken, refreshToken:j.refreshToken, expiresIn:j.expiresIn};
+      }
+      _authToken = d.idToken;
+      try { localStorage.setItem('tbr__auth', JSON.stringify({idToken:d.idToken, refreshToken:d.refreshToken, exp:Date.now()+(+d.expiresIn)*1000})); } catch {}
+      return _authToken;
+    } catch { return null; }
+    finally { _authPromise = null; }
+  })();
+  return _authPromise;
+}
+// Arma la URL de un endpoint de Firebase agregando el token de auth si está disponible
+async function fbUrl(path, extraQs='') {
+  const token = await ensureAuth();
+  const sep = path.includes('?') ? '&' : '?';
+  let url = path + (extraQs ? sep+extraQs : '');
+  if (token) url += (url.includes('?') ? '&' : '?') + 'auth=' + token;
+  return url;
+}
+
 const DB = {
   _t: {},
   get(k, def=null) {
@@ -1153,13 +1211,14 @@ const DB = {
   },
   del(k) {
     try { localStorage.removeItem('tbr_'+k); } catch {}
-    if (navigator.onLine) fetch(`${FB}/${k}.json`,{method:'DELETE'}).catch(()=>{});
+    if (navigator.onLine) fbUrl(`${FB}/${k}.json`).then(url=>fetch(url,{method:'DELETE'})).catch(()=>{});
   }
 };
 
 async function fbWrite(k, v) {
   try {
-    const r = await fetch(`${FB}/${k}.json`, {
+    const url = await fbUrl(`${FB}/${k}.json`);
+    const r = await fetch(url, {
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(v)
@@ -1213,7 +1272,8 @@ async function fbSync() {
     }
   } catch {}
   try {
-    const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(5000)});
+    const url = await fbUrl(FB+'.json', 't='+Date.now());
+    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
     if (!r.ok) return;
     const d = await r.json();
     if (!d) return;
@@ -1252,7 +1312,8 @@ async function fbSync() {
 async function initialSyncIfFresh() {
   if (!navigator.onLine) return;
   try {
-    const r = await fetch(FB+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(8000)});
+    const url = await fbUrl(FB+'.json', 't='+Date.now());
+    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
     if (!r.ok) return;
     const d = await r.json();
     if (!d) return;
