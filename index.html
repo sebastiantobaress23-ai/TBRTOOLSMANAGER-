@@ -513,6 +513,16 @@ html.light body::before{
 @keyframes pgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes modalBackdropIn{from{opacity:0}to{opacity:1}}
 @keyframes modalBoxIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* ── DIRECTIONAL PAGE TRANSITIONS ── */
+@keyframes pageSlideInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pageSlideInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+#app.slide-r{animation:pageSlideInR .32s cubic-bezier(.22,.61,.36,1) both}
+#app.slide-l{animation:pageSlideInL .32s cubic-bezier(.22,.61,.36,1) both}
+
+/* ── THEME TRANSITION (View Transitions API) ── */
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-image-pair(root){isolation:isolate}
 @keyframes numPulse{0%{transform:scale(1);text-shadow:none}30%{transform:scale(1.12);text-shadow:0 0 16px currentColor}100%{transform:scale(1);text-shadow:none}}
 .num-pulse{display:inline-block;animation:numPulse .5s ease}
 
@@ -809,6 +819,24 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .mbox{background:#111;border:1px solid var(--b3);border-radius:var(--r2);width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both}
 .mhdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--b2);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--si);position:sticky;top:0;background:#111;z-index:1}
 .mbody{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+
+/* ── BOTTOM SHEET (mobile modals) ── */
+@keyframes sheetUpIn{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+  .mol{align-items:flex-end;padding:0}
+  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;max-height:88vh;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
+  .mhdr{padding-top:20px;border-radius:18px 18px 0 0}
+  .mhdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
+  html.light .mhdr::before{background:rgba(0,0,0,.15)}
+}
+@media(prefers-reduced-motion:reduce){.mbox{animation:none}}
+
+/* ── ACTION SHEET (long-press menu) ── */
+.asheet-list{display:flex;flex-direction:column;padding:6px}
+.asheet-action{display:flex;align-items:center;gap:12px;width:100%;padding:14px 14px;background:none;border:none;color:#fff;font-size:14px;font-family:'Barlow',sans-serif;text-align:left;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
+.asheet-action:active{background:rgba(255,255,255,.06)}
+.asheet-action.danger{color:var(--re)}
+html.light .asheet-action{color:#222}
 
 /* CONFIRM MODAL */
 .cm-ol{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
@@ -1174,6 +1202,12 @@ select{cursor:pointer}
 </nav>
 
 <div id="ptr-indicator" class="ptr-indicator"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+<div id="asheet-ol" class="mol" style="display:none" onclick="if(event.target===this)closeActionSheet()">
+  <div class="mbox" style="max-width:380px">
+    <div class="mhdr"><span id="asheet-title"></span><button class="btn-rm" onclick="closeActionSheet()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div id="asheet-list" class="asheet-list"></div>
+  </div>
+</div>
 <div id="app"></div>
 
 <!-- CONFIRM MODAL -->
@@ -1520,7 +1554,8 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   receipt: '<path d="M4 2h16v20l-3-2-3 2-3-2-3 2-3-2-1 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/>',
   barChart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-  cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'
+  cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
 };
 function ic(name, size=14, extraStyle=''){
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0${extraStyle?';'+extraStyle:''}">${ICONS[name]||''}</svg>`;
@@ -1712,6 +1747,7 @@ const DRAFT_KEY = 'tbr_draft_v2';
    NAVIGATION
 ═══════════════════════════════════════════ */
 const PAGE_COLORS = {dashboard:'rgba(74,222,128,.6)',compra:'rgba(129,140,248,.6)',historial:'rgba(45,212,191,.6)',ventas:'rgba(74,222,128,.5)',pedidos:'rgba(226,201,126,.6)',viaje:'rgba(129,140,248,.5)',catalogo:'rgba(226,201,126,.6)',stats:'rgba(251,191,36,.6)',publicar:'rgba(251,146,60,.6)',competencia:'rgba(248,113,113,.5)',config:'rgba(100,100,100,.4)',orden:'rgba(45,212,191,.6)',proveedores:'rgba(52,211,153,.6)',clientes:'rgba(244,114,182,.6)'};
+const PAGE_ORDER = ['dashboard','compra','historial','ventas','pedidos','catalogo','stats','publicar','competencia','orden','cotizaciones','proveedores','clientes','viaje','config'];
 function openGSearch(){
   const ol=document.getElementById('gsearch-ol');
   ol.style.display='flex';
@@ -2077,6 +2113,8 @@ function navigate(p) {
   if (PAGE !== p && PAGE === 'compra') { fleteReal = null; }
   if (PAGE !== p && PAGE === 'historial') { histSearch = ''; }
   if (PAGE !== p && PAGE === 'clientes') { cliSearch = ''; }
+  const fromIdx = PAGE_ORDER.indexOf(PAGE), toIdx = PAGE_ORDER.indexOf(p);
+  _navDir = (fromIdx>=0 && toIdx>=0 && toIdx!==fromIdx) ? (toIdx>fromIdx?'r':'l') : null;
   PAGE = p;
   document.querySelectorAll('.tab,.mob-tab').forEach(t=>{
     const active = t.dataset.p===p;
@@ -2224,6 +2262,7 @@ window.addEventListener('scroll', ()=>{
 })();
 
 let _pageTransition = false;
+let _navDir = null;
 
 function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
@@ -2234,9 +2273,12 @@ function render() {
     app.innerHTML = fns[PAGE]();
     if (_pageTransition) {
       _pageTransition = false;
+      app.classList.remove('slide-r','slide-l');
       app.style.animation = 'none';
       void app.offsetWidth;
       app.style.animation = '';
+      if (_navDir) app.classList.add(_navDir==='r'?'slide-r':'slide-l');
+      _navDir = null;
     }
     after[PAGE]?.();
   }
@@ -2297,6 +2339,77 @@ function fireConfetti(){
   document.body.appendChild(wrap);
   setTimeout(()=>wrap.remove(),2900);
 }
+
+/* ── ACTION SHEET (menú contextual de long-press) ── */
+function openActionSheet(title, actions){
+  document.getElementById('asheet-title').textContent = title||'';
+  document.getElementById('asheet-list').innerHTML = actions.map(a=>
+    `<button class="asheet-action${a.danger?' danger':''}" onclick="closeActionSheet();${a.fn}">${a.icon||''}<span>${esc(a.label)}</span></button>`
+  ).join('');
+  document.getElementById('asheet-ol').style.display='flex';
+}
+function closeActionSheet(){
+  document.getElementById('asheet-ol').style.display='none';
+}
+function openActionSheetFor(el){
+  const type=el.dataset.lp, id=el.dataset.id;
+  if(!type||!id) return;
+  let title='', actions=[];
+  if(type==='ped'){
+    const o=DB.get('pedidos',[]).find(x=>x.id===id);
+    if(!o) return;
+    title=`${o.nro} · ${o.cliente||''}`;
+    actions=[
+      {label:'Ver detalle',icon:ic('eye'),fn:`navigateToPed('${id}')`},
+      {label:'Repetir pedido',icon:ic('undo'),fn:`duplicatePed('${id}')`},
+      {label:'Borrar',icon:ic('trash'),fn:`delPed('${id}')`,danger:true}
+    ];
+  } else if(type==='cli'){
+    const c=DB.get('clientes',[]).find(x=>x.id===id);
+    if(!c) return;
+    title=c.nombre||'';
+    actions=[];
+    if(c.tel) actions.push({label:'WhatsApp',icon:waIcon(14),fn:`window.open('https://wa.me/${c.tel.replace(/\D/g,'')}','_blank')`});
+    actions.push({label:'Editar',icon:ic('edit'),fn:`openCli('${id}')`});
+    actions.push({label:'Eliminar',icon:ic('trash'),fn:`delCli('${id}')`,danger:true});
+  } else if(type==='cat'){
+    const c=DB.get('catalog',[]).find(x=>x.id===id);
+    if(!c) return;
+    title=c.name||'';
+    actions=[
+      {label:'Vista 360',icon:ic('eye'),fn:`openProd360('${id}')`},
+      {label:'Editar',icon:ic('edit'),fn:`editCat('${id}')`},
+      {label:'Ajustar stock',icon:ic('exchange'),fn:`openStockAdj('${id}')`},
+      {label:'Eliminar',icon:ic('close'),fn:`delCat('${id}')`,danger:true}
+    ];
+  } else return;
+  openActionSheet(title, actions);
+}
+/* Long-press (≈520ms) sobre tarjetas con [data-lp] abre el menú de acciones */
+(function(){
+  let timer=null, moved=false, sx=0, sy=0, target=null;
+  const THRESH=520;
+  document.addEventListener('touchstart', e=>{
+    const el=e.target.closest('[data-lp]');
+    if(!el) return;
+    target=el; moved=false;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    timer=setTimeout(()=>{
+      if(!moved){
+        haptic(20);
+        openActionSheetFor(target);
+        document.addEventListener('click', ev=>{ ev.stopPropagation(); ev.preventDefault(); }, {capture:true, once:true});
+      }
+      timer=null;
+    }, THRESH);
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!timer) return;
+    const dx=Math.abs(e.touches[0].clientX-sx), dy=Math.abs(e.touches[0].clientY-sy);
+    if(dx>8||dy>8){ moved=true; clearTimeout(timer); timer=null; }
+  }, {passive:true});
+  document.addEventListener('touchend', ()=>{ if(timer){ clearTimeout(timer); timer=null; } });
+})();
 
 function waIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M16.004 2.667c-7.363 0-13.333 5.97-13.333 13.333 0 2.353.615 4.65 1.784 6.667L2.67 29.333l6.823-1.784a13.27 13.27 0 0 0 6.51 1.658h.006c7.362 0 13.332-5.97 13.332-13.333S23.366 2.667 16.004 2.667zm0 24.4a11 11 0 0 1-5.61-1.535l-.402-.24-4.05 1.06 1.082-3.95-.262-.405a10.97 10.97 0 0 1-1.687-5.864c0-6.083 4.95-11.033 11.034-11.033 2.948 0 5.717 1.148 7.8 3.232a10.96 10.96 0 0 1 3.23 7.804c0 6.083-4.95 11.033-11.033 11.033zm6.05-8.27c-.332-.166-1.96-.967-2.263-1.077-.304-.11-.526-.166-.747.166s-.857 1.077-1.05 1.298c-.193.222-.387.25-.718.083-.332-.166-1.4-.516-2.667-1.645-.985-.879-1.65-1.964-1.844-2.296-.193-.332-.02-.51.146-.675.15-.149.332-.388.498-.582.166-.193.221-.332.332-.554.11-.222.055-.416-.028-.583-.083-.166-.747-1.8-1.024-2.465-.27-.648-.544-.56-.747-.57-.193-.01-.415-.012-.637-.012s-.582.083-.886.416c-.304.332-1.16 1.133-1.16 2.764s1.188 3.206 1.353 3.428c.166.222 2.337 3.567 5.66 5.001.79.341 1.407.545 1.888.697.793.252 1.514.217 2.084.131.636-.095 1.96-.801 2.236-1.575.276-.774.276-1.437.193-1.575-.083-.139-.304-.222-.636-.388z"/></svg>`;
@@ -3149,12 +3262,26 @@ function setThemeColorMeta(light) {
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute('content', light ? '#f0f2f5' : '#0c0c0c');
 }
-function toggleTheme() {
-  const light = document.documentElement.classList.toggle('light');
-  const b = document.getElementById('theme-btn');
-  if (b) b.innerHTML = light ? ic('sun')+' Modo claro' : ic('moon')+' Modo oscuro';
-  setThemeColorMeta(light);
-  try { localStorage.setItem('tbr_theme', light ? 'light' : 'dark'); } catch(e){}
+function toggleTheme(e) {
+  const apply = ()=>{
+    const light = document.documentElement.classList.toggle('light');
+    const b = document.getElementById('theme-btn');
+    if (b) b.innerHTML = light ? ic('sun')+' Modo claro' : ic('moon')+' Modo oscuro';
+    setThemeColorMeta(light);
+    try { localStorage.setItem('tbr_theme', light ? 'light' : 'dark'); } catch(e){}
+  };
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!document.startViewTransition || reduced) { apply(); return; }
+  const x = e?.clientX ?? window.innerWidth/2;
+  const y = e?.clientY ?? 0;
+  const endRadius = Math.hypot(Math.max(x, innerWidth-x), Math.max(y, innerHeight-y));
+  const transition = document.startViewTransition(apply);
+  transition.ready.then(()=>{
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+      { duration: 480, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+    );
+  });
 }
 function initTheme() {
   try {
@@ -3896,7 +4023,7 @@ function pgCat() {
       <div class="ph-l" style="text-align:right"><span class="cat-price-full">Último precio</span><span class="cat-price-short">Precio</span></div>
       <div class="ph-l">Actualizado</div><div></div>
     </div>
-    ${cat.map((c,i)=>`<div class="cat-r"${stg(i)}>
+    ${cat.map((c,i)=>`<div class="cat-r" data-lp="cat" data-id="${c.id}"${stg(i)}>
       <div><div style="font-weight:600">${esc(c.name)}</div>${c.stock!=null?`<button class="badge stock-chip ${c.stock<=0?'badge-r':c.stock<=2?'badge-y':'badge-g'}" onclick="openStockAdj('${c.id}')" title="Tocá para ajustar el stock">${c.stock<=0?'Sin stock':c.stock<=2?`Stock bajo: ${c.stock}`:`Stock: ${c.stock}`}</button><div class="stock-bar"><div class="stock-bar-fill ${c.stock<=0?'r':c.stock<=2?'y':'g'}" style="width:${Math.max(4,Math.min(100,c.stock/10*100))}%"></div></div>`:''}${c.salePrice?`<div style="font-size:10px;font-weight:600;margin-top:2px;color:var(--ud)">Venta: ${fmtA(c.salePrice)}${(()=>{const cost=suggestSaleCost(c.code,c.name);return cost?` · margen ${Math.round((c.salePrice-cost)/cost*100)}%`:'';})()}</div>`:''}</div>
       <div class="c-code" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--di);letter-spacing:1px">${esc(c.code||'—')}</div>
       <div style="text-align:right">
@@ -4901,7 +5028,7 @@ function pgConfig() {
         <div style="font-size:13px;color:var(--ch)">Tema de la app</div>
         <div class="hint">Cambiá entre modo oscuro y modo claro.</div>
       </div>
-      <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">${isLight?ic('sun')+' Modo claro':ic('moon')+' Modo oscuro'}</button>
+      <button id="theme-btn" class="theme-btn" style="margin-left:0" onclick="toggleTheme(event)" title="Cambiar tema claro/oscuro">${isLight?ic('sun')+' Modo claro':ic('moon')+' Modo oscuro'}</button>
     </div>
   </div>
 
@@ -5919,7 +6046,7 @@ function pgPedidos() {
         <button class="hi-swipe-action accent" onclick="duplicatePed('${o.id}')">${ic('undo')}<span>Repetir</span></button>
         <button class="hi-swipe-action danger" onclick="delPed('${o.id}')">${ic('trash')}<span>Borrar</span></button>
       </div>
-      <div class="hi-hdr hi-swipe-content" onclick="toggleHi('ped${i}')">
+      <div class="hi-hdr hi-swipe-content" data-lp="ped" data-id="${o.id}" onclick="toggleHi('ped${i}')">
         <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
         <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
       </div>
@@ -6553,7 +6680,7 @@ function cliListHTML(list) {
         ${c.tel?`<button class="hi-swipe-action accent" onclick="window.open('https://wa.me/${esc(c.tel.replace(/\D/g,''))}','_blank')">${waIcon()}<span>WhatsApp</span></button>`:''}
         <button class="hi-swipe-action danger" onclick="delCli('${c.id}')">${ic('trash')}<span>Eliminar</span></button>
       </div>
-      <div class="hi-hdr hi-swipe-content" onclick="toggleHi('cli${i}')">
+      <div class="hi-hdr hi-swipe-content" data-lp="cli" data-id="${c.id}" onclick="toggleHi('cli${i}')">
         <div class="hi-hdr-l">
           <div class="cli-avatar">${esc(cliInitials(c.nombre))}</div>
           <div><div class="hi-n">${highlight(c.nombre,cliSearch)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
