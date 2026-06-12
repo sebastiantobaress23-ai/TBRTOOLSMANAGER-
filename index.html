@@ -3779,7 +3779,7 @@ function histCard(p, idx, badges=[], i=0) {
         <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
       </div>
       <div class="hi-acts">
-        <button class="btn-g btn-sm" onclick="printOrden('${p.id}')">${ic('printer')} OC</button>
+        <button class="btn-p btn-sm" onclick="printOrden('${p.id}')">${ic('printer')} OC</button>
         <button class="btn-g btn-sm" onclick="exportOneXLSX('${p.id}')">⬇ Excel</button>
         <button class="btn-g btn-sm" onclick="duplicatePurchase('${p.id}')">⎘ Duplicar</button>
         <button class="btn-g btn-sm" onclick="reusar('${p.id}')">${ic('undo')} Reusar</button>
@@ -4107,7 +4107,7 @@ function pgVentas(){
         </table>
       </div>`:''}
       <div class="hi-acts" style="margin-top:8px">
-        <button class="btn-g btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
+        <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
         ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
       </div>
     </div>`;}).join('')}
@@ -6016,7 +6016,7 @@ function pgCotizaciones() {
       <div class="hi-acts">
         <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?ic('check')+' Pendiente':ic('check')+' Cotizada'}</button>
         ${o.status==='cotizada'?`<button class="btn-p btn-sm" onclick="cotToOrden('${esc(o.nro)}')">${ic('fileText')} Crear orden de compra</button>`:''}
-        <button class="btn-g btn-sm" onclick="reprintCot('${o.id}')">${ic('printer')} Reimprimir</button>
+        <button class="btn-p btn-sm" onclick="reprintCot('${o.id}')">${ic('printer')} Reimprimir</button>
         <button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareCotWA('${o.id}')">${waIcon()}WhatsApp</button>
         <button class="btn-d" onclick="delCot('${o.id}')">${ic('trash')} Borrar</button>
       </div>
@@ -6345,9 +6345,9 @@ function pgPedidos() {
         ${o.status==='preparacion'?`<button class="btn-p btn-sm hi-act-main" onclick="pedToVenta('${o.id}')">${ic('check')} Entregado / Cobrado</button>`:''}
         <div class="hi-acts-row">
           ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" onclick="editPed('${o.id}')">${ic('edit')} Editar</button>`:''}
-          <button class="btn-g btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
+          <button class="btn-p btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
           <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
-          ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-g btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
+          ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-p btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
         </div>
         <div class="hi-acts-row hi-acts-danger">
           ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar pedido</button>`:''}
@@ -7532,7 +7532,7 @@ function pgOrden() {
       </div>
       <div class="hi-acts">
         ${!o.recibida?`<button class="btn-p" onclick="loadOCToCompra('${o.id}')">${ic('package')} Recibida → Cargar en Compra</button>`:''}
-        <button class="btn-g" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
+        <button class="btn-p" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
