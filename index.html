@@ -3948,10 +3948,12 @@ function suggestDirectPrice(code, name){
 }
 // Precio sugerido para ventas por Mercado Libre: si el producto tiene una
 // publicación guardada (Publicar ML), se usa el precio ya calculado ahí
-// (con su margen/comisión/envío personalizados). Si no, se calcula con costo
-// + margen directo + comisión + envío configurados, de modo que la ganancia
-// neta (precio - comisión% - envío - costo) sea equivalente al margen
-// directo. Misma fórmula que se usa en el Cotizador.
+// (con su margen/comisión/envío personalizados). Si no, se parte del precio
+// de venta cargado en el catálogo (mismo que usa "Venta directa") y se sube
+// para compensar la comisión y el envío de ML, de modo que la ganancia neta
+// (precio - comisión% - envío - costo) sea la misma en ambos canales. Si el
+// producto no tiene precio de venta cargado, se usa costo + margen directo +
+// comisión + envío configurados (misma fórmula que el Cotizador).
 function suggestMLPrice(code, name){
   const key=(code||name||'').toLowerCase();
   const pubs=DB.get('mlpubs',[]);
@@ -3959,12 +3961,17 @@ function suggestMLPrice(code, name){
     const pp=(pubs[i].products||[]).find(p=>(p.c||p.n||'').toLowerCase()===key);
     if(pp && pp.precio) return Math.round(pp.precio);
   }
-  const cost = suggestSaleCost(code, name);
-  if (!cost) return 0;
   const s = DB.get('settings',{});
-  const margin = s.directMargin!=null ? s.directMargin : 30;
   const com = s.mlCom!=null ? s.mlCom : 16;
   const env = s.mlEnv!=null ? s.mlEnv : 7500;
+  const cat=DB.get('catalog',[]);
+  const c = cat.find(x=>(code && x.code===code) || (!code && x.name===name));
+  if (c && c.salePrice) {
+    return Math.round((c.salePrice + env) / (1 - com/100));
+  }
+  const cost = suggestSaleCost(code, name);
+  if (!cost) return 0;
+  const margin = s.directMargin!=null ? s.directMargin : 30;
   return Math.round(cost*(1+margin/100)/(1-com/100) + env);
 }
 // Sugiere el precio de venta según el canal: en "Venta directa" usa el precio
