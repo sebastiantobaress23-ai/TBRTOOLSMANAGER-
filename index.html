@@ -351,7 +351,7 @@ html.light .info{background:#f0f9ff;border-color:#bae6fd;color:#075985}
 html.light .rtw{border-color:#e0e0e0}
 html.light .btn-add-row{border-color:#ccc;color:#888}
 html.light .cat-r{border-bottom-color:#eee}
-html.light .hi-hdr:hover{background:#f5f5f5}
+@media(hover:hover){html.light .hi-hdr:hover{background:#f5f5f5}}
 
 /* ── ACENTOS DORADOS EN MODO CLARO ── */
 html.light .iw input:focus,html.light .iw select:focus{border-color:rgba(146,64,14,.35)!important;box-shadow:0 0 0 3px rgba(146,64,14,.06)!important}
@@ -778,7 +778,6 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 /* HISTORIAL */
 .hi{background:linear-gradient(145deg,var(--bg2),#131313);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .hi-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s}
-.hi-hdr:hover{background:rgba(255,255,255,.025);border-radius:var(--r)}
 .hi-hdr-l{display:flex;align-items:center;gap:14px;min-width:0}
 .cli-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0;color:var(--ud);background:linear-gradient(145deg,rgba(226,201,126,.18),rgba(226,201,126,.04));border:1px solid rgba(226,201,126,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .hi-n{font-weight:700;font-size:15px;margin-bottom:4px;color:rgba(255,255,255,.9)}
@@ -994,13 +993,16 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 /* Header con leve resplandor */
 .hdr{background:linear-gradient(180deg,rgba(18,18,18,1),rgba(8,8,8,1))}
 
-/* mc / hi: hover más expresivo */
-.mc:hover,.hi-hdr:hover{background:rgba(255,255,255,.025)}
+/* mc / hi: hover más expresivo (solo dispositivos con puntero, evita estado "pegado" en touch) */
+.mc:hover{background:rgba(255,255,255,.025)}
 .hi{transition:border-color .2s,box-shadow .2s}
 .hi:hover{border-color:rgba(255,255,255,.1)}
 .hi-hdr{position:relative}
 .hi-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,rgba(226,201,126,.5),rgba(45,212,191,.3));opacity:0;transition:opacity .2s}
-.hi-hdr:hover::before{opacity:1}
+@media(hover:hover){
+  .hi-hdr:hover{background:rgba(255,255,255,.025);border-radius:var(--r)}
+  .hi-hdr:hover::before{opacity:1}
+}
 
 /* Selects e inputs: tipografía y contraste consistentes */
 select{cursor:pointer}
