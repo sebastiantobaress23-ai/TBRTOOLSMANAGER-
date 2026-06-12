@@ -847,6 +847,16 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 .cat-r:hover .cat-photo{transform:scale(1.08);border-color:rgba(226,201,126,.3)}
 .cat-r:hover .cat-photo-ph{border-color:rgba(226,201,126,.3)}
 @media(prefers-reduced-motion:reduce){.cat-photo{transition:none}}
+
+/* Galería de fotos en modal de producto */
+.ce-photos-wrap{display:flex;flex-wrap:wrap;gap:10px}
+.ce-photo-thumb{position:relative;width:84px;height:84px;border-radius:var(--r);overflow:hidden;border:1px solid var(--b2);flex-shrink:0}
+.ce-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ce-photo-cover{position:absolute;left:0;bottom:0;right:0;text-align:center;padding:2px 0;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ud);background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+.ce-photo-thumb-rm{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:var(--ch);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s}
+.ce-photo-thumb-rm:hover{background:var(--re);color:#fff}
+.ce-photo-add{width:84px;height:84px;border-radius:var(--r);border:1px dashed var(--b3);background:var(--bg2);color:var(--di);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.ce-photo-add:hover{border-color:var(--ud);color:var(--ud)}
 .btn-catdig{position:relative;border-color:rgba(226,201,126,.3);transition:border-color .2s,box-shadow .2s,transform .15s}
 .btn-catdig:hover{border-color:rgba(226,201,126,.55);box-shadow:0 4px 18px -6px rgba(226,201,126,.4);transform:translateY(-1px)}
 
@@ -958,6 +968,24 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
 @media(max-width:768px){
   /* Nav inferior móvil ya brinda navegación y marca; el footer queda oculto para no solaparse con el FAB */
   footer{display:none}
+}
+
+/* CABECERA CATÁLOGO + MENÚ DESPLEGABLE "Catálogo digital" */
+.cat-hdr{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.cat-hdr-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.dd-wrap{position:relative}
+.dd-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:220px;background:var(--bg2);border:1px solid var(--b2);border-radius:var(--r);box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;flex-direction:column;gap:2px;z-index:50}
+.dd-wrap.open .dd-menu{display:flex}
+.dd-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border-radius:6px;background:transparent;border:none;color:var(--us);font-size:13px;font-family:inherit;text-align:left;cursor:pointer;white-space:nowrap;transition:background .15s}
+.dd-item:hover{background:var(--bg3)}
+@media(max-width:680px){
+  .cat-hdr{flex-direction:column;align-items:stretch}
+  .cat-hdr-acts{width:100%}
+  .cat-hdr-acts .btn-g,.cat-hdr-acts .btn-p,.cat-hdr-acts .dd-wrap{flex:1 1 calc(50% - 4px)}
+  .cat-hdr-acts .btn-g,.cat-hdr-acts .btn-p{width:100%;justify-content:center;white-space:nowrap}
+  .cat-hdr-acts .btn-catdig{width:100%;justify-content:center}
+  .dd-menu{left:0;right:auto;min-width:0;width:100%}
+  .cat-movs-t{display:none}
 }
 
 @media(max-width:720px){
@@ -1698,7 +1726,8 @@ const ICONS = {
   cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
-  link: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/>'
+  link: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/>',
+  chevron: '<polyline points="6 9 12 15 18 9"/>'
 };
 function ic(name, size=14, extraStyle=''){
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0${extraStyle?';'+extraStyle:''}">${ICONS[name]||''}</svg>`;
@@ -2237,6 +2266,18 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('click', e=>{
   const fan=document.getElementById('qa-fan');
   if(fan && fan.classList.contains('open') && !e.target.closest('#qa-fab')) closeFan();
+});
+function toggleDD(id,ev){
+  if(ev)ev.stopPropagation();
+  const el=document.getElementById(id);
+  if(!el)return;
+  const open=el.classList.contains('open');
+  closeAllDD();
+  if(!open)el.classList.add('open');
+}
+function closeAllDD(){document.querySelectorAll('.dd-wrap.open').forEach(el=>el.classList.remove('open'));}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.dd-wrap')) closeAllDD();
 });
 // Cierra cualquier modal/overlay persistente (Acción rápida, Simulador,
 // escáner, búsqueda global, confirmaciones, abanico del FAB, etc.) que haya
@@ -4302,7 +4343,23 @@ function pgCat() {
   const ro=catReorderMode;
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button>${cat.some(c=>c.salePrice)?`<button class="btn-g btn-sm btn-catdig" style="color:var(--ud)" onclick="openCatalogoDigital()">${ic('eye')} Catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalog()">${ic('star')} Compartir catálogo</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="generateCatalogDataFile()">${ic('download')} Generar catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalogoDigitalLink()">${ic('link')} Compartir link</button>`:''}<button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="cat-hdr mb20">
+    <div class="sh" style="margin:0">Catálogo de productos</div>
+    <div class="cat-hdr-acts">
+      <button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button>
+      <button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} <span class="cat-movs-t">Movimientos</span></button>
+      ${cat.some(c=>c.salePrice)?`<div class="dd-wrap" id="cat-dig-dd">
+        <button class="btn-g btn-sm btn-catdig" style="color:var(--ud)" onclick="toggleDD('cat-dig-dd',event)">${ic('eye')} Catálogo digital ${ic('chevron',12)}</button>
+        <div class="dd-menu">
+          <button class="dd-item" onclick="closeAllDD();openCatalogoDigital()">${ic('eye')} Ver catálogo digital</button>
+          <button class="dd-item" onclick="closeAllDD();shareCatalog()">${ic('star')} Compartir catálogo (PDF)</button>
+          <button class="dd-item" onclick="closeAllDD();generateCatalogDataFile()">${ic('download')} Generar catálogo digital</button>
+          <button class="dd-item" onclick="closeAllDD();shareCatalogoDigitalLink()">${ic('link')} Compartir link</button>
+        </div>
+      </div>`:''}
+      <button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button>
+    </div>
+  </div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -4359,22 +4416,12 @@ function pgCat() {
   <div id="cat-edit-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatEdit()">
     <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">${ic('close')}</button></div>
     <div class="mbody">
-      <div class="fb mb16" style="gap:16px;align-items:center">
-        <div style="width:64px;height:64px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-          <img id="ce-photo-preview" src="" style="display:none;max-width:100%;max-height:100%;object-fit:cover">
-          <span id="ce-photo-placeholder" style="color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin foto</span>
-        </div>
-        <div style="flex:1;min-width:160px">
-          <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Foto del producto</div>
-          <div class="hint mb8">Se usa en el catálogo y al compartir el catálogo premium con clientes. Máx. 800KB.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-g btn-sm" onclick="document.getElementById('ce-photo-inp').click()">${ic('camera')} Subir foto</button>
-            <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="previewCePhoto(this)">
-            <button id="ce-photo-rm" class="btn-g btn-sm" style="display:none" onclick="removeCePhoto()">${ic('trash')} Quitar</button>
-          </div>
-        </div>
+      <div class="mb16">
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Fotos del producto</div>
+        <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 800KB cada una.</div>
+        <div id="ce-photos-wrap" class="ce-photos-wrap"></div>
+        <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="addCePhoto(this)">
       </div>
-      <input type="hidden" id="ce-photo">
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
       <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0" oninput="updateCeCostHint()"></div></div>
@@ -4389,26 +4436,31 @@ function pgCat() {
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhoto('');updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhoto(c.photo||'');updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
-function setCePhoto(data){
-  document.getElementById('ce-photo').value=data||'';
-  const img=document.getElementById('ce-photo-preview');
-  const ph=document.getElementById('ce-photo-placeholder');
-  const rm=document.getElementById('ce-photo-rm');
-  if(data){if(img){img.src=data;img.style.display='';}if(ph)ph.style.display='none';if(rm)rm.style.display='';}
-  else {if(img){img.src='';img.style.display='none';}if(ph)ph.style.display='';if(rm)rm.style.display='none';}
+let cePhotos=[];
+function renderCePhotos(){
+  const wrap=document.getElementById('ce-photos-wrap');
+  wrap.innerHTML=cePhotos.map((p,i)=>`<div class="ce-photo-thumb">
+      <img src="${p}" alt="">
+      ${i===0?'<span class="ce-photo-cover">Portada</span>':''}
+      <button class="ce-photo-thumb-rm" onclick="removeCePhoto(${i})" title="Quitar foto" aria-label="Quitar foto">${ic('close',12)}</button>
+    </div>`).join('')
+    + (cePhotos.length<6?`<button class="ce-photo-add" onclick="document.getElementById('ce-photo-inp').click()" title="Agregar foto" aria-label="Agregar foto">${ic('camera',18)}</button>`:'');
 }
-function previewCePhoto(input){
+function addCePhoto(input){
   const file=input.files&&input.files[0];
   if(!file)return;
   if(file.size>800*1024){toast('La imagen es muy grande (máx. 800KB)',false);return;}
+  if(cePhotos.length>=6){toast('Máximo 6 fotos por producto.',false);return;}
   const reader=new FileReader();
-  reader.onload=()=>{setCePhoto(reader.result);};
+  reader.onload=()=>{cePhotos.push(reader.result);renderCePhotos();};
   reader.readAsDataURL(file);
+  input.value='';
 }
-function removeCePhoto(){setCePhoto('');}
+function removeCePhoto(i){cePhotos.splice(i,1);renderCePhotos();}
+function setCePhotos(arr){cePhotos=Array.isArray(arr)?arr.slice():[];renderCePhotos();}
 
 /* ═══════════════════════════════════════════
    CATÁLOGO DIGITAL — vidriera premium
@@ -4553,11 +4605,12 @@ function saveCat(){
   const stock=stockRaw===''?undefined:Math.max(0,parseInt(stockRaw)||0);
   const salePriceRaw=document.getElementById('ce-saleprice').value;
   const salePrice=salePriceRaw===''?undefined:Math.max(0,parseFloat(salePriceRaw)||0);
-  const photo=document.getElementById('ce-photo').value||'';
+  const photos=cePhotos.slice(0,6);
+  const photo=photos[0]||'';
   if(!name){toast('Ingresá el nombre.',false);return;}
   let cat=DB.get('catalog',[]);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined})}:c);
-  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{})});
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined}),...(photos.length?{photos}:{photos:undefined})}:c);
+  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{}),...(photos.length?{photos}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
@@ -7679,7 +7732,8 @@ function generateCatalogDataFile(){
     products: cat.map(c=>({
       name:c.name, code:c.code||'', salePrice:c.salePrice,
       stock: c.stock!=null ? c.stock : undefined,
-      photo: c.photo||undefined
+      photo: c.photo||undefined,
+      photos: (c.photos&&c.photos.length>1)?c.photos:undefined
     }))
   };
   const content=`/* ════════════════════════════════════════════════════

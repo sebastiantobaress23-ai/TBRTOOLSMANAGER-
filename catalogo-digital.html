@@ -127,6 +127,12 @@ body{
 .price small{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
   letter-spacing:3px;text-transform:uppercase;color:var(--di);margin-bottom:2px}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.gallery-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.gthumb{width:56px;height:56px;border-radius:10px;background-size:cover;background-position:center;
+  border:2px solid transparent;cursor:pointer;opacity:.55;flex-shrink:0;padding:0;
+  transition:opacity .25s var(--ease),border-color .25s var(--ease),transform .2s var(--ease)}
+.gthumb:hover{opacity:.85;transform:translateY(-2px)}
+.gthumb.cur{opacity:1;border-color:var(--gd);box-shadow:0 6px 18px -8px rgba(226,201,126,.5)}
 .cta-primary{display:inline-flex;align-items:center;gap:10px;background:var(--gd);color:#1a1206;
   font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;
   text-transform:uppercase;text-decoration:none;padding:14px 26px;border-radius:999px;border:none;
@@ -258,6 +264,7 @@ const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;'
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let idx = 0;
+let photoIdx = 0;
 let bgToggle = false; // false -> bgA active, true -> bgB active
 
 function stockChip(c){
@@ -267,11 +274,12 @@ function stockChip(c){
   return `<span class="chip g">Stock · ${c.stock}</span>`;
 }
 
-function setBackground(c){
+function setBackground(c, photo){
   const showing = bgToggle ? document.getElementById('bgB') : document.getElementById('bgA');
   const hiding  = bgToggle ? document.getElementById('bgA') : document.getElementById('bgB');
-  showing.innerHTML = c.photo
-    ? `<div class="kb" style="background-image:url('${c.photo}')"></div>`
+  const img = photo || c.photo;
+  showing.innerHTML = img
+    ? `<div class="kb" style="background-image:url('${img}')"></div>`
     : `<div class="ph-fallback"><span>${esc((c.name||'?').slice(0,1).toUpperCase())}</span></div>`;
   showing.classList.add('on');
   hiding.classList.remove('on');
@@ -280,7 +288,9 @@ function setBackground(c){
 
 function renderSlide(){
   const c = PRODUCTS[idx];
-  setBackground(c);
+  const photos = (c.photos && c.photos.length) ? c.photos : (c.photo ? [c.photo] : []);
+  photoIdx = 0;
+  setBackground(c, photos[0]);
 
   document.getElementById('heroMain').innerHTML = `
     <div class="meta-row bfu" style="animation-delay:280ms">
@@ -295,12 +305,24 @@ function renderSlide(){
         Consultar por WhatsApp
       </button>
     </div>
+    ${photos.length>1?`<div class="gallery-row bfu" style="animation-delay:660ms" role="group" aria-label="Más fotos del producto">
+      ${photos.map((p,i)=>`<button class="gthumb ${i===0?'cur':''}" style="background-image:url('${p}')" onclick="selectPhoto(${i})" aria-label="Ver foto ${i+1}"></button>`).join('')}
+    </div>`:''}
   `;
 
   document.getElementById('counter').textContent = `${idx+1} / ${PRODUCTS.length}`;
   document.getElementById('segs').innerHTML = PRODUCTS.map((_,i)=>
     `<div class="seg ${i<idx?'done':''} ${i===idx?'now':''}" onclick="goTo(${i})" style="cursor:pointer"><i></i></div>`
   ).join('');
+}
+
+function selectPhoto(i){
+  const c = PRODUCTS[idx];
+  const photos = (c.photos && c.photos.length) ? c.photos : (c.photo ? [c.photo] : []);
+  if(!photos[i] || i===photoIdx) return;
+  photoIdx = i;
+  setBackground(c, photos[i]);
+  document.querySelectorAll('.gthumb').forEach((el,j)=>el.classList.toggle('cur', j===i));
 }
 
 function nextSlide(){ idx = (idx+1) % PRODUCTS.length; renderSlide(); }
