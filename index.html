@@ -1593,16 +1593,13 @@ function empBrandHTML(emp){
     + (emp.waNegocio?`<p>WhatsApp: ${esc(emp.waNegocio)}</p>`:'');
 }
 
-function mpQrUrl(data, size){
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size||200}x${size||200}&data=${encodeURIComponent(data)}`;
-}
 function paymentInfoHTML(emp){
   const rows=[];
   if(emp.cbu) rows.push(`<div><strong>CBU:</strong> ${esc(emp.cbu)}</div>`);
   if(emp.alias) rows.push(`<div><strong>Alias:</strong> ${esc(emp.alias)}</div>`);
   if(emp.mp) rows.push(`<div><strong>Mercado Pago:</strong> ${esc(emp.mp)}</div>`);
   if(!rows.length) return '';
-  const qr = emp.mp ? `<img class="pay-qr" src="${mpQrUrl(emp.mp,110)}" alt="QR de pago">` : '';
+  const qr = emp.mpQr ? `<img class="pay-qr" src="${emp.mpQr}" alt="QR de pago">` : '';
   return `<div class="pay-info"><div class="pay-info-flex"><div class="pay-info-rows"><div class="pay-info-t">Medios de pago</div>${rows.join('')}</div>${qr}</div></div>`;
 }
 
@@ -5392,6 +5389,21 @@ function pgConfig() {
       <div><label class="fl">Alias</label><div class="iw"><input type="text" id="emp-alias" value="${esc(emp.alias||'')}"></div></div>
       <div><label class="fl">Mercado Pago (link o alias)</label><div class="iw"><input type="text" id="emp-mp" value="${esc(emp.mp||'')}"></div></div>
     </div>
+    <div class="fb mt16" style="gap:16px;align-items:center">
+      <div style="width:64px;height:64px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+        <img id="emp-mpqr-preview" src="${esc(emp.mpQr||'')}" style="${emp.mpQr?'':'display:none;'}max-width:100%;max-height:100%;object-fit:contain">
+        <span id="emp-mpqr-placeholder" style="${emp.mpQr?'display:none':''};color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin QR</span>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">QR de cobro de Mercado Pago</div>
+        <div class="hint mb8">Subí una foto de tu QR de cobro (Mercado Pago app → Cobros → Cobrar con QR). Se usa en el botón "Cobrar" de Pedidos y en los PDFs. Máx. 800KB.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-g btn-sm" onclick="document.getElementById('emp-mpqr-inp').click()">${ic('camera')} Subir QR</button>
+          <input type="file" id="emp-mpqr-inp" accept="image/*" style="display:none" onchange="previewEmpMpQr(this)">
+          <button id="emp-mpqr-rm" class="btn-g btn-sm" style="${emp.mpQr?'':'display:none'}" onclick="removeEmpMpQr()">${ic('trash')} Quitar</button>
+        </div>
+      </div>
+    </div>
     <div class="fe mt16"><button class="btn-p" onclick="saveEmpresa()">Guardar datos empresa</button></div>
   </div>
 
@@ -5510,7 +5522,7 @@ const HELP_SECTIONS = [
   {t:'Nueva Compra', d:'Acá armás una compra a un proveedor: cargás el modo (USDT/pesos/etc.), precio base, spread, comisiones y flete, agregás los productos y la app calcula automáticamente el costo final y el precio sugerido de venta. Al guardar, la compra pasa al Historial y los productos se suman/actualizan en el Catálogo.'},
   {t:'Historial', d:'Lista de todas las compras que ya guardaste, con su fecha, productos, tipo de cambio usado y ganancia estimada. Te sirve para revisar compras anteriores, repetirlas o consultar cuánto invertiste y ganaste en cada una.'},
   {t:'Ventas', d:'Acá registrás cada venta: elegís el producto del catálogo (te sugiere el costo automáticamente), cargás precio y cantidad, y la app calcula la ganancia real al instante. También vas a encontrar un ranking de qué productos te dejan más rentabilidad y el historial completo de ventas.'},
-  {t:'Pedidos', d:'Para armar presupuestos y pedidos a tus clientes: elegís el cliente, agregás los artículos con cantidad y precio, y la app te muestra el total en vivo y genera un PDF para enviar por WhatsApp. Después podés seguir el estado del pedido (cotización → cliente confirma → en preparación → entregado/cobrado), y al marcarlo como entregado se genera automáticamente el comprobante de venta. Cuando un pedido está confirmado o en preparación, el botón "Cobrar" muestra un QR de Mercado Pago (configurado en Configuración → Mi empresa) con el total para que el cliente escanee y pague.'},
+  {t:'Pedidos', d:'Para armar presupuestos y pedidos a tus clientes: elegís el cliente, agregás los artículos con cantidad y precio, y la app te muestra el total en vivo y genera un PDF para enviar por WhatsApp. Después podés seguir el estado del pedido (cotización → cliente confirma → en preparación → entregado/cobrado), y al marcarlo como entregado se genera automáticamente el comprobante de venta. Cuando un pedido está confirmado o en preparación, el botón "Cobrar" muestra tu QR real de Mercado Pago (subido en Configuración → Mi empresa → Datos de pago) junto con el total del pedido, para que el cliente lo escanee e ingrese ese monto al pagar.'},
   {t:'Catálogo', d:'Es la base de productos de tu negocio: nombre, código, último precio y costo, fecha de actualización y la "Vista 360" con el historial de precios y movimientos de cada producto. Se completa solo a medida que cargás compras, pero también podés agregar o editar productos manualmente. A cada producto le podés sumar una foto y un precio de venta; si hay productos con precio de venta cargado aparece el botón "Compartir catálogo", que genera un PDF tipo lookbook con fotos, nombres, códigos y precios para enviar a tus clientes por WhatsApp.'},
   {t:'Estadísticas', d:'Gráficos y números que muestran cómo evoluciona tu negocio: ventas, ganancias, productos más vendidos y más. Te ayuda a detectar tendencias y tomar mejores decisiones de compra y precio.'},
   {t:'Publicar ML', d:'Calculadora pensada para armar tus publicaciones de Mercado Libre: a partir del costo del producto, te sugiere el precio de venta considerando comisión, envío y el margen que quieras ganar. Podés guardar las publicaciones para tenerlas a mano.'},
@@ -5642,6 +5654,32 @@ function removeEmpLogo(){
   DB.set('empresa',emp);
   render();
   toast('Logo eliminado');
+}
+function previewEmpMpQr(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  if(file.size>800*1024){toast('La imagen es muy grande (máx. 800KB)',false);return;}
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const emp=DB.get('empresa',{});
+    emp.mpQr=reader.result;
+    DB.set('empresa',emp);
+    const img=document.getElementById('emp-mpqr-preview');
+    if(img){img.src=emp.mpQr;img.style.display='';}
+    const ph=document.getElementById('emp-mpqr-placeholder');
+    if(ph)ph.style.display='none';
+    const rm=document.getElementById('emp-mpqr-rm');
+    if(rm)rm.style.display='';
+    toast('QR de Mercado Pago guardado');
+  };
+  reader.readAsDataURL(file);
+}
+function removeEmpMpQr(){
+  const emp=DB.get('empresa',{});
+  delete emp.mpQr;
+  DB.set('empresa',emp);
+  render();
+  toast('QR eliminado');
 }
 function saveStockThreshold(){const v=Math.max(1,parseInt(document.getElementById('stock-th').value)||2);const s=DB.get('settings',{});s.lowStockThreshold=v;DB.set('settings',s);render();toast('Umbral guardado');}
 function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada');}
@@ -6527,14 +6565,14 @@ function openCobrarModal(id){
   const total=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
   const body=document.getElementById('cobrar-body');
   if(!body)return;
-  if(!emp.mp){
-    body.innerHTML=`<div class="empty" style="padding:16px">Configurá tu "Mercado Pago (link o alias)" en Configuración → Mi empresa → Datos de pago para poder generar el QR de cobro.</div>`;
+  if(!emp.mpQr){
+    body.innerHTML=`<div class="empty" style="padding:16px">Subí tu QR de cobro de Mercado Pago en Configuración → Mi empresa → Datos de pago (Mercado Pago app → Cobros → Cobrar con QR) para poder mostrarlo aquí.</div>`;
   } else {
     body.innerHTML=`
       <div style="font-size:13px;color:var(--mu);margin-bottom:4px">${esc(o.cliente||'')}</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--ud);letter-spacing:-.5px;margin-bottom:16px">${fmtA(total)}</div>
-      <img src="${mpQrUrl(emp.mp,260)}" alt="QR Mercado Pago" style="width:260px;height:260px;border-radius:12px;background:#fff;padding:8px">
-      <div class="hint mt12">Pedile al cliente que escanee este código con la app de Mercado Pago para pagar ${o.nro?`el pedido ${esc(o.nro)}`:'el pedido'}.</div>
+      <img src="${emp.mpQr}" alt="QR Mercado Pago" style="width:260px;height:260px;border-radius:12px;background:#fff;padding:8px;object-fit:contain">
+      <div class="hint mt12">Pedile al cliente que escanee este código con la app de Mercado Pago e ingrese el monto ${o.nro?`del pedido ${esc(o.nro)}`:''} (${fmtA(total)}) para pagar.</div>
     `;
   }
   document.getElementById('cobrar-modal').style.display='flex';
