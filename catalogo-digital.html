@@ -26,6 +26,9 @@ body{
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
+:focus-visible{outline:2px solid var(--gd);outline-offset:3px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ── ambient glow ── */
 .glow{position:fixed;top:-30vh;left:50%;width:140vw;height:80vh;transform:translateX(-50%);
@@ -43,9 +46,9 @@ body{
 .bar-name span{color:var(--gd)}
 .bar-search{flex:1;max-width:340px;margin-left:auto;position:relative}
 .bar-search input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:999px;padding:9px 16px 9px 36px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:13px;
-  outline:none;transition:border-color .2s,background .2s}
-.bar-search input:focus{border-color:rgba(226,201,126,.4);background:rgba(255,255,255,.06)}
+  border-radius:999px;padding:11px 16px 11px 36px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;
+  transition:border-color .2s,background .2s;touch-action:manipulation}
+.bar-search input:focus-visible{border-color:rgba(226,201,126,.5);background:rgba(255,255,255,.06);outline:none;box-shadow:0 0 0 3px rgba(226,201,126,.18)}
 .bar-search input::placeholder{color:var(--di)}
 .bar-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--di);pointer-events:none}
 
@@ -84,16 +87,18 @@ body{
 .card{
   background:linear-gradient(165deg,var(--bg3),var(--bg1));
   border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);overflow:hidden;
-  display:flex;flex-direction:column;
-  opacity:0;transform:translateY(28px) scale(.98);
-  transition:opacity .65s var(--ease),transform .65s var(--ease),
-    border-color .3s,box-shadow .3s;
-  cursor:default;
+  display:flex;flex-direction:column;text-align:left;width:100%;
+  color:inherit;font:inherit;
+  opacity:0;transform:translateY(24px) scale(.98);
+  transition:opacity .5s var(--ease),transform .5s var(--ease),
+    border-color .2s,box-shadow .2s;
+  cursor:pointer;touch-action:manipulation;
 }
 .card.feat{grid-column:span 2}
 @media(max-width:680px){.card.feat{grid-column:span 1}}
 .card.in{opacity:1;transform:translateY(0) scale(1)}
 .card:hover{border-color:rgba(226,201,126,.32);box-shadow:0 20px 50px -28px rgba(226,201,126,.35)}
+.card:active{transform:scale(.985)}
 .card:hover .ph img{transform:scale(1.06)}
 .card:hover .ph::after{transform:translateX(120%)}
 
@@ -105,7 +110,7 @@ body{
   color:rgba(226,201,126,.28);text-transform:uppercase;text-align:center;padding:0 18px}
 .ph::after{content:'';position:absolute;inset:0;
   background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.10) 50%,transparent 58%);
-  transform:translateX(-120%);transition:transform .9s var(--ease);pointer-events:none}
+  transform:translateX(-120%);transition:transform .6s var(--ease);pointer-events:none}
 .ph-badge{position:absolute;top:12px;left:12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;
   font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 10px;border-radius:999px;
   background:rgba(10,10,10,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.1)}
@@ -154,8 +159,9 @@ body{
 <header class="bar" id="bar">
   <div class="bar-name">TBR <span>TOOLS</span></div>
   <div class="bar-search">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="text" id="q" placeholder="Buscar producto o código…" oninput="filterProducts()">
+    <label for="q" class="sr-only">Buscar producto o código</label>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="search" id="q" placeholder="Buscar producto o código…" oninput="filterProducts()">
   </div>
 </header>
 
@@ -217,15 +223,23 @@ function cardHTML(c, i){
   const feat = i===0 ? ' feat' : '';
   const photo = c.photo
     ? `<img src="${c.photo}" alt="${esc(c.name)}" loading="lazy">`
-    : `<div class="ph-ph">${esc((c.name||'?').slice(0,1).toUpperCase())}</div>`;
-  return `<article class="card${feat}" data-name="${esc(c.name).toLowerCase()}" data-code="${esc(c.code||'').toLowerCase()}">
+    : `<div class="ph-ph" aria-hidden="true">${esc((c.name||'?').slice(0,1).toUpperCase())}</div>`;
+  return `<button type="button" class="card${feat}" data-name="${esc(c.name).toLowerCase()}" data-code="${esc(c.code||'').toLowerCase()}"
+      onclick="consultarProducto(${i})" aria-label="Consultar ${esc(c.name)} por WhatsApp, ${fmtA(c.salePrice)}">
     <div class="ph">${photo}${stockBadge(c)}</div>
     <div class="card-body">
       <div class="card-name">${esc(c.name)}</div>
       ${c.code?`<div class="card-code">${esc(c.code)}</div>`:''}
       <div class="card-price">${fmtA(c.salePrice)}</div>
     </div>
-  </article>`;
+  </button>`;
+}
+
+function consultarProducto(i){
+  const c = PRODUCTS[i];
+  if(!c) return;
+  const msg = encodeURIComponent(`Hola! Te consulto por "${c.name}"${c.code?` (${c.code})`:''} — vi que está a ${fmtA(c.salePrice)} en el catálogo.`);
+  window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${msg}`, '_blank', 'noopener');
 }
 
 function render(){
