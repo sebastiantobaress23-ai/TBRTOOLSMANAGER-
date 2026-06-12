@@ -1695,7 +1695,9 @@ const ICONS = {
   qrcode: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="17.5" y1="14" x2="17.5" y2="17.5"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>',
   barChart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
   cart: '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
-  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/>'
 };
 function ic(name, size=14, extraStyle=''){
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0${extraStyle?';'+extraStyle:''}">${ICONS[name]||''}</svg>`;
@@ -4299,7 +4301,7 @@ function pgCat() {
   const ro=catReorderMode;
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button>${cat.some(c=>c.salePrice)?`<button class="btn-g btn-sm btn-catdig" style="color:var(--ud)" onclick="openCatalogoDigital()">${ic('eye')} Catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalog()">${ic('star')} Compartir catálogo</button>`:''}<button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button>${cat.some(c=>c.salePrice)?`<button class="btn-g btn-sm btn-catdig" style="color:var(--ud)" onclick="openCatalogoDigital()">${ic('eye')} Catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalog()">${ic('star')} Compartir catálogo</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="generateCatalogDataFile()">${ic('download')} Generar catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalogoDigitalLink()">${ic('link')} Compartir link</button>`:''}<button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -5524,6 +5526,7 @@ function pgConfig() {
       <div><label class="fl">Teléfono</label><div class="iw"><input type="text" id="emp-tel" value="${esc(emp.tel||'')}"></div></div>
       <div><label class="fl">Email</label><div class="iw"><input type="text" id="emp-email" value="${esc(emp.email||'')}"></div></div>
       <div><label class="fl">WhatsApp del negocio</label><div class="iw"><input type="text" id="emp-wa" placeholder="Ej: 5491122334455" value="${esc(emp.waNegocio||'')}"></div></div>
+      <div><label class="fl">Link del catálogo digital</label><div class="iw"><input type="text" id="emp-catalog-url" placeholder="https://tu-usuario.github.io/tu-repo/catalogo-digital.html" value="${esc(emp.catalogUrl||'')}"></div></div>
     </div>
     <div class="hint mt16" style="border-top:1px solid var(--b1);padding-top:14px">Datos de pago — aparecen en los presupuestos y comprobantes de venta para que tus clientes sepan cómo pagarte. Dejalos vacíos si no querés mostrarlos.</div>
     <div class="cfg-g2 mt12">
@@ -5765,6 +5768,7 @@ function saveEmpresa(){
   emp.tel=document.getElementById('emp-tel').value.trim();
   emp.email=document.getElementById('emp-email').value.trim();
   emp.waNegocio=document.getElementById('emp-wa').value.trim();
+  emp.catalogUrl=document.getElementById('emp-catalog-url').value.trim();
   emp.cbu=document.getElementById('emp-cbu').value.trim();
   emp.alias=document.getElementById('emp-alias').value.trim();
   emp.mp=document.getElementById('emp-mp').value.trim();
@@ -7664,6 +7668,43 @@ function catalogDocBody(cat, emp){
   <div class="foot-note">TBR TOOLS · Catálogo · ${fecha}</div>
 </div>`;
   return {css: DOC_CSS + CATALOG_GRID_CSS, html};
+}
+function generateCatalogDataFile(){
+  const cat=DB.get('catalog',[]).filter(c=>c.salePrice);
+  if(!cat.length){toast('Cargá precios de venta en el catálogo para poder generarlo.',false);return;}
+  const emp=DB.get('empresa',{});
+  const data={
+    empresa:{ nombre: emp.razonSocial||'TBR Tools', whatsapp: emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'' },
+    products: cat.map(c=>({
+      name:c.name, code:c.code||'', salePrice:c.salePrice,
+      stock: c.stock!=null ? c.stock : undefined,
+      photo: c.photo||undefined
+    }))
+  };
+  const content=`/* ════════════════════════════════════════════════════
+   Datos del catálogo digital — ${esc(data.empresa.nombre)}
+   Generado por TBR Tools Manager el ${new Date().toLocaleDateString('es-AR')}.
+   Subí este archivo junto a catalogo-digital.html para
+   actualizar los productos, fotos y precios mostrados.
+═════════════════════════════════════════════════════ */
+const CATALOG_DATA = ${JSON.stringify(data, null, 2)};
+`;
+  const blob=new Blob([content],{type:'text/javascript'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='catalogo-data.js'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Archivo catalogo-data.js generado. Subilo a tu hosting junto al catálogo digital.');
+}
+function shareCatalogoDigitalLink(){
+  const emp=DB.get('empresa',{});
+  if(!emp.catalogUrl){
+    toast('Primero configurá el link del catálogo digital en Empresa › Datos.',false);
+    return;
+  }
+  const msg=encodeURIComponent(`📋 Mirá nuestro catálogo de productos: ${emp.catalogUrl}`);
+  const phone=emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'';
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank', 'noopener');
 }
 async function shareCatalog(){
   const cat=DB.get('catalog',[]).filter(c=>c.salePrice);
