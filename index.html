@@ -460,11 +460,11 @@ html.light body::before{
 /* Columna de accesos rápidos apilados arriba del botón de acción rápida */
 .qa-fan{position:absolute;left:27px;top:27px;width:0;height:0;pointer-events:none}
 .qa-fan.open{pointer-events:auto}
-.qa-mini{position:absolute;left:0;top:0;width:42px;height:42px;margin:-21px 0 0 -21px;background:transparent;border:none;padding:0;cursor:pointer;display:block;opacity:0;transform:translate(0,0) scale(.3);transition:opacity .16s ease,transform .3s cubic-bezier(.34,1.56,.64,1);transition-delay:0s;touch-action:none}
+.qa-mini{position:absolute;left:0;top:0;width:42px;height:42px;margin:-21px 0 0 -21px;background:transparent;border:none;padding:0;cursor:pointer;display:block;opacity:0;transform:translate(0,0) scale(.3);transition:opacity .16s ease,transform .3s cubic-bezier(.34,1.56,.64,1);transition-delay:0s;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .qa-fan.open .qa-mini{opacity:1;transform:translate(var(--dx,0),var(--dy,0)) scale(1);transition-delay:var(--dl,0s)}
 .qa-mini-ic{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.95);border:1px solid rgba(240,236,224,.3);color:#f0ece0;box-shadow:0 8px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .15s,background .15s,transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
 .qa-mini:hover .qa-mini-ic{border-color:rgba(240,236,224,.6);background:rgba(240,236,224,.1)}
-.qa-mini-lbl{position:absolute;left:50%;top:50%;transform:translate(calc(-100% + var(--lx,-33px)),calc(-50% + var(--ly,0px)));font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.qa-mini-lbl{position:absolute;left:50%;top:50%;transform:translate(calc(-100% + var(--lx,-33px)),calc(-50% + var(--ly,0px)));font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--ch);background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4);user-select:none;-webkit-user-select:none}
 /* Reordenamiento manual: ícono que se está arrastrando se agranda y brilla en dorado */
 .qa-mini.qa-mini-dragging{z-index:10;transition:none!important}
 .qa-mini.qa-mini-dragging .qa-mini-ic{transform:scale(1.18);border-color:var(--ud);box-shadow:0 0 0 3px rgba(226,201,126,.45),0 14px 40px rgba(226,201,126,.5),inset 0 1px 0 rgba(255,255,255,.3)}
@@ -793,7 +793,9 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-swipe-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:76px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;-webkit-tap-highlight-color:transparent}
 .hi-swipe-action.danger{background:var(--re)}
 .hi-swipe-action.accent{background:var(--ud);color:#1c1404}
+.hi-swipe-action span{user-select:none;-webkit-user-select:none}
 .hi-swipe-content{position:relative;background:#131313;transition:transform .25s cubic-bezier(.22,.61,.36,1);will-change:transform;touch-action:pan-y}
+.hi-swipe-content.swiped .hi-hdr-r{opacity:0;transition:opacity .15s}
 @media(min-width:769px){
   .hi-swipe-actions{display:none}
   .hi-swipe-content{transform:none!important}
@@ -6270,7 +6272,7 @@ function pgPedidos() {
       </div>
       <div class="hi-hdr hi-swipe-content" data-lp="ped" data-id="${o.id}" onclick="toggleHi('ped${i}')">
         <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
-        <div><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
+        <div class="hi-hdr-r"><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
       </div>
     </div>
     <div class="hi-body${_pedEditId===o.id?' open':''}" id="ped${i}">
@@ -6921,7 +6923,7 @@ function cliListHTML(list) {
           <div class="cli-avatar">${esc(cliInitials(c.nombre))}</div>
           <div><div class="hi-n">${highlight(c.nombre,cliSearch)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
         </div>
-        <div><div class="hi-v">${total?`<span class="count-val" data-target="${total}">${fmtA(total)}</span>`:fmtA(0)}</div><div class="hi-t">comprado</div></div>
+        <div class="hi-hdr-r"><div class="hi-v">${total?`<span class="count-val" data-target="${total}">${fmtA(total)}</span>`:fmtA(0)}</div><div class="hi-t">comprado</div></div>
       </div>
     </div>
     <div class="hi-body" id="cli${i}">
