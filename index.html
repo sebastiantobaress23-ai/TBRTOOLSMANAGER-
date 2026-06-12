@@ -656,12 +656,13 @@ html.light .record-val{color:#92400e}
 .pr .ef:not(:empty){display:block}
 .pr-wrap{display:flex;flex-direction:column;gap:3px}
 .ped-cost-ref{font-size:9px;color:var(--di);margin-top:3px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
-/* Item rows del formulario de Pedidos/Cotización: leve "tabla premium"
-   con separadores y resalte al pasar el cursor (solo en esta sección) */
-.ped-items .ord-hdr{border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px}
-.ped-items .ord-row{padding:8px 6px;border-radius:8px;transition:background .15s}
-.ped-items .ord-row:hover{background:rgba(255,255,255,.025)}
-.ped-items .ord-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04)}
+/* Item rows de los formularios de ítems (Pedidos, Nueva compra, Cotizaciones
+   a proveedores, Orden de compra): leve "tabla premium" con separadores y
+   resalte al pasar el cursor */
+.items-card .ord-hdr,.items-card .ph{border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px}
+.items-card .pr{padding:8px 6px;border-radius:8px;transition:background .15s}
+.items-card .pr:hover{background:rgba(255,255,255,.025)}
+.items-card .pr:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04)}
 @media(max-width:640px){
   .pg{padding-left:14px;padding-right:14px}
   /* Grids responsive */
@@ -2968,9 +2969,9 @@ function pgCompra() {
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Com. ML</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:var(--ch)">${conf.mlCom}%</span></div>
     </div>
   </div>
-  <div class="card">
-    <div class="fb mb12 prod-tools">
-      <span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">PRODUCTOS</span>
+  <div class="card items-card">
+    <div class="fb mb16 prod-tools">
+      <span class="sh-inline">Productos</span>
       <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">${ic('folder')} Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">${ic('save')} Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">${ic('camera')} Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">${ic('camera')} Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
@@ -5967,6 +5968,7 @@ function pgCotizaciones() {
   <div class="info mb16" style="font-size:12px">Esto es para pedirle precios a tus <b>proveedores</b> (compras). Si lo que necesitás es enviarle un presupuesto a un <b>cliente</b>, usá la sección <b>Pedidos</b>.</div>
 
   <div class="card mb16">
+    <div class="sh mb16">Datos del proveedor</div>
     <div class="fb">
       <div><label class="fl mb8">Proveedor</label>
       <div class="iw" style="max-width:320px">
@@ -5978,9 +5980,9 @@ function pgCotizaciones() {
     </div>
   </div>
 
-  <div class="card mb16">
-    <div class="fb mb12">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS A COTIZAR</span>
+  <div class="card mb16 items-card">
+    <div class="fb mb16">
+      <span class="sh-inline">Artículos a cotizar</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openCotCatModal()">Del catálogo</button>`:''}
       </div>
@@ -5994,7 +5996,7 @@ function pgCotizaciones() {
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="printCotizacion()">${ic('printer')} Generar e imprimir solicitud</button>
+    <button class="btn-go cot-act-main" onclick="printCotizacion()">${ic('printer')} Generar e imprimir solicitud</button>
     <button class="btn-g cot-act-sec" onclick="clearCot()">Limpiar</button>
   </div>
 
@@ -6268,7 +6270,7 @@ function pgPedidos() {
     <div class="hint mt12">Al elegir un cliente ya cargado se completan automáticamente su teléfono y CUIT/DNI guardados.</div>
   </div>
 
-  <div class="card mb16 ped-items">
+  <div class="card mb16 items-card">
     <div class="fb mb16">
       <span class="sh-inline">Artículos</span>
       <div class="fg">
@@ -7469,6 +7471,7 @@ function pgOrden() {
 
   <!-- Proveedor -->
   <div class="card mb16">
+    <div class="sh mb16">Datos del proveedor</div>
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px;align-items:flex-start">
       <div style="flex:1;min-width:220px"><label class="fl mb8" style="min-height:28px">Proveedor</label>
       <div class="iw" style="max-width:320px">
@@ -7488,9 +7491,9 @@ function pgOrden() {
   </div>
 
   <!-- Artículos -->
-  <div class="card mb16">
-    <div class="fb mb12">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS</span>
+  <div class="card mb16 items-card">
+    <div class="fb mb16">
+      <span class="sh-inline">Artículos</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openOrdCatModal()">Del catálogo</button>`:''}
       </div>
@@ -7509,7 +7512,7 @@ function pgOrden() {
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="printOrdenNew()">${ic('printer')} Generar e imprimir orden</button>
+    <button class="btn-go cot-act-main" onclick="printOrdenNew()">${ic('printer')} Generar e imprimir orden</button>
     <button class="btn-g cot-act-sec" onclick="clearOrder()">Limpiar</button>
   </div>
 
