@@ -1654,6 +1654,7 @@ function condicionesHTML(){
   if(!s.presupuestoCond) return '';
   return `<div class="cond-info">${esc(s.presupuestoCond).replace(/\n/g,'<br>')}</div>`;
 }
+const DEFAULT_CATALOG_URL = 'https://sebastiantobaress23-ai.github.io/TBRTOOLSMANAGER-/catalogo-digital.html';
 const ICONS = {
   close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   check: '<polyline points="20 6 9 17 4 12"/>',
@@ -5526,7 +5527,7 @@ function pgConfig() {
       <div><label class="fl">Teléfono</label><div class="iw"><input type="text" id="emp-tel" value="${esc(emp.tel||'')}"></div></div>
       <div><label class="fl">Email</label><div class="iw"><input type="text" id="emp-email" value="${esc(emp.email||'')}"></div></div>
       <div><label class="fl">WhatsApp del negocio</label><div class="iw"><input type="text" id="emp-wa" placeholder="Ej: 5491122334455" value="${esc(emp.waNegocio||'')}"></div></div>
-      <div><label class="fl">Link del catálogo digital</label><div class="iw"><input type="text" id="emp-catalog-url" placeholder="https://tu-usuario.github.io/tu-repo/catalogo-digital.html" value="${esc(emp.catalogUrl||'')}"></div></div>
+      <div><label class="fl">Link del catálogo digital</label><div class="iw"><input type="text" id="emp-catalog-url" placeholder="https://tu-usuario.github.io/tu-repo/catalogo-digital.html" value="${esc(emp.catalogUrl||DEFAULT_CATALOG_URL)}"></div></div>
     </div>
     <div class="hint mt16" style="border-top:1px solid var(--b1);padding-top:14px">Datos de pago — aparecen en los presupuestos y comprobantes de venta para que tus clientes sepan cómo pagarte. Dejalos vacíos si no querés mostrarlos.</div>
     <div class="cfg-g2 mt12">
@@ -7698,11 +7699,8 @@ const CATALOG_DATA = ${JSON.stringify(data, null, 2)};
 }
 function shareCatalogoDigitalLink(){
   const emp=DB.get('empresa',{});
-  if(!emp.catalogUrl){
-    toast('Primero configurá el link del catálogo digital en Empresa › Datos.',false);
-    return;
-  }
-  const msg=encodeURIComponent(`📋 Mirá nuestro catálogo de productos: ${emp.catalogUrl}`);
+  const url=emp.catalogUrl||DEFAULT_CATALOG_URL;
+  const msg=encodeURIComponent(`📋 Mirá nuestro catálogo de productos: ${url}`);
   const phone=emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'';
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank', 'noopener');
 }
