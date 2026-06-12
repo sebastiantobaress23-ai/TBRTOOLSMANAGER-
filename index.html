@@ -113,7 +113,7 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 
 /* ── PAGE TRANSITION ── */
 @keyframes pgEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.pg{animation:pgEnter .22s cubic-bezier(.22,.61,.36,1) both}
+.pg{animation:pgEnter .22s cubic-bezier(.22,.61,.36,1)}
 
 /* ── CARD GLOW HOVER ── */
 .sc.accent-g:hover{box-shadow:0 0 0 1px rgba(74,222,128,.3),0 4px 24px rgba(74,222,128,.12)!important;transform:translateY(-2px)}
@@ -530,7 +530,7 @@ html.light body::before{
 .tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
 
 /* CONTENT */
-#app{flex:1;position:relative;z-index:1;animation:pgFadeIn .28s ease both}
+#app{flex:1;position:relative;z-index:1;animation:pgFadeIn .28s ease}
 @keyframes pgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes modalBackdropIn{from{opacity:0}to{opacity:1}}
 @keyframes modalBoxIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -538,8 +538,8 @@ html.light body::before{
 /* ── DIRECTIONAL PAGE TRANSITIONS ── */
 @keyframes pageSlideInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
 @keyframes pageSlideInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
-#app.slide-r{animation:pageSlideInR .32s cubic-bezier(.22,.61,.36,1) both}
-#app.slide-l{animation:pageSlideInL .32s cubic-bezier(.22,.61,.36,1) both}
+#app.slide-r{animation:pageSlideInR .32s cubic-bezier(.22,.61,.36,1)}
+#app.slide-l{animation:pageSlideInL .32s cubic-bezier(.22,.61,.36,1)}
 
 /* ── THEME TRANSITION (View Transitions API) ── */
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
@@ -835,7 +835,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 /* ── DRAG TO REORDER (Catálogo) ── */
 .btn-g.on{background:var(--ud);border-color:var(--ud);color:#1a1206}
 html.light .btn-g.on{background:#92400e;border-color:#92400e;color:#fff}
-.cat-r.reorder-on{grid-template-columns:28px 1fr 90px 110px 96px 84px}
+.cat-t.reorder-on,.cat-r.reorder-on{grid-template-columns:28px 1fr 90px 110px 96px 84px}
 .cat-drag-handle{display:flex;align-items:center;justify-content:center;color:var(--di);cursor:grab;touch-action:none;-webkit-tap-highlight-color:transparent;padding:6px 0}
 .cat-drag-handle:active{cursor:grabbing;color:var(--ud)}
 .cat-r.reorder-on{transition:transform .18s cubic-bezier(.22,.61,.36,1),background .1s}
@@ -1007,6 +1007,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
   .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
+  .cat-t.reorder-on{display:none}
   .cat-r.reorder-on{grid-template-columns:24px 1fr 92px}
   .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-r > div:nth-child(4){display:none}
   .cat-r.reorder-on .c-code,.cat-r.reorder-on>div:nth-child(5){display:none}
@@ -2589,23 +2590,20 @@ function openActionSheetFor(el){
 /* ── DRAG TO REORDER (Catálogo) ── */
 (function(){
   let dragEl=null, container=null, rows=[], startY=0, startIdx=0, currentIdx=0, rowH=0;
-  document.addEventListener('touchstart', e=>{
-    const handle=e.target.closest('.cat-drag-handle');
-    if(!handle) return;
+  function start(handle, clientY){
     dragEl=handle.closest('.cat-r');
     if(!dragEl) return;
     container=dragEl.parentElement;
     rows=[...container.querySelectorAll('.cat-r')];
     startIdx=currentIdx=rows.indexOf(dragEl);
-    startY=e.touches[0].clientY;
+    startY=clientY;
     rowH=dragEl.getBoundingClientRect().height;
     dragEl.classList.add('cat-dragging');
     haptic(10);
-  }, {passive:true});
-  document.addEventListener('touchmove', e=>{
+  }
+  function move(clientY){
     if(!dragEl) return;
-    e.preventDefault();
-    const dy=e.touches[0].clientY-startY;
+    const dy=clientY-startY;
     dragEl.style.transform=`translateY(${dy}px)`;
     const newIdx=Math.max(0,Math.min(rows.length-1, startIdx+Math.round(dy/rowH)));
     if(newIdx!==currentIdx){
@@ -2618,8 +2616,8 @@ function openActionSheetFor(el){
       });
       haptic(5);
     }
-  }, {passive:false});
-  document.addEventListener('touchend', ()=>{
+  }
+  function end(){
     if(!dragEl) return;
     dragEl.classList.remove('cat-dragging');
     dragEl.style.transform='';
@@ -2633,7 +2631,30 @@ function openActionSheetFor(el){
     }
     dragEl=null;
     render();
+  }
+  document.addEventListener('touchstart', e=>{
+    const handle=e.target.closest('.cat-drag-handle');
+    if(!handle) return;
+    start(handle, e.touches[0].clientY);
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!dragEl) return;
+    e.preventDefault();
+    move(e.touches[0].clientY);
+  }, {passive:false});
+  document.addEventListener('touchend', end);
+  document.addEventListener('mousedown', e=>{
+    const handle=e.target.closest('.cat-drag-handle');
+    if(!handle) return;
+    e.preventDefault();
+    start(handle, e.clientY);
   });
+  document.addEventListener('mousemove', e=>{
+    if(!dragEl) return;
+    e.preventDefault();
+    move(e.clientY);
+  });
+  document.addEventListener('mouseup', end);
 })();
 /* ── SWIPE HORIZONTAL ENTRE PESTAÑAS ── */
 (function(){
@@ -4333,8 +4354,8 @@ function pgCat() {
   </div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
-    <div class="cat-t">
-      <div class="ph-l">Nombre</div><div class="ph-l c-code">Código</div>
+    <div class="cat-t${ro?' reorder-on':''}">
+      ${ro?'<div></div>':''}<div class="ph-l">Nombre</div><div class="ph-l c-code">Código</div>
       <div class="ph-l" style="text-align:right"><span class="cat-price-full">Último precio</span><span class="cat-price-short">Precio</span></div>
       <div class="ph-l">Actualizado</div><div></div>
     </div>
