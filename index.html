@@ -276,6 +276,17 @@ body.compact .g4{gap:8px!important}
 .hint{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.5px}
 /* Info box */
 .info{background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:var(--r);padding:10px 14px;font-size:13px;color:rgba(45,212,191,.8)}
+/* Section label used inline within flex headers (no divider line) */
+.sh-inline{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:rgba(226,201,126,.55)}
+/* FLOW STEPS: circuito de estados (pedidos/cotizaciones) */
+.flow-steps{display:flex;align-items:stretch;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.flow-step{display:flex;align-items:center;gap:10px;flex:1 1 150px;padding:12px 14px;background:linear-gradient(145deg,rgba(20,20,20,1),rgba(12,12,12,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.flow-step-ic{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(226,201,126,.08);border:1px solid rgba(226,201,126,.25);color:var(--ud);flex-shrink:0}
+.flow-step-tx{min-width:0}
+.flow-step-n{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:var(--mu);margin-bottom:2px}
+.flow-step-l{font-size:12px;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3}
+.flow-sep{flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.12)}
+@media(max-width:760px){.flow-sep{display:none}.flow-step{flex:1 1 calc(50% - 4px)}}
 /* Alert */
 .alert-y{background:rgba(251,191,36,.05)!important;border:1px solid rgba(251,191,36,.2)!important;border-left:3px solid rgba(251,191,36,.6)!important;color:rgba(251,191,36,.9)!important}
 /* Totbar totals */
@@ -645,6 +656,12 @@ html.light .record-val{color:#92400e}
 .pr .ef:not(:empty){display:block}
 .pr-wrap{display:flex;flex-direction:column;gap:3px}
 .ped-cost-ref{font-size:9px;color:var(--di);margin-top:3px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
+/* Item rows del formulario de Pedidos/Cotización: leve "tabla premium"
+   con separadores y resalte al pasar el cursor (solo en esta sección) */
+.ped-items .ord-hdr{border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px}
+.ped-items .ord-row{padding:8px 6px;border-radius:8px;transition:background .15s}
+.ped-items .ord-row:hover{background:rgba(255,255,255,.025)}
+.ped-items .ord-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04)}
 @media(max-width:640px){
   .pg{padding-left:14px;padding-right:14px}
   /* Grids responsive */
@@ -6220,11 +6237,24 @@ function pgPedidos() {
   const sales = DB.get('sales',[]);
   const clientes = DB.get('clientes',[]);
 
+  const pedTotal = PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+
   return `<div class="pg">
   <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
-  <div class="info mb16" style="font-size:12px">Circuito: <b>Generar presupuesto</b> (queda como "Cotización enviada") → cuando el cliente confirma, marcá <b>"Cliente confirmó pedido"</b> → <b>"En preparación"</b> → al entregar, <b>"Entregado / Cobrado"</b> genera automáticamente el comprobante de venta (factura) en Ventas con todos los artículos del pedido, referenciando este presupuesto.</div>
+
+  <div class="flow-steps">
+    <div class="flow-step"><span class="flow-step-ic">${ic('send',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 1</div><div class="flow-step-l">Generar presupuesto</div></div></div>
+    <div class="flow-sep">${ic('arrowRight',14)}</div>
+    <div class="flow-step"><span class="flow-step-ic">${ic('clipboard',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 2</div><div class="flow-step-l">Cliente confirma</div></div></div>
+    <div class="flow-sep">${ic('arrowRight',14)}</div>
+    <div class="flow-step"><span class="flow-step-ic">${ic('package',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 3</div><div class="flow-step-l">En preparación</div></div></div>
+    <div class="flow-sep">${ic('arrowRight',14)}</div>
+    <div class="flow-step"><span class="flow-step-ic">${ic('check',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 4</div><div class="flow-step-l">Entregado / Cobrado</div></div></div>
+  </div>
+  <div class="hint mb20">Al marcar "Entregado / Cobrado" se genera automáticamente el comprobante de venta en Ventas con los artículos de este pedido.</div>
 
   <div class="card mb16">
+    <div class="sh mb16">Datos del cliente</div>
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
       <div style="flex:1;min-width:200px"><label class="fl mb8">Cliente</label>
       <div class="iw"><input type="text" id="ped-cliente" placeholder="Nombre del cliente" list="ped-clientes-list" autocomplete="off" oninput="onPedClienteInput(this.value)"></div>
@@ -6238,9 +6268,9 @@ function pgPedidos() {
     <div class="hint mt12">Al elegir un cliente ya cargado se completan automáticamente su teléfono y CUIT/DNI guardados.</div>
   </div>
 
-  <div class="card mb16">
-    <div class="fb mb12">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--di)">ARTÍCULOS</span>
+  <div class="card mb16 ped-items">
+    <div class="fb mb16">
+      <span class="sh-inline">Artículos</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatModal()">Del catálogo</button>`:''}
         <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
@@ -6252,11 +6282,15 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
+    <div class="fb mt16" id="ped-total-wrap" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.06);${PED.length?'':'display:none'}">
+      <span class="sh-inline">Total presupuesto</span>
+      <span id="ped-total-val" style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ud);letter-spacing:-.3px">${fmtA(pedTotal)}</span>
+    </div>
     <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se usa el "Precio de venta" definido en cada producto (Catálogo → editar producto); si no lo cargaste, se sugiere costo + margen de Configuración → Ventas directas. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
   </div>
 
   <div class="cot-actbar mb16">
-    <button class="btn-p cot-act-main" onclick="generatePedido()">${ic('fileText')} Generar presupuesto</button>
+    <button class="btn-go cot-act-main" onclick="generatePedido()">${ic('fileText')} Generar presupuesto</button>
     <button class="btn-g cot-act-sec" onclick="clearPed()">Limpiar</button>
   </div>
 
@@ -6348,12 +6382,14 @@ function addPedRow(n='',c='',q=1,p='') {
     if (PED.length===1) list.innerHTML='';
     list.insertAdjacentHTML('beforeend',pedRow(PED[PED.length-1]));
   }
+  refreshPedTotal();
 }
 function rmPed(id) {
   PED=PED.filter(x=>x.id!==id);
   const el=document.getElementById('ped-'+id);
   if(el)el.remove();
   if(!PED.length){const l=document.getElementById('ped-list');if(l)l.innerHTML='<div class="empty" style="padding:16px">Sin artículos.</div>';}
+  refreshPedTotal();
 }
 function updPed(id,k,v) {
   const x=PED.find(x=>x.id===id);
@@ -6361,6 +6397,14 @@ function updPed(id,k,v) {
   if(k==='q') x.q=parseInt(v)||1;
   else if(k==='p') x.p=parseFloat(v)||0;
   else x[k]=v;
+  if(k==='q'||k==='p') refreshPedTotal();
+}
+function refreshPedTotal() {
+  const wrap=document.getElementById('ped-total-wrap');
+  const val=document.getElementById('ped-total-val');
+  if(!wrap||!val) return;
+  wrap.style.display = PED.length ? 'flex' : 'none';
+  val.textContent = fmtA(PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0));
 }
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
