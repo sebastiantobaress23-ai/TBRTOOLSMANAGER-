@@ -87,9 +87,14 @@ body{
   padding:max(16px,env(safe-area-inset-top)) clamp(16px,4vw,48px) 0}
 .brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .brand img{width:38px;height:38px;border-radius:9px;display:block}
-.brand-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;letter-spacing:5px;
-  text-transform:uppercase;line-height:1.1}
-.brand-t span{display:block;font-size:9px;letter-spacing:4px;color:var(--gd);font-weight:600;margin-top:1px}
+.brand-t{line-height:1.05}
+.brand-wordmark{display:flex;align-items:baseline;gap:6px}
+.brand-wordmark b{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:18px;letter-spacing:.5px;
+  color:var(--ch)}
+.brand-wordmark i{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:normal;
+  font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--ch);opacity:.85}
+.brand-t span{display:block;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:4px;
+  color:var(--gd);font-weight:600;text-transform:uppercase;margin-top:2px}
 .topbar-actions{display:flex;align-items:center;gap:10px}
 .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;cursor:pointer;
   font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;
@@ -180,7 +185,7 @@ body{
   <header class="topbar">
     <div class="brand bfu" style="animation-delay:0ms">
       <img src="assets/tbr-logo.png" alt="TBR Tools">
-      <div class="brand-t">TBR Tools<span>Catálogo digital</span></div>
+      <div class="brand-t"><div class="brand-wordmark"><b>TBR</b><i>Tools</i></div><span>Catálogo digital</span></div>
     </div>
     <div class="topbar-actions">
       <button class="liquid-glass pill bfu" style="animation-delay:120ms" onclick="openGrid()">
@@ -225,18 +230,22 @@ body{
   <div class="grid-wrap"><div class="tgrid" id="tgrid"></div></div>
 </div>
 
+<script src="catalogo-data.js"></script>
 <script>
 /* ════════════════════════════════════════════════════
    FUENTE DE DATOS
-   Reemplazar/alimentar este array desde TBR Tools Manager
-   (mismo formato que el catálogo de la app):
-   { name, code, salePrice, stock, photo }
+   Los datos reales se cargan desde catalogo-data.js (generado
+   por TBR Tools Manager → Catálogo → "Generar catálogo digital").
+   Si ese archivo no está presente, se usan estos datos de ejemplo.
+   Formato: { name, code, salePrice, stock, photo }
    - photo: dataURL/base64 o URL de imagen (opcional)
    - stock: número (opcional, omitir si no se controla stock)
 ═════════════════════════════════════════════════════ */
-const EMPRESA = { nombre: 'Alexis Sebastián Tobares', whatsapp: '5492604375765' };
+const DATA = (typeof CATALOG_DATA !== 'undefined') ? CATALOG_DATA : null;
 
-const PRODUCTS = [
+const EMPRESA = (DATA && DATA.empresa) || { nombre: 'TBR Tools', whatsapp: '5492604375765' };
+
+const PRODUCTS = (DATA && DATA.products) || [
   {name:'Amoladora Inalámbrica 20V 1000W Total', code:'TAGLI271532', salePrice:280622, stock:5},
   {name:'Taladro Percutor Inalámbrico 20V 86Nm Total', code:'TIDLI208687', salePrice:275425, stock:1},
   {name:'Taladro Atornillador Inalámbrico 20V 50Nm Total', code:'TDLI205062', salePrice:176688, stock:5},
