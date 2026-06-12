@@ -240,24 +240,62 @@ body{
 <script>
 /* ════════════════════════════════════════════════════
    FUENTE DE DATOS
-   Los datos reales se cargan desde catalogo-data.js (generado
-   por TBR Tools Manager → Catálogo → "Generar catálogo digital").
-   Si ese archivo no está presente, se usan estos datos de ejemplo.
-   Formato: { name, code, salePrice, stock, photo }
+   1) Catálogo en vivo: se intenta leer directo desde la base de datos
+      de TBR Tools Manager (Firebase), así el catálogo se actualiza
+      solo cuando se edita un producto en la app.
+   2) catalogo-data.js: si la lectura en vivo falla (sin conexión,
+      base vacía, etc.), se usan los datos generados manualmente desde
+      TBR Tools Manager → Catálogo → "Generar catálogo digital".
+   3) Datos de ejemplo: último recurso si no hay ninguna de las dos
+      fuentes anteriores.
+   Formato de producto: { name, code, salePrice, stock, photo, photos }
    - photo: dataURL/base64 o URL de imagen (opcional)
+   - photos: array de fotos adicionales (opcional)
    - stock: número (opcional, omitir si no se controla stock)
 ═════════════════════════════════════════════════════ */
-const DATA = (typeof CATALOG_DATA !== 'undefined') ? CATALOG_DATA : null;
+const FB_LIVE = 'https://tbr-tools-manager-default-rtdb.firebaseio.com/tbr';
 
-const EMPRESA = (DATA && DATA.empresa) || { nombre: 'TBR Tools', whatsapp: '5492604375765' };
-
-const PRODUCTS = (DATA && DATA.products) || [
+const SAMPLE_PRODUCTS = [
   {name:'Amoladora Inalámbrica 20V 1000W Total', code:'TAGLI271532', salePrice:280622, stock:5},
   {name:'Taladro Percutor Inalámbrico 20V 86Nm Total', code:'TIDLI208687', salePrice:275425, stock:1},
   {name:'Taladro Atornillador Inalámbrico 20V 50Nm Total', code:'TDLI205062', salePrice:176688, stock:5},
   {name:'Equipo De Pintar 530W 800ML Total', code:'TT45061', salePrice:75448, stock:4},
   {name:'Equipo De Pintar 450W 800ML Total', code:'TT3506', salePrice:69290, stock:3},
 ];
+
+const STATIC_DATA = (typeof CATALOG_DATA !== 'undefined') ? CATALOG_DATA : null;
+
+let EMPRESA = (STATIC_DATA && STATIC_DATA.empresa) || { nombre: 'TBR Tools', whatsapp: '5492604375765' };
+let PRODUCTS = (STATIC_DATA && STATIC_DATA.products) || SAMPLE_PRODUCTS;
+
+/* Intenta traer el catálogo en vivo desde Firebase. Devuelve null si
+   falla o si no hay productos con precio de venta cargado. */
+async function fetchLiveCatalog(){
+  try{
+    const [catRes, empRes] = await Promise.all([
+      fetch(`${FB_LIVE}/catalog.json`, {cache:'no-store', signal:AbortSignal.timeout(4000)}),
+      fetch(`${FB_LIVE}/empresa.json`, {cache:'no-store', signal:AbortSignal.timeout(4000)})
+    ]);
+    if(!catRes.ok) return null;
+    const catalog = await catRes.json();
+    if(!Array.isArray(catalog)) return null;
+    const products = catalog.filter(c=>c && c.salePrice).map(c=>({
+      name: c.name, code: c.code||'', salePrice: c.salePrice,
+      stock: c.stock!=null ? c.stock : undefined,
+      photo: c.photo||undefined,
+      photos: (c.photos && c.photos.length>1) ? c.photos : undefined
+    }));
+    if(!products.length) return null;
+    const emp = empRes.ok ? await empRes.json() : null;
+    return {
+      empresa: {
+        nombre: (emp && emp.razonSocial) || EMPRESA.nombre,
+        whatsapp: (emp && emp.waNegocio) ? emp.waNegocio.replace(/\D/g,'') : EMPRESA.whatsapp
+      },
+      products
+    };
+  }catch{ return null; }
+}
 
 const fmtA = n => '$ ' + Math.round(n||0).toLocaleString('es-AR');
 const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -386,7 +424,11 @@ document.addEventListener('touchend', e=>{
   touchX=null;
 }, {passive:true});
 
-renderSlide();
+(async () => {
+  const live = await fetchLiveCatalog();
+  if(live){ EMPRESA = live.empresa; PRODUCTS = live.products; idx = Math.min(idx, PRODUCTS.length-1); }
+  renderSlide();
+})();
 </script>
 </body>
 </html>
