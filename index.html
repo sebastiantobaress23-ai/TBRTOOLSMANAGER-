@@ -1105,6 +1105,45 @@ select{cursor:pointer}
   .card:hover,.sc:hover,.mc:hover,.qa-fab:hover{transform:none!important}
 }
 
+/* ═══════════════════════════════════════════
+   CATÁLOGO DIGITAL — vidriera premium
+═══════════════════════════════════════════ */
+.catdig-ol{position:fixed;inset:0;background:#060606;z-index:10000;display:flex;flex-direction:column;animation:catdigFade .25s ease both}
+@keyframes catdigFade{from{opacity:0}to{opacity:1}}
+.catdig-top{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top))}
+.catdig-segs{flex:1;display:flex;gap:4px}
+.catdig-seg{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.catdig-seg i{display:block;height:100%;width:0;background:var(--ud);transition:width .35s cubic-bezier(.22,.61,.36,1)}
+.catdig-seg.done i,.catdig-seg.now i{width:100%}
+.catdig-close{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ch);cursor:pointer;transition:background .15s,transform .15s}
+.catdig-close:hover{background:rgba(255,255,255,.12);transform:scale(1.06)}
+.catdig-stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:8px 16px;touch-action:pan-y}
+.catdig-nav{position:absolute;top:0;bottom:0;width:30%;cursor:pointer;z-index:2;background:transparent;border:none}
+.catdig-nav.l{left:0}.catdig-nav.r{right:0}
+.catdig-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ch);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .15s,opacity .15s;z-index:3}
+.catdig-stage:not(:hover) .catdig-arrow{opacity:0}
+.catdig-arrow:hover{background:rgba(226,201,126,.16);border-color:rgba(226,201,126,.35);color:var(--ud);transform:translateY(-50%) scale(1.06)}
+.catdig-arrow.l{left:14px}.catdig-arrow.r{right:14px}
+@media(hover:none){.catdig-arrow{display:none}}
+.catdig-card{width:min(420px,92vw);display:flex;flex-direction:column;align-items:center;text-align:center;animation:catdigSlideIn .45s cubic-bezier(.16,1,.3,1) both}
+@keyframes catdigSlideIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+.catdig-card.back{animation-name:catdigSlideInBack}
+@keyframes catdigSlideInBack{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+.catdig-photo-wrap{position:relative;width:min(300px,68vw);height:min(300px,68vw);border-radius:var(--r2);overflow:hidden;background:linear-gradient(150deg,var(--bg3),var(--bg1));border:1px solid rgba(226,201,126,.18);box-shadow:0 24px 60px -24px rgba(0,0,0,.7);animation:catdigPhotoIn .55s cubic-bezier(.16,1,.3,1) .05s both}
+@keyframes catdigPhotoIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.catdig-photo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.catdig-noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:88px;font-weight:800;color:rgba(226,201,126,.18)}
+.catdig-photo-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%);transform:translateX(-120%);animation:catdigShine 1.1s cubic-bezier(.22,.61,.36,1) .35s both;pointer-events:none}
+@keyframes catdigShine{to{transform:translateX(120%)}}
+.catdig-name{margin-top:22px;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ch);animation:catdigUp .45s cubic-bezier(.22,.61,.36,1) .12s both}
+.catdig-code{margin-top:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--di);animation:catdigUp .45s cubic-bezier(.22,.61,.36,1) .17s both}
+.catdig-price{margin-top:14px;font-family:'Rajdhani',sans-serif;font-size:clamp(2.4rem,9vw,3.4rem);font-weight:800;letter-spacing:-.5px;color:var(--ud);animation:catdigUp .45s cubic-bezier(.22,.61,.36,1) .22s both}
+@keyframes catdigUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.catdig-stock{margin-top:10px;animation:catdigUp .45s cubic-bezier(.22,.61,.36,1) .27s both}
+.catdig-bottom{display:flex;justify-content:center;align-items:center;gap:14px;padding:16px 16px max(16px,env(safe-area-inset-bottom))}
+.catdig-count{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--di)}
+@media(prefers-reduced-motion:reduce){.catdig-photo-wrap::after{display:none}}
+
 </style>
 </head>
 <body>
@@ -4253,7 +4292,7 @@ function pgCat() {
   const ro=catReorderMode;
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
-  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button>${cat.some(c=>c.salePrice)?`<button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalog()">${ic('star')} Compartir catálogo</button>`:''}<button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
+  <div class="fb mb20"><div class="sh" style="margin:0;flex:1">Catálogo de productos</div><button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button><button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} Movimientos</button>${cat.some(c=>c.salePrice)?`<button class="btn-g btn-sm" style="color:var(--ud)" onclick="openCatalogoDigital()">${ic('eye')} Catálogo digital</button><button class="btn-g btn-sm" style="color:var(--ud)" onclick="shareCatalog()">${ic('star')} Compartir catálogo</button>`:''}<button class="btn-p btn-sm" onclick="openAddCat()">+ Agregar</button></div>
   ${cat.length===0?emptyState(EMPTY_ICONS.catalog,'Catálogo vacío','Se actualiza automáticamente\ncuando guardás compras.'):`
   <div class="card" style="padding:0;overflow:hidden">
     <div class="cat-t">
@@ -4360,6 +4399,102 @@ function previewCePhoto(input){
   reader.readAsDataURL(file);
 }
 function removeCePhoto(){setCePhoto('');}
+
+/* ═══════════════════════════════════════════
+   CATÁLOGO DIGITAL — vidriera premium
+═══════════════════════════════════════════ */
+let _catDig = {items:[], idx:0};
+let _catDigTouchX = null;
+function catDigOverlayHTML(){
+  return `<div id="catdig-ol" class="catdig-ol">
+    <div class="catdig-top">
+      <div class="catdig-segs" id="catdig-segs"></div>
+      <div class="catdig-close" onclick="closeCatalogoDigital()">${ic('close',16)}</div>
+    </div>
+    <div class="catdig-stage" id="catdig-stage" ontouchstart="catDigTouchStart(event)" ontouchend="catDigTouchEnd(event)"></div>
+    <div class="catdig-bottom">
+      <div class="catdig-count" id="catdig-count"></div>
+    </div>
+  </div>`;
+}
+function openCatalogoDigital(){
+  const items = DB.get('catalog',[]).filter(c=>c.salePrice);
+  if(!items.length){toast('Cargá precios de venta en el catálogo para usar el catálogo digital.',false);return;}
+  _catDig.items = items;
+  _catDig.idx = 0;
+  if(!document.getElementById('catdig-ol')){
+    document.body.insertAdjacentHTML('beforeend', catDigOverlayHTML());
+  }
+  document.getElementById('catdig-ol').style.display='flex';
+  renderCatDigSlide('fwd');
+  document.addEventListener('keydown', catDigKeydown);
+}
+function closeCatalogoDigital(){
+  const ol=document.getElementById('catdig-ol');
+  if(ol) ol.remove();
+  document.removeEventListener('keydown', catDigKeydown);
+}
+function catDigKeydown(e){
+  if(e.key==='Escape') closeCatalogoDigital();
+  else if(e.key==='ArrowRight') catDigNext();
+  else if(e.key==='ArrowLeft') catDigPrev();
+}
+function catDigNext(){
+  if(_catDig.idx < _catDig.items.length-1){_catDig.idx++; renderCatDigSlide('fwd');}
+}
+function catDigPrev(){
+  if(_catDig.idx > 0){_catDig.idx--; renderCatDigSlide('back');}
+}
+function catDigGoto(i){
+  if(i===_catDig.idx) return;
+  const dir = i>_catDig.idx?'fwd':'back';
+  _catDig.idx=i;
+  renderCatDigSlide(dir);
+}
+function catDigTouchStart(e){_catDigTouchX=e.touches[0].clientX;}
+function catDigTouchEnd(e){
+  if(_catDigTouchX==null) return;
+  const dx=e.changedTouches[0].clientX-_catDigTouchX;
+  if(dx<-40) catDigNext();
+  else if(dx>40) catDigPrev();
+  _catDigTouchX=null;
+}
+function renderCatDigSlide(dir){
+  const {items, idx} = _catDig;
+  const c = items[idx];
+  const segsEl = document.getElementById('catdig-segs');
+  if(segsEl) segsEl.innerHTML = items.map((_,i)=>`<div class="catdig-seg ${i<=idx?'done':''}" onclick="catDigGoto(${i})" style="cursor:pointer"><i></i></div>`).join('');
+  const stage = document.getElementById('catdig-stage');
+  stage.innerHTML = `
+    <button class="catdig-nav l" onclick="catDigPrev()" aria-label="Anterior" tabindex="-1"></button>
+    <button class="catdig-nav r" onclick="catDigNext()" aria-label="Siguiente" tabindex="-1"></button>
+    ${idx>0?`<button class="catdig-arrow l" onclick="catDigPrev()" aria-label="Anterior"><span style="display:flex;transform:rotate(180deg)">${ic('arrowRight',18)}</span></button>`:''}
+    ${idx<items.length-1?`<button class="catdig-arrow r" onclick="catDigNext()" aria-label="Siguiente">${ic('arrowRight',18)}</button>`:''}
+    <div class="catdig-card ${dir==='back'?'back':''}">
+      <div class="catdig-photo-wrap">${c.photo?`<img src="${c.photo}" alt="${esc(c.name)}">`:`<div class="catdig-noimg">${esc((c.name||'?').slice(0,1).toUpperCase())}</div>`}</div>
+      <div class="catdig-name">${esc(c.name)}</div>
+      ${c.code?`<div class="catdig-code">${esc(c.code)}</div>`:''}
+      <div class="catdig-price" id="catdig-price">${fmtA(0)}</div>
+      ${c.stock!=null?`<div class="catdig-stock"><span class="badge ${c.stock<=0?'badge-r':'badge-g'}">${c.stock<=0?'Sin stock':`Stock: ${c.stock}`}</span></div>`:''}
+    </div>
+  `;
+  const countEl = document.getElementById('catdig-count');
+  if(countEl) countEl.textContent = `${idx+1} / ${items.length}`;
+  animateCatDigPrice(c.salePrice||0);
+}
+function animateCatDigPrice(target){
+  const el=document.getElementById('catdig-price');
+  if(!el) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=fmtA(target);return;}
+  const start=performance.now(), dur=700;
+  function step(now){
+    const p=Math.min(1,(now-start)/dur);
+    const eased=1-Math.pow(1-p,3);
+    el.textContent=fmtA(Math.round(target*eased));
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
 function ceCost(){
   const usd=parseFloat(document.getElementById('ce-price').value)||0;
   return Math.round(usd*lastTCE());
