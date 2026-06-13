@@ -1648,6 +1648,7 @@ async function syncCatalogOrders() {
    No toca claves con cambios locales aún no confirmados (tbr__pending),
    para no perder ediciones recientes hechas sin conexión. */
 async function initialSyncIfFresh() {
+  try { alert('SYNC v124 ejecutando, online='+navigator.onLine); } catch {}
   if (!navigator.onLine) return;
   try {
     const url = await fbUrl(FB+'.json', 't='+Date.now());
