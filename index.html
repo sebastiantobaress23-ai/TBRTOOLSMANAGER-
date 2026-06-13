@@ -1701,7 +1701,8 @@ async function initialSyncIfFresh() {
       }
     }
     if (restored) _lastWrite = Date.now();
-  } catch {}
+    try { toast('v126b sync OK. catalog local='+(DB.get('catalog',[])||[]).length+' remoto='+(Array.isArray(d.catalog)?d.catalog.length:'n/a')+' r.ok='+r.ok, true, 5000); } catch {}
+  } catch (e) { try { toast('v126b sync ERROR: '+(e&&e.message), false, 5000); } catch {} }
 }
 
 function setSyncDot(ok) {
