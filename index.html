@@ -2339,6 +2339,40 @@ document.addEventListener('click', e=>{
 // (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
 // scroll y los toques de la sección nueva, dando la sensación de que la app
 // "se traba".
+/* Deslizar hacia abajo desde el encabezado de un modal (mobile) para cerrarlo */
+(function(){
+  let startY=0, deltaY=0, dragging=false, box=null, mol=null;
+  document.addEventListener('touchstart', e=>{
+    if(!window.matchMedia('(max-width:768px)').matches) return;
+    const hdr=e.target.closest('.mhdr');
+    if(!hdr || e.target.closest('button')) return;
+    box=hdr.closest('.mbox');
+    mol=hdr.closest('.mol');
+    if(!box||!mol) return;
+    startY=e.touches[0].clientY;
+    deltaY=0;
+    dragging=true;
+    box.style.transition='none';
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(!dragging||!box) return;
+    deltaY=e.touches[0].clientY-startY;
+    if(deltaY<0) deltaY=0;
+    box.style.transform=`translateY(${deltaY}px)`;
+  }, {passive:true});
+  document.addEventListener('touchend', ()=>{
+    if(!dragging||!box) return;
+    box.style.transition='transform .25s cubic-bezier(.22,.61,.36,1)';
+    if(deltaY>90){
+      const b=box, m=mol;
+      b.style.transform='translateY(100%)';
+      setTimeout(()=>{ m.click(); b.style.transform=''; b.style.transition=''; }, 200);
+    } else {
+      box.style.transform='';
+    }
+    dragging=false; box=null; mol=null;
+  });
+})();
 function _updateVh100(){
   const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
   document.documentElement.style.setProperty('--vh100', h+'px');
