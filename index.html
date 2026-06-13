@@ -4543,14 +4543,16 @@ function pgCat() {
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
       <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div class="fg-w"><div class="iw" style="flex:1;min-width:125px"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 108px;min-width:108px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px;flex:0 0 auto;padding:0 8px" title="Sugerir según costo + margen">Sugerir</button></div></div>
       <div class="hint">Es lo que le cobrás al cliente en Pedidos. El campo "%" es el margen sobre tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>): cambialo para recalcular el precio, o editá el precio y se recalcula el margen. "Sugerir" usa el margen de Configuración → Ventas directas si no cargaste uno propio acá.</div>
+      <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><div class="iw"><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="resize:vertical;min-height:70px"></textarea></div></div>
+      <div class="hint">Se muestra en la ficha del producto dentro del catálogo digital, debajo del nombre.</div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
     </div></div>
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';document.getElementById('ce-specs').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';unlockBody();}
 let cePhotos=[];
 function renderCePhotos(){
@@ -4634,10 +4636,11 @@ function saveCat(){
   const salePrice=salePriceRaw===''?undefined:Math.max(0,parseFloat(salePriceRaw)||0);
   const photos=cePhotos.slice(0,6);
   const photo=photos[0]||'';
+  const specs=document.getElementById('ce-specs').value.trim();
   if(!name){toast('Ingresá el nombre.',false);return;}
   let cat=DB.get('catalog',[]);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined}),...(photos.length?{photos}:{photos:undefined})}:c);
-  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{}),...(photos.length?{photos}:{})});
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined}),...(photos.length?{photos}:{photos:undefined}),...(specs?{specs}:{specs:undefined})}:c);
+  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{}),...(photos.length?{photos}:{}),...(specs?{specs}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
