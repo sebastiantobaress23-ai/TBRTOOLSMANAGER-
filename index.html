@@ -910,7 +910,7 @@ body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%;top:calc(-
 html.light .asheet-action{color:#222}
 
 /* CONFIRM MODAL */
-.cm-ol{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
+.cm-ol{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10006;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
 .cm-box{background:#111;border:1px solid var(--b3);border-radius:var(--r2);padding:26px;width:100%;max-width:320px;text-align:center;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both}
 .cm-msg{font-size:15px;color:var(--ch);margin-bottom:20px;line-height:1.6}
 .cm-btns{display:flex;gap:10px;justify-content:center}
@@ -2494,10 +2494,11 @@ function confirm2(msg, cb, okTxt='Eliminar', okCls='cm-ok') {
   document.getElementById('cm-ok').textContent = okTxt;
   document.getElementById('cm-ok').className = okCls;
   document.getElementById('cm-ol').style.display = 'flex';
+  lockBody();
   _confirmCb = cb;
 }
-function cmOk()     { document.getElementById('cm-ol').style.display='none'; haptic(15); if(_confirmCb){_confirmCb();_confirmCb=null;} }
-function cmCancel() { document.getElementById('cm-ol').style.display='none'; _confirmCb=null; }
+function cmOk()     { document.getElementById('cm-ol').style.display='none'; unlockBody(); haptic(15); if(_confirmCb){_confirmCb();_confirmCb=null;} }
+function cmCancel() { document.getElementById('cm-ol').style.display='none'; unlockBody(); _confirmCb=null; }
 
 /* ── HAPTIC FEEDBACK ── */
 function haptic(pattern=10){
