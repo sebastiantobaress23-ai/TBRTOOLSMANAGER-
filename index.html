@@ -213,7 +213,7 @@ body.compact .g4{gap:8px!important}
 .ml-src-btn.on{border-color:var(--ud);color:var(--ud);background:rgba(226,201,126,.08)}
 .ml-select{background:var(--bg3);border:1px solid var(--b2);color:var(--ch);border-radius:var(--r);padding:0 12px;height:36px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:180px;flex:1}
 .ml-mode-bar{display:flex;gap:6px;margin-bottom:16px}
-.ml-mode-btn{flex:1;height:36px;background:var(--bg3);border:1px solid var(--b2);color:var(--di);border-radius:var(--r);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.ml-mode-btn{flex:1;height:42px;background:var(--bg3);border:1px solid var(--b2);color:var(--di);border-radius:var(--r);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
 .ml-mode-btn:hover{border-color:var(--si);color:var(--si)}
 .ml-mode-btn.on{border-color:var(--ye);color:var(--ye);background:rgba(251,191,36,.08)}
 .ml-global{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px 16px;margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
@@ -1258,7 +1258,7 @@ select{cursor:pointer}
   </div>
 </div>
 <div id="sim-modal" class="mol" style="display:none" onclick="if(event.target===this)closeSimulador()">
-  <div class="mbox" style="max-width:480px"><div class="mhdr">Simulador de ganancias<button class="btn-rm" onclick="closeSimulador()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="mbox" style="max-width:480px"><div class="mhdr"><span>Simulador de ganancias</span><button class="btn-rm" onclick="closeSimulador()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
   <div class="mbody">
     <div style="font-size:12px;color:var(--di);margin-bottom:14px">Probá distintos escenarios de costo, tipo de cambio y márgenes para ver cómo cambiaría tu ganancia, sin afectar tus datos reales.</div>
     <div><label class="fl">Costo del producto (USD)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="sim-costo" min="0" step="0.5" value="100" oninput="simRecalc()"></div></div>
@@ -1321,7 +1321,7 @@ select{cursor:pointer}
 <!-- CONFIRM MODAL -->
 <div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
   <div class="mbox" style="max-width:540px">
-    <div class="mhdr">Cargar productos desde foto<button class="btn-rm" onclick="closeOcrModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mhdr"><span>Cargar productos desde foto</span><button class="btn-rm" onclick="closeOcrModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="mbody">
       <div id="ocr-status" style="font-size:13px;color:var(--di);margin-bottom:14px">Procesando imagen…</div>
       <div id="ocr-progress" style="height:8px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:16px"><div id="ocr-bar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,var(--us),var(--ch));transition:width .25s"></div></div>
@@ -1346,7 +1346,7 @@ select{cursor:pointer}
 <!-- ESCÁNER DE CÓDIGO DE BARRAS -->
 <div id="scan-modal" class="mol" style="display:none" onclick="if(event.target===this)closeScan()">
   <div class="mbox" style="max-width:480px">
-    <div class="mhdr">Escanear código de barras<button class="btn-rm" onclick="closeScan()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mhdr"><span>Escanear código de barras</span><button class="btn-rm" onclick="closeScan()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="mbody">
       <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;line-height:0">
         <video id="scan-video" autoplay playsinline muted style="width:100%;display:block;max-height:320px;object-fit:cover"></video>
@@ -3140,11 +3140,11 @@ function pgCompra() {
   </div>
   <!-- MODAL CATÁLOGO -->
   <div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
     <div id="cat-modal-body" class="mbody"></div></div>
   </div>
   <div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
-    <div class="mbox"><div class="mhdr">Plantillas de compra<button class="btn-rm" onclick="closeTplModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Plantillas de compra</span><button class="btn-rm" onclick="closeTplModal()">${ic('close')}</button></div>
     <div id="tpl-modal-body" class="mbody"></div></div>
   </div>
 </div>`;
