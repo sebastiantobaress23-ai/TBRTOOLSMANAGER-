@@ -889,7 +889,7 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 @keyframes sheetUpIn{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){
   .mol{align-items:flex-end;padding:0}
-  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
+  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;overflow:hidden;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
   .mhdr{padding-top:20px;border-radius:18px 18px 0 0;flex-shrink:0}
   .mhdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
   html.light .mhdr::before{background:rgba(0,0,0,.15)}
@@ -6338,7 +6338,7 @@ function pgCotizaciones() {
   </div>`:''}
 
   <div id="cot-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCotCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCotCatModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCotCatModal()">${ic('close')}</button></div>
     <div id="cot-cat-body" class="mbody"></div></div>
   </div>
 </div>`;
@@ -6673,7 +6673,7 @@ function pgPedidos() {
   </div>`:''}
 
   <div id="ped-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closePedCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closePedCatModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closePedCatModal()">${ic('close')}</button></div>
     <div id="ped-cat-body" class="mbody"></div></div>
   </div>
 
@@ -7993,7 +7993,7 @@ function pgOrden() {
 
   <!-- Modal catálogo para orden -->
   <div id="ord-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOrdCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeOrdCatModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeOrdCatModal()">${ic('close')}</button></div>
     <div id="ord-cat-body" class="mbody"></div></div>
   </div>
 </div>`;
