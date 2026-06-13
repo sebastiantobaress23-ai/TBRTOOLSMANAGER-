@@ -3946,15 +3946,14 @@ function suggestDirectPrice(code, name){
   const margin = s.directMargin!=null ? s.directMargin : 30;
   return Math.round(cost * (1 + margin/100));
 }
-// Precio sugerido para ventas por Mercado Libre: si el producto tiene una
-// publicación guardada (Publicar ML), se usa el precio ya calculado ahí (con
-// su margen/comisión/envío personalizados). Si no, se calcula con costo +
-// margen deseado para ML (configuración → Mercado Libre, independiente del
-// margen de "Ventas directas"), subiendo el resultado para compensar la
-// comisión y el envío de ML, de modo que la ganancia neta (precio - comisión%
-// - envío - costo) sea igual a costo × margen ML%. No depende del precio de
-// venta cargado en el catálogo, porque los márgenes de ML suelen ser más
-// ajustados que los de venta directa.
+// Precio sugerido para ventas por Mercado Libre: prioriza el precio que el
+// usuario ya configuró para ese producto en "Publicar ML" (ahí cada producto
+// puede tener su propio margen, comisión y envío). Si el producto no tiene
+// una publicación guardada, se calcula con costo + margen por defecto (30%,
+// fijo, ya que el margen varía por producto y se configura en Publicar ML),
+// subiendo el resultado para compensar la comisión y el envío de ML. No
+// depende del precio ni del margen cargados en el catálogo para "Ventas
+// directas", porque los márgenes de ML suelen ser distintos.
 function suggestMLPrice(code, name){
   const key=(code||name||'').toLowerCase();
   const pubs=DB.get('mlpubs',[]);
@@ -3967,8 +3966,7 @@ function suggestMLPrice(code, name){
   const s = DB.get('settings',{});
   const com = s.mlCom!=null ? s.mlCom : 16;
   const env = s.mlEnv!=null ? s.mlEnv : 7500;
-  const margin = s.mlMargin!=null ? s.mlMargin : 30;
-  return Math.round((cost*(1+margin/100) + env) / (1 - com/100));
+  return Math.round((cost*1.3 + env) / (1 - com/100));
 }
 // Sugiere el precio de venta según el canal: en "Venta directa" usa el precio
 // de venta cargado en el catálogo (o costo + margen directo); en "Mercado
@@ -5448,13 +5446,9 @@ function pgConfig() {
         <label class="fl">Envío ML por defecto</label>
         <div class="iw" style="max-width:220px"><span class="ipre">ARS</span><input type="number" id="ml-env" value="${s.mlEnv!==undefined?s.mlEnv:7500}" step="500"></div>
       </div>
-      <div style="flex:1;min-width:140px">
-        <label class="fl">Margen deseado (ML)</label>
-        <div class="iw" style="max-width:200px"><input type="number" id="ml-margin" value="${s.mlMargin!=null?s.mlMargin:30}" min="0" max="500" step="1"><span class="isuf">%</span></div>
-      </div>
       <button class="btn-p" onclick="saveMLSettings()" style="height:42px;padding:0 20px">Guardar</button>
     </div>
-    <div class="hint mt12" style="color:var(--si)">El precio sugerido para Mercado Libre se calcula con este margen (no con el de "Ventas directas", que suele ser mayor): costo + margen, y luego se sube para cubrir la comisión y el envío de ML, de modo que la ganancia neta sea igual a costo × margen%.</div>
+    <div class="hint mt12" style="color:var(--si)">El precio sugerido para Mercado Libre de cada producto usa el precio que tengas configurado para él en "Publicar ML" (costo + margen deseado + envío). Si un producto no tiene una publicación guardada ahí, se usa un margen por defecto del 30% sobre el costo.</div>
   </div>
 
   <div class="sh mb16">Ventas directas (Pedidos)</div>
@@ -5725,7 +5719,7 @@ function saveConf(){
 }
 function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
-function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;s.mlMargin=Math.max(0,parseFloat(document.getElementById('ml-margin').value));if(isNaN(s.mlMargin))s.mlMargin=30;DB.set('settings',s);toast('Configuración ML guardada');}
+function saveMLSettings(){const s=DB.get('settings',{});s.mlCom=parseFloat(document.getElementById('ml-com').value)||16;s.mlEnv=parseFloat(document.getElementById('ml-env').value)||7500;DB.set('settings',s);toast('Configuración ML guardada');}
 function saveDirectMargin(){const s=DB.get('settings',{});s.directMargin=Math.max(0,parseFloat(document.getElementById('direct-margin').value));if(isNaN(s.directMargin))s.directMargin=30;DB.set('settings',s);toast('Margen guardado');}
 function saveEmpresa(){
   const emp=DB.get('empresa',{});
