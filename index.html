@@ -1566,8 +1566,8 @@ async function fbSync() {
       if (!typing) render();
       // Si cambió la configuración de usuarios/PIN, re-evaluar el bloqueo
       if (settingsChanged) checkAccessPin();
-      setSyncDot(true);
     }
+    setSyncDot(true);
   } catch { setSyncDot(false); }
 }
 
