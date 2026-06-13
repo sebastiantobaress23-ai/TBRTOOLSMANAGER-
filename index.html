@@ -3955,10 +3955,15 @@ function suggestDirectPrice(code, name){
 // depende del precio ni del margen cargados en el catálogo para "Ventas
 // directas", porque los márgenes de ML suelen ser distintos.
 function suggestMLPrice(code, name){
-  const key=(code||name||'').toLowerCase();
+  const ck=(code||'').toLowerCase().trim();
+  const nk=(name||'').toLowerCase().trim();
   const pubs=DB.get('mlpubs',[]);
   for(let i=pubs.length-1;i>=0;i--){
-    const pp=(pubs[i].products||[]).find(p=>(p.c||p.n||'').toLowerCase()===key);
+    const pp=(pubs[i].products||[]).find(p=>{
+      const pc=(p.c||'').toLowerCase().trim();
+      const pn=(p.n||'').toLowerCase().trim();
+      return (ck && pc && ck===pc) || (nk && pn && nk===pn);
+    });
     if(pp && pp.precio) return Math.round(pp.precio);
   }
   const cost = suggestSaleCost(code, name);
