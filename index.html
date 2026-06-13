@@ -1904,6 +1904,7 @@ const PAGE_ORDER = ['dashboard','compra','historial','ventas','pedidos','catalog
 function openGSearch(){
   const ol=document.getElementById('gsearch-ol');
   ol.style.display='flex';
+  lockBody();
   const inp=document.getElementById('gsearch-input');
   inp.value='';
   document.getElementById('gsearch-results').innerHTML='';
@@ -1912,6 +1913,7 @@ function openGSearch(){
 }
 function closeGSearch(){
   document.getElementById('gsearch-ol').style.display='none';
+  unlockBody();
   _gsActiveIdx=-1;
 }
 function gsearchGo(fn){
@@ -1965,9 +1967,11 @@ function gsearchSetActive(idx){
 ═══════════════════════════════════════════ */
 function openQA(){
   document.getElementById('qa-ol').style.display='flex';
+  lockBody();
 }
 function closeQA(){
   document.getElementById('qa-ol').style.display='none';
+  unlockBody();
 }
 function toggleQA(){
   const wrap=document.getElementById('qa-fab');
