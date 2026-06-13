@@ -1462,10 +1462,16 @@ async function fbWrite(k, v) {
 
     if (!r.ok) {
       console.error('Firebase error', k, r.status);
+      SYNC_DIAG.lastErrorAt = Date.now();
+      SYNC_DIAG.lastError = `Firebase respondió ${r.status} al guardar "${k}"`;
+      setSyncDot(false);
       return;
     }
 
     _lastWrite = Date.now();
+    SYNC_DIAG.lastOkAt = Date.now();
+    SYNC_DIAG.lastError = null;
+    setSyncDot(true);
     try {
       const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]').filter(x=>x!==k);
       localStorage.setItem('tbr__pending', JSON.stringify(pending));
@@ -1473,6 +1479,9 @@ async function fbWrite(k, v) {
 
   } catch (err) {
     console.error('Firebase error', err);
+    SYNC_DIAG.lastErrorAt = Date.now();
+    SYNC_DIAG.lastError = 'Error de red al guardar "' + k + '": ' + (err && err.message ? err.message : String(err));
+    setSyncDot(false);
   }
 }
 
@@ -1494,6 +1503,11 @@ window.addEventListener('offline', () => setSyncDot(false));
 // guardan con DB.set para que viajen entre dispositivos)
 const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
+// Estado de diagnóstico de sincronización, visible en Configuración →
+// "Sincronización" para detectar fallas de autenticación o de red que el
+// punto verde/rojo de la cabecera no siempre refleja con claridad.
+const SYNC_DIAG = { lastOkAt: null, lastErrorAt: null, lastError: null, lastAuthOk: null };
+
 let _lastWrite = 0;
 async function fbSync() {
   if (Date.now()-_lastWrite < 3000) return;
@@ -1509,10 +1523,18 @@ async function fbSync() {
   } catch {}
   try {
     const url = await fbUrl(FB+'.json', 't='+Date.now());
+    SYNC_DIAG.lastAuthOk = url.includes('auth=');
     const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
-    if (!r.ok) return;
+    if (!r.ok) {
+      SYNC_DIAG.lastErrorAt = Date.now();
+      SYNC_DIAG.lastError = `Firebase respondió ${r.status} al leer datos`;
+      setSyncDot(false);
+      return;
+    }
     const d = await r.json();
-    if (!d) return;
+    SYNC_DIAG.lastOkAt = Date.now();
+    SYNC_DIAG.lastError = null;
+    if (!d) { setSyncDot(true); return; }
     let changed = false;
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
@@ -1530,9 +1552,13 @@ async function fbSync() {
       if (!typing) render();
       // Si cambió la configuración de usuarios/PIN, re-evaluar el bloqueo
       if (settingsChanged) checkAccessPin();
-      setSyncDot(true);
     }
-  } catch { setSyncDot(false); }
+    setSyncDot(true);
+  } catch (e) {
+    SYNC_DIAG.lastErrorAt = Date.now();
+    SYNC_DIAG.lastError = 'Error de red: ' + (e && e.message ? e.message : String(e));
+    setSyncDot(false);
+  }
 }
 
 /* Sincronización inicial: se ejecuta SIEMPRE al cargar la app, antes de
@@ -5439,6 +5465,13 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Sincronización</div>
+  <div class="card mb24">
+    <div class="hint mb12" style="color:var(--si)">Esto muestra el estado real de la conexión con la base de datos compartida entre dispositivos (Firebase). Útil para diagnosticar si el celular y la PC no muestran los mismos datos.</div>
+    <div id="sync-diag-box" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--ch);display:flex;flex-direction:column;gap:4px;margin-bottom:14px"></div>
+    <button class="btn-p" onclick="runSyncDiagnostic()">Verificar conexión ahora</button>
+  </div>
+
   <div class="sh mb16">Mercado Libre</div>
   <div class="card mb24">
     <div class="hint mb16" style="color:var(--si)">Estos valores se usan como default en Publicar ML y en todas las calculadoras. Son independientes del proveedor.</div>
@@ -8345,6 +8378,36 @@ after.orden = ()=>{};
 after.cotizaciones = ()=>{};
 after.pedidos = ()=>{};
 after.clientes = ()=>{ animateCountUps(); };
+after.config = ()=>{ renderSyncDiag(); };
+
+// Pinta el estado de sincronización en Configuración (auth, último OK/error)
+function renderSyncDiag(){
+  const box = document.getElementById('sync-diag-box');
+  if (!box) return;
+  const fmtAgo = (ts)=>{
+    if (!ts) return 'nunca';
+    const sec = Math.round((Date.now()-ts)/1000);
+    if (sec < 60) return `hace ${sec}s`;
+    const min = Math.round(sec/60);
+    if (min < 60) return `hace ${min} min`;
+    return `hace ${Math.round(min/60)} h`;
+  };
+  const lines = [];
+  lines.push(`Conexión: ${navigator.onLine ? '🟢 con internet' : '🔴 sin internet'}`);
+  lines.push(`Autenticación Firebase: ${SYNC_DIAG.lastAuthOk===true ? '🟢 OK' : SYNC_DIAG.lastAuthOk===false ? '🔴 falló' : '⚪ sin probar'}`);
+  lines.push(`Última sincronización OK: ${SYNC_DIAG.lastOkAt ? '🟢 '+fmtAgo(SYNC_DIAG.lastOkAt) : '⚪ nunca'}`);
+  if (SYNC_DIAG.lastError) {
+    lines.push(`Último error (${fmtAgo(SYNC_DIAG.lastErrorAt)}): 🔴 ${SYNC_DIAG.lastError}`);
+  }
+  const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+  lines.push(`Cambios pendientes de subir: ${pending.length ? '🟡 '+pending.join(', ') : '🟢 ninguno'}`);
+  box.innerHTML = lines.map(l=>`<div>${esc(l)}</div>`).join('');
+}
+async function runSyncDiagnostic(){
+  toast('Verificando conexión…');
+  await fbSync();
+  renderSyncDiag();
+}
 
 /* ═══════════════════════════════════════════
    INIT
