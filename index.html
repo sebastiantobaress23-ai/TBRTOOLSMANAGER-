@@ -886,16 +886,17 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 .mbox{background:#111;border:1px solid var(--b3);border-radius:var(--r2);width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both}
 .mhdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--b2);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--si);position:sticky;top:0;background:#111;z-index:1}
 .mbody{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+[data-lp]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* ── BOTTOM SHEET (mobile modals) ── */
 @keyframes sheetUpIn{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){
   .mol{align-items:flex-end;padding:0}
-  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;overflow:hidden;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
+  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;height:var(--vh100,100dvh);max-height:var(--vh100,100dvh);display:flex;flex-direction:column;overflow:hidden;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
   .mhdr{padding-top:20px;border-radius:18px 18px 0 0;flex-shrink:0}
   .mhdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
   html.light .mhdr::before{background:rgba(0,0,0,.15)}
-  .mbody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
+  .mbody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + 72px + env(safe-area-inset-bottom,0px))}
   .mbox.asheet-box{position:fixed !important;left:0;right:0;bottom:0;top:auto;width:100%;max-width:100%;height:auto !important;max-height:80vh;display:block;overflow-y:auto;flex:none}
   .mbox.asheet-box .asheet-list{flex:none;display:flex}
   .mbody .btn-go{height:48px!important;min-height:48px!important;flex-shrink:0;padding:0 22px}
@@ -2338,6 +2339,13 @@ document.addEventListener('click', e=>{
 // (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
 // scroll y los toques de la sección nueva, dando la sensación de que la app
 // "se traba".
+function _updateVh100(){
+  const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+  document.documentElement.style.setProperty('--vh100', h+'px');
+}
+_updateVh100();
+window.addEventListener('resize', _updateVh100);
+if(window.visualViewport) window.visualViewport.addEventListener('resize', _updateVh100);
 function lockBody(){
   if(document.body.classList.contains('modal-open')) return;
   document.documentElement.style.setProperty('--scroll-y', window.scrollY+'px');
@@ -4543,7 +4551,7 @@ function pgCat() {
       <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
       <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div class="fg-w"><div class="iw" style="flex:1;min-width:125px"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 108px;min-width:108px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px;flex:0 0 auto;padding:0 8px" title="Sugerir según costo + margen">Sugerir</button></div></div>
       <div class="hint">Es lo que le cobrás al cliente en Pedidos. El campo "%" es el margen sobre tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>): cambialo para recalcular el precio, o editá el precio y se recalcula el margen. "Sugerir" usa el margen de Configuración → Ventas directas si no cargaste uno propio acá.</div>
-      <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><div class="iw"><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="resize:vertical;min-height:70px"></textarea></div></div>
+      <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical;min-height:70px;box-sizing:border-box"></textarea></div>
       <div class="hint">Se muestra en la ficha del producto dentro del catálogo digital, debajo del nombre.</div>
       <input type="hidden" id="ce-id">
       <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
