@@ -4439,7 +4439,7 @@ function pgCat() {
     <div class="mbody">
       <div class="mb16">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Fotos del producto</div>
-        <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 800KB cada una.</div>
+        <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 5MB cada una.</div>
         <div id="ce-photos-wrap" class="ce-photos-wrap"></div>
         <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="addCePhoto(this)">
       </div>
@@ -4473,7 +4473,7 @@ function renderCePhotos(){
 function addCePhoto(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  if(file.size>800*1024){toast('La imagen es muy grande (máx. 800KB)',false);return;}
+  if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
   if(cePhotos.length>=6){toast('Máximo 6 fotos por producto.',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{cePhotos.push(reader.result);renderCePhotos();};
