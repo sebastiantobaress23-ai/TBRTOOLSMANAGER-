@@ -1637,7 +1637,7 @@ async function initialSyncIfFresh() {
       const local = DB.get(k);
       const isEmptyArr = Array.isArray(local) && local.length===0 && Array.isArray(d[k]) && d[k].length>0;
       const isEmptyObj = local && typeof local==='object' && !Array.isArray(local) && Object.keys(local).length===0 && d[k] && typeof d[k]==='object';
-      if (local===null || isEmptyArr || isEmptyObj) {
+      if (local===null || local===undefined || isEmptyArr || isEmptyObj) {
         try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); restored = true; } catch {}
         continue;
       }
