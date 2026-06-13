@@ -799,7 +799,8 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-hdr-l{display:flex;align-items:center;gap:14px;min-width:0}
 .cli-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0;color:var(--ud);background:linear-gradient(145deg,rgba(226,201,126,.18),rgba(226,201,126,.04));border:1px solid rgba(226,201,126,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .hi-n{font-weight:700;font-size:15px;margin-bottom:4px;color:rgba(255,255,255,.9)}
-.badge-cat{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ud);background:rgba(226,201,126,.12);border:1px solid rgba(226,201,126,.25);border-radius:4px;padding:2px 6px;vertical-align:middle;margin-left:4px}
+.badge-cat{display:inline-flex;align-items:center;gap:4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ud);background:rgba(226,201,126,.12);border:1px solid rgba(226,201,126,.25);border-radius:4px;padding:2px 6px;vertical-align:middle;margin-left:4px}
+.badge-cat .icon{width:11px;height:11px}
 .hi-d{font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
 .hi-v{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--gr);text-align:right}
 .hi-t{font-size:11px;color:var(--di);text-align:right;margin-top:2px}
@@ -1602,7 +1603,7 @@ async function syncCatalogOrders() {
     if (imported>0) {
       DB.set('pedidos',peds);
       _lastWrite=Date.now();
-      toast(`${imported} nuevo${imported!==1?'s':''} pedido${imported!==1?'s':''} del catálogo digital 🛒`);
+      toast(imported===1 ? 'Nuevo pedido del catálogo' : `${imported} nuevos pedidos del catálogo`, true, 4000);
       if (PAGE==='pedidos') render();
     }
   } catch {}
@@ -6710,7 +6711,7 @@ function pgPedidos() {
         <button class="hi-swipe-action danger" onclick="delPed('${o.id}')">${ic('trash')}<span>Borrar</span></button>
       </div>
       <div class="hi-hdr hi-swipe-content" data-lp="ped" data-id="${o.id}" onclick="toggleHi('ped${i}')">
-        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}${o.origen==='catalogo-digital'?' <span class="badge-cat" title="Pedido recibido desde el catálogo digital">🛒 Catálogo</span>':''}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
+        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}${o.origen==='catalogo-digital'?` <span class="badge-cat" title="Pedido recibido desde el catálogo digital">${ic('cart')}Catálogo</span>`:''}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
         <div class="hi-hdr-r"><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
       </div>
     </div>
