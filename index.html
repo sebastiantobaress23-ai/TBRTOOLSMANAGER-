@@ -2387,6 +2387,7 @@ _updateVh100();
 window.addEventListener('resize', _updateVh100);
 if(window.visualViewport) window.visualViewport.addEventListener('resize', _updateVh100);
 function lockBody(){
+  _updateVh100();
   if(document.body.classList.contains('modal-open')) return;
   document.documentElement.style.setProperty('--scroll-y', window.scrollY+'px');
   document.body.classList.add('modal-open');
