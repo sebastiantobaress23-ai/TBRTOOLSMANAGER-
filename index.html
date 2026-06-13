@@ -1904,6 +1904,7 @@ const PAGE_ORDER = ['dashboard','compra','historial','ventas','pedidos','catalog
 function openGSearch(){
   const ol=document.getElementById('gsearch-ol');
   ol.style.display='flex';
+  lockBody();
   const inp=document.getElementById('gsearch-input');
   inp.value='';
   document.getElementById('gsearch-results').innerHTML='';
@@ -1912,6 +1913,7 @@ function openGSearch(){
 }
 function closeGSearch(){
   document.getElementById('gsearch-ol').style.display='none';
+  unlockBody();
   _gsActiveIdx=-1;
 }
 function gsearchGo(fn){
@@ -1965,9 +1967,11 @@ function gsearchSetActive(idx){
 ═══════════════════════════════════════════ */
 function openQA(){
   document.getElementById('qa-ol').style.display='flex';
+  lockBody();
 }
 function closeQA(){
   document.getElementById('qa-ol').style.display='none';
+  unlockBody();
 }
 function toggleQA(){
   const wrap=document.getElementById('qa-fab');
@@ -2280,6 +2284,7 @@ function unlockBody(){
 }
 function closeAllOverlays(){
   document.querySelectorAll('.mol, .qa-ol, .gsearch-ol, .cm-ol').forEach(el=>{
+    if(el.id==='scan-modal' && el.style.display==='flex') closeScan();
     if(el.id!=='lock-ov' && el.style.display==='flex') el.style.display='none';
   });
   unlockBody();
@@ -3246,6 +3251,7 @@ async function openScan(callback){
   }
   _scanCallback=callback;
   modal.style.display='flex';
+  lockBody();
   status.textContent='Cargando lector…';
   try{
     await loadZXing();
@@ -3281,6 +3287,7 @@ async function openScan(callback){
 function closeScan(){
   const modal=document.getElementById('scan-modal');
   if(modal) modal.style.display='none';
+  unlockBody();
   if(_scanReader){ try{_scanReader.reset();}catch(e){} _scanReader=null; }
   _scanCallback=null;
 }
