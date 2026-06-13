@@ -799,6 +799,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-hdr-l{display:flex;align-items:center;gap:14px;min-width:0}
 .cli-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0;color:var(--ud);background:linear-gradient(145deg,rgba(226,201,126,.18),rgba(226,201,126,.04));border:1px solid rgba(226,201,126,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .hi-n{font-weight:700;font-size:15px;margin-bottom:4px;color:rgba(255,255,255,.9)}
+.badge-cat{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ud);background:rgba(226,201,126,.12);border:1px solid rgba(226,201,126,.25);border-radius:4px;padding:2px 6px;vertical-align:middle;margin-left:4px}
 .hi-d{font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
 .hi-v{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--gr);text-align:right}
 .hi-t{font-size:11px;color:var(--di);text-align:right;margin-top:2px}
@@ -1541,6 +1542,72 @@ async function fbSync() {
     }
   } catch { setSyncDot(false); }
 }
+
+// Helper para leer valores tipados de Firestore REST (cada campo viene como
+// {stringValue:...} / {booleanValue:...} / {integerValue:...} / {doubleValue:...} / {arrayValue:{values:[...]}})
+function _fsVal(v) {
+  if (!v) return undefined;
+  if ('stringValue' in v) return v.stringValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('integerValue' in v) return parseInt(v.integerValue,10);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('nullValue' in v) return null;
+  if ('arrayValue' in v) return (v.arrayValue.values||[]).map(_fsVal);
+  if ('mapValue' in v) {
+    const o={}; for (const k in (v.mapValue.fields||{})) o[k]=_fsVal(v.mapValue.fields[k]);
+    return o;
+  }
+  return undefined;
+}
+
+const FS_PROJECT = 'tbr-tools-manager';
+const FS_BASE = `https://firestore.googleapis.com/v1/projects/${FS_PROJECT}/databases/(default)/documents`;
+
+// Trae pedidos nuevos hechos desde el catálogo digital (Firestore, colección
+// "pedidos_pendientes" con sincronizado:false) y los convierte al formato de
+// Pedidos de la app. Marca cada documento como sincronizado:true al importarlo.
+async function syncCatalogOrders() {
+  if (!navigator.onLine) return;
+  try {
+    const token = await ensureAuth();
+    if (!token) return;
+    const r = await fetch(`${FS_BASE}/pedidos_pendientes`, {
+      headers: {'Authorization': 'Bearer '+token},
+      cache: 'no-store', signal: AbortSignal.timeout(6000)
+    });
+    if (!r.ok) return;
+    const data = await r.json();
+    const docs = data.documents||[];
+    if (!docs.length) return;
+    const peds = DB.get('pedidos',[]);
+    let imported = 0;
+    for (const doc of docs) {
+      const f = doc.fields||{};
+      if (_fsVal(f.sincronizado)!==false) continue;
+      const items = (_fsVal(f.items)||[]).map(it=>({id:uid(), n:it.n||'', c:it.c||'', q:+it.q||1, p:parseFloat(it.p)||0}));
+      if (!items.length) continue;
+      const nro = nextPEDNumber();
+      const record = {id:uid(), nro, date:_fsVal(f.date)||new Date().toISOString(), cliente:_fsVal(f.cliente)||'Cliente catálogo', tel:_fsVal(f.tel)||'', cuit:_fsVal(f.cuit)||'', items, status:'cotizacion', origen:'catalogo-digital'};
+      peds.push(record);
+      saveCliente(record.cliente, record.tel, record.cuit);
+      imported++;
+      // Marcar como sincronizado en Firestore
+      const docName = doc.name.split('/documents/')[1];
+      fetch(`${FS_BASE}/${docName}?updateMask.fieldPaths=sincronizado&key=`+FB_API_KEY, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({fields:{sincronizado:{booleanValue:true}}})
+      }).catch(()=>{});
+    }
+    if (imported>0) {
+      DB.set('pedidos',peds);
+      _lastWrite=Date.now();
+      toast(`${imported} nuevo${imported!==1?'s':''} pedido${imported!==1?'s':''} del catálogo digital 🛒`);
+      if (PAGE==='pedidos') render();
+    }
+  } catch {}
+}
+
 
 /* Sincronización inicial: se ejecuta SIEMPRE al cargar la app, antes de
    inicializar valores por defecto. Restaura por clave (no todo o nada):
@@ -6643,7 +6710,7 @@ function pgPedidos() {
         <button class="hi-swipe-action danger" onclick="delPed('${o.id}')">${ic('trash')}<span>Borrar</span></button>
       </div>
       <div class="hi-hdr hi-swipe-content" data-lp="ped" data-id="${o.id}" onclick="toggleHi('ped${i}')">
-        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
+        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}${o.origen==='catalogo-digital'?' <span class="badge-cat" title="Pedido recibido desde el catálogo digital">🛒 Catálogo</span>':''}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
         <div class="hi-hdr-r"><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
       </div>
     </div>
@@ -8385,7 +8452,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 
 after.orden = ()=>{};
 after.cotizaciones = ()=>{};
-after.pedidos = ()=>{};
+after.pedidos = ()=>{ syncCatalogOrders(); };
 after.clientes = ()=>{ animateCountUps(); };
 
 /* ═══════════════════════════════════════════
@@ -8486,6 +8553,9 @@ window.onload = async function() {
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
+  // Pedidos nuevos del catálogo digital (Firestore) cada 20s
+  setInterval(syncCatalogOrders, 20000);
+  syncCatalogOrders();
   // Revisar alertas/metas para notificaciones cada 5 min
   if (notifySupported() && Notification.permission === 'granted') {
     setTimeout(()=>checkAndNotify(), 4000);
