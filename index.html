@@ -1687,7 +1687,7 @@ async function initialSyncIfFresh() {
       try { toast('Catálogo restaurado ('+(DB.get('catalog',[])||[]).length+' artículos)', true, 4000); } catch {}
     } else if (Array.isArray(DB.get('catalog',[])) && DB.get('catalog',[]).length===0) {
       const remoteLen = Array.isArray(d.catalog) ? d.catalog.length : (d.catalog && typeof d.catalog==='object' ? Object.keys(d.catalog).length : 0);
-      try { toast('Catálogo local vacío, remoto tiene '+remoteLen+' (d.catalog '+(d.catalog==null?'null':typeof d.catalog)+')', true, 6000); } catch {}
+      try { alert('DIAGNOSTICO CATALOGO\nlocal vacio\nremoto tipo: '+(d.catalog==null?'null':typeof d.catalog)+(Array.isArray(d.catalog)?' (array)':'')+'\nremoto largo/keys: '+remoteLen+'\npending: '+pending.join(',')+'\nrestored flag: '+restored); } catch {}
     }
   } catch (e) { try { toast('Sync inicial: error '+(e&&e.message), true, 4000); } catch {} }
 }
