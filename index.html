@@ -900,6 +900,7 @@ body.modal-open{overflow:hidden}
 
 /* ── ACTION SHEET (long-press menu) ── */
 .asheet-list{display:flex;flex-direction:column;padding:6px}
+@media(max-width:768px){.asheet-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}}
 .asheet-action{display:flex;align-items:center;gap:12px;width:100%;padding:14px 14px;background:none;border:none;color:#fff;font-size:14px;font-family:'Barlow',sans-serif;text-align:left;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
 .asheet-action:active{background:rgba(255,255,255,.06)}
 .asheet-action.danger{color:var(--re)}
@@ -2550,10 +2551,12 @@ function openActionSheet(title, actions){
     `<button class="asheet-action${a.danger?' danger':''}" onclick="closeActionSheet();${a.fn}">${a.icon||''}<span>${esc(a.label)}</span></button>`
   ).join('');
   document.getElementById('asheet-ol').style.display='flex';
+  document.body.classList.add('modal-open');
   playSound('open');
 }
 function closeActionSheet(){
   document.getElementById('asheet-ol').style.display='none';
+  document.body.classList.remove('modal-open');
   playSound('close');
 }
 function openActionSheetFor(el){
