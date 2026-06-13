@@ -867,7 +867,8 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 .hint{font-size:11px;color:var(--mu);margin-top:4px;line-height:1.5}
 .iw{display:flex;align-items:center;height:42px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);overflow:hidden;transition:border-color .15s;box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
 .iw:focus-within{border-color:var(--b3)}
-.iw select{flex:1;background:transparent;border:none;outline:none;padding:0 12px;height:100%;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer}
+.iw select{flex:1;background:transparent;border:none;outline:none;padding:0 12px;height:100%;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;cursor:pointer;min-width:0;text-overflow:ellipsis}
+@media(max-width:480px){.iw select{font-size:12.5px;padding:0 8px}}
 .iw select option{background:#1c1c1c}
 .ipre,.isuf{padding:0 11px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--di);background:var(--bg4);height:100%;display:flex;align-items:center;white-space:nowrap}
 .ipre{border-right:1px solid var(--b2)}.isuf{border-left:1px solid var(--b2)}
