@@ -1654,14 +1654,16 @@ async function initialSyncIfFresh() {
     const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
     let d;
     if (!r.ok) {
+      try { toast('Sync inicial: /tbr.json '+r.status+', probando catálogo público…', true, 4000); } catch {}
       d = await _fbFallbackPublic();
-      if (!d) return;
+      if (!d) { try { toast('Sync inicial: fallback de catálogo también falló', true, 4000); } catch {} return; }
     } else {
       d = await r.json();
     }
     if (!d) return;
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
     let restored = false;
+    const before = JSON.stringify(DB.get('catalog'));
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
       if (pending.includes(k)) continue;
@@ -1680,7 +1682,14 @@ async function initialSyncIfFresh() {
       }
     }
     if (restored) _lastWrite = Date.now();
-  } catch {}
+    const after = JSON.stringify(DB.get('catalog'));
+    if (before !== after) {
+      try { toast('Catálogo restaurado ('+(DB.get('catalog',[])||[]).length+' artículos)', true, 4000); } catch {}
+    } else if (Array.isArray(DB.get('catalog',[])) && DB.get('catalog',[]).length===0) {
+      const remoteLen = Array.isArray(d.catalog) ? d.catalog.length : (d.catalog && typeof d.catalog==='object' ? Object.keys(d.catalog).length : 0);
+      try { toast('Catálogo local vacío, remoto tiene '+remoteLen+' (d.catalog '+(d.catalog==null?'null':typeof d.catalog)+')', true, 6000); } catch {}
+    }
+  } catch (e) { try { toast('Sync inicial: error '+(e&&e.message), true, 4000); } catch {} }
 }
 
 function setSyncDot(ok) {
