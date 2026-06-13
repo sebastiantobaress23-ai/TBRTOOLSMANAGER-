@@ -899,7 +899,7 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
   .mbody .btn-go{height:48px!important;min-height:48px!important;flex-shrink:0;padding:0 22px}
 }
 @media(prefers-reduced-motion:reduce){.mbox{animation:none}}
-body.modal-open{overflow:hidden}
+body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%;top:calc(-1 * var(--scroll-y, 0px))}
 
 /* ── ACTION SHEET (long-press menu) ── */
 .asheet-list{display:flex;flex-direction:column;padding:6px}
@@ -2265,11 +2265,23 @@ document.addEventListener('click', e=>{
 // (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
 // scroll y los toques de la sección nueva, dando la sensación de que la app
 // "se traba".
+function lockBody(){
+  if(document.body.classList.contains('modal-open')) return;
+  document.documentElement.style.setProperty('--scroll-y', window.scrollY+'px');
+  document.body.classList.add('modal-open');
+}
+function unlockBody(){
+  if(!document.body.classList.contains('modal-open')) return;
+  const y=parseInt(document.documentElement.style.getPropertyValue('--scroll-y')||'0',10);
+  document.body.classList.remove('modal-open');
+  document.documentElement.style.removeProperty('--scroll-y');
+  window.scrollTo(0,y);
+}
 function closeAllOverlays(){
   document.querySelectorAll('.mol, .qa-ol, .gsearch-ol, .cm-ol').forEach(el=>{
     if(el.id!=='lock-ov' && el.style.display==='flex') el.style.display='none';
   });
-  document.body.classList.remove('modal-open');
+  unlockBody();
   _confirmCb=null;
   closeFan();
 }
@@ -2555,12 +2567,12 @@ function openActionSheet(title, actions){
     `<button class="asheet-action${a.danger?' danger':''}" onclick="closeActionSheet();${a.fn}">${a.icon||''}<span>${esc(a.label)}</span></button>`
   ).join('');
   document.getElementById('asheet-ol').style.display='flex';
-  document.body.classList.add('modal-open');
+  lockBody();
   playSound('open');
 }
 function closeActionSheet(){
   document.getElementById('asheet-ol').style.display='none';
-  document.body.classList.remove('modal-open');
+  unlockBody();
   playSound('close');
 }
 function openActionSheetFor(el){
@@ -3832,9 +3844,9 @@ function openCatModal() {
   if (!m||!b) return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600;font-size:14px">${esc(c.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${esc(c.code||'sin código')} · ${fmtU(c.lastPrice||0)}</div></div><button class="btn-p btn-sm" onclick="addFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
-  document.body.classList.add('modal-open');
+  lockBody();
 }
-function closeCatModal(){const m=document.getElementById('cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
+function closeCatModal(){const m=document.getElementById('cat-modal');if(m)m.style.display='none';unlockBody();}
 function addFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addProd(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||0,0,0);closeCatModal();}
 
 /* ═══════════════════════════════════════════
@@ -4459,9 +4471,9 @@ function pgCat() {
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';document.body.classList.add('modal-open');}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';document.body.classList.add('modal-open');}
-function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';document.body.classList.remove('modal-open');}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
+function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';unlockBody();}
 let cePhotos=[];
 function renderCePhotos(){
   const wrap=document.getElementById('ce-photos-wrap');
@@ -6381,9 +6393,9 @@ function openCotCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')}</div></div><button class="btn-p btn-sm" onclick="addCotFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
-  document.body.classList.add('modal-open');
+  lockBody();
 }
-function closeCotCatModal(){const m=document.getElementById('cot-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
+function closeCotCatModal(){const m=document.getElementById('cot-cat-modal');if(m)m.style.display='none';unlockBody();}
 function addCotFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addCotRow(c.name,c.code||'',1);closeCotCatModal();}
 
 function setCotPrice(id,idx,v){
@@ -6844,9 +6856,9 @@ function openPedCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')}</div></div><button class="btn-p btn-sm" onclick="addPedFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
-  document.body.classList.add('modal-open');
+  lockBody();
 }
-function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
+function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';unlockBody();}
 function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,(c.salePrice||suggestDirectPrice(c.code,c.name))||'');closePedCatModal();}
 
 function generatePedido() {
@@ -8213,9 +8225,9 @@ function openOrdCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')} · ${fmtU(c.lastPrice||0)}</div></div><button class="btn-p btn-sm" onclick="addOrdFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
-  document.body.classList.add('modal-open');
+  lockBody();
 }
-function closeOrdCatModal(){const m=document.getElementById('ord-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
+function closeOrdCatModal(){const m=document.getElementById('ord-cat-modal');if(m)m.style.display='none';unlockBody();}
 function addOrdFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addOrdRow(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||0);closeOrdCatModal();}
 
 function printOrdenNew() {
