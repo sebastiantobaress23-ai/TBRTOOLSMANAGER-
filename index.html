@@ -5524,7 +5524,7 @@ function pgConfig() {
       </div>
       <div style="flex:1;min-width:160px">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Logo de la empresa</div>
-        <div class="hint mb8">Aparece en los PDFs de presupuestos, órdenes, cotizaciones y comprobantes. Recomendado: imagen cuadrada, máx. 800KB.</div>
+        <div class="hint mb8">Aparece en los PDFs de presupuestos, órdenes, cotizaciones y comprobantes. Recomendado: imagen cuadrada, máx. 5MB.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-g btn-sm" onclick="document.getElementById('emp-logo-inp').click()">${ic('camera')} Subir logo</button>
           <input type="file" id="emp-logo-inp" accept="image/*" style="display:none" onchange="previewEmpLogo(this)">
@@ -5792,7 +5792,7 @@ function saveEmpresa(){
 function previewEmpLogo(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  if(file.size>800*1024){toast('La imagen es muy grande (máx. 800KB)',false);return;}
+  if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{
     const emp=DB.get('empresa',{});
@@ -5818,7 +5818,7 @@ function removeEmpLogo(){
 function previewEmpMpQr(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  if(file.size>800*1024){toast('La imagen es muy grande (máx. 800KB)',false);return;}
+  if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{
     const emp=DB.get('empresa',{});
