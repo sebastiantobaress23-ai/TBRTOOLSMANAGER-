@@ -3140,7 +3140,7 @@ function pgCompra() {
   </div>
   <!-- MODAL CATÁLOGO -->
   <div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
-    <div class="mbox"><div class="mhdr">Agregar del catálogo<button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
+    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
     <div id="cat-modal-body" class="mbody"></div></div>
   </div>
   <div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
@@ -3832,8 +3832,9 @@ function openCatModal() {
   if (!m||!b) return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600;font-size:14px">${esc(c.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${esc(c.code||'sin código')} · ${fmtU(c.lastPrice||0)}</div></div><button class="btn-p btn-sm" onclick="addFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
+  document.body.classList.add('modal-open');
 }
-function closeCatModal(){const m=document.getElementById('cat-modal');if(m)m.style.display='none';}
+function closeCatModal(){const m=document.getElementById('cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
 function addFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addProd(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||0,0,0);closeCatModal();}
 
 /* ═══════════════════════════════════════════
