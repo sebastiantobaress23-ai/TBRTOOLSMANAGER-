@@ -894,7 +894,8 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
   .mhdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
   html.light .mhdr::before{background:rgba(0,0,0,.15)}
   .mbody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
-  .asheet-box{height:auto;max-height:80vh;flex:none}
+  .mbox.asheet-box{height:auto !important;max-height:80vh;flex:none}
+  .mbox.asheet-box .asheet-list{flex:none}
 }
 @media(prefers-reduced-motion:reduce){.mbox{animation:none}}
 body.modal-open{overflow:hidden}
