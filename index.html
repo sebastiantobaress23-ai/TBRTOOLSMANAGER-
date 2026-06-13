@@ -1655,17 +1655,30 @@ async function initialSyncIfFresh() {
     const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
     let d;
     if (!r.ok) {
-      try { toast('Sync inicial: /tbr.json '+r.status+', probando catálogo público…', true, 4000); } catch {}
       d = await _fbFallbackPublic();
-      if (!d) { try { toast('Sync inicial: fallback de catálogo también falló', true, 4000); } catch {} return; }
+      if (!d) return;
     } else {
       d = await r.json();
     }
     if (!d) return;
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
     let restored = false;
-    const before = JSON.stringify(DB.get('catalog'));
+
+    // Caso especial: catálogo local vacío pero con datos en remoto.
+    // Forzar restauración directa sin depender de comparaciones de tipo.
+    if (!pending.includes('catalog') && Array.isArray(d.catalog) && d.catalog.length>0) {
+      const localCat = DB.get('catalog');
+      if (!Array.isArray(localCat) || localCat.length===0) {
+        try {
+          localStorage.setItem('tbr_catalog', JSON.stringify(d.catalog));
+          restored = true;
+          toast('Catálogo restaurado ('+d.catalog.length+' artículos)', true, 4000);
+        } catch {}
+      }
+    }
+
     for (const k of FB_SYNC_KEYS) {
+      if (k==='catalog') continue;
       if (d[k]==null) continue;
       if (pending.includes(k)) continue;
       const local = DB.get(k);
@@ -1683,14 +1696,7 @@ async function initialSyncIfFresh() {
       }
     }
     if (restored) _lastWrite = Date.now();
-    const after = JSON.stringify(DB.get('catalog'));
-    if (before !== after) {
-      try { toast('Catálogo restaurado ('+(DB.get('catalog',[])||[]).length+' artículos)', true, 4000); } catch {}
-    } else if (Array.isArray(DB.get('catalog',[])) && DB.get('catalog',[]).length===0) {
-      const remoteLen = Array.isArray(d.catalog) ? d.catalog.length : (d.catalog && typeof d.catalog==='object' ? Object.keys(d.catalog).length : 0);
-      try { alert('DIAGNOSTICO CATALOGO\nlocal vacio\nremoto tipo: '+(d.catalog==null?'null':typeof d.catalog)+(Array.isArray(d.catalog)?' (array)':'')+'\nremoto largo/keys: '+remoteLen+'\npending: '+pending.join(',')+'\nrestored flag: '+restored); } catch {}
-    }
-  } catch (e) { try { toast('Sync inicial: error '+(e&&e.message), true, 4000); } catch {} }
+  } catch {}
 }
 
 function setSyncDot(ok) {
