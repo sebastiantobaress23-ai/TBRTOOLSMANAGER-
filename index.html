@@ -2266,6 +2266,7 @@ function closeAllOverlays(){
   document.querySelectorAll('.mol, .qa-ol, .gsearch-ol, .cm-ol').forEach(el=>{
     if(el.id!=='lock-ov' && el.style.display==='flex') el.style.display='none';
   });
+  document.body.classList.remove('modal-open');
   _confirmCb=null;
   closeFan();
 }
