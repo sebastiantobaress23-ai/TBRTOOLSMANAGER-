@@ -4006,6 +4006,20 @@ function syncSaleMargin(source){
   const marginEl=document.getElementById('sale-margin');
   if(!priceEl||!costEl||!marginEl) return;
   const cost=parseFloat(costEl.value)||0;
+  const channel=document.getElementById('sale-channel')?.value==='directa'?'directa':'ml';
+  if(channel==='ml'){
+    const s=DB.get('settings',{});
+    const com=s.mlCom??16, env=s.mlEnv??7500;
+    if(source==='margin'){
+      if(!cost) return;
+      const margin=parseFloat(marginEl.value)||0;
+      priceEl.value=Math.round(cost*(1+margin/100)/(1-com/100)+env);
+    } else {
+      const price=parseFloat(priceEl.value)||0;
+      marginEl.value = cost ? Math.round(((price-env)*(1-com/100)-cost)/cost*100) : '';
+    }
+    return;
+  }
   if(source==='margin'){
     if(!cost) return;
     const margin=parseFloat(marginEl.value)||0;
