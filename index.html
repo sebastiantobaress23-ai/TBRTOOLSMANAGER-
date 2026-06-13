@@ -1666,11 +1666,16 @@ async function initialSyncIfFresh() {
 
     // Caso especial: catálogo local vacío pero con datos en remoto.
     // Forzar restauración directa sin depender de comparaciones de tipo.
-    if (!pending.includes('catalog') && Array.isArray(d.catalog) && d.catalog.length>0) {
+    if (Array.isArray(d.catalog) && d.catalog.length>0) {
       const localCat = DB.get('catalog');
       if (!Array.isArray(localCat) || localCat.length===0) {
         try {
           localStorage.setItem('tbr_catalog', JSON.stringify(d.catalog));
+          if (pending.includes('catalog')) {
+            const idx = pending.indexOf('catalog');
+            pending.splice(idx,1);
+            localStorage.setItem('tbr__pending', JSON.stringify(pending));
+          }
           restored = true;
           toast('Catálogo restaurado ('+d.catalog.length+' artículos)', true, 4000);
         } catch {}
