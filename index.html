@@ -5586,6 +5586,16 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Formas de pago y recargos</div>
+  <div class="card mb24">
+    <div class="hint mb16">Definí recargos por forma de pago (ej. cuotas con tarjeta). Al crear un pedido vas a poder elegir la forma de pago y el total se recalcula automáticamente con el recargo.</div>
+    <div id="pm-list"></div>
+    <div class="fb" style="gap:8px;margin-top:4px">
+      <button class="btn-g btn-sm" onclick="addPM()">+ Agregar forma de pago</button>
+      <button class="btn-p btn-sm" onclick="savePM()">Guardar</button>
+    </div>
+  </div>
+
   <div class="sh mb16">Mi empresa</div>
   <div class="card mb24">
     <div class="fb mb16" style="gap:16px;align-items:center">
@@ -5839,6 +5849,41 @@ function saveConf(){
   const s=DB.get('settings',{});
   if(!s.activeConfig){s.activeConfig=conf.id;DB.set('settings',s);}
   closeConf();render();toast('Proveedor guardado');
+}
+function getDefaultPM(){return [{name:'Efectivo / Transferencia',pct:0}];}
+function getPM(){
+  const s=DB.get('settings',{});
+  return (s.paymentMethods&&s.paymentMethods.length)?s.paymentMethods:getDefaultPM();
+}
+let PM=null;
+function renderPMRows(){
+  const wrap=document.getElementById('pm-list');
+  if(!wrap)return;
+  if(!PM)PM=getPM().map(x=>({...x}));
+  wrap.innerHTML=PM.map((m,i)=>`<div class="fb" style="gap:8px;margin-bottom:8px">
+    <div class="iw" style="flex:1"><input type="text" value="${esc(m.name)}" placeholder="Ej: 3 cuotas" oninput="PM[${i}].name=this.value"></div>
+    <div class="iw" style="flex:0 0 100px"><input type="number" value="${m.pct}" step="1" oninput="PM[${i}].pct=parseFloat(this.value)||0"><span class="isuf">%</span></div>
+    <button class="btn-rm" onclick="rmPM(${i})">${ic('close')}</button>
+  </div>`).join('');
+}
+function addPM(){if(!PM)PM=getPM().map(x=>({...x}));PM.push({name:'',pct:0});renderPMRows();}
+function rmPM(i){PM.splice(i,1);renderPMRows();}
+function savePM(){
+  const pm=(PM||[]).map(m=>({name:(m.name||'').trim(),pct:parseFloat(m.pct)||0})).filter(m=>m.name);
+  const s=DB.get('settings',{});
+  s.paymentMethods=pm.length?pm:getDefaultPM();
+  DB.set('settings',s);
+  PM=null;
+  toast('Formas de pago guardadas');
+  render();
+}
+function pmOptions(sel){
+  return getPM().map((m,i)=>`<option value="${i}"${sel===i?' selected':''}>${esc(m.name)}${m.pct?` (+${m.pct}%)`:''}</option>`).join('');
+}
+function pedFinalTotal(o){
+  const base=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const pct=o.pago?.pct||0;
+  return Math.round(base*(1+pct/100));
 }
 function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
@@ -6691,10 +6736,15 @@ function pgPedidos() {
     </div>
     <div id="ped-list">${PED.length===0?'<div class="empty" style="padding:16px">Sin artículos. Agregá uno arriba.</div>':PED.map(pedRow).join('')}</div>
     <button class="btn-add-row" onclick="addPedRow()">+ Agregar artículo</button>
+    <div class="fb mt16" style="align-items:center;gap:12px;flex-wrap:wrap">
+      <label class="fl" style="margin:0">Forma de pago</label>
+      <div class="iw" style="flex:1;min-width:160px"><select id="ped-pago" onchange="refreshPedTotal()">${pmOptions(0)}</select></div>
+    </div>
     <div class="fb mt16" id="ped-total-wrap" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.06);${PED.length?'':'display:none'}">
       <span class="sh-inline">Total presupuesto</span>
       <span id="ped-total-val" style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ud);letter-spacing:-.3px">${fmtA(pedTotal)}</span>
     </div>
+    <div id="ped-total-rec" class="hint" style="width:100%;text-align:right"></div>
     <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se usa el "Precio de venta" definido en cada producto (Catálogo → editar producto); si no lo cargaste, se sugiere costo + margen de Configuración → Ventas directas. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
   </div>
 
@@ -6706,7 +6756,7 @@ function pgPedidos() {
   ${peds.length>0?`<div>
   <div class="sh mb16">Pedidos y presupuestos</div>
   ${peds.map((o,i)=>{
-    const total=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+    const total=pedFinalTotal(o);
     return `<div class="hi"${stg(i)}>
     <div class="hi-swipe">
       <div class="hi-swipe-actions">
@@ -6728,6 +6778,8 @@ function pgPedidos() {
           <div class="iw"><input type="text" id="pedit-tel" value="${esc(o.tel||'')}" autocomplete="off"></div></div>
           <div style="flex:1;min-width:140px"><label class="fl mb8">CUIT / DNI</label>
           <div class="iw"><input type="text" id="pedit-cuit" value="${esc(o.cuit||'')}" autocomplete="off"></div></div>
+          <div style="flex:1;min-width:160px"><label class="fl mb8">Forma de pago</label>
+          <div class="iw"><select id="pedit-pago">${pmOptions(getPM().findIndex(m=>m.name===o.pago?.nombre))}</select></div></div>
         </div>
       </div>
       <div class="ord-hdr" style="display:grid;grid-template-columns:1.4fr 85px 50px 150px 34px;gap:8px;padding:0 6px 8px">
@@ -6746,6 +6798,7 @@ function pgPedidos() {
         <tbody>${(o.items||[]).map(p=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr">${fmtA(p.p||0)}</td><td class="tr">${fmtA((p.q||1)*(p.p||0))}</td></tr>`).join('')}</tbody>
         </table>
       </div>
+      ${o.pago?.pct?`<div class="hint mt8" style="text-align:right">Forma de pago: ${esc(o.pago.nombre)} · Recargo ${o.pago.pct}%: +${fmtA(pedFinalTotal(o)-(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0))} · <b>Total: ${fmtA(pedFinalTotal(o))}</b></div>`:''}
       <div class="hi-acts-ped">
         ${o.status==='cotizacion'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','confirmado')">${ic('check')} Cliente confirmó pedido</button>`:''}
         ${o.status==='confirmado'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
@@ -6783,7 +6836,7 @@ function openCobrarModal(id){
   const o=DB.get('pedidos',[]).find(x=>x.id===id);
   if(!o)return;
   const emp=DB.get('empresa',{});
-  const total=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const total=pedFinalTotal(o);
   const body=document.getElementById('cobrar-body');
   if(!body)return;
   if(!emp.mpQr){
@@ -6844,7 +6897,13 @@ function refreshPedTotal() {
   const val=document.getElementById('ped-total-val');
   if(!wrap||!val) return;
   wrap.style.display = PED.length ? 'flex' : 'none';
-  val.textContent = fmtA(PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0));
+  const base=PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const sel=document.getElementById('ped-pago');
+  const m=getPM()[sel?parseInt(sel.value):0]||{pct:0};
+  const final=Math.round(base*(1+(m.pct||0)/100));
+  const recEl=document.getElementById('ped-total-rec');
+  if(recEl) recEl.textContent = m.pct?`Recargo ${m.pct}% (${esc(m.name)}): +${fmtA(final-base)}`:'';
+  val.textContent = fmtA(final);
 }
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
@@ -6900,6 +6959,9 @@ function savePedEdit(id){
   o.tel=tel;
   o.cuit=cuit;
   o.items=_pedEditItems.map(({id,...rest})=>({...rest}));
+  const pagoSel=document.getElementById('pedit-pago');
+  const pm=getPM()[pagoSel?parseInt(pagoSel.value):0]||{name:'Efectivo / Transferencia',pct:0};
+  o.pago={nombre:pm.name,pct:pm.pct||0};
   DB.set('pedidos',peds);
   saveCliente(cliente,tel,cuit);
   _lastWrite=Date.now();
@@ -6951,7 +7013,9 @@ function generatePedido() {
   const cuit=document.getElementById('ped-cuit')?.value.trim();
   if(!cliente){toast('Ingresá el nombre del cliente.',false);return;}
   const nro=nextPEDNumber();
-  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',cuit:cuit||'',items:PED.map(p=>({...p})),status:'cotizacion'};
+  const sel=document.getElementById('ped-pago');
+  const m=getPM()[sel?parseInt(sel.value):0]||{name:'Efectivo / Transferencia',pct:0};
+  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',cuit:cuit||'',items:PED.map(p=>({...p})),status:'cotizacion',pago:{nombre:m.name,pct:m.pct||0}};
   const peds=DB.get('pedidos',[]);
   peds.push(record);
   DB.set('pedidos',peds);
@@ -8458,6 +8522,7 @@ after.orden = ()=>{};
 after.cotizaciones = ()=>{};
 after.pedidos = ()=>{ syncCatalogOrders(); };
 after.clientes = ()=>{ animateCountUps(); };
+after.config = ()=>{ renderPMRows(); };
 
 /* ═══════════════════════════════════════════
    INIT
