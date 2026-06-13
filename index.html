@@ -1798,9 +1798,10 @@ function openSimulador(){
   const m=document.getElementById('sim-modal');
   document.body.appendChild(m); // evita que quede posicionado relativo al contenido scrolleado de #app
   m.style.display='flex';
+  lockBody();
   simRecalc();
 }
-function closeSimulador(){const m=document.getElementById('sim-modal');if(m)m.style.display='none';}
+function closeSimulador(){const m=document.getElementById('sim-modal');if(m)m.style.display='none';unlockBody();}
 function simRecalc(){
   const costo=parseFloat(document.getElementById('sim-costo')?.value)||0;
   const tce=parseFloat(document.getElementById('sim-tce')?.value)||0;
@@ -3873,8 +3874,9 @@ function openTplModal() {
     <div class="fg"><button class="btn-p btn-sm" onclick="loadTemplate('${t.id}')">+ Cargar</button><button class="btn-d" onclick="delTemplate('${t.id}')">${ic('trash')}</button></div>
   </div>`).join('');
   m.style.display='flex';
+  lockBody();
 }
-function closeTplModal(){const m=document.getElementById('tpl-modal');if(m)m.style.display='none';}
+function closeTplModal(){const m=document.getElementById('tpl-modal');if(m)m.style.display='none';unlockBody();}
 function loadTemplate(id) {
   const t = DB.get('templates',[]).find(x=>x.id===id);
   if (!t) return;
@@ -6716,10 +6718,12 @@ function openCobrarModal(id){
     `;
   }
   document.getElementById('cobrar-modal').style.display='flex';
+  lockBody();
 }
 function closeCobrarModal(){
   const m=document.getElementById('cobrar-modal');
   if(m)m.style.display='none';
+  unlockBody();
 }
 
 function pedRow(p) {
@@ -7404,8 +7408,9 @@ function openCli(id){
   document.getElementById('cli-cuit').value=c?.cuit||'';
   document.getElementById('cli-id').value=c?.id||'';
   document.getElementById('cli-modal').style.display='flex';
+  lockBody();
 }
-function closeCli(){const m=document.getElementById('cli-modal');if(m)m.style.display='none';}
+function closeCli(){const m=document.getElementById('cli-modal');if(m)m.style.display='none';unlockBody();}
 function saveCli(){
   const nombre=document.getElementById('cli-nombre').value.trim();
   if(!nombre){toast('Ingresá el nombre del cliente.',false);return;}
