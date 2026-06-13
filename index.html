@@ -2339,35 +2339,33 @@ document.addEventListener('click', e=>{
 // (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
 // scroll y los toques de la sección nueva, dando la sensación de que la app
 // "se traba".
-/* Deslizar hacia abajo (desde el encabezado, o desde arriba del contenido
-   cuando está scrolleado al tope) para cerrar un modal en mobile. */
+/* Deslizar hacia abajo desde el encabezado de un modal (mobile) para cerrarlo */
 (function(){
-  let startY=0, deltaY=0, dragging=false, candidate=false, box=null, mol=null, body=null;
+  let startY=0, deltaY=0, dragging=false, candidate=false, box=null, mol=null;
   document.addEventListener('touchstart', e=>{
     if(!window.matchMedia('(max-width:768px)').matches) return;
-    const b=e.target.closest('.mbox');
-    if(!b || e.target.closest('button')) return;
-    box=b; mol=b.closest('.mol'); body=b.querySelector('.mbody');
-    if(!mol) return;
+    const hdr=e.target.closest('.mhdr');
+    if(!hdr || e.target.closest('button')) return;
+    box=hdr.closest('.mbox'); mol=hdr.closest('.mol');
+    if(!box||!mol) return;
     startY=e.touches[0].clientY;
     deltaY=0; dragging=false; candidate=true;
   }, {passive:true});
   document.addEventListener('touchmove', e=>{
     if(!candidate||!box) return;
     const dy=e.touches[0].clientY-startY;
+    if(dy<=0){ return; }
     if(!dragging){
-      if(dy<=10) { if(dy<-10) candidate=false; return; }
-      if(body && body.scrollTop>0){ candidate=false; return; }
       dragging=true;
       box.style.animation='none';
       box.style.transition='none';
     }
-    deltaY=Math.max(0,dy);
+    deltaY=dy;
     box.style.transform=`translateY(${deltaY}px)`;
     if(e.cancelable) e.preventDefault();
   }, {passive:false});
   document.addEventListener('touchend', ()=>{
-    if(!dragging||!box){ candidate=false; box=null; mol=null; body=null; return; }
+    if(!dragging||!box){ candidate=false; box=null; mol=null; return; }
     box.style.transition='transform .25s cubic-bezier(.22,.61,.36,1)';
     if(deltaY>90){
       const b=box, m=mol;
@@ -2378,7 +2376,7 @@ document.addEventListener('click', e=>{
       b.style.transform='';
       setTimeout(()=>{ b.style.animation=''; }, 260);
     }
-    dragging=false; candidate=false; box=null; mol=null; body=null;
+    dragging=false; candidate=false; box=null; mol=null;
   });
 })();
 function _updateVh100(){
