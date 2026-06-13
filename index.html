@@ -2339,29 +2339,34 @@ document.addEventListener('click', e=>{
 // (por ej. el usuario tocó un tab del menú sin cerrarlos) bloquean todo el
 // scroll y los toques de la sección nueva, dando la sensación de que la app
 // "se traba".
-/* Deslizar hacia abajo desde el encabezado de un modal (mobile) para cerrarlo */
+/* Deslizar hacia abajo (desde el encabezado, o desde arriba del contenido
+   cuando está scrolleado al tope) para cerrar un modal en mobile. */
 (function(){
-  let startY=0, deltaY=0, dragging=false, box=null, mol=null;
+  let startY=0, deltaY=0, dragging=false, candidate=false, box=null, mol=null, body=null;
   document.addEventListener('touchstart', e=>{
     if(!window.matchMedia('(max-width:768px)').matches) return;
-    const hdr=e.target.closest('.mhdr');
-    if(!hdr || e.target.closest('button')) return;
-    box=hdr.closest('.mbox');
-    mol=hdr.closest('.mol');
-    if(!box||!mol) return;
+    const b=e.target.closest('.mbox');
+    if(!b || e.target.closest('button')) return;
+    box=b; mol=b.closest('.mol'); body=b.querySelector('.mbody');
+    if(!mol) return;
     startY=e.touches[0].clientY;
-    deltaY=0;
-    dragging=true;
-    box.style.transition='none';
+    deltaY=0; dragging=false; candidate=true;
   }, {passive:true});
   document.addEventListener('touchmove', e=>{
-    if(!dragging||!box) return;
-    deltaY=e.touches[0].clientY-startY;
-    if(deltaY<0) deltaY=0;
+    if(!candidate||!box) return;
+    const dy=e.touches[0].clientY-startY;
+    if(!dragging){
+      if(dy<=10) { if(dy<-10) candidate=false; return; }
+      if(body && body.scrollTop>0){ candidate=false; return; }
+      dragging=true;
+      box.style.transition='none';
+    }
+    deltaY=Math.max(0,dy);
     box.style.transform=`translateY(${deltaY}px)`;
-  }, {passive:true});
+    if(e.cancelable) e.preventDefault();
+  }, {passive:false});
   document.addEventListener('touchend', ()=>{
-    if(!dragging||!box) return;
+    if(!dragging||!box){ candidate=false; box=null; mol=null; body=null; return; }
     box.style.transition='transform .25s cubic-bezier(.22,.61,.36,1)';
     if(deltaY>90){
       const b=box, m=mol;
@@ -2370,7 +2375,7 @@ document.addEventListener('click', e=>{
     } else {
       box.style.transform='';
     }
-    dragging=false; box=null; mol=null;
+    dragging=false; candidate=false; box=null; mol=null; body=null;
   });
 })();
 function _updateVh100(){
