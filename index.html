@@ -2359,6 +2359,7 @@ document.addEventListener('click', e=>{
       if(dy<=10) { if(dy<-10) candidate=false; return; }
       if(body && body.scrollTop>0){ candidate=false; return; }
       dragging=true;
+      box.style.animation='none';
       box.style.transition='none';
     }
     deltaY=Math.max(0,dy);
@@ -2373,7 +2374,9 @@ document.addEventListener('click', e=>{
       b.style.transform='translateY(100%)';
       setTimeout(()=>{ m.click(); b.style.transform=''; b.style.transition=''; }, 200);
     } else {
-      box.style.transform='';
+      const b=box;
+      b.style.transform='';
+      setTimeout(()=>{ b.style.animation=''; }, 260);
     }
     dragging=false; candidate=false; box=null; mol=null; body=null;
   });
