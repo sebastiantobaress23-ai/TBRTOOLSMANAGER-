@@ -8682,6 +8682,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (_swRefreshed) return;
       _swRefreshed = true;
+      // Recordar la página actual para no volver siempre al dashboard
+      // después de la actualización automática del Service Worker.
+      try { sessionStorage.setItem('tbr_lastpage', PAGE||''); } catch {}
       location.reload();
     });
   });
@@ -8698,6 +8701,10 @@ window.onload = async function() {
     favicon.href = hdrLogo.src;
     document.head.appendChild(favicon);
   }
+  // Pedir PIN/Face ID de entrada lo antes posible (no depende de la red:
+  // usa la configuración ya guardada localmente). Antes se pedía recién
+  // después de initialSyncIfFresh, que puede tardar varios segundos.
+  checkAccessPin();
   // Si el dispositivo no tiene datos locales (instalación nueva / incógnito),
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
@@ -8740,7 +8747,6 @@ window.onload = async function() {
     const dn = document.querySelector('nav.nav');
     if (dn) dn.style.display = 'none';
   }
-  checkAccessPin();
   // App Shortcuts (mantener presionado el ícono): ?page=ventas, ?page=compra, ?page=ventas&scan=1
   const validPages=['dashboard','compra','historial','ventas','pedidos','catalogo','stats','publicar','competencia','config','orden','cotizaciones','proveedores','viaje'];
   const params=new URLSearchParams(location.search);
@@ -8752,7 +8758,9 @@ window.onload = async function() {
     }
     history.replaceState(null,'',location.pathname);
   } else {
-    navigate('dashboard');
+    let lastPage = null;
+    try { lastPage = sessionStorage.getItem('tbr_lastpage'); sessionStorage.removeItem('tbr_lastpage'); } catch {}
+    navigate(lastPage && validPages.includes(lastPage) ? lastPage : 'dashboard');
   }
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
