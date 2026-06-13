@@ -889,12 +889,14 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 @keyframes sheetUpIn{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){
   .mol{align-items:flex-end;padding:0}
-  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;max-height:88vh;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
-  .mhdr{padding-top:20px;border-radius:18px 18px 0 0}
+  .mbox{max-width:100%;width:100%;border-radius:18px 18px 0 0;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;display:flex;flex-direction:column;animation:sheetUpIn .32s cubic-bezier(.22,.61,.36,1) both}
+  .mhdr{padding-top:20px;border-radius:18px 18px 0 0;flex-shrink:0}
   .mhdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
   html.light .mhdr::before{background:rgba(0,0,0,.15)}
+  .mbody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
 }
 @media(prefers-reduced-motion:reduce){.mbox{animation:none}}
+body.modal-open{overflow:hidden}
 
 /* ── ACTION SHEET (long-press menu) ── */
 .asheet-list{display:flex;flex-direction:column;padding:6px}
@@ -4449,9 +4451,9 @@ function pgCat() {
   </div>
 </div>`;
 }
-function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';}
-function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';}
+function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';document.body.classList.add('modal-open');}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';document.body.classList.add('modal-open');}
+function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';document.body.classList.remove('modal-open');}
 let cePhotos=[];
 function renderCePhotos(){
   const wrap=document.getElementById('ce-photos-wrap');
@@ -6371,8 +6373,9 @@ function openCotCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')}</div></div><button class="btn-p btn-sm" onclick="addCotFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
+  document.body.classList.add('modal-open');
 }
-function closeCotCatModal(){const m=document.getElementById('cot-cat-modal');if(m)m.style.display='none';}
+function closeCotCatModal(){const m=document.getElementById('cot-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
 function addCotFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addCotRow(c.name,c.code||'',1);closeCotCatModal();}
 
 function setCotPrice(id,idx,v){
@@ -6557,17 +6560,6 @@ function pgPedidos() {
 
   return `<div class="pg">
   <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
-
-  <div class="flow-steps">
-    <div class="flow-step"><span class="flow-step-ic">${ic('send',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 1</div><div class="flow-step-l">Generar presupuesto</div></div></div>
-    <div class="flow-sep">${ic('arrowRight',14)}</div>
-    <div class="flow-step"><span class="flow-step-ic">${ic('clipboard',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 2</div><div class="flow-step-l">Cliente confirma</div></div></div>
-    <div class="flow-sep">${ic('arrowRight',14)}</div>
-    <div class="flow-step"><span class="flow-step-ic">${ic('package',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 3</div><div class="flow-step-l">En preparación</div></div></div>
-    <div class="flow-sep">${ic('arrowRight',14)}</div>
-    <div class="flow-step"><span class="flow-step-ic">${ic('check',14)}</span><div class="flow-step-tx"><div class="flow-step-n">Paso 4</div><div class="flow-step-l">Entregado / Cobrado</div></div></div>
-  </div>
-  <div class="hint mb20">Al marcar "Entregado / Cobrado" se genera automáticamente el comprobante de venta en Ventas con los artículos de este pedido.</div>
 
   <div class="card mb16">
     <div class="sh mb16">Datos del cliente</div>
@@ -6844,8 +6836,9 @@ function openPedCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')}</div></div><button class="btn-p btn-sm" onclick="addPedFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
+  document.body.classList.add('modal-open');
 }
-function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';}
+function closePedCatModal(){const m=document.getElementById('ped-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
 function addPedFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addPedRow(c.name,c.code||'',1,(c.salePrice||suggestDirectPrice(c.code,c.name))||'');closePedCatModal();}
 
 function generatePedido() {
@@ -8212,8 +8205,9 @@ function openOrdCatModal(){
   if(!m||!b)return;
   b.innerHTML=cat.length===0?'<div class="empty">Catálogo vacío.</div>':cat.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--b2)"><div><div style="font-weight:600">${esc(c.name)}</div><div style="font-size:11px;color:var(--di)">${esc(c.code||'—')} · ${fmtU(c.lastPrice||0)}</div></div><button class="btn-p btn-sm" onclick="addOrdFromCat('${c.id}')">+ Agregar</button></div>`).join('');
   m.style.display='flex';
+  document.body.classList.add('modal-open');
 }
-function closeOrdCatModal(){const m=document.getElementById('ord-cat-modal');if(m)m.style.display='none';}
+function closeOrdCatModal(){const m=document.getElementById('ord-cat-modal');if(m)m.style.display='none';document.body.classList.remove('modal-open');}
 function addOrdFromCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;addOrdRow(c.name,c.code||'',1,c.lastPrice||c.defaultPrice||0);closeOrdCatModal();}
 
 function printOrdenNew() {
