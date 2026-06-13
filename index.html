@@ -7972,9 +7972,14 @@ const CATALOG_DATA = ${JSON.stringify(data, null, 2)};
 function shareCatalogoDigitalLink(){
   const emp=DB.get('empresa',{});
   const url=emp.catalogUrl||DEFAULT_CATALOG_URL;
-  const msg=encodeURIComponent(`📋 Mirá nuestro catálogo de productos: ${url}`);
-  const phone=emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'';
-  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank', 'noopener');
+  const text=`📋 Mirá nuestro catálogo de productos: ${url}`;
+  if(navigator.share){
+    navigator.share({title:'Catálogo de productos', text, url}).catch(()=>{});
+    return;
+  }
+  // wa.me sin número: abre WhatsApp dejando elegir el contacto destinatario,
+  // en vez de abrir un chat con el propio número del negocio.
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
 }
 async function shareCatalog(){
   const cat=DB.get('catalog',[]).filter(c=>c.salePrice);
