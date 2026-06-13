@@ -1504,6 +1504,23 @@ window.addEventListener('offline', () => setSyncDot(false));
 // guardan con DB.set para que viajen entre dispositivos)
 const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
+// Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
+// auth anónima fallida): trae solo los nodos de lectura pública (catalog,
+// empresa), sin token, para que el catálogo siga sincronizando.
+async function _fbFallbackPublic() {
+  const out = {};
+  for (const k of ['catalog','empresa']) {
+    try {
+      const r = await fetch(FB+'/'+k+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(5000)});
+      if (r.ok) {
+        const v = await r.json();
+        if (v!=null) out[k] = v;
+      }
+    } catch {}
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 let _lastWrite = 0;
 async function fbSync() {
   if (Date.now()-_lastWrite < 3000) return;
@@ -1520,8 +1537,17 @@ async function fbSync() {
   try {
     const url = await fbUrl(FB+'.json', 't='+Date.now());
     const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
-    if (!r.ok) return;
-    const d = await r.json();
+    let d;
+    if (!r.ok) {
+      // El fetch de todo el árbol puede fallar por permisos (auth anónima
+      // fallida) aunque /tbr/catalog y /tbr/empresa sean de lectura pública.
+      // Reintentar esas claves por separado sin auth para no dejar el
+      // catálogo sin sincronizar.
+      d = await _fbFallbackPublic();
+      if (!d) return;
+    } else {
+      d = await r.json();
+    }
     if (!d) return;
     let changed = false;
     let settingsChanged = false;
@@ -1626,8 +1652,13 @@ async function initialSyncIfFresh() {
   try {
     const url = await fbUrl(FB+'.json', 't='+Date.now());
     const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-    if (!r.ok) return;
-    const d = await r.json();
+    let d;
+    if (!r.ok) {
+      d = await _fbFallbackPublic();
+      if (!d) return;
+    } else {
+      d = await r.json();
+    }
     if (!d) return;
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
     let restored = false;
