@@ -7954,12 +7954,13 @@ function generateCatalogDataFile(){
   if(!cat.length){toast('Cargá precios de venta en el catálogo para poder generarlo.',false);return;}
   const emp=DB.get('empresa',{});
   const data={
-    empresa:{ nombre: emp.razonSocial||'TBR Tools', whatsapp: emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'' },
+    empresa:{ nombre:'TBR Tools', whatsapp: emp.waNegocio?emp.waNegocio.replace(/\D/g,''):'', cuotasCant: emp.cuotasCant||0, cuotasRecargoPct: emp.cuotasRecargoPct||0 },
     products: cat.map(c=>({
       name:c.name, code:c.code||'', salePrice:c.salePrice,
       stock: c.stock!=null ? c.stock : undefined,
       photo: c.photo||undefined,
-      photos: (c.photos&&c.photos.length>1)?c.photos:undefined
+      photos: (c.photos&&c.photos.length>1)?c.photos:undefined,
+      description: c.specs||undefined
     }))
   };
   const content=`/* ════════════════════════════════════════════════════
