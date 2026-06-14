@@ -481,6 +481,11 @@ a{color:inherit;text-decoration:none}
 .co-input.err{border-color:var(--re);animation:shake .3s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .co-hint{font-size:10px;letter-spacing:.5px;color:var(--faint);line-height:1.5;margin-top:4px}
+.co-pay-opts{display:flex;flex-direction:column;gap:8px}
+.co-pay-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--hair);
+  border-radius:10px;font-size:13px;cursor:pointer;background:rgba(255,255,255,.03)}
+.co-pay-opt.active{border-color:var(--gd-soft);background:rgba(255,255,255,.06)}
+.co-pay-opt input{accent-color:var(--gold,#d4af37)}
 .co-altwa{display:block;width:100%;text-align:center;margin-top:12px;color:var(--di);
   font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-decoration:underline;
   text-underline-offset:3px;transition:color .2s}
@@ -1255,6 +1260,7 @@ let cartOpen = false;
 let cartView = 'list';        // 'list' | 'checkout' | 'done'
 let submitting = false;
 let lastOrder = null, lastVia = null;
+let selectedPayment = localStorage.getItem('tbr_paymethod') || 'efectivo'; // 'efectivo' | 'cuotas'
 
 /* ── Firebase / Firestore ── */
 let db = null, FB_READY = false;
@@ -1288,6 +1294,9 @@ function buildOrder(cliente, tel){
     status: 'cotizacion',
     origen: 'catalogo-digital',
     sincronizado: false,
+    formaPago: selectedPayment,
+    cuotasCant: selectedPayment==='cuotas' ? (EMPRESA.cuotasCant||0) : 0,
+    recargoPct: selectedPayment==='cuotas' ? (EMPRESA.cuotasRecargoPct||0) : 0,
     items: cartLines().map(({item,qty})=>({
       n: item.name,
       c: item.code || '',
@@ -1295,6 +1304,12 @@ function buildOrder(cliente, tel){
       p: Math.round(item.salePrice)
     }))
   };
+}
+
+function setPaymentMethod(method){
+  selectedPayment = method;
+  localStorage.setItem('tbr_paymethod', method);
+  renderCart();
 }
 
 function loadCart(){
@@ -1428,6 +1443,20 @@ function renderCartBody(lines){
           <label class="co-label" for="coTel">Teléfono / WhatsApp <i>· opcional</i></label>
           <input id="coTel" class="co-input" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej. 2604 37-5765" value="${esc(savedTel)}">
         </div>
+        ${(EMPRESA.cuotasCant>0 && EMPRESA.cuotasRecargoPct>0) ? `
+        <div class="co-field">
+          <label class="co-label">Forma de pago</label>
+          <div class="co-pay-opts">
+            <label class="co-pay-opt${selectedPayment==='efectivo'?' active':''}">
+              <input type="radio" name="coPay" value="efectivo" ${selectedPayment==='efectivo'?'checked':''} onchange="setPaymentMethod('efectivo')">
+              Efectivo/Transferencia — ${fmt(cartTotal())}
+            </label>
+            <label class="co-pay-opt${selectedPayment==='cuotas'?' active':''}">
+              <input type="radio" name="coPay" value="cuotas" ${selectedPayment==='cuotas'?'checked':''} onchange="setPaymentMethod('cuotas')">
+              ${EMPRESA.cuotasCant}x sin interés — ${fmt(cartTotal()*(1+EMPRESA.cuotasRecargoPct/100)/EMPRESA.cuotasCant)} c/u
+            </label>
+          </div>
+        </div>` : ''}
         <div class="co-hint mono">${FB_READY
           ? 'Tu pedido se registra y lo recibimos al instante.'
           : 'Se enviará por WhatsApp con todo el detalle.'}</div>
