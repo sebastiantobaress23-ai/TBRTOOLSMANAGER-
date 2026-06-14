@@ -365,6 +365,7 @@ a{color:inherit;text-decoration:none}
   color:#3ddc84;margin-top:4px;text-transform:none}
 .card-price .cash-disc{font-size:9px;margin-top:2px}
 .detail-specs{margin:28px 0;border-top:1px solid var(--hair)}
+.detail-desc{margin:-8px 0 28px;font-family:'Barlow',sans-serif;font-size:14px;line-height:1.6;color:var(--ch2,var(--di))}
 .detail-specrow{display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:14px 4px;border-bottom:1px solid var(--hair-2)}
 .detail-speck{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)}
@@ -869,7 +870,8 @@ async function fetchLive(){
       name:x.name, code:x.code||'', salePrice:x.salePrice,
       stock:x.stock!=null?x.stock:undefined,
       photo:x.photo||undefined,
-      photos:(x.photos&&x.photos.length>1)?x.photos:undefined
+      photos:(x.photos&&x.photos.length>1)?x.photos:undefined,
+      description:x.specs||undefined
     }));
     if(!products.length) return null;
     const emp = e.ok ? await e.json() : null;
@@ -1207,6 +1209,7 @@ function renderDetail(){
       </div>
       <div class="detail-price"><span class="metal-gold">${priceBlockHTML(item)}</span><small>IVA incluido</small></div>
       <div class="detail-specs">${specRows}${stockRow}</div>
+      ${item.description?`<div class="detail-desc">${esc(item.description).replace(/\n/g,'<br>')}</div>`:''}
       <div class="detail-actions">
         <div class="qty">
           <button onclick="detailQtyChange(-1)" aria-label="Menos">−</button>
