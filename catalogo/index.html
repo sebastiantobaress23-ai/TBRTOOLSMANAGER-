@@ -840,13 +840,11 @@ const pad3 = n => String(n).padStart(3,'0');
 
 function priceBlockHTML(item, size){
   const cuotas = EMPRESA.cuotasCant||0;
-  const desc = EMPRESA.efectivoDescPct||0;
-  const main = cuotas>1
-    ? `${cuotas}x ${fmt(item.salePrice/cuotas)} sin interés`
-    : fmt(item.salePrice);
-  if(!desc) return main;
-  const cash = item.salePrice * (1 - desc/100);
-  const sub = `Efectivo/Transferencia: ${fmt(cash)} (−${desc}%)`;
+  const recargo = EMPRESA.cuotasRecargoPct||0;
+  if(!cuotas) return fmt(item.salePrice);
+  const totalCuotas = item.salePrice * (1 + recargo/100);
+  const main = `${cuotas}x ${fmt(totalCuotas/cuotas)} sin interés`;
+  const sub = `Efectivo/Transferencia: ${fmt(item.salePrice)}`;
   return size==='small'
     ? `${main}<div class="cash-disc">${sub}</div>`
     : `<div>${main}</div><div class="cash-disc">${sub}</div>`;
@@ -875,7 +873,7 @@ async function fetchLive(){
         nombre:(emp&&emp.razonSocial)||EMPRESA.nombre,
         whatsapp:(emp&&emp.waNegocio)?emp.waNegocio.replace(/\D/g,''):EMPRESA.whatsapp,
         cuotasCant:(emp&&emp.cuotasCant)||0,
-        efectivoDescPct:(emp&&emp.efectivoDescPct)||0
+        cuotasRecargoPct:(emp&&emp.cuotasRecargoPct)||0
       },
       products
     };
