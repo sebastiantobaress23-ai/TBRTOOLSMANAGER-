@@ -875,7 +875,7 @@ async function fetchLive(){
     const emp = e.ok ? await e.json() : null;
     return {
       empresa:{
-        nombre:(emp&&emp.razonSocial)||EMPRESA.nombre,
+        nombre:EMPRESA.nombre,
         whatsapp:(emp&&emp.waNegocio)?emp.waNegocio.replace(/\D/g,''):EMPRESA.whatsapp,
         cuotasCant:(emp&&emp.cuotasCant)||0,
         cuotasRecargoPct:(emp&&emp.cuotasRecargoPct)||0
