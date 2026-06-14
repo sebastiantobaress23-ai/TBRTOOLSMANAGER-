@@ -5751,6 +5751,8 @@ function pgConfig() {
       <div><label class="fl">Email</label><div class="iw"><input type="text" id="emp-email" value="${esc(emp.email||'')}"></div></div>
       <div><label class="fl">WhatsApp del negocio</label><div class="iw"><input type="text" id="emp-wa" placeholder="Ej: 5491122334455" value="${esc(emp.waNegocio||'')}"></div></div>
       <div><label class="fl">Link del catálogo digital</label><div class="iw"><input type="text" id="emp-catalog-url" placeholder="https://tu-usuario.github.io/tu-repo/catalogo/" value="${esc(emp.catalogUrl||DEFAULT_CATALOG_URL)}"></div></div>
+      <div><label class="fl">Cantidad de cuotas sin interés</label><div class="iw"><input type="number" id="emp-cuotas-cant" placeholder="Ej: 3" value="${esc(emp.cuotasCant||'')}"></div></div>
+      <div><label class="fl">Descuento efectivo/transferencia (%)</label><div class="iw"><input type="number" id="emp-efectivo-desc" placeholder="Ej: 10" value="${esc(emp.efectivoDescPct||'')}"></div></div>
     </div>
     <div class="hint mt16" style="border-top:1px solid var(--b1);padding-top:14px">Datos de pago — aparecen en los presupuestos y comprobantes de venta para que tus clientes sepan cómo pagarte. Dejalos vacíos si no querés mostrarlos.</div>
     <div class="cfg-g2 mt12">
@@ -6028,6 +6030,8 @@ function saveEmpresa(){
   emp.email=document.getElementById('emp-email').value.trim();
   emp.waNegocio=document.getElementById('emp-wa').value.trim();
   emp.catalogUrl=document.getElementById('emp-catalog-url').value.trim();
+  emp.cuotasCant=parseInt(document.getElementById('emp-cuotas-cant').value)||0;
+  emp.efectivoDescPct=parseFloat(document.getElementById('emp-efectivo-desc').value)||0;
   emp.cbu=document.getElementById('emp-cbu').value.trim();
   emp.alias=document.getElementById('emp-alias').value.trim();
   emp.mp=document.getElementById('emp-mp').value.trim();
