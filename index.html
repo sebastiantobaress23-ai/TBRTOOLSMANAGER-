@@ -1615,7 +1615,11 @@ async function syncCatalogOrders() {
       const items = (_fsVal(f.items)||[]).map(it=>({id:uid(), n:it.n||'', c:it.c||'', q:+it.q||1, p:parseFloat(it.p)||0}));
       if (!items.length) continue;
       const nro = nextPEDNumber();
-      const record = {id:uid(), nro, date:_fsVal(f.date)||new Date().toISOString(), cliente:_fsVal(f.cliente)||'Cliente catálogo', tel:_fsVal(f.tel)||'', cuit:_fsVal(f.cuit)||'', items, status:'cotizacion', origen:'catalogo-digital'};
+      const formaPago = _fsVal(f.formaPago)||'efectivo';
+      const recargoPct = parseFloat(_fsVal(f.recargoPct))||0;
+      const cuotasCant = parseInt(_fsVal(f.cuotasCant))||0;
+      const record = {id:uid(), nro, date:_fsVal(f.date)||new Date().toISOString(), cliente:_fsVal(f.cliente)||'Cliente catálogo', tel:_fsVal(f.tel)||'', cuit:_fsVal(f.cuit)||'', items, status:'cotizacion', origen:'catalogo-digital', formaPago, recargoPct, cuotasCant};
+      if (formaPago==='cuotas' && recargoPct>0) record.pago = {name:`${cuotasCant}x sin interés`, pct:recargoPct};
       peds.push(record);
       saveCliente(record.cliente, record.tel, record.cuit);
       imported++;
@@ -6897,7 +6901,7 @@ function pgPedidos() {
         <button class="hi-swipe-action danger" onclick="delPed('${o.id}')">${ic('trash')}<span>Borrar</span></button>
       </div>
       <div class="hi-hdr hi-swipe-content" data-lp="ped" data-id="${o.id}" onclick="toggleHi('ped${i}')">
-        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}${o.origen==='catalogo-digital'?` <span class="badge-cat" title="Pedido recibido desde el catálogo digital">${ic('cart')}Catálogo</span>`:''}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
+        <div><div class="hi-n">${esc(o.nro)} · ${esc(o.cliente)}${o.origen==='catalogo-digital'?` <span class="badge-cat" title="Pedido recibido desde el catálogo digital">${ic('cart')}Catálogo</span>`:''}${o.origen==='catalogo-digital'&&o.formaPago==='cuotas'?` <span class="badge-cat" title="Cliente eligió pagar en cuotas">${o.cuotasCant}x +${o.recargoPct}%</span>`:''}</div><div class="hi-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div></div>
         <div class="hi-hdr-r"><div class="hi-v">${fmtA(total)}</div><div class="hi-t">total</div></div>
       </div>
     </div>
