@@ -870,7 +870,9 @@ document.addEventListener('keydown', e=>{
 window.addEventListener('scroll', ()=>{
   $('#topbar').classList.toggle('scrolled', window.scrollY>40);
   const hb=$('.hero-bg');
-  if(hb) hb.style.transform = `translate3d(0,${Math.min(window.scrollY*0.18,140)}px,0)`;
+  if(hb) hb.style.transform = `translate3d(0,${Math.min(window.scrollY*0.45,320)}px,0)`;
+  const kb=$('.bg-layer .kb');
+  if(kb) kb.style.setProperty('--scrollY', Math.min(window.scrollY*0.12,80)+'px');
 }, {passive:true});
 /* Parallax sutil con el giroscopio / puntero sobre la imagen del hero */
 function heroPointerParallax(x,y){
