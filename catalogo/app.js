@@ -408,7 +408,6 @@ function renderDetail(){
     : '';
 
   $('#detailGrid').innerHTML = `
-    ${img?`<div class="detail-photo-bg"><span style="background-image:url('${img}')"></span></div>`:''}
     <div class="detail-media">
       <div class="detail-stage" id="detailStage">
         ${detailStageHTML(item)}
