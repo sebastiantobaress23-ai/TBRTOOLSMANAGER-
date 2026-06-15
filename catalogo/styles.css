@@ -147,8 +147,8 @@ a{color:inherit;text-decoration:none}
   50%{transform:translate3d(2%,-2%,0) scale(1.08)}
 }
 .bg-layer .kb{position:absolute;inset:-6%;z-index:1;background-color:transparent;background-repeat:no-repeat;
-  background-position:center 43%;background-size:cover;transform:scale(.93);
-  filter:blur(22px) drop-shadow(0 30px 42px rgba(0,0,0,.5))}
+  background-position:center 43%;background-size:cover;
+  filter:drop-shadow(0 30px 42px rgba(0,0,0,.5))}
 .bg-layer .kb::after{content:'';position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);
   background-size:300% 100%;background-position:140% 0;
@@ -396,7 +396,6 @@ a{color:inherit;text-decoration:none}
 .detail-stage{position:relative;aspect-ratio:1;border-radius:var(--r-l);overflow:visible;
   border:1px solid var(--hair);background:transparent}
 .detail-stage .card-img,.detail-stage .ph{border-radius:inherit}
-.detail-stage .card-img{background-size:93% auto}
 .detail-photo-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .detail-photo-bg span{position:absolute;inset:-20%;background-repeat:no-repeat;
   background-position:center;background-size:contain;transform:scale(1.6);
@@ -418,11 +417,11 @@ a{color:inherit;text-decoration:none}
 .detail-price small{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:3px;
   text-transform:uppercase;color:var(--di);margin-left:12px}
 .detail-specs{margin:32px 0;border-top:1px solid var(--hair)}
-.detail-desc{margin:-8px 0 32px;font-family:'Barlow',sans-serif;font-weight:600;font-size:14px;line-height:1.75;color:var(--ch)}
+.detail-desc{margin:-8px 0 32px;font-family:'Barlow',sans-serif;font-size:14px;line-height:1.75;color:var(--si)}
 .detail-specrow{display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:16px 4px;border-bottom:4px solid var(--gd)}
-.detail-speck{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gd);-webkit-text-stroke:.6px var(--gd);text-shadow:0 0 1px var(--gd)}
-.detail-specv{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:23px;color:var(--gd);-webkit-text-stroke:.7px var(--gd);text-shadow:0 0 1px var(--gd)}
+  padding:16px 4px;border-bottom:1px solid rgba(255,255,255,.05)}
+.detail-speck{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)}
+.detail-specv{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;color:var(--ch)}
 .detail-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
 .detail-actions .btn{flex:1;min-width:160px}
 .qty{display:flex;align-items:center;gap:2px;border:1px solid var(--hair);border-radius:999px;overflow:hidden}
@@ -586,8 +585,8 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 .save-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;
   font-size:11px;font-weight:500;letter-spacing:1px;color:var(--gr);text-transform:uppercase;white-space:nowrap;
   border:1px solid rgba(95,208,138,.45);background:rgba(95,208,138,.12);border-radius:999px;padding:4px 9px}
-.pay-line{display:block;font-family:'DM Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.4px;
-  color:var(--si);margin-top:9px;text-transform:none}
+.pay-line{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:11px;letter-spacing:.4px;
+  color:var(--di);margin-top:9px;text-transform:none}
 .card-cuotas{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:9px;letter-spacing:.3px;
   color:var(--di);margin-top:5px;text-transform:none}
 .detail-pay{display:flex;flex-direction:column;gap:4px;margin-top:10px}
