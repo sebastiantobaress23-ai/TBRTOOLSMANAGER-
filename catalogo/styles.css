@@ -419,9 +419,9 @@ a{color:inherit;text-decoration:none}
 .detail-specs{margin:32px 0;border-top:1px solid var(--hair)}
 .detail-desc{margin:-8px 0 32px;font-family:'Barlow',sans-serif;font-weight:600;font-size:14px;line-height:1.75;color:var(--ch)}
 .detail-specrow{display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:16px 4px;border-bottom:2px solid rgba(226,201,126,.18)}
-.detail-speck{font-family:'DM Mono',monospace;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gd)}
-.detail-specv{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:20px;color:var(--gd)}
+  padding:16px 4px;border-bottom:3px solid rgba(226,201,126,.32)}
+.detail-speck{font-family:'DM Mono',monospace;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gd)}
+.detail-specv{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:21px;color:var(--gd)}
 .detail-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
 .detail-actions .btn{flex:1;min-width:160px}
 .qty{display:flex;align-items:center;gap:2px;border:1px solid var(--hair);border-radius:999px;overflow:hidden}
@@ -585,8 +585,8 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 .save-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;
   font-size:11px;font-weight:500;letter-spacing:1px;color:var(--gr);text-transform:uppercase;white-space:nowrap;
   border:1px solid rgba(95,208,138,.45);background:rgba(95,208,138,.12);border-radius:999px;padding:4px 9px}
-.pay-line{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:11px;letter-spacing:.4px;
-  color:var(--di);margin-top:9px;text-transform:none}
+.pay-line{display:block;font-family:'DM Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.4px;
+  color:var(--si);margin-top:9px;text-transform:none}
 .card-cuotas{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:9px;letter-spacing:.3px;
   color:var(--di);margin-top:5px;text-transform:none}
 .detail-pay{display:flex;flex-direction:column;gap:4px;margin-top:10px}
