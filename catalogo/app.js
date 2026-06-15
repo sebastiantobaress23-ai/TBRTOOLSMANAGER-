@@ -390,9 +390,10 @@ function detailStageHTML(item){
 
 function renderDetail(){
   const item = detailItem;
-  // Fondo oscuro liso (sin imagen de producto de fondo, para no competir con la imagen principal)
+  // Fondo difuminado
+  const img = bgImageFor(item);
   $('#detailBg').innerHTML = `
-    <div class="bg-layer on"><div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 30%,#1c1813,#090807 76%)"></div></div>
+    <div class="bg-layer on">${img?`<div class="kb" style="background-image:url('${img}')"></div>`:`<div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 30%,#1c1813,#090807 76%)"></div>`}</div>
     <div class="hero-scrim"></div><div class="hero-scrim-2"></div><div class="hero-vig"></div>
     <div style="position:absolute;inset:0;backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)"></div>`;
 
