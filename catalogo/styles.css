@@ -344,7 +344,7 @@ a{color:inherit;text-decoration:none}
   transition:transform .6s var(--ease)}
 .card:hover .card-photo{transform:scale(1.05)}
 .stage-media{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
-.stage-img{position:absolute;inset:-8%;background-size:contain;background-repeat:no-repeat;background-position:center;
+.stage-img{position:absolute;inset:3%;background-size:contain;background-repeat:no-repeat;background-position:center;
   filter:drop-shadow(0 24px 36px rgba(0,0,0,.6))}
 .stage-media::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:radial-gradient(ellipse 78% 70% at 50% 42%,transparent 58%,rgba(0,0,0,.4) 100%)}
