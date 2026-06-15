@@ -377,7 +377,7 @@ a{color:inherit;text-decoration:none}
 .detail-back svg{width:16px;height:16px}
 .detail-grid{position:relative;z-index:2;max-width:var(--max);margin:0 auto;
   display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,64px);
-  padding:clamp(78px,11vh,120px) var(--pad) clamp(40px,7vh,80px);align-items:center;min-height:100svh}
+  padding:clamp(78px,11vh,120px) var(--pad) clamp(40px,7vh,80px);align-items:start;min-height:100svh}
 .detail-media{position:relative}
 .detail-stage{position:relative;aspect-ratio:1;border-radius:var(--r-l);overflow:hidden;
   border:1px solid var(--hair);background:var(--card)}
