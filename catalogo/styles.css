@@ -146,7 +146,7 @@ a{color:inherit;text-decoration:none}
   0%,100%{transform:translate3d(0,0,0) scale(1)}
   50%{transform:translate3d(2%,-2%,0) scale(1.08)}
 }
-.bg-layer .kb{position:absolute;inset:-6%;z-index:1;background-color:transparent;background-repeat:no-repeat;
+.bg-layer .kb{position:absolute;inset:2%;z-index:1;background-color:transparent;background-repeat:no-repeat;
   background-position:center 43%;background-size:cover;
   filter:drop-shadow(0 30px 42px rgba(0,0,0,.5))}
 .bg-layer .kb::after{content:'';position:absolute;inset:0;pointer-events:none;
@@ -417,10 +417,10 @@ a{color:inherit;text-decoration:none}
 .detail-price small{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:3px;
   text-transform:uppercase;color:var(--di);margin-left:12px}
 .detail-specs{margin:32px 0;border-top:1px solid var(--hair)}
-.detail-desc{margin:-8px 0 32px;font-family:'Barlow',sans-serif;font-size:14px;line-height:1.75;color:var(--si)}
+.detail-desc{margin:-8px 0 32px;font-family:'Barlow',sans-serif;font-weight:500;font-size:14px;line-height:1.75;color:var(--si)}
 .detail-specrow{display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:16px 4px;border-bottom:1px solid rgba(255,255,255,.05)}
-.detail-speck{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)}
+.detail-speck{font-family:'DM Mono',monospace;font-weight:500;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di);opacity:.85}
 .detail-specv{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;color:var(--ch)}
 .detail-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
 .detail-actions .btn{flex:1;min-width:160px}
@@ -590,8 +590,8 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 .card-cuotas{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:9px;letter-spacing:.3px;
   color:var(--di);margin-top:5px;text-transform:none}
 .detail-pay{display:flex;flex-direction:column;gap:4px;margin-top:10px}
-.detail-pay .dp-ef{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gd-deep)}
-.detail-pay .dp-card{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.4px;color:var(--di)}
+.detail-pay .dp-ef{font-family:'DM Mono',monospace;font-weight:600;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gd-deep)}
+.detail-pay .dp-card{font-family:'DM Mono',monospace;font-weight:600;font-size:12px;letter-spacing:.4px;color:var(--di)}
 
 /* ─── Franja de confianza ─── */
 .trust{position:relative;z-index:10;background:var(--bg-1);border-top:1px solid var(--hair-2)}
