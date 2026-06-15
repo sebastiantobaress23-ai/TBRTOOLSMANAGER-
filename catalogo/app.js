@@ -560,7 +560,6 @@ function addToCart(i, qty){
   else CART.push({code:item.code, name:item.name, qty});
   saveCart(); syncCartUI(); syncAddButtons();
   flashAdd(i);
-  toast(`${item.name.slice(0,28)}${item.name.length>28?'…':''} · agregado`);
 }
 function cartChange(code,d){
   const line = CART.find(l=>l.code===code); if(!line) return;
@@ -590,10 +589,15 @@ function syncCartUI(){
   // Barra de pedido fija (mobile)
   const bar=$('#orderBar');
   if(bar){
+    const wasShown = bar.classList.contains('show');
     bar.classList.toggle('show', n>0);
     const t=$('#orderBarTotal'), q=$('#orderBarCount');
     if(t) t.textContent = fmt(cartTotal());
     if(q) q.textContent = `${n} ${n===1?'ítem':'ítems'}`;
+    if(n>was && wasShown){
+      const meta=bar.querySelector('.ob-meta');
+      if(meta){ meta.classList.remove('bump'); void meta.offsetWidth; meta.classList.add('bump'); }
+    }
   }
 }
 

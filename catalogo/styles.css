@@ -629,6 +629,8 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 .ob-left{display:flex;align-items:center;gap:12px;min-width:0}
 .ob-left>svg{width:24px;height:24px;color:var(--gd);flex-shrink:0}
 .ob-meta{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.ob-meta.bump{animation:obBump .26s var(--ease)}
+@keyframes obBump{0%{opacity:.4;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
 .ob-meta b{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;
   text-transform:uppercase;color:var(--si)}
 .ob-meta i{font-family:'Rajdhani',sans-serif;font-style:normal;font-weight:800;font-size:19px;letter-spacing:-.5px}
