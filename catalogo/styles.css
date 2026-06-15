@@ -147,7 +147,7 @@ a{color:inherit;text-decoration:none}
   50%{transform:translate3d(2%,-2%,0) scale(1.08)}
 }
 .bg-layer .kb{position:absolute;inset:-6%;z-index:1;background-color:transparent;background-repeat:no-repeat;
-  background-position:center center;background-size:85%;
+  background-position:center center;background-size:90%;
   filter:drop-shadow(0 30px 42px rgba(0,0,0,.5))}
 .bg-layer .kb::after{content:'';position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);
