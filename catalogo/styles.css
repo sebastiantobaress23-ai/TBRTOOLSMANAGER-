@@ -616,14 +616,15 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 .showroom-cta{display:flex;flex-wrap:wrap;gap:12px}
 
 /* ─── Barra de pedido fija (mobile) ─── */
-.order-bar{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:90;
+.order-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:11px 14px 11px 18px;border-radius:18px;color:var(--ch);
-  background:linear-gradient(180deg,rgba(24,22,19,.98),rgba(14,13,12,.98));
+  padding:14px 18px calc(14px + env(safe-area-inset-bottom)) 20px;border-radius:20px 20px 0 0;color:var(--ch);
+  background:linear-gradient(180deg,rgba(24,22,19,.98),rgba(14,13,12,.99));
   backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
-  border:1px solid rgba(226,201,126,.26);
-  box-shadow:0 22px 52px -18px rgba(0,0,0,.92),inset 0 1px 0 rgba(255,255,255,.05);
-  transform:translateY(180%);transition:transform .42s var(--ease-2);-webkit-tap-highlight-color:transparent}
+  border:1px solid rgba(226,201,126,.26);border-bottom:none;
+  box-shadow:0 -8px 40px -12px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.05);
+  transform:translateY(100%);transition:transform .26s var(--ease-2);-webkit-tap-highlight-color:transparent;
+  will-change:transform}
 .order-bar.show{transform:translateY(0)}
 .ob-left{display:flex;align-items:center;gap:12px;min-width:0}
 .ob-left>svg{width:24px;height:24px;color:var(--gd);flex-shrink:0}
