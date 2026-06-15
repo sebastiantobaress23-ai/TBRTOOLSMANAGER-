@@ -863,10 +863,34 @@ window.addEventListener('hashchange', ()=>{
   else if(location.hash && !detailOpen) applyHash();
 });
 
+/* ── Refresco automático: vuelve a pedir catalog.json/empresa.json y actualiza
+   precios, stock, fotos y descripciones sin recargar la página ── */
+let lastLiveSnapshot = null;
+async function refreshLive(){
+  const live = await fetchLive();
+  if(!live) return;
+  const snapshot = JSON.stringify(live);
+  if(snapshot === lastLiveSnapshot) return;
+  lastLiveSnapshot = snapshot;
+  EMPRESA = live.empresa; PRODUCTS = live.products;
+  const curCode = detailItem ? detailItem.code : null;
+  buildItems(); buildFeatured(); buildCats(); renderGrid(); syncCartUI();
+  if(detailOpen && curCode){
+    const updated = ITEMS.find(it=>it.code===curCode);
+    if(updated){ detailItem = updated; renderDetail(); }
+  }
+}
+
 (async ()=>{
   initFirebase();
   bootUI();
   applyHash();
   const live = await fetchLive();
-  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash(); }
+  if(live){
+    lastLiveSnapshot = JSON.stringify(live);
+    EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash();
+  }
+  setInterval(refreshLive, 20000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshLive(); });
+  window.addEventListener('online', refreshLive);
 })();
