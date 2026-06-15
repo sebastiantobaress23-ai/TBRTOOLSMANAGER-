@@ -371,7 +371,7 @@ function shareDetail(){
   if(navigator.share){
     navigator.share({title:item.name, text, url}).catch(()=>{});
   }else if(navigator.clipboard){
-    navigator.clipboard.writeText(url).then(()=>toast('Link copiado')).catch(()=>fallbackShare(url));
+    navigator.clipboard.writeText(url).catch(()=>fallbackShare(url));
   }else fallbackShare(url);
 }
 function fallbackShare(url){
@@ -611,7 +611,7 @@ function openCart(){
 function closeCart(){ cartOpen=false; $('#cart').classList.remove('open'); $('#cartScrim').classList.remove('open'); if(!detailOpen) document.body.style.overflow=''; }
 
 function goCheckout(){
-  if(!cartLines().length){ toast('Tu pedido está vacío'); return; }
+  if(!cartLines().length) return;
   cartView='checkout'; renderCart();
   setTimeout(()=>{ const el=$('#coName'); if(el) el.focus(); },120);
 }
@@ -770,7 +770,7 @@ async function submitOrder(){
   if(submitting) return;
   const cliente = ($('#coName')?.value||'').trim();
   const tel     = ($('#coTel')?.value||'').trim();
-  if(!cliente){ toast('Ingresá tu nombre'); const el=$('#coName'); if(el){ el.focus(); el.classList.add('err'); } return; }
+  if(!cliente){ const el=$('#coName'); if(el){ el.focus(); el.classList.add('err'); } return; }
   localStorage.setItem('tbr_cliente', cliente);
   localStorage.setItem('tbr_tel', tel);
 
@@ -791,7 +791,6 @@ async function submitOrder(){
   }catch(e){
     console.warn('Error guardando pedido en Firestore:', e);
     submitting = false;
-    toast('No se pudo guardar — te paso a WhatsApp');
     sendOrderWhatsApp(order);
     finishOrder(order, 'whatsapp');
   }
@@ -821,7 +820,7 @@ function sendOrderWhatsApp(order){
 /* Atajo: enviar por WhatsApp sin pasar por el form (usa nombre guardado si hay) */
 function startOrderWhatsApp(){
   const lines = cartLines();
-  if(!lines.length){ toast('Tu pedido está vacío'); return; }
+  if(!lines.length) return;
   const order = buildOrder(localStorage.getItem('tbr_cliente')||'Cliente', localStorage.getItem('tbr_tel')||'');
   sendOrderWhatsApp(order);
 }
@@ -833,13 +832,6 @@ function consultOne(i){
 function openWa(){
   const msg = `Hola! Te escribo por el catálogo de ${EMPRESA.nombre} 🙂`;
   window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
-}
-
-/* ── Toast ── */
-let toastTimer=null;
-function toast(txt){
-  const t=$('#toast'); $('#toastTxt').textContent=txt; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
 }
 
 /* ── Reveal on scroll ── */
