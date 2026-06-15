@@ -338,12 +338,12 @@ a{color:inherit;text-decoration:none}
 .kb-blur{position:absolute;inset:0;background-size:cover;background-position:center;
   filter:blur(34px) saturate(1.2) brightness(.5);transform:scale(1.25);pointer-events:none}
 .card-media .kb-blur{filter:blur(26px) saturate(1.15) brightness(.46)}
-.card-photo{position:absolute;inset:9% 9% 11%;background-size:contain;background-repeat:no-repeat;
+.card-photo{position:absolute;inset:2% 2% 3%;background-size:contain;background-repeat:no-repeat;
   background-position:center;filter:drop-shadow(0 16px 26px rgba(0,0,0,.55));
   transition:transform .6s var(--ease)}
 .card:hover .card-photo{transform:scale(1.05)}
 .stage-media{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
-.stage-img{position:absolute;inset:11%;background-size:contain;background-repeat:no-repeat;background-position:center;
+.stage-img{position:absolute;inset:2%;background-size:contain;background-repeat:no-repeat;background-position:center;
   filter:drop-shadow(0 24px 36px rgba(0,0,0,.6))}
 .stage-media::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:radial-gradient(ellipse 78% 70% at 50% 42%,transparent 58%,rgba(0,0,0,.4) 100%)}
