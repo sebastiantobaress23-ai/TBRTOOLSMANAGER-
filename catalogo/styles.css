@@ -395,6 +395,9 @@ a{color:inherit;text-decoration:none}
 .detail-media{position:relative}
 .detail-stage{position:relative;aspect-ratio:1;border-radius:var(--r-l);overflow:hidden;
   border:1px solid var(--hair);background:var(--card)}
+.detail-stage::before{content:'';position:absolute;inset:-20%;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 55% at 50% 50%,rgba(60,90,110,.35),rgba(30,40,55,.18) 55%,transparent 75%);
+  filter:blur(60px)}
 .detail-stage .card-img,.detail-stage .ph{border-radius:inherit}
 .detail-mticks .tick{opacity:.6}
 .detail-thumbs{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
