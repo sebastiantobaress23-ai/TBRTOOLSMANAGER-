@@ -390,10 +390,12 @@ function detailStageHTML(item){
 
 function renderDetail(){
   const item = detailItem;
-  // Fondo oscuro liso (sin imagen de producto de fondo, para no competir con la imagen principal)
+  // Fondo difuminado
+  const img = bgImageFor(item);
   $('#detailBg').innerHTML = `
-    <div class="bg-layer on"><div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 30%,#1c1813,#090807 76%)"></div></div>
-    <div class="hero-scrim"></div><div class="hero-scrim-2"></div><div class="hero-vig"></div>`;
+    <div class="bg-layer on">${img?`<div class="kb" style="background-image:url('${img}')"></div>`:`<div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 30%,#1c1813,#090807 76%)"></div>`}</div>
+    <div class="hero-scrim"></div><div class="hero-scrim-2"></div><div class="hero-vig"></div>
+    <div style="position:absolute;inset:0;backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)"></div>`;
 
   const specRows = item.specs.length
     ? item.specs.map(s=>`<div class="detail-specrow"><span class="detail-speck">${esc(s.k)}</span><span class="detail-specv">${esc(s.v)}</span></div>`).join('')
@@ -867,25 +869,6 @@ document.addEventListener('keydown', e=>{
 });
 window.addEventListener('scroll', ()=>{
   $('#topbar').classList.toggle('scrolled', window.scrollY>40);
-  const hb=$('.hero-bg');
-  if(hb) hb.style.transform = `translate3d(0,${Math.min(window.scrollY*0.45,320)}px,0)`;
-  const kb=$('.bg-layer .kb');
-  if(kb) kb.style.setProperty('--scrollY', Math.min(window.scrollY*0.12,80)+'px');
-}, {passive:true});
-/* Parallax sutil con el giroscopio / puntero sobre la imagen del hero */
-function heroPointerParallax(x,y){
-  const hb=$('.hero-bg'); if(!hb) return;
-  const dx=(x-.5)*14, dy=(y-.5)*10;
-  hb.style.setProperty('--px', dx+'px');
-  hb.style.setProperty('--py', dy+'px');
-}
-window.addEventListener('pointermove', e=>{
-  if(window.scrollY>10) return;
-  heroPointerParallax(e.clientX/innerWidth, e.clientY/innerHeight);
-}, {passive:true});
-window.addEventListener('deviceorientation', e=>{
-  if(window.scrollY>10 || e.gamma==null) return;
-  heroPointerParallax(.5 + e.gamma/90, .5 + (e.beta-45)/90);
 }, {passive:true});
 window.addEventListener('hashchange', ()=>{
   if(!location.hash && detailOpen) closeDetail();
