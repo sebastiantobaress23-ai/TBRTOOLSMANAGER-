@@ -869,6 +869,23 @@ document.addEventListener('keydown', e=>{
 });
 window.addEventListener('scroll', ()=>{
   $('#topbar').classList.toggle('scrolled', window.scrollY>40);
+  const hb=$('.hero-bg');
+  if(hb) hb.style.transform = `translate3d(0,${Math.min(window.scrollY*0.18,140)}px,0)`;
+}, {passive:true});
+/* Parallax sutil con el giroscopio / puntero sobre la imagen del hero */
+function heroPointerParallax(x,y){
+  const hb=$('.hero-bg'); if(!hb) return;
+  const dx=(x-.5)*14, dy=(y-.5)*10;
+  hb.style.setProperty('--px', dx+'px');
+  hb.style.setProperty('--py', dy+'px');
+}
+window.addEventListener('pointermove', e=>{
+  if(window.scrollY>10) return;
+  heroPointerParallax(e.clientX/innerWidth, e.clientY/innerHeight);
+}, {passive:true});
+window.addEventListener('deviceorientation', e=>{
+  if(window.scrollY>10 || e.gamma==null) return;
+  heroPointerParallax(.5 + e.gamma/90, .5 + (e.beta-45)/90);
 }, {passive:true});
 window.addEventListener('hashchange', ()=>{
   if(!location.hash && detailOpen) closeDetail();
