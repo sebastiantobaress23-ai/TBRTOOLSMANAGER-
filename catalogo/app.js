@@ -33,7 +33,30 @@ const precioTarjeta = ef => Math.round((ef||0) * (1 + getRecargoPct()/100));
 const valorCuota   = ef => Math.round(precioTarjeta(ef) / getCuotasCant());
 const ahorroPct    = () => Math.round(getRecargoPct()/(100+getRecargoPct())*100);
 
-/* ── Catálogo en vivo desde Firebase ── */
+/* ── Catálogo en vivo desde Firebase ──
+   mapLiveCatalog/mapLiveEmpresa traducen los nodos crudos de /tbr/catalog
+   y /tbr/empresa al formato que usa el catálogo. Se usan tanto por el
+   fetch inicial (REST, por si la DB SDK no carga) como por los listeners
+   en tiempo real (onValue) que mantienen todo sincronizado. ── */
+function mapLiveCatalog(cat){
+  if(!Array.isArray(cat)) return null;
+  const products = cat.filter(x=>x&&x.salePrice).map(x=>({
+    name:x.name, code:x.code||'', salePrice:x.salePrice,
+    stock:x.stock!=null?x.stock:undefined,
+    photo:x.photo||undefined,
+    photos:(x.photos&&x.photos.length>1)?x.photos:undefined,
+    description:x.specs||undefined
+  }));
+  return products.length ? products : null;
+}
+function mapLiveEmpresa(emp){
+  return {
+    nombre:EMPRESA.nombre,
+    whatsapp:(emp&&emp.waNegocio)?emp.waNegocio.replace(/\D/g,''):EMPRESA.whatsapp,
+    cuotasCant:(emp&&emp.cuotasCant)||0,
+    cuotasRecargoPct:(emp&&emp.cuotasRecargoPct)||0
+  };
+}
 async function fetchLive(){
   try{
     const [c,e] = await Promise.all([
@@ -41,26 +64,10 @@ async function fetchLive(){
       fetch(`${FB_LIVE}/empresa.json`,{cache:'no-store',signal:AbortSignal.timeout(4000)})
     ]);
     if(!c.ok) return null;
-    const cat = await c.json();
-    if(!Array.isArray(cat)) return null;
-    const products = cat.filter(x=>x&&x.salePrice).map(x=>({
-      name:x.name, code:x.code||'', salePrice:x.salePrice,
-      stock:x.stock!=null?x.stock:undefined,
-      photo:x.photo||undefined,
-      photos:(x.photos&&x.photos.length>1)?x.photos:undefined,
-      description:x.specs||undefined
-    }));
-    if(!products.length) return null;
+    const products = mapLiveCatalog(await c.json());
+    if(!products) return null;
     const emp = e.ok ? await e.json() : null;
-    return {
-      empresa:{
-        nombre:EMPRESA.nombre,
-        whatsapp:(emp&&emp.waNegocio)?emp.waNegocio.replace(/\D/g,''):EMPRESA.whatsapp,
-        cuotasCant:(emp&&emp.cuotasCant)||0,
-        cuotasRecargoPct:(emp&&emp.cuotasRecargoPct)||0
-      },
-      products
-    };
+    return { empresa: mapLiveEmpresa(emp), products };
   }catch{ return null; }
 }
 
@@ -480,7 +487,7 @@ let lastOrder = null, lastVia = null;
 let selectedPayment = localStorage.getItem('tbr_paymethod') || 'efectivo'; // 'efectivo' | 'cuotas'
 
 /* ── Firebase / Firestore ── */
-let db = null, FB_READY = false;
+let db = null, FB_READY = false, rtdb = null;
 function initFirebase(){
   try{
     const cfg = window.FIREBASE_CONFIG;
@@ -490,6 +497,7 @@ function initFirebase(){
     if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
     db = firebase.firestore();
     FB_READY = true;
+    if(firebase.database) rtdb = firebase.database();
   }catch(e){ console.warn('Firebase no inicializado:', e && e.message); FB_READY = false; }
 }
 
@@ -863,34 +871,47 @@ window.addEventListener('hashchange', ()=>{
   else if(location.hash && !detailOpen) applyHash();
 });
 
-/* ── Refresco automático: vuelve a pedir catalog.json/empresa.json y actualiza
-   precios, stock, fotos y descripciones sin recargar la página ── */
-let lastLiveSnapshot = null;
-async function refreshLive(){
-  const live = await fetchLive();
-  if(!live) return;
-  const snapshot = JSON.stringify(live);
-  if(snapshot === lastLiveSnapshot) return;
-  lastLiveSnapshot = snapshot;
-  EMPRESA = live.empresa; PRODUCTS = live.products;
+/* ── Sincronización en tiempo real: cualquier cambio de precio, stock, foto
+   o descripción hecho en TBR Tools se escribe en /tbr/catalog y /tbr/empresa
+   de Realtime Database, y onValue() empuja ese cambio a todos los clientes
+   conectados de inmediato (sin polling, sin recargar). ── */
+let liveCatalog = null, liveEmpresa = null, firstLiveApplied = false;
+function applyLiveData(){
+  if(!liveCatalog) return;
+  EMPRESA = mapLiveEmpresa(liveEmpresa);
+  PRODUCTS = liveCatalog;
   const curCode = detailItem ? detailItem.code : null;
+  if(!firstLiveApplied){
+    firstLiveApplied = true;
+    bootUI();
+    if(!detailOpen) applyHash();
+    return;
+  }
   buildItems(); buildFeatured(); buildCats(); renderGrid(); syncCartUI();
   if(detailOpen && curCode){
     const updated = ITEMS.find(it=>it.code===curCode);
     if(updated){ detailItem = updated; renderDetail(); }
   }
 }
+function startLiveSync(){
+  if(!rtdb) return false;
+  rtdb.ref('tbr/catalog').on('value', snap=>{
+    const products = mapLiveCatalog(snap.val());
+    if(products){ liveCatalog = products; applyLiveData(); }
+  });
+  rtdb.ref('tbr/empresa').on('value', snap=>{
+    liveEmpresa = snap.val();
+    if(liveCatalog) applyLiveData();
+  });
+  return true;
+}
 
 (async ()=>{
   initFirebase();
   bootUI();
   applyHash();
+  if(startLiveSync()) return;
+  // Sin SDK de Realtime Database disponible: usar REST como respaldo
   const live = await fetchLive();
-  if(live){
-    lastLiveSnapshot = JSON.stringify(live);
-    EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash();
-  }
-  setInterval(refreshLive, 20000);
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshLive(); });
-  window.addEventListener('online', refreshLive);
+  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash(); }
 })();
