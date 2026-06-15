@@ -869,6 +869,13 @@ document.addEventListener('keydown', e=>{
 });
 window.addEventListener('scroll', ()=>{
   $('#topbar').classList.toggle('scrolled', window.scrollY>40);
+  const y = Math.min(window.scrollY, 600);
+  const bg = $('.bg-layer.on');
+  if(bg){
+    bg.style.transform = `translate3d(0,${y*0.08}px,0)`;
+    const kb = bg.querySelector('.kb');
+    if(kb) kb.style.transform = `translate3d(0,${y*0.18}px,0)`;
+  }
 }, {passive:true});
 window.addEventListener('hashchange', ()=>{
   if(!location.hash && detailOpen) closeDetail();
