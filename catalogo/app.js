@@ -126,9 +126,26 @@ function buildItems(){
       initial:(p.name||'?').trim().charAt(0).toUpperCase()
     };
   });
+  uniqifyNames();
 }
 
-/* ── Media: video (loop) → foto → placeholder elegante ── */
+/* ── Nombre único por producto: si el título corto colapsa con otro,
+   le agrega la spec que los diferencia (ej. "· 530 W") ── */
+function uniqifyNames(){
+  const groups = {};
+  ITEMS.forEach(it=>{ it._base = shortName(it.name); (groups[it._base] = groups[it._base] || []).push(it); });
+  ITEMS.forEach(it=>{
+    const grp = groups[it._base];
+    if(grp.length < 2){ it.displayName = it._base; return; }
+    let suffix = '';
+    for(const s of it.specs){
+      const vals = new Set(grp.map(g=>(g.specs.find(x=>x.k===s.k)||{}).v).filter(Boolean));
+      if(vals.size > 1){ suffix = s.v; break; }
+    }
+    if(!suffix && it.code) suffix = it.code;
+    it.displayName = suffix ? `${it._base} · ${suffix}` : it._base;
+  });
+}
 function videoOf(item){ return (item.videos && item.videos[0]) || null; }
 function videoTag(src, poster, cls){
   return `<video class="${cls||'card-img'}" autoplay muted loop playsinline preload="metadata"${poster?` poster='${poster}'`:''}><source src='${src}' type='video/mp4'></video>`;
@@ -212,7 +229,7 @@ function renderHero(){
       <span class="chip code">${esc(item.code||'—')}</span>
       ${stockChip(item)}
     </div>
-    <h1 class="hero-title bfu" style="animation-delay:.18s">${esc(shortName(item.name))}</h1>
+    <h1 class="hero-title bfu" style="animation-delay:.18s">${esc(item.displayName||shortName(item.name))}</h1>
     <div class="hero-specs bfu" style="animation-delay:.26s">${specsHTML}</div>
     <div class="hero-bottom bfu" style="animation-delay:.34s">
       <div class="hero-price">
@@ -310,7 +327,7 @@ function cardHTML(item){
     </div>
     <div class="card-body">
       <div class="card-cat">${esc(item.cat)}${item.brand?' · '+esc(item.brand):''}</div>
-      <h3 class="card-name">${esc(shortName(item.name))}</h3>
+      <h3 class="card-name">${esc(item.displayName||shortName(item.name))}</h3>
       <div class="card-specchips">${specChips}</div>
       <div class="card-foot">
         <div class="card-price"><small>Efectivo</small>${fmt(item.salePrice)}<span class="card-cuotas">${getCuotasCant()} cuotas s/interés de ${fmt(valorCuota(item.salePrice))}</span></div>
@@ -395,7 +412,7 @@ function renderDetail(){
   $('#detailBg').innerHTML = `
     <div class="bg-layer on">${img?`<div class="kb" style="background-image:url('${img}')"></div>`:`<div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 30%,#1c1813,#090807 76%)"></div>`}</div>
     <div class="hero-scrim"></div><div class="hero-scrim-2"></div><div class="hero-vig"></div>
-    <div style="position:absolute;inset:0;backdrop-filter:blur(31px);-webkit-backdrop-filter:blur(31px)"></div>`;
+    <div class="detail-frost"></div>`;
 
   const specRows = item.specs.length
     ? item.specs.map(s=>`<div class="detail-specrow"><span class="detail-speck">${esc(s.k)}</span><span class="detail-specv">${esc(s.v)}</span></div>`).join('')
@@ -418,7 +435,7 @@ function renderDetail(){
     </div>
     <div class="detail-info">
       <div class="detail-cat"><span class="kicker">${esc(item.cat)}</span></div>
-      <h1 class="detail-title">${esc(shortName(item.name))}</h1>
+      <h1 class="detail-title">${esc(item.displayName||shortName(item.name))}</h1>
       <div class="detail-meta">
         ${item.brand?`<span class="chip chip-brand"><i>Marca</i>${esc(item.brand)}</span>`:''}
         <span class="chip code">${esc(item.code||'—')}</span>
@@ -592,6 +609,7 @@ function syncCartUI(){
   if(bar){
     const wasShown = bar.classList.contains('show');
     bar.classList.toggle('show', n>0);
+    document.body.classList.toggle('has-orderbar', n>0);
     const t=$('#orderBarTotal'), q=$('#orderBarCount');
     if(t) t.textContent = fmt(cartTotal());
     if(q) q.textContent = `${n} ${n===1?'ítem':'ítems'}`;
@@ -862,13 +880,6 @@ document.addEventListener('keydown', e=>{
 });
 window.addEventListener('scroll', ()=>{
   $('#topbar').classList.toggle('scrolled', window.scrollY>40);
-  const y = Math.min(window.scrollY, 600);
-  const bg = $('.bg-layer.on');
-  if(bg){
-    bg.style.transform = `translate3d(0,${y*0.08}px,0)`;
-    const kb = bg.querySelector('.kb');
-    if(kb) kb.style.transform = `translate3d(0,${y*0.18}px,0)`;
-  }
 }, {passive:true});
 window.addEventListener('hashchange', ()=>{
   if(!location.hash && detailOpen) closeDetail();
