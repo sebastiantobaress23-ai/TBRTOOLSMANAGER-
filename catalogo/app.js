@@ -208,6 +208,12 @@ function setHeroBg(item){
     : (img
       ? photoLayers(img, 'kb')
       : `<div class="kb" style="background:radial-gradient(ellipse 80% 70% at 62% 36%,#211d17,#0b0a09 74%)"></div>`);
+  // Posición y tamaño custom por producto (campos heroX, heroY, heroSize en Firebase)
+  const kb = showing.querySelector('.kb:not(.kb-blur)');
+  if(kb && img){
+    if(item.heroX || item.heroY) kb.style.backgroundPosition = `${item.heroX||'10%'} ${item.heroY||'22%'}`;
+    if(item.heroSize) kb.style.backgroundSize = item.heroSize;
+  }
   showing.classList.add('on'); hiding.classList.remove('on');
   bgToggle=!bgToggle;
 }
