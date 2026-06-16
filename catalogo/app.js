@@ -455,7 +455,7 @@ function renderDetail(){
           <span id="detailQty">${detailQty}</span>
           <button onclick="detailQtyChange(1)" aria-label="Más">+</button>
         </div>
-        <button class="btn btn-gold" onclick="addToCart(${item.i},detailQty)">
+        <button class="btn btn-gold" id="detailAddBtn" onclick="addToCart(${item.i},detailQty)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
           Agregar al pedido
         </button>
@@ -590,6 +590,13 @@ function cartRemove(code){ CART = CART.filter(l=>l.code!==code); saveCart(); ren
 function flashAdd(i){
   const btn = document.querySelector(`[data-add="${i}"]`);
   if(btn){ btn.classList.add('added'); setTimeout(()=>btn.classList.remove('added'),900); }
+  const detailBtn = $('#detailAddBtn');
+  if(detailBtn && detailOpen){
+    const orig = detailBtn.innerHTML;
+    detailBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> ¡Agregado!';
+    detailBtn.disabled = true;
+    setTimeout(()=>{ detailBtn.innerHTML=orig; detailBtn.disabled=false; }, 1200);
+  }
   const cc=$('#cartCount'); cc.style.transform='scale(0)'; requestAnimationFrame(()=>{ cc.classList.add('show'); cc.style.transform=''; });
 }
 function syncAddButtons(){
