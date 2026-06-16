@@ -836,11 +836,16 @@ function orderToText(order){
 function sendOrderWhatsApp(order){
   window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${encodeURIComponent(orderToText(order))}`,'_blank','noopener');
 }
-/* Atajo: enviar por WhatsApp sin pasar por el form (usa nombre guardado si hay) */
+/* Atajo: enviar por WhatsApp sin pasar por el form (usa nombre guardado si hay).
+   También intenta registrar en Firestore para que llegue a la app. */
 function startOrderWhatsApp(){
   const lines = cartLines();
   if(!lines.length) return;
   const order = buildOrder(localStorage.getItem('tbr_cliente')||'Cliente', localStorage.getItem('tbr_tel')||'');
+  if(FB_READY && db){
+    const coll = window.PEDIDOS_COLLECTION || 'pedidos_pendientes';
+    db.collection(coll).doc(order.id).set(order).catch(()=>{});
+  }
   sendOrderWhatsApp(order);
 }
 function consultOne(i){
