@@ -118,9 +118,9 @@ a{color:inherit;text-decoration:none}
 .topbar .brand-sub{font-size:10.5px;letter-spacing:2.5px;color:var(--gd)}
 .topbar-actions{display:flex;align-items:center;gap:10px}
 .icon-btn{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  color:var(--ch);flex-shrink:0;position:relative}
+  color:var(--ch);flex-shrink:0;position:relative;overflow:visible}
 .icon-btn svg{width:19px;height:19px}
-.cart-count{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;border-radius:10px;
+.cart-count{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;border-radius:10px;
   background:linear-gradient(165deg,var(--gd-hi),var(--gd) 60%,var(--gd-deep));color:#1a1206;
   font-family:'Rajdhani',sans-serif;font-weight:800;font-size:11.5px;line-height:1;
   display:flex;align-items:center;justify-content:center;padding:0 5px;
