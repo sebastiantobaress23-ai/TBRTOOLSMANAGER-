@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body style="background-color: rgb(7, 7, 7)">
 
@@ -35,7 +35,7 @@
   <div class="brand" onclick="window.scrollTo({top:0,behavior:'smooth'})">
     <img class="brand-logo" src="assets/tbr-logo.png" alt="TBR Tools">
     <div class="brand-txt">
-      <div class="brand-sub">Catálogo · Ed. 2026</div>
+      <div class="brand-sub" style="font-weight: 600">Catálogo · Ed. 2026</div>
     </div>
   </div>
   <div class="topbar-actions">
@@ -63,6 +63,8 @@
   <div class="hero-vig"></div>
   <div class="hero-ticks"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span></div>
 
+  <div class="hero-flag"><span class="kicker">Destacado</span></div>
+
   <div class="hero-inner">
     <div class="hero-main" id="heroMain"></div>
   </div>
@@ -82,7 +84,7 @@
     </div>
   </div>
 
-  <a class="scroll-hint" href="#coleccion" aria-label="Ver colección">
+  <a class="scroll-hint" href="#coleccion" aria-label="Ver colección" style="font-weight: 700">
     Ver colección
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
   </a>
@@ -92,10 +94,10 @@
 <main class="collection" id="coleccion">
   <div class="section-head">
     <div>
-      <span class="kicker">La colección</span>
+      <span class="kicker" style="font-weight: 700">La colección</span>
       <h2 class="section-title">Todo el<br>catálogo</h2>
     </div>
-    <span class="section-count" id="secCount">—</span>
+    <span class="section-count" id="secCount" style="font-weight: 500">—</span>
   </div>
 
   <div class="filterbar">
@@ -129,7 +131,7 @@
   <div class="showroom-inner">
     <div class="wm-logo wm-showroom" role="img" aria-label="TBR Tools"></div>
     <h2 class="showroom-title">Equipamiento para profesionales<br>que no improvisan</h2>
-    <p class="showroom-sub">Selección premium de herramientas, con atención directa y asesoramiento real. Armá tu pedido y coordinamos al instante por WhatsApp.</p>
+    <p class="showroom-sub" style="font-weight: 500">Selección premium de herramientas, con atención directa y asesoramiento real. Armá tu pedido y coordinamos al instante por WhatsApp.</p>
     <div class="showroom-cta">
       <button class="btn btn-gold" onclick="document.getElementById('coleccion').scrollIntoView({behavior:'smooth'})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -148,15 +150,15 @@
   <div class="trust-in">
     <div class="trust-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      <div><b>Tarjetas y cuotas</b><span>Débito, crédito y transferencia</span></div>
+      <div><b>Tarjetas y cuotas</b><span style="font-weight: 500">Débito, crédito y transferencia</span></div>
     </div>
     <div class="trust-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      <div><b>Envío o retiro</b><span>Coordinamos por WhatsApp</span></div>
+      <div><b>Envío o retiro</b><span style="font-weight: 500">Coordinamos por WhatsApp</span></div>
     </div>
     <div class="trust-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
-      <div><b>Garantía oficial</b><span>Productos con garantía de fábrica</span></div>
+      <div><b>Garantía oficial</b><span style="font-weight: 500">Productos con garantía de fábrica</span></div>
     </div>
   </div>
 </section>
@@ -167,19 +169,19 @@
     <div class="footer-brand">
       <div class="brand">
         <img class="brand-logo" src="assets/tbr-logo.png" alt="TBR Tools" style="width: 52px; height: 52px">
-        <div class="brand-txt"><div class="brand-sub">Ferretería · Herramientas</div></div>
+        <div class="brand-txt"><div class="brand-sub" style="font-weight: 600">Ferretería · Herramientas</div></div>
       </div>
-      <p style="margin: 1px 0px 0px">Selección de herramientas, máquinas y accesorios para profesionales y aficionados. Consultá precios y disponibilidad por WhatsApp y armá tu pedido — nuestro equipo te asesora y responde a la brevedad.</p>
+      <p style="margin: 1px 0px 0px; font-weight: 500">Selección de herramientas, máquinas y accesorios para profesionales y aficionados. Consultá precios y disponibilidad por WhatsApp y armá tu pedido — nuestro equipo te asesora y responde a la brevedad.</p>
     </div>
     <div class="footer-cta">
-      <span class="footer-mono">Atención directa</span>
+      <span class="footer-mono" style="font-weight: 600">Atención directa</span>
       <button class="btn btn-gold" onclick="openWa()">
         <span class="wa-ic wa-ic-onlight"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg></span>
         Escribir por WhatsApp
       </button>
     </div>
   </div>
-  <div class="footer-legal">TBR Tools · Catálogo digital · Precios sujetos a modificación sin previo aviso</div>
+  <div class="footer-legal" style="font-weight: 600">TBR Tools · Catálogo digital · Precios sujetos a modificación sin previo aviso</div>
 </footer>
 
 <!-- ══ DETALLE INMERSIVO ══ -->
@@ -227,13 +229,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="catalogo-data.js"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
 
 <style id="__om-edit-overrides">
-#heroMain >.hero-kicker >:is(h1,h2,h3,h4,h5,h6,p,li,dt,dd,blockquote,figcaption,label,span,a,em,strong,small,td,th,caption) { font-weight: 500 !important }
-#heroMain >.hero-kicker >:is(h1,h2,h3,h4,h5,h6,p,li,dt,dd,blockquote,figcaption,label,span,a,em,strong,small,td,th,caption) { font-weight: 600 !important }
-#heroMain small { font-weight: 500 !important }
-#heroMain small { font-weight: 700 !important }
 </style>
