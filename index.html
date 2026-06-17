@@ -2647,6 +2647,7 @@ let catReorderMode = false;
 function toggleCatReorder(){ catReorderMode = !catReorderMode; render(); }
 
 function render() {
+  if(document.getElementById('cat-edit-modal')?.style.display==='flex'){_pendingRender=true;return;}
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
