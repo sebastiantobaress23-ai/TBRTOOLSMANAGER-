@@ -1472,11 +1472,22 @@ async function getCatalogWithPhotos() {
 
 async function fbWrite(k, v) {
   try {
+    // Al escribir el catálogo a Firebase, reincluir las fotos desde catalog_photos
+    // para que el catálogo digital las siga viendo en tbr/catalog.
+    let payload = v;
+    if (k === 'catalog' && Array.isArray(v)) {
+      const photosMap = DB.get('catalog_photos', {});
+      payload = v.map(p => {
+        const ph = photosMap[p.id];
+        if (!ph) return p;
+        return { ...p, ...(ph.photo ? {photo: ph.photo} : {}), ...(ph.photos && ph.photos.length ? {photos: ph.photos} : {}) };
+      });
+    }
     const url = await fbUrl(`${FB}/${k}.json`);
     const r = await fetch(url, {
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(v)
+      body:JSON.stringify(payload)
     });
 
     if (!r.ok) {
