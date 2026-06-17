@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=38">
+<link rel="stylesheet" href="styles.css?v=39">
 </head>
 <body style="background-color: rgb(7, 7, 7)">
 
@@ -106,9 +106,10 @@
       <button class="cat stock-toggle" id="stockToggle" onclick="toggleStock()" style="color: rgb(95, 208, 138); border-color: rgb(95, 208, 138); background-color: rgba(95, 208, 138, 0.12)">
         <span class="st-dot"></span> En stock
       </button>
-      <div class="search-box">
+      <div class="search-box" style="position:relative">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="search" placeholder="Buscar producto o código" oninput="onSearch(this.value)" aria-label="Buscar">
+        <div id="searchAC" class="search-autocomplete" hidden></div>
       </div>
       <div class="sort-sel">
         <select onchange="setSort(this.value)" aria-label="Ordenar">
@@ -118,10 +119,14 @@
           <option value="name">Nombre A-Z</option>
         </select>
       </div>
+      <button class="glass icon-btn" id="shareViewBtn" onclick="shareView()" aria-label="Compartir vista" title="Compartir vista con filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
     </div>
   </div>
 
   <div class="grid" id="grid"></div>
+  <div id="historySec" class="history-section"></div>
 </main>
 
 <!-- ══ SHOWROOM / MARCA ══ -->
@@ -231,7 +236,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="catalogo-data.js"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
 
