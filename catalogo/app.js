@@ -399,6 +399,9 @@ function cardHTML(item){
         <button class="card-quick" onclick="openDetail(${item.i},false,this.closest('.card'));event.stopPropagation()" aria-label="Ver ficha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
+        <button class="card-compare" data-compare="${item.i}" onclick="toggleCompare(${item.i});event.stopPropagation()" aria-label="Comparar producto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        </button>
       </div>
       ${stockBadge(item)}
     </div>
@@ -423,7 +426,182 @@ function renderGrid(){
     : `<div class="empty">Sin resultados para tu búsqueda</div>`;
   $('#secCount').textContent = `${pad3(list.length)} ${list.length===1?'producto':'productos'}`;
   syncAddButtons();
+  syncCompareButtons();
   observeReveal();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FEATURE 2: COMPARADOR FLOTANTE DE PRODUCTOS
+═════════════════════════════════════════════════════════════════ */
+let compareList = [];
+
+function toggleCompare(i){
+  const idx = compareList.indexOf(i);
+  if(idx !== -1){
+    compareList.splice(idx,1);
+  } else {
+    if(compareList.length >= 2){
+      showCompareToast('Solo podés comparar 2 productos');
+      shakeCompareBar();
+      return;
+    }
+    compareList.push(i);
+  }
+  syncCompareButtons();
+  renderCompareBar();
+}
+
+function syncCompareButtons(){
+  const set = new Set(compareList);
+  $$('[data-compare]').forEach(b=>{
+    const i = +b.dataset.compare;
+    const on = set.has(i);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+    // update icon: balanza = default, check = selected
+    b.innerHTML = on
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`;
+    b.closest('.card')?.classList.toggle('comparing', on);
+  });
+}
+
+function renderCompareBar(){
+  let bar = $('#compareBar');
+  if(!compareList.length){
+    if(bar) bar.classList.add('hidden');
+    return;
+  }
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'compareBar';
+    bar.className = 'compare-bar';
+    document.body.appendChild(bar);
+  }
+  bar.classList.remove('hidden');
+  const canCompare = compareList.length === 2;
+  const slots = [0,1].map(idx=>{
+    const item = compareList[idx] != null ? ITEMS[compareList[idx]] : null;
+    if(item){
+      return `<div class="compare-slot filled">
+        <div class="compare-slot-thumb" style="background-image:url('${item.photos[0]||''}')"></div>
+        <span class="compare-slot-name">${esc(item.displayName||shortName(item.name))}</span>
+        <button class="compare-slot-rm" onclick="toggleCompare(${item.i})" aria-label="Quitar">×</button>
+      </div>`;
+    }
+    return `<div class="compare-slot">
+      <div class="compare-slot-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <span class="compare-slot-name" style="color:var(--faint)">Seleccioná un producto</span>
+    </div>`;
+  }).join('');
+  bar.innerHTML = `
+    <div class="compare-slots">${slots}</div>
+    <div class="compare-bar-actions">
+      <button class="btn-compare-now" onclick="openCompareModal()" ${canCompare?'':'disabled'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4M15 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M12 12H9m0 0-3 3m3-3L6 9"/></svg>
+        Comparar ahora
+      </button>
+      <button class="btn-compare-cancel" onclick="clearCompare()">Cancelar</button>
+    </div>`;
+}
+
+function clearCompare(){
+  compareList = [];
+  syncCompareButtons();
+  const bar = $('#compareBar'); if(bar) bar.classList.add('hidden');
+}
+
+let _compareToastTimer = null;
+function showCompareToast(msg){
+  const existing = $('.compare-toast'); if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'compare-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(_compareToastTimer);
+  _compareToastTimer = setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),220); },2200);
+}
+function shakeCompareBar(){
+  const bar = $('#compareBar'); if(!bar) return;
+  bar.style.animation='none';
+  void bar.offsetWidth;
+  bar.style.animation='shakeBar .32s ease';
+  setTimeout(()=>bar.style.animation='',400);
+}
+
+function openCompareModal(){
+  if(compareList.length < 2) return;
+  const [ia, ib] = compareList;
+  const a = ITEMS[ia], b = ITEMS[ib];
+  if(!a || !b) return;
+
+  // Recopilar todas las specs únicas de ambos productos
+  const allSpecKeys = [];
+  const specMapA = {}, specMapB = {};
+  a.specs.forEach(s=>{ specMapA[s.k]=s.v; if(!allSpecKeys.includes(s.k)) allSpecKeys.push(s.k); });
+  b.specs.forEach(s=>{ specMapB[s.k]=s.v; if(!allSpecKeys.includes(s.k)) allSpecKeys.push(s.k); });
+
+  function parseNum(v){ const m = String(v||'').replace(',','.').match(/[\d.]+/); return m?parseFloat(m[0]):null; }
+
+  function specRowsFor(specMap, otherMap){
+    return allSpecKeys.map(k=>{
+      const val = specMap[k]; const other = otherMap[k];
+      if(!val && !other) return '';
+      if(!val) return `<div class="compare-spec-row"><span class="compare-spec-k">${esc(k)}</span><span class="compare-spec-v spec-dash">—</span></div>`;
+      const numV = parseNum(val), numO = parseNum(other);
+      const isWinner = numV != null && numO != null && numV > numO;
+      return `<div class="compare-spec-row"><span class="compare-spec-k">${esc(k)}</span><span class="compare-spec-v${isWinner?' spec-win':''}">${esc(val)}</span></div>`;
+    }).join('');
+  }
+
+  function colHTML(item, specMap, otherMap){
+    const imgPart = item.photos[0]
+      ? `<div class="compare-col-img" style="background-image:url('${item.photos[0]}')"></div>`
+      : `<div class="compare-col-img-ph"><div class="ph-glyph">${esc(item.initial)}</div></div>`;
+    const stockVal = item.stock != null ? (item.stock > 0 ? item.stock+' u.' : 'Sin stock') : 'Disponible';
+    return `<div class="compare-col">
+      ${imgPart}
+      <div class="compare-col-body">
+        <div class="compare-col-name">${esc(item.displayName||shortName(item.name))}</div>
+        <div class="compare-col-prices">
+          <div class="compare-col-ef metal-gold">${fmt(item.salePrice)}</div>
+          <div class="compare-col-card">Tarjeta ${fmt(precioTarjeta(item.salePrice))} · ${getCuotasCant()} cuotas sin interés de ${fmt(valorCuota(item.salePrice))}</div>
+        </div>
+        <div class="compare-specs-table">${specRowsFor(specMap, otherMap)}</div>
+        <div class="compare-col-stock">
+          <span class="compare-col-stock-k">Stock</span>
+          <span class="compare-col-stock-v">${stockVal}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  let modal = $('#compareModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'compareModal';
+    modal.className = 'compare-modal';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="compare-modal-inner">
+      <div class="compare-modal-header">
+        <h2><span class="kicker" style="font-size:1rem">Comparando productos</span></h2>
+        <button class="compare-modal-close" onclick="closeCompareModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="compare-cols">
+        ${colHTML(a, specMapA, specMapB)}
+        ${colHTML(b, specMapB, specMapA)}
+      </div>
+    </div>`;
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCompareModal(){
+  const modal=$('#compareModal'); if(modal) modal.classList.remove('open');
+  if(!detailOpen && !cartOpen) document.body.style.overflow='';
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -704,6 +882,7 @@ function renderRelated(item){
     <div class="related-head"><span class="kicker">También te puede interesar</span></div>
     <div class="related-grid">${pool.map(cardHTML).join('')}</div>`;
   syncAddButtons();
+  syncCompareButtons();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -901,10 +1080,14 @@ function closeCart(){ cartOpen=false; $('#cart').classList.remove('open'); $('#c
 
 function goCheckout(){
   if(!cartLines().length) return;
+  cartView='summary'; renderCart();
+}
+function goCheckoutForm(){
   cartView='checkout'; renderCart();
   setTimeout(()=>{ const el=$('#coName'); if(el) el.focus(); },120);
 }
 function backToList(){ cartView='list'; renderCart(); }
+function backToSummary(){ cartView='summary'; renderCart(); }
 
 function renderCart(){
   const lines = cartLines();
@@ -914,62 +1097,109 @@ function renderCart(){
   renderCartFoot(lines);
 }
 
+function _cartThumbHTML(item, size=64){
+  if(item.photos[0]) return `<img src="${item.photos[0]}" alt="" loading="lazy" style="width:${size}px;height:${size}px;object-fit:contain;display:block">`;
+  return `<div class="ph" style="width:${size}px;height:${size}px"><div class="ph-glyph">${esc(item.initial)}</div></div>`;
+}
+
 function renderCartBody(lines){
   const body = $('#cartBody');
 
+  /* ── DONE ── */
   if(cartView==='done' && lastOrder){
     const total = lastOrder.items.reduce((a,it)=>a+it.p*it.q,0);
+    const itemsList = lastOrder.items.map(it=>{
+      const prod = ITEMS.find(x=>x.code===it.c);
+      const thumb = prod?.photos[0]
+        ? `<img src="${prod.photos[0]}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:var(--bg-2)">`
+        : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--faint)">${esc((it.n||'?').charAt(0).toUpperCase())}</div>`;
+      return `<div class="od-item"><div class="od-item-thumb">${thumb}</div><div class="od-item-info"><div class="od-item-name">${esc(it.n)}</div><div class="od-item-sub mono">x${it.q} · ${fmt(it.p*it.q)}</div></div></div>`;
+    }).join('');
     body.innerHTML = `
       <div class="order-done">
-        <div class="od-check">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <div class="od-anim">
+          <svg class="od-circle" viewBox="0 0 52 52"><circle class="od-circle-bg" cx="26" cy="26" r="22"/><circle class="od-circle-fill" cx="26" cy="26" r="22"/><path class="od-check-path" fill="none" stroke="#1a1206" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14 26l8 8 16-16"/></svg>
         </div>
-        <h4>Pedido enviado</h4>
-        <p>${lastVia==='firestore'
-            ? 'Recibimos tu pedido. Te contactamos a la brevedad para confirmar disponibilidad y forma de pago.'
+        <h4>¡Pedido enviado!</h4>
+        <div class="od-id mono">#${esc(lastOrder.id.slice(0,8).toUpperCase())}</div>
+        <p class="od-msg">${lastVia==='firestore'
+            ? 'Recibimos tu pedido. Te contactamos a la brevedad para confirmar disponibilidad y pago.'
             : 'Te abrimos WhatsApp con el detalle. Envialo y te respondemos enseguida.'}</p>
-        <div class="od-ticket">
-          <div class="od-row"><span class="mono">Pedido</span><span class="mono">#${esc(lastOrder.id.slice(0,8).toUpperCase())}</span></div>
-          <div class="od-row"><span class="mono">Cliente</span><span>${esc(lastOrder.cliente)}</span></div>
-          <div class="od-row"><span class="mono">Ítems</span><span>${lastOrder.items.reduce((a,it)=>a+it.q,0)}</span></div>
-          <div class="od-row od-total"><span class="mono">Total est.</span><span class="metal-gold">${fmt(total)}</span></div>
+        <div class="od-items-list">${itemsList}</div>
+        <div class="od-total-row"><span class="mono">Total estimado</span><span class="metal-gold od-total-val">${fmt(total)}</span></div>
+        <div class="od-actions">
+          ${lastVia==='firestore'?`<button class="btn btn-wa" onclick="sendOrderWhatsApp(lastOrder)"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Z"/></svg>Avisar por WhatsApp</button>`:''}
         </div>
-        ${lastVia==='firestore'?`<button class="od-wa" onclick="sendOrderWhatsApp(lastOrder)">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Z"/></svg>
-          ¿Querés avisar también por WhatsApp?
-        </button>`:''}
+      </div>`;
+    spawnConfetti();
+    return;
+  }
+
+  /* ── SUMMARY ── */
+  if(cartView==='summary'){
+    body.innerHTML = `
+      <div class="co-wrap">
+        <button class="co-back" onclick="backToList()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Volver
+        </button>
+        <div class="co-sum-head"><span class="kicker">Tu pedido</span></div>
+        <div class="co-sum-items">
+          ${lines.map(({item,qty})=>`
+            <div class="co-sum-item">
+              <div class="co-sum-thumb">${_cartThumbHTML(item,40)}</div>
+              <div class="co-sum-info">
+                <div class="co-sum-name">${esc(item.displayName||shortName(item.name))}</div>
+                <div class="co-sum-qty mono">× ${qty}</div>
+              </div>
+              <div class="co-sum-price metal-gold">${fmt(item.salePrice*qty)}</div>
+            </div>`).join('')}
+        </div>
+        <div class="co-sum-total">
+          <span class="mono">Total estimado</span>
+          <span class="metal-gold co-sum-total-val">${fmt(cartTotal())}</span>
+        </div>
+        <div class="co-sum-note mono">Confirmamos precio final y disponibilidad antes de cerrar la venta.</div>
       </div>`;
     return;
   }
 
+  /* ── CHECKOUT ── */
   if(cartView==='checkout'){
     const savedName = localStorage.getItem('tbr_cliente')||'';
     const savedTel  = localStorage.getItem('tbr_tel')||'';
     body.innerHTML = `
       <div class="co-wrap">
-        <button class="co-back" onclick="backToList()">
+        <button class="co-back" onclick="backToSummary()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          Volver al pedido
+          Volver al resumen
         </button>
-        <div class="co-summary">
-          <span class="mono">${cartQtyTotal()} ${cartQtyTotal()===1?'ítem':'ítems'}</span>
-          <span class="co-sumtotal metal-gold">${fmt(cartTotal())}</span>
+        <div class="co-mini-total"><span class="mono">${cartQtyTotal()} ítem${cartQtyTotal()!==1?'s':''}</span><span class="metal-gold">${fmt(cartTotal())}</span></div>
+        <div class="co-field co-float">
+          <input id="coName" class="co-input" type="text" autocomplete="name" placeholder=" " value="${esc(savedName)}" oninput="validateCheckout()">
+          <label class="co-flabel" for="coName">Nombre y apellido <i>· obligatorio</i></label>
         </div>
-        <div class="co-field">
-          <label class="co-label" for="coName">Nombre <i>· obligatorio</i></label>
-          <input id="coName" class="co-input" type="text" autocomplete="name" placeholder="Tu nombre y apellido" value="${esc(savedName)}" oninput="validateCheckout()">
+        <div class="co-field co-float">
+          <input id="coTel" class="co-input" type="tel" autocomplete="tel" inputmode="numeric" placeholder=" " value="${esc(savedTel)}" oninput="fmtTel(this)">
+          <label class="co-flabel" for="coTel">Teléfono / WhatsApp <i>· opcional</i></label>
         </div>
-        <div class="co-field">
-          <label class="co-label" for="coTel">Teléfono / WhatsApp <i>· opcional</i></label>
-          <input id="coTel" class="co-input" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej. 2604 37-5765" value="${esc(savedTel)}">
+        <div class="co-field co-float">
+          <select id="coOrigen" class="co-input co-select">
+            <option value="">— Seleccioná —</option>
+            <option value="Instagram">Instagram</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Recomendación">Recomendación</option>
+            <option value="Google">Google</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <label class="co-flabel co-flabel-sel" for="coOrigen">¿Cómo nos conociste? <i>· opcional</i></label>
         </div>
         ${(EMPRESA.cuotasCant>0 && EMPRESA.cuotasRecargoPct>0) ? `
         <div class="co-field">
-          <label class="co-label">Forma de pago</label>
           <div class="co-pay-opts">
             <label class="co-pay-opt${selectedPayment==='efectivo'?' active':''}">
               <input type="radio" name="coPay" value="efectivo" ${selectedPayment==='efectivo'?'checked':''} onchange="setPaymentMethod('efectivo')">
-              Efectivo/Transferencia — ${fmt(cartTotal())}
+              Efectivo / Transferencia — ${fmt(cartTotal())}
             </label>
             <label class="co-pay-opt${selectedPayment==='cuotas'?' active':''}">
               <input type="radio" name="coPay" value="cuotas" ${selectedPayment==='cuotas'?'checked':''} onchange="setPaymentMethod('cuotas')">
@@ -984,7 +1214,7 @@ function renderCartBody(lines){
     return;
   }
 
-  // vista 'list'
+  /* ── LIST ── */
   if(!lines.length){
     body.innerHTML = `<div class="cart-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
@@ -995,17 +1225,18 @@ function renderCartBody(lines){
   }
   body.innerHTML = lines.map(({item,qty})=>`
     <div class="citem">
-      <div class="citem-img">${item.photos[0]?`<div class="card-img" style="background-image:url('${item.photos[0]}')"></div>`:`<div class="ph"><div class="ph-glyph">${esc(item.initial)}</div></div>`}</div>
+      <div class="citem-thumb">${_cartThumbHTML(item,64)}</div>
       <div class="citem-info">
-        <div class="citem-name">${esc(item.name)}</div>
+        <div class="citem-name">${esc(item.displayName||shortName(item.name))}</div>
         <div class="citem-code mono">${esc(item.code||'—')}</div>
+        <div class="citem-unit mono">${fmt(item.salePrice)} c/u</div>
         <div class="citem-foot">
           <div class="qty-sm">
             <button onclick="cartChange('${esc(item.code)}',-1)" aria-label="Menos">−</button>
             <span>${qty}</span>
             <button onclick="cartChange('${esc(item.code)}',1)" aria-label="Más">+</button>
           </div>
-          <div class="citem-price">${fmt(item.salePrice*qty)}</div>
+          <div class="citem-price metal-gold">${fmt(item.salePrice*qty)}</div>
           <button class="citem-del" onclick="cartRemove('${esc(item.code)}')" aria-label="Quitar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
           </button>
@@ -1022,10 +1253,19 @@ function renderCartFoot(lines){
     return;
   }
 
+  if(cartView==='summary'){
+    foot.innerHTML = `
+      <button class="btn btn-gold" onclick="goCheckoutForm()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        Confirmar y continuar
+      </button>
+      <button class="co-altwa" onclick="startOrderWhatsApp()">o enviar directo por WhatsApp</button>`;
+    return;
+  }
+
   if(cartView==='checkout'){
     foot.innerHTML = `
       <div class="cart-total"><span class="l">Total estimado</span><span class="v metal-gold">${fmt(cartTotal())}</span></div>
-      <div class="cart-note">Confirmamos precio final y disponibilidad antes de cerrar la venta.</div>
       <button class="btn btn-gold" id="coSubmit" onclick="submitOrder()" ${submitting?'disabled':''}>
         ${submitting
           ? `<span class="spin"></span> Enviando…`
@@ -1034,19 +1274,36 @@ function renderCartFoot(lines){
     return;
   }
 
-  // vista 'list'
   if(!lines.length){
     foot.innerHTML = `<div class="cart-note" style="text-align:center;margin:0">Agregá productos para iniciar tu pedido</div>`;
     return;
   }
   foot.innerHTML = `
     <div class="cart-total"><span class="l">Total estimado</span><span class="v metal-gold">${fmt(cartTotal())}</span></div>
-    <div class="cart-note">Precios en efectivo / transferencia. El total es una estimación; confirmamos precio final y disponibilidad al recibir tu pedido.</div>
+    <div class="cart-note">Precios en efectivo / transferencia. Confirmamos precio final y disponibilidad al recibir tu pedido.</div>
     <button class="btn btn-gold" onclick="goCheckout()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      Confirmar pedido
+      Ver resumen del pedido
     </button>
     <button class="co-altwa" onclick="startOrderWhatsApp()">o enviar directo por WhatsApp</button>`;
+}
+
+function fmtTel(inp){
+  let v = inp.value.replace(/\D/g,'');
+  if(v.length>4) v = v.slice(0,4)+' '+v.slice(4);
+  if(v.length>9) v = v.slice(0,9)+'-'+v.slice(9,13);
+  inp.value = v;
+}
+
+function spawnConfetti(){
+  const colors = ['#e2c97e','#f3e3b0','#b8975a','#ffffff'];
+  for(let i=0;i<28;i++){
+    const d = document.createElement('div');
+    d.className = 'confetti-p';
+    d.style.cssText = `left:${10+Math.random()*80}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${Math.random()*600}ms;animation-duration:${900+Math.random()*600}ms;width:${4+Math.random()*5}px;height:${4+Math.random()*5}px;border-radius:${Math.random()>0.5?'50%':'2px'}`;
+    document.getElementById('cart')?.appendChild(d);
+    setTimeout(()=>d.remove(), 1800);
+  }
 }
 
 function validateCheckout(){
@@ -1215,7 +1472,7 @@ document.addEventListener('click', e=>{
 }, {passive:true});
 
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ if(cartOpen) closeCart(); else if(detailOpen) closeDetail(); }
+  if(e.key==='Escape'){ if(cartOpen) closeCart(); else if($('#compareModal')?.classList.contains('open')) closeCompareModal(); else if(detailOpen) closeDetail(); }
   if(!detailOpen && !cartOpen){
     if(e.key==='ArrowRight') nextHero();
     else if(e.key==='ArrowLeft') goHero(heroIdx-1);
