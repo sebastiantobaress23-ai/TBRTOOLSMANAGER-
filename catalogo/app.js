@@ -426,8 +426,16 @@ function renderGrid(){
 ═════════════════════════════════════════════════════════════════ */
 let detailOpen = false, detailItem = null, detailPhoto = 0, detailQty = 1;
 
+function _cancelHeroTransition(){
+  // Cancela cualquier transición de hero en curso para no interferir con el detalle
+  _heroTransiting = false;
+  const heroMain = $('#heroMain');
+  if(heroMain){ heroMain.style.transition=''; heroMain.style.opacity=''; heroMain.style.transform=''; }
+  document.querySelectorAll('.hero-flash').forEach(el=>el.remove());
+}
 function openDetail(i, fromHash){
   detailItem = ITEMS[i]; if(!detailItem) return;
+  _cancelHeroTransition();
   detailPhoto = 0; detailQty = 1; detailOpen = true;
   renderDetail();
   $('#detail').classList.add('open');
