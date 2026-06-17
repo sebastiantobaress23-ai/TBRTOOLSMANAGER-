@@ -1461,6 +1461,15 @@ const DB = {
   }
 };
 
+async function getCatalogWithPhotos() {
+  const cat = DB.get('catalog', []);
+  const photos = DB.get('catalog_photos', {});
+  return cat.map(p => {
+    const ph = photos[p.id] || {};
+    return { ...p, photo: ph.photo || p.photo || '', photos: ph.photos || p.photos || [] };
+  });
+}
+
 async function fbWrite(k, v) {
   try {
     const url = await fbUrl(`${FB}/${k}.json`);
@@ -4556,7 +4565,7 @@ function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)retu
    CATÁLOGO
 ═══════════════════════════════════════════ */
 function pgCat() {
-  const cat=DB.get('catalog',[]);
+  const _catRaw=DB.get('catalog',[]);const _catPh=DB.get('catalog_photos',{});const cat=_catRaw.map(p=>{const ph=_catPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};});
   const ro=catReorderMode;
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
@@ -4666,7 +4675,7 @@ function pgCat() {
 </div>`;
 }
 function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';document.getElementById('ce-specs').value='';document.getElementById('ce-hero-x').value='';document.getElementById('ce-hero-y').value='';document.getElementById('ce-hero-size').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;const _ephotos=DB.get('catalog_photos',{});const _eph=_ephotos[id]||{};c.photo=_eph.photo||c.photo||'';c.photos=_eph.photos||c.photos||[];document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';unlockBody();}
 let cePhotos=[];
 function renderCePhotos(){
@@ -4803,8 +4812,13 @@ async function saveCat(){
   }));
   const photo=photos[0]||'';
   let cat=DB.get('catalog',[]);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined}),...(photos.length?{photos}:{photos:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined})}:c);
-  else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{}),...(photos.length?{photos}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
+  const prodId=eid||uid();
+  // Save photos separately in catalog_photos
+  const _photosMap=DB.get('catalog_photos',{});
+  _photosMap[prodId]={photo:photo,photos:photos};
+  DB.set('catalog_photos',_photosMap);
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
+  else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
@@ -4812,12 +4826,17 @@ function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
   const idx=cat.findIndex(c=>c.id===id);
   if(idx<0) return;
   const [removed]=cat.splice(idx,1);
+  const _dp=DB.get('catalog_photos',{});
+  const _removedPhoto=_dp[id];
+  delete _dp[id];
+  DB.set('catalog_photos',_dp);
   DB.set('catalog',cat);
   render();
   toast('Producto eliminado',true,4000,()=>{
     const c2=DB.get('catalog',[]);
     c2.splice(idx,0,removed);
     DB.set('catalog',c2);
+    if(_removedPhoto){const _rp=DB.get('catalog_photos',{});_rp[id]=_removedPhoto;DB.set('catalog_photos',_rp);}
     render();
     toast('Producto restaurado');
   });
@@ -7981,7 +8000,7 @@ function catalogDocBody(cat, emp){
   return {css: DOC_CSS + CATALOG_GRID_CSS, html};
 }
 function generateCatalogDataFile(){
-  const cat=DB.get('catalog',[]).filter(c=>c.salePrice);
+  const _gcdPh=DB.get('catalog_photos',{});const cat=DB.get('catalog',[]).map(p=>{const ph=_gcdPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
   if(!cat.length){toast('Cargá precios de venta en el catálogo para poder generarlo.',false);return;}
   const emp=DB.get('empresa',{});
   const data={
@@ -8022,7 +8041,7 @@ function shareCatalogoDigitalLink(){
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
 }
 async function shareCatalog(){
-  const cat=DB.get('catalog',[]).filter(c=>c.salePrice);
+  const _scPh=DB.get('catalog_photos',{});const cat=DB.get('catalog',[]).map(p=>{const ph=_scPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
   if(!cat.length){toast('Cargá precios de venta en el catálogo para poder compartirlo.',false);return;}
   const emp=DB.get('empresa',{});
   if(!(await ensureJsPDF()) || !(await ensureHtml2Canvas())){toast('No se pudo generar el PDF del catálogo.',false);return;}
@@ -8734,6 +8753,30 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Migration: move photos from catalog objects to catalog_photos
+(function migrateCatalogPhotos() {
+  const cat = DB.get('catalog', []);
+  const hasInlinePhotos = cat.some(p =>
+    (p.photo && p.photo.startsWith('data:')) ||
+    (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))
+  );
+  if (!hasInlinePhotos) return;
+  const photosMap = DB.get('catalog_photos', {});
+  const cleanCat = cat.map(p => {
+    if ((p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))) {
+      photosMap[p.id] = { photo: p.photo || '', photos: p.photos || [] };
+    }
+    const { photo, photos, ...rest } = p;
+    const cleanP = { ...rest };
+    if (p.photo && !p.photo.startsWith('data:')) cleanP.photo = p.photo;
+    if (p.photos) cleanP.photos = p.photos.filter(ph => ph && !ph.startsWith('data:'));
+    return cleanP;
+  });
+  DB.set('catalog_photos', photosMap);
+  DB.set('catalog', cleanCat);
+  console.log('[Migration] Catalog photos separated from catalog data');
+})();
 
 window.onload = async function() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
