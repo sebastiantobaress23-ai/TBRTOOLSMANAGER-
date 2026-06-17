@@ -218,14 +218,11 @@ function setHeroBg(item){
   bgToggle=!bgToggle;
 }
 
-function renderHero(){
-  if(!featured.length) return;
-  const item = featured[heroIdx];
-  setHeroBg(item);
+function _heroMainHTML(item){
   const specsHTML = item.specs.slice(0,3).map(s=>
     `<div class="spec"><div class="spec-v">${esc(s.v)}</div><div class="spec-k">${esc(s.k)}</div></div>`
   ).join('') || `<div class="spec"><div class="spec-v">${esc(item.cat)}</div><div class="spec-k">Categoría</div></div>`;
-  $('#heroMain').innerHTML = `
+  return `
     <div class="hero-kicker bfu" style="animation-delay:.05s">
       <span class="kicker">Destacado</span>
     </div>
@@ -253,10 +250,52 @@ function renderHero(){
         </button>
       </div>
     </div>`;
+}
+
+let _heroTransiting = false;
+function renderHero(instant){
+  if(!featured.length) return;
+  const item = featured[heroIdx];
+
+  // Rieles siempre inmediatos
   $('#railDots').innerHTML = featured.map((_,i)=>
     `<button class="rail-dot ${i===heroIdx?'active':''}" onclick="goHero(${i})" aria-label="Destacado ${i+1}"><i></i></button>`
   ).join('');
   $('#railNow').textContent = `${pad3(heroIdx+1)} / ${pad3(featured.length)}`;
+
+  if(instant || _heroTransiting){
+    // Primera carga o transición encadenada: sin animación de salida
+    setHeroBg(item);
+    $('#heroMain').innerHTML = _heroMainHTML(item);
+    return;
+  }
+
+  _heroTransiting = true;
+  const heroMain = $('#heroMain');
+
+  // 1. Fade-out del texto actual
+  heroMain.style.transition = 'opacity .22s ease, transform .22s ease';
+  heroMain.style.opacity = '0';
+  heroMain.style.transform = 'translateY(10px)';
+
+  // 2. Flash overlay sobre el hero para suavizar el crossfade del fondo
+  const hero = document.querySelector('.hero');
+  const flash = document.createElement('div');
+  flash.className = 'hero-flash';
+  hero.appendChild(flash);
+  requestAnimationFrame(()=>{ flash.classList.add('hero-flash-go'); });
+
+  setTimeout(()=>{
+    // 3. Swap fondo e inyectar nuevo texto
+    setHeroBg(item);
+    heroMain.style.transition = '';
+    heroMain.style.opacity = '';
+    heroMain.style.transform = '';
+    heroMain.innerHTML = _heroMainHTML(item);
+
+    // 4. Limpiar flash
+    setTimeout(()=>{ flash.remove(); _heroTransiting = false; }, 700);
+  }, 240);
 }
 
 function goHero(i){ heroIdx=(i+featured.length)%featured.length; renderHero(); restartHeroTimer(); }
@@ -348,12 +387,12 @@ function cardHTML(item){
   const specChips = (item.specs.length
     ? item.specs.slice(0,3).map(s=>`<span class="sc">${esc(s.v)}</span>`)
     : [`<span class="sc">${esc(item.cat)}</span>`]).join('');
-  return `<article class="card reveal" onclick="openDetail(${item.i})">
+  return `<article class="card reveal" onclick="openDetail(${item.i},false,this)">
     <div class="card-media">
       ${mediaHTML(item)}
       <div class="card-top">
         <span class="card-no mono">${pad3(item.i+1)}</span>
-        <button class="card-quick" onclick="openDetail(${item.i});event.stopPropagation()" aria-label="Ver ficha">
+        <button class="card-quick" onclick="openDetail(${item.i},false,this.closest('.card'));event.stopPropagation()" aria-label="Ver ficha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
@@ -364,7 +403,7 @@ function cardHTML(item){
       <div class="card-specchips">${specChips}</div>
       <div class="card-foot">
         <div class="card-price"><small>Efectivo</small>${fmt(item.salePrice)}<span class="card-cuotas">${getCuotasCant()} cuotas s/interés de ${fmt(valorCuota(item.salePrice))}</span></div>
-        <button class="card-add" data-add="${item.i}" onclick="addToCart(${item.i});event.stopPropagation()" aria-label="Agregar al pedido">
+        <button class="card-add" data-add="${item.i}" onclick="addToCart(${item.i},1,this.closest('.card')?.querySelector('.card-media'));event.stopPropagation()" aria-label="Agregar al pedido">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </div>
@@ -387,9 +426,22 @@ function renderGrid(){
 ═════════════════════════════════════════════════════════════════ */
 let detailOpen = false, detailItem = null, detailPhoto = 0, detailQty = 1;
 
-function openDetail(i, fromHash){
+function openDetail(i, fromHash, clickedCardEl){
   detailItem = ITEMS[i]; if(!detailItem) return;
   detailPhoto = 0; detailQty = 1; detailOpen = true;
+  // Task 6: card→detail image expansion transition
+  if(clickedCardEl && detailItem.photos[0] && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const mediaEl = clickedCardEl.querySelector('.card-media') || clickedCardEl;
+    const r = mediaEl.getBoundingClientRect();
+    const fly = document.createElement('div');
+    fly.className = 'detail-fly-img';
+    fly.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background-image:url('${detailItem.photos[0]}')`;
+    document.body.appendChild(fly);
+    fly.animate([
+      {transform:'translate(0,0)',width:r.width+'px',height:r.height+'px',borderRadius:'16px',opacity:1},
+      {transform:`translate(${-r.left}px,${-r.top}px)`,width:'100vw',height:'100vh',borderRadius:'0px',opacity:0}
+    ],{duration:300,easing:'ease-out',fill:'forwards'}).onfinish=()=>fly.remove();
+  }
   renderDetail();
   $('#detail').classList.add('open');
   document.body.style.overflow='hidden';
@@ -424,6 +476,15 @@ function shareDetail(){
     navigator.clipboard.writeText(url).catch(()=>fallbackShare(url));
   }else fallbackShare(url);
 }
+/* Task 5: Share individual product via WhatsApp with specific format */
+function shareDetailWa(){
+  const item = detailItem; if(!item) return;
+  const code = item.code || '';
+  const url = `https://tbrtoolscatalogo.vercel.app/#${encodeURIComponent(code)}`;
+  const msg = `Mirá este producto: ${item.name} - ${fmt(item.salePrice)} efectivo. Pedilo acá: ${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener');
+}
+
 function fallbackShare(url){
   const item = detailItem;
   const msg = `${item.name} — ${fmt(item.salePrice)}\n${url}`;
@@ -496,8 +557,8 @@ function renderDetail(){
           <span class="wa-ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg></span>
           Consultar
         </button>
-        <button class="btn btn-ghost btn-share" onclick="shareDetail()" aria-label="Compartir producto">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
+        <button class="btn btn-ghost btn-share" onclick="shareDetailWa()" aria-label="Compartir por WhatsApp">
+          <span class="wa-ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg></span>
           Compartir
         </button>
       </div>
@@ -603,7 +664,7 @@ function cartLines(){
 function cartQtyTotal(){ return CART.reduce((a,l)=>a+l.qty,0); }
 function cartTotal(){ return cartLines().reduce((a,{item,qty})=>a+item.salePrice*qty,0); }
 
-function addToCart(i, qty){
+function addToCart(i, qty, sourceEl){
   const item = ITEMS[i]; if(!item) return;
   qty = qty||1;
   const line = CART.find(l=>l.code===item.code);
@@ -611,6 +672,8 @@ function addToCart(i, qty){
   else CART.push({code:item.code, name:item.name, qty});
   saveCart(); syncCartUI(); syncAddButtons();
   flashAdd(i);
+  // Task 2: fly-to-cart if image source is available
+  flyToCart(i, sourceEl);
 }
 function cartChange(code,d){
   const line = CART.find(l=>l.code===code); if(!line) return;
@@ -632,6 +695,55 @@ function flashAdd(i){
   }
   const cc=$('#cartCount'); cc.style.transform='scale(0)'; requestAnimationFrame(()=>{ cc.classList.add('show'); cc.style.transform=''; });
 }
+/* Task 2: Fly-to-cart animation */
+function flyToCart(i, sourceEl){
+  const item = ITEMS[i]; if(!item) return;
+  const imgUrl = item.photos[0] || null;
+  if(!imgUrl) return;
+  // Find source element: the card media, or add button
+  let srcRect = null;
+  if(sourceEl && sourceEl.getBoundingClientRect){
+    srcRect = sourceEl.getBoundingClientRect();
+  } else {
+    const card = document.querySelector(`[data-add="${i}"]`);
+    if(card){
+      const media = card.closest('.card')?.querySelector('.card-media');
+      srcRect = (media || card).getBoundingClientRect();
+    }
+  }
+  if(!srcRect) return;
+  // Target: cart icon button
+  const cartBtn = document.querySelector('#cartCount');
+  if(!cartBtn) return;
+  const targetRect = cartBtn.getBoundingClientRect();
+  const tx = targetRect.left + targetRect.width/2;
+  const ty = targetRect.top + targetRect.height/2;
+  const sx = srcRect.left + srcRect.width/2;
+  const sy = srcRect.top + srcRect.height/2;
+  // Create flying clone
+  const fly = document.createElement('div');
+  fly.className = 'fly-img';
+  fly.style.cssText = `left:${sx-30}px;top:${sy-30}px;background-image:url('${imgUrl}')`;
+  document.body.appendChild(fly);
+  // Animate with curved trajectory using WAAPI
+  const dx = tx - sx, dy = ty - sy;
+  const ctrl1x = sx + dx*0.1 + 60, ctrl1y = sy - 80;
+  // Use CSS keyframe via animation + JS transform
+  fly.animate([
+    {transform:'translate(0,0) scale(1)',opacity:1,borderRadius:'12px'},
+    {transform:`translate(${dx*0.5 + 60 - 0}px,${dy*0.3 - 80}px) scale(0.85)`,opacity:1,offset:0.4},
+    {transform:`translate(${dx}px,${dy}px) scale(0.2)`,opacity:0,borderRadius:'50%'}
+  ],{duration:600,easing:'cubic-bezier(.16,1,.3,1)',fill:'forwards'}).onfinish = ()=>{
+    fly.remove();
+    // bump cart icon
+    const btn = cartBtn.parentElement;
+    btn.classList.remove('cart-fly-bump');
+    void btn.offsetWidth;
+    btn.classList.add('cart-fly-bump');
+    setTimeout(()=>btn.classList.remove('cart-fly-bump'), 500);
+  };
+}
+
 function syncAddButtons(){
   const inCart = new Set(CART.map(l=>l.code));
   $$('[data-add]').forEach(b=>{
@@ -898,22 +1010,113 @@ function openWa(){
   window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
 }
 
-/* ── Reveal on scroll ── */
+/* ── Reveal on scroll (Task 1: fade-up with IntersectionObserver, .card-visible) ── */
 let io=null;
 function observeReveal(){
   if(io) io.disconnect();
   io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        // stagger delay based on position in viewport batch
+        const delay = Math.min(+e.target.dataset.revealIdx||0, 8) * 0.05;
+        e.target.style.transitionDelay = delay+'s';
+        e.target.classList.add('card-visible');
+        io.unobserve(e.target);
+      }
+    });
   },{threshold:.12, rootMargin:'0px 0px -40px 0px'});
-  $$('.reveal:not(.in)').forEach((el,k)=>{ el.style.animationDelay=(Math.min(k,8)*0.05)+'s'; io.observe(el); });
+  $$('.reveal:not(.card-visible)').forEach((el,k)=>{
+    el.dataset.revealIdx = k;
+    io.observe(el);
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════
    INIT
 ═════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════
+   TASK 3: SKELETON LOADING
+═════════════════════════════════════════════════════════════════ */
+function skeletonCard(){
+  return `<div class="skeleton-card">
+    <div class="sk-media"></div>
+    <div class="sk-body">
+      <div class="skeleton sk-cat"></div>
+      <div class="skeleton sk-name"></div>
+      <div class="sk-chips"><div class="skeleton sk-chip"></div><div class="skeleton sk-chip"></div></div>
+      <div class="sk-foot"><div class="skeleton sk-price"></div><div class="skeleton sk-add"></div></div>
+    </div>
+  </div>`;
+}
+function showSkeletons(){
+  const heroMain = $('#heroMain');
+  if(heroMain && !heroMain.innerHTML.trim()){
+    const hero = document.querySelector('.hero');
+    if(hero && !$('#heroSkeleton')){
+      hero.insertAdjacentHTML('afterbegin',
+        `<div class="skeleton-hero" id="heroSkeleton" style="position:absolute;inset:0;z-index:5;pointer-events:none">
+          <div class="skeleton sk-kicker"></div>
+          <div class="skeleton sk-title"></div>
+          <div class="sk-specs">${[1,2,3].map(()=>`<div class="skeleton sk-spec"></div>`).join('')}</div>
+          <div class="skeleton sk-price"></div>
+          <div class="sk-btns"><div class="skeleton sk-btn"></div><div class="skeleton sk-btn"></div></div>
+        </div>`
+      );
+    }
+  }
+  const grid = $('#grid');
+  if(grid && !grid.innerHTML.trim()){
+    grid.innerHTML = `<div class="skeleton-grid" style="grid-column:1/-1">${[1,2,3,4,5,6].map(skeletonCard).join('')}</div>`;
+  }
+}
+function hideSkeletons(){
+  const sk = $('#heroSkeleton'); if(sk) sk.remove();
+}
+
 function bootUI(){
-  buildItems(); buildFeatured(); buildCats(); renderHero(); renderGrid();
+  hideSkeletons();
+  buildItems(); buildFeatured(); buildCats(); renderHero(true); renderGrid();
   syncCartUI(); restartHeroTimer(); initHeroSwipe(); initHeroParallax();
+  initPremiumCursor();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TASK 4: PREMIUM CURSOR (desktop/hover only)
+═════════════════════════════════════════════════════════════════ */
+function initPremiumCursor(){
+  if(!matchMedia('(hover:hover)').matches) return;
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  if(!dot || !ring) return;
+  let mx=window.innerWidth/2, my=window.innerHeight/2;
+  let rx=mx, ry=my;
+  let raf=null;
+  function moveDot(x,y){ dot.style.left=x+'px'; dot.style.top=y+'px'; }
+  function moveRing(x,y){ ring.style.left=x+'px'; ring.style.top=y+'px'; }
+  document.addEventListener('mousemove',e=>{
+    mx=e.clientX; my=e.clientY;
+    moveDot(mx,my);
+    if(!raf) raf=requestAnimationFrame(animateRing);
+  },{passive:true});
+  function animateRing(){
+    rx += (mx-rx)*0.18;
+    ry += (my-ry)*0.18;
+    moveRing(rx,ry);
+    if(Math.abs(mx-rx)>0.3 || Math.abs(my-ry)>0.3) raf=requestAnimationFrame(animateRing);
+    else raf=null;
+  }
+  document.addEventListener('mousedown',()=>document.body.classList.add('cursor-click'),{passive:true});
+  document.addEventListener('mouseup',()=>document.body.classList.remove('cursor-click'),{passive:true});
+  // Hover detection on interactive elements
+  document.addEventListener('mouseover',e=>{
+    if(e.target.closest('button,a,input,select,label,[onclick]'))
+      document.body.classList.add('cursor-hover');
+  },{passive:true});
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('button,a,input,select,label,[onclick]'))
+      document.body.classList.remove('cursor-hover');
+  },{passive:true});
+  moveDot(mx,my); moveRing(mx,my);
 }
 
 document.addEventListener('keydown', e=>{
@@ -967,6 +1170,7 @@ function startLiveSync(){
 }
 
 (async ()=>{
+  showSkeletons(); // Task 3: show skeleton immediately
   initFirebase();
   bootUI();
   applyHash();
