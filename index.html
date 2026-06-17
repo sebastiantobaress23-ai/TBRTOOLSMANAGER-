@@ -1587,7 +1587,8 @@ async function fbSync() {
     if (changed) {
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
-      if (!typing) render();
+      const anyModalOpen = !!document.querySelector('.mol[style*="flex"]');
+      if (!typing && !anyModalOpen) render(); else _pendingRender = true;
       // Si cambió la configuración de usuarios/PIN, re-evaluar el bloqueo
       if (settingsChanged) checkAccessPin();
     }
@@ -4690,10 +4691,11 @@ function pgCat() {
   </div>
 </div>`;
 }
+let _pendingRender=false;
 let _catEditOpenedAt=0;
 function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';document.getElementById('ce-specs').value='';document.getElementById('ce-hero-x').value='';document.getElementById('ce-hero-y').value='';document.getElementById('ce-hero-size').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();_catEditOpenedAt=Date.now();}
 function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;const _ephotos=DB.get('catalog_photos',{});const _eph=_ephotos[id]||{};c.photo=_eph.photo||c.photo||'';c.photos=_eph.photos||c.photos||[];document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();_catEditOpenedAt=Date.now();}
-function closeCatEdit(){if(Date.now()-_catEditOpenedAt<350)return;document.getElementById('cat-edit-modal').style.display='none';unlockBody();}
+function closeCatEdit(){if(Date.now()-_catEditOpenedAt<350)return;document.getElementById('cat-edit-modal').style.display='none';unlockBody();if(_pendingRender){_pendingRender=false;render();}}
 let cePhotos=[];
 let _ceDragIdx=null;
 function renderCePhotos(){
