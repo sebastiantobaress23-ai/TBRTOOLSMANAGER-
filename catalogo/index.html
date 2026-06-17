@@ -106,9 +106,10 @@
       <button class="cat stock-toggle" id="stockToggle" onclick="toggleStock()" style="color: rgb(95, 208, 138); border-color: rgb(95, 208, 138); background-color: rgba(95, 208, 138, 0.12)">
         <span class="st-dot"></span> En stock
       </button>
-      <div class="search-box">
+      <div class="search-box" style="position:relative">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="search" placeholder="Buscar producto o código" oninput="onSearch(this.value)" aria-label="Buscar">
+        <div id="searchAC" class="search-autocomplete" hidden></div>
       </div>
       <div class="sort-sel">
         <select onchange="setSort(this.value)" aria-label="Ordenar">
@@ -118,10 +119,14 @@
           <option value="name">Nombre A-Z</option>
         </select>
       </div>
+      <button class="glass icon-btn" id="shareViewBtn" onclick="shareView()" aria-label="Compartir vista" title="Compartir vista con filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
     </div>
   </div>
 
   <div class="grid" id="grid"></div>
+  <div id="historySec" class="history-section"></div>
 </main>
 
 <!-- ══ SHOWROOM / MARCA ══ -->

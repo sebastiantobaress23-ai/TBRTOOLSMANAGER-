@@ -236,7 +236,7 @@ function _heroMainHTML(item){
     <div class="hero-bottom bfu" style="animation-delay:.34s">
       <div class="hero-price">
         <small>Efectivo / transferencia</small>
-        <div class="price-row"><span class="metal-gold">${fmt(item.salePrice)}</span><span class="save-badge">${ahorroPct()}% OFF</span></div>
+        <div class="price-row"><span class="metal-gold hero-price-val" data-price="${fmt(item.salePrice)}">${fmt(item.salePrice)}</span><span class="save-badge">${ahorroPct()}% OFF</span></div>
         <span class="pay-line">Tarjeta ${fmt(precioTarjeta(item.salePrice))} · ${getCuotasCant()} cuotas sin interés de ${fmt(valorCuota(item.salePrice))}</span>
       </div>
       <div class="hero-cta-row">
@@ -267,6 +267,7 @@ function renderHero(instant){
     // Primera carga o transición encadenada: sin animación de salida
     setHeroBg(item);
     $('#heroMain').innerHTML = _heroMainHTML(item);
+    if(!instant){ const pv=$('.hero-price-val'); if(pv) animateHeroPrice(pv, pv.dataset.price||''); }
     return;
   }
 
@@ -292,6 +293,8 @@ function renderHero(instant){
     heroMain.style.opacity = '';
     heroMain.style.transform = '';
     heroMain.innerHTML = _heroMainHTML(item);
+    const pv = heroMain.querySelector('.hero-price-val');
+    if(pv) animateHeroPrice(pv, pv.dataset.price||'');
 
     // 4. Limpiar flash
     setTimeout(()=>{ flash.remove(); _heroTransiting = false; }, 700);
@@ -334,7 +337,30 @@ function buildCats(){
 }
 function setCat(c){ activeCat=c; buildCats(); renderGrid(); }
 function setSort(v){ sortBy=v; renderGrid(); }
-function onSearch(v){ query=v.trim().toLowerCase(); renderGrid(); }
+function onSearch(v){ query=v.trim().toLowerCase(); renderGrid(); renderAutocomplete(v.trim()); }
+
+function renderAutocomplete(raw){
+  const ac = $('#searchAC'); if(!ac) return;
+  if(!raw){ ac.innerHTML=''; ac.hidden=true; return; }
+  const q = raw.toLowerCase();
+  const hits = ITEMS.filter(x=>
+    (x.name||'').toLowerCase().includes(q)||(x.code||'').toLowerCase().includes(q)
+  ).slice(0,5);
+  if(!hits.length){ ac.innerHTML=''; ac.hidden=true; return; }
+  ac.innerHTML = hits.map(item=>`
+    <div class="ac-item" onclick="openDetail(${item.i});closeAutocomplete()">
+      <div class="ac-thumb">${item.photos[0]?`<img src="${item.photos[0]}" alt="" loading="lazy">`:`<div class="ac-initial">${esc(item.initial)}</div>`}</div>
+      <div class="ac-info">
+        <div class="ac-name">${esc(item.displayName||shortName(item.name))}</div>
+        <div class="ac-price metal-gold">${fmt(item.salePrice)}</div>
+      </div>
+    </div>`).join('');
+  ac.hidden = false;
+}
+function closeAutocomplete(){
+  const ac=$('#searchAC'); if(ac){ ac.innerHTML=''; ac.hidden=true; }
+  const inp=$('.search-box input'); if(inp){ inp.value=''; query=''; renderGrid(); }
+}
 function toggleStock(){
   stockOnly=!stockOnly;
   const b=$('#stockToggle'); if(b) b.classList.toggle('active', stockOnly);
@@ -354,6 +380,13 @@ function filtered(){
   return list;
 }
 
+function stockBadge(item){
+  if(item.stock==null || item.stock>2) return '';
+  if(item.stock<=0) return '';
+  const txt = item.stock===1 ? 'Último' : `Quedan ${item.stock}`;
+  return `<span class="stock-badge">${txt}</span>`;
+}
+
 function cardHTML(item){
   const specChips = (item.specs.length
     ? item.specs.slice(0,3).map(s=>`<span class="sc">${esc(s.v)}</span>`)
@@ -370,6 +403,7 @@ function cardHTML(item){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
         </button>
       </div>
+      ${stockBadge(item)}
     </div>
     <div class="card-body">
       <div class="card-cat">${esc(item.cat)}${item.brand?' · '+esc(item.brand):''}</div>
@@ -584,6 +618,7 @@ function _cancelHeroTransition(){
 }
 function openDetail(i, fromHash, clickedCardEl){
   detailItem = ITEMS[i]; if(!detailItem) return;
+  saveHistory(i);
   _cancelHeroTransition();
   detailPhoto = 0; detailQty = 1; detailOpen = true;
   // Task 6: card→detail image expansion transition
@@ -612,6 +647,94 @@ function closeDetail(){
   detailOpen=false; $('#detail').classList.remove('open');
   if(!cartOpen) document.body.style.overflow='';
   if(location.hash){ try{ history.replaceState(null,'', location.pathname+location.search); }catch{} }
+  renderHistory();
+}
+
+function toggleSpecPanel(){
+  const panel = $('#specPanel'); if(!panel) return;
+  const body = panel.querySelector('.spec-panel-body');
+  const btn = panel.querySelector('.spec-panel-toggle');
+  const expanded = btn.getAttribute('aria-expanded')==='true';
+  btn.setAttribute('aria-expanded', String(!expanded));
+  body.style.maxHeight = expanded ? '0' : body.scrollHeight+'px';
+  panel.classList.toggle('open', !expanded);
+}
+
+/* ── Historial de vistos ── */
+const HISTORY_KEY = 'tbr_history';
+function saveHistory(i){
+  let h = JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
+  h = [i, ...h.filter(x=>x!==i)].slice(0,6);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+}
+function renderHistory(){
+  const h = JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
+  const valid = h.map(i=>ITEMS[i]).filter(Boolean);
+  const sec = $('#historySec');
+  if(!sec) return;
+  if(!valid.length){ sec.innerHTML=''; return; }
+  sec.innerHTML = `
+    <div class="history-head"><span class="kicker">Vistos recientemente</span></div>
+    <div class="history-grid">${valid.map(item=>`
+      <article class="history-card" onclick="openDetail(${item.i},false,this)">
+        <div class="history-thumb">${item.photos[0]?`<img src="${item.photos[0]}" alt="" loading="lazy">`:`<div class="ph-glyph">${esc(item.initial)}</div>`}</div>
+        <div class="history-info">
+          <div class="history-name">${esc(item.displayName||shortName(item.name))}</div>
+          <div class="history-price metal-gold">${fmt(item.salePrice)}</div>
+        </div>
+      </article>`).join('')}
+    </div>`;
+}
+
+/* ── Link compartible con filtros ── */
+function applyUrlFilters(){
+  const p = new URLSearchParams(location.search);
+  if(p.get('cat') && p.get('cat')!=='Todos') setCat(p.get('cat'));
+  if(p.get('q')){ query=p.get('q'); const inp=$('.search-box input'); if(inp) inp.value=query; }
+  if(p.get('stock')==='1'){ stockOnly=true; const b=$('#stockToggle'); if(b) b.classList.add('active'); }
+}
+function shareView(){
+  const p = new URLSearchParams();
+  if(activeCat && activeCat!=='Todos') p.set('cat', activeCat);
+  if(query) p.set('q', query);
+  if(stockOnly) p.set('stock','1');
+  const url = location.origin+location.pathname+(p.toString()?'?'+p.toString():'');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>showShareFeedback()).catch(()=>fallbackCopy(url));
+  } else fallbackCopy(url);
+}
+function fallbackCopy(url){
+  const ta = document.createElement('textarea');
+  ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); showShareFeedback(); }catch{}
+  document.body.removeChild(ta);
+}
+function showShareFeedback(){
+  const btn = $('#shareViewBtn'); if(!btn) return;
+  const orig = btn.innerHTML;
+  btn.textContent = '¡Copiado!';
+  btn.style.color = 'var(--gd)';
+  setTimeout(()=>{ btn.innerHTML=orig; btn.style.color=''; }, 2000);
+}
+
+/* ── Contador animado en precio del hero (odómetro) ── */
+let _lastHeroPrice = null;
+function animateHeroPrice(el, newText){
+  if(!el || _lastHeroPrice === newText){ if(el) el.textContent=newText; return; }
+  _lastHeroPrice = newText;
+  el.innerHTML = '';
+  [...newText].forEach((ch, idx)=>{
+    const span = document.createElement('span');
+    span.className = 'price-digit';
+    span.textContent = ch;
+    if(/\d/.test(ch)){
+      span.style.display='inline-block';
+      span.style.animationDelay = (idx * 38)+'ms';
+      span.classList.add('price-digit-anim');
+    }
+    el.appendChild(span);
+  });
 }
 
 /* Abre la ficha si la URL trae #CODIGO */
@@ -699,7 +822,23 @@ function renderDetail(){
         <span class="dp-card">Tarjeta ${fmt(precioTarjeta(item.salePrice))} · ${getCuotasCant()} cuotas sin interés de ${fmt(valorCuota(item.salePrice))}</span>
       </div>
       <div class="detail-specs">${specRows}${stockRow}</div>
+      ${stockBadge(item) ? `<div class="detail-stock-badge">${stockBadge(item)}</div>` : ''}
       ${item.description?`<div class="detail-desc">${esc(item.description).replace(/\n/g,'<br>')}</div>`:''}
+      ${item.specs.length ? `
+      <div class="spec-panel" id="specPanel">
+        <button class="spec-panel-toggle" onclick="toggleSpecPanel()" aria-expanded="false">
+          <span>ESPECIFICACIONES TÉCNICAS</span>
+          <span class="spec-panel-code mono">${esc(item.code||'')}</span>
+          <svg class="spec-panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="spec-panel-body">
+          <div class="spec-panel-grid">
+            ${item.specs.map(s=>`<div class="spec-panel-row"><span class="spec-panel-k">${esc(s.k)}</span><span class="spec-panel-v">${esc(s.v)}</span></div>`).join('')}
+            ${item.stock!=null?`<div class="spec-panel-row"><span class="spec-panel-k">Stock</span><span class="spec-panel-v">${item.stock>0?item.stock+' unidades':'Sin stock'}</span></div>`:''}
+            ${item.code?`<div class="spec-panel-row"><span class="spec-panel-k">Código</span><span class="spec-panel-v">${esc(item.code)}</span></div>`:''}
+          </div>
+        </div>
+      </div>` : ''}
       <div class="detail-actions">
         <div class="qty">
           <button onclick="detailQtyChange(-1)" aria-label="Menos">−</button>
@@ -1233,12 +1372,26 @@ function hideSkeletons(){
 
 function bootUI(){
   hideSkeletons();
-  buildItems(); buildFeatured(); buildCats(); renderHero(true); renderGrid();
+  buildItems(); buildFeatured(); buildCats();
+  applyUrlFilters();
+  renderHero(true); renderGrid();
   syncCartUI(); restartHeroTimer(); initHeroSwipe();
+  renderHistory();
   initPremiumCursor();
 }
 
+function setCat(name){
+  activeCat=name;
+  $$('#cats .cat').forEach(b=>b.classList.toggle('active', b.dataset.cat===name));
+}
+
 function initPremiumCursor(){}
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-box')){
+    const ac=$('#searchAC'); if(ac && !ac.hidden){ ac.innerHTML=''; ac.hidden=true; }
+  }
+}, {passive:true});
 
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){ if(cartOpen) closeCart(); else if($('#compareModal')?.classList.contains('open')) closeCompareModal(); else if(detailOpen) closeDetail(); }
