@@ -668,9 +668,11 @@ function saveHistory(i){
   localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
 }
 function renderHistory(){
+  const sec = $('#historySec');
+  if(sec) sec.innerHTML = '';
+  return; // deshabilitado
   const h = JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');
   const valid = h.map(i=>ITEMS[i]).filter(Boolean);
-  const sec = $('#historySec');
   if(!sec) return;
   if(!valid.length){ sec.innerHTML=''; return; }
   sec.innerHTML = `
@@ -824,21 +826,6 @@ function renderDetail(){
       <div class="detail-specs">${specRows}${stockRow}</div>
       ${stockBadge(item) ? `<div class="detail-stock-badge">${stockBadge(item)}</div>` : ''}
       ${item.description?`<div class="detail-desc">${esc(item.description).replace(/\n/g,'<br>')}</div>`:''}
-      ${item.specs.length ? `
-      <div class="spec-panel" id="specPanel">
-        <button class="spec-panel-toggle" onclick="toggleSpecPanel()" aria-expanded="false">
-          <span>ESPECIFICACIONES TÉCNICAS</span>
-          <span class="spec-panel-code mono">${esc(item.code||'')}</span>
-          <svg class="spec-panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="spec-panel-body">
-          <div class="spec-panel-grid">
-            ${item.specs.map(s=>`<div class="spec-panel-row"><span class="spec-panel-k">${esc(s.k)}</span><span class="spec-panel-v">${esc(s.v)}</span></div>`).join('')}
-            ${item.stock!=null?`<div class="spec-panel-row"><span class="spec-panel-k">Stock</span><span class="spec-panel-v">${item.stock>0?item.stock+' unidades':'Sin stock'}</span></div>`:''}
-            ${item.code?`<div class="spec-panel-row"><span class="spec-panel-k">Código</span><span class="spec-panel-v">${esc(item.code)}</span></div>`:''}
-          </div>
-        </div>
-      </div>` : ''}
       <div class="detail-actions">
         <div class="qty">
           <button onclick="detailQtyChange(-1)" aria-label="Menos">−</button>
