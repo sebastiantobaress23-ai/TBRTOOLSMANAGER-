@@ -1166,15 +1166,15 @@ function renderCartBody(lines){
         </button>
         <div class="sum-head">
           <span class="kicker">Tu pedido</span>
-          <span class="sum-count">${cartQtyTotal()} ${cartQtyTotal()===1?'ítem':'ítems'}</span>
+          <span class="sum-count mono">${cartQtyTotal()} ${cartQtyTotal()===1?'ítem':'ítems'}</span>
         </div>
         <div class="sum-list">
           ${lines2.map(({item,qty})=>`
             <div class="sum-item">
-              <div class="sum-thumb">${item.photos[0]?`<img src="${item.photos[0]}" alt="" style="width:100%;height:100%;object-fit:contain;">`:`<div class="ph-glyph" style="font-size:18px">${esc(item.initial)}</div>`}</div>
+              <div class="sum-thumb">${item.photos[0]?`<img src="${item.photos[0]}" alt="" loading="lazy">`:`<div class="ph-glyph" style="font-size:18px">${esc(item.initial)}</div>`}</div>
               <div class="sum-info">
                 <div class="sum-name">${esc(item.displayName||shortName(item.name))}</div>
-                <div class="sum-qty mono">x${qty}</div>
+                <div class="sum-qty mono">× ${qty}</div>
               </div>
               <div class="sum-sub metal-gold">${fmt(item.salePrice*qty)}</div>
             </div>`).join('')}
@@ -1184,11 +1184,7 @@ function renderCartBody(lines){
           <span class="sum-total-label mono">Total estimado</span>
           <span class="sum-total-val metal-gold">${fmt(cartTotal())}</span>
         </div>
-        <div class="sum-note mono">Confirmamos precio final antes de cerrar</div>
-        <button class="btn btn-gold" style="width:100%;margin-top:20px" onclick="goCheckoutForm()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          Confirmar y continuar →
-        </button>
+        <div class="sum-note mono">Confirmamos precio final y disponibilidad antes de cerrar la venta.</div>
       </div>`;
     return;
   }

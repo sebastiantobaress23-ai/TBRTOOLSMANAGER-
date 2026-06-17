@@ -1173,3 +1173,22 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 /* Confetti */
 .confetti-p{position:absolute;top:-10px;pointer-events:none;z-index:10;animation:confettiFall linear forwards}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(420px) rotate(540deg);opacity:0}}
+
+/* ── Resumen de pedido (summary view) ── */
+.sum-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.sum-count{font-size:11px;color:var(--di);letter-spacing:1px}
+.sum-list{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.sum-item{display:flex;align-items:center;gap:12px}
+.sum-thumb{width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;
+  background:var(--bg-2);display:flex;align-items:center;justify-content:center}
+.sum-thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.sum-info{flex:1;min-width:0}
+.sum-name{font-size:13px;font-weight:600;color:var(--ch);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.sum-qty{font-size:11px;color:var(--di)}
+.sum-sub{font-size:14px;font-weight:700;flex-shrink:0}
+.sum-divider{height:1px;background:var(--hair);margin:4px 0 14px}
+.sum-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.sum-total-label{font-size:11px;color:var(--di);letter-spacing:1.5px;text-transform:uppercase}
+.sum-total-val{font-size:24px;font-weight:800}
+.sum-note{font-size:10px;color:var(--faint);letter-spacing:.3px;line-height:1.5}
