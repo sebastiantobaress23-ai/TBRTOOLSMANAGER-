@@ -4771,19 +4771,37 @@ function sugerirVenta(){
   }
   document.getElementById('ce-saleprice').value=Math.round(cost*(1+margin/100));
 }
-function saveCat(){
+async function saveCat(){
   const name=document.getElementById('ce-name').value.trim(),code=document.getElementById('ce-code').value.trim(),barcode=document.getElementById('ce-barcode').value.trim(),price=parseFloat(document.getElementById('ce-price').value)||0,eid=document.getElementById('ce-id').value;
   const stockRaw=document.getElementById('ce-stock').value;
   const stock=stockRaw===''?undefined:Math.max(0,parseInt(stockRaw)||0);
   const salePriceRaw=document.getElementById('ce-saleprice').value;
   const salePrice=salePriceRaw===''?undefined:Math.max(0,parseFloat(salePriceRaw)||0);
-  const photos=cePhotos.slice(0,6);
-  const photo=photos[0]||'';
   const specs=document.getElementById('ce-specs').value.trim();
   const heroX=document.getElementById('ce-hero-x').value.trim();
   const heroY=document.getElementById('ce-hero-y').value.trim();
   const heroSize=document.getElementById('ce-hero-size').value.trim();
   if(!name){toast('Ingresá el nombre.',false);return;}
+  // Re-comprimir fotos base64 existentes (las nuevas ya vienen comprimidas al subirse)
+  const btn=document.getElementById('cat-edit-modal').querySelector('.btn-go');
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  const photos = await Promise.all(cePhotos.slice(0,6).map(async p=>{
+    if(!p.startsWith('data:')) return p; // URL externa → no tocar
+    try{
+      return await new Promise((res,rej)=>{
+        const img=new Image(); img.onerror=rej;
+        img.onload=()=>{
+          let w=img.width,h=img.height,max=800;
+          if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          res(c.toDataURL('image/jpeg',0.60));
+        };
+        img.src=p;
+      });
+    }catch{return p;}
+  }));
+  const photo=photos[0]||'';
   let cat=DB.get('catalog',[]);
   if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(photo?{photo}:{photo:undefined}),...(photos.length?{photos}:{photos:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined})}:c);
   else cat.push({id:uid(),name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(photo?{photo}:{}),...(photos.length?{photos}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
