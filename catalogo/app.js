@@ -318,35 +318,6 @@ function restartHeroTimer(){
   heroTimer = setInterval(()=>{ if(!detailOpen && !cartOpen) nextHero(); }, 6500);
 }
 
-function initHeroParallax(){
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const hero = document.querySelector('.hero');
-  if(!hero || hero._parallax) return;
-  hero._parallax = true;
-  let raf = null;
-  function getKbs(){ return document.querySelectorAll('.bg-layer .kb:not(.kb-blur)'); }
-  hero.addEventListener('mousemove', e=>{
-    if(raf) return;
-    raf = requestAnimationFrame(()=>{
-      raf = null;
-      const r = hero.getBoundingClientRect();
-      const cx = (e.clientX - r.left) / r.width  - 0.5;
-      const cy = (e.clientY - r.top)  / r.height - 0.5;
-      getKbs().forEach(kb=>{
-        kb.style.transform = `translate(${(cx*48).toFixed(1)}px,${(cy*30).toFixed(1)}px)`;
-        const bpx = 10 - cx * 6;
-        const bpy = 50 + cy * 8;
-        kb.style.backgroundPosition = `right ${bpx.toFixed(1)}% ${bpy.toFixed(1)}%`;
-      });
-    });
-  }, {passive:true});
-  hero.addEventListener('mouseleave', ()=>{
-    getKbs().forEach(kb=>{
-      kb.style.transform = 'translate(0px,0px)';
-      kb.style.backgroundPosition = '';
-    });
-  }, {passive:true});
-}
 
 /* ════════════════════════════════════════════════════════════════
    COLECCIÓN — grilla, filtros, búsqueda, orden
@@ -1084,48 +1055,11 @@ function hideSkeletons(){
 function bootUI(){
   hideSkeletons();
   buildItems(); buildFeatured(); buildCats(); renderHero(true); renderGrid();
-  syncCartUI(); restartHeroTimer(); initHeroSwipe(); initHeroParallax();
+  syncCartUI(); restartHeroTimer(); initHeroSwipe();
   initPremiumCursor();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   TASK 4: PREMIUM CURSOR (desktop/hover only)
-═════════════════════════════════════════════════════════════════ */
-function initPremiumCursor(){
-  if(!matchMedia('(hover:hover)').matches) return;
-  const dot = document.getElementById('cursor-dot');
-  const ring = document.getElementById('cursor-ring');
-  if(!dot || !ring) return;
-  let mx=window.innerWidth/2, my=window.innerHeight/2;
-  let rx=mx, ry=my;
-  let raf=null;
-  function moveDot(x,y){ dot.style.left=x+'px'; dot.style.top=y+'px'; }
-  function moveRing(x,y){ ring.style.left=x+'px'; ring.style.top=y+'px'; }
-  document.addEventListener('mousemove',e=>{
-    mx=e.clientX; my=e.clientY;
-    moveDot(mx,my);
-    if(!raf) raf=requestAnimationFrame(animateRing);
-  },{passive:true});
-  function animateRing(){
-    rx += (mx-rx)*0.18;
-    ry += (my-ry)*0.18;
-    moveRing(rx,ry);
-    if(Math.abs(mx-rx)>0.3 || Math.abs(my-ry)>0.3) raf=requestAnimationFrame(animateRing);
-    else raf=null;
-  }
-  document.addEventListener('mousedown',()=>document.body.classList.add('cursor-click'),{passive:true});
-  document.addEventListener('mouseup',()=>document.body.classList.remove('cursor-click'),{passive:true});
-  // Hover detection on interactive elements
-  document.addEventListener('mouseover',e=>{
-    if(e.target.closest('button,a,input,select,label,[onclick]'))
-      document.body.classList.add('cursor-hover');
-  },{passive:true});
-  document.addEventListener('mouseout',e=>{
-    if(e.target.closest('button,a,input,select,label,[onclick]'))
-      document.body.classList.remove('cursor-hover');
-  },{passive:true});
-  moveDot(mx,my); moveRing(mx,my);
-}
+function initPremiumCursor(){}
 
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){ if(cartOpen) closeCart(); else if(detailOpen) closeDetail(); }
