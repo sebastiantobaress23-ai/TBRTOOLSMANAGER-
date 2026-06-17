@@ -852,11 +852,15 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 
 /* Galería de fotos en modal de producto */
 .ce-photos-wrap{display:flex;flex-wrap:wrap;gap:10px}
-.ce-photo-thumb{position:relative;width:84px;height:84px;border-radius:var(--r);overflow:hidden;border:1px solid var(--b2);flex-shrink:0}
-.ce-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ce-photo-thumb{position:relative;width:84px;height:84px;border-radius:var(--r);overflow:hidden;border:1px solid var(--b2);flex-shrink:0;cursor:grab;touch-action:none;transition:opacity .15s,transform .15s,border-color .15s}
+.ce-photo-thumb.dragging{opacity:.35;transform:scale(.95);border-color:var(--ud)}
+.ce-photo-thumb.drag-over{border-color:var(--ud);box-shadow:0 0 0 2px var(--ud)}
+.ce-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .ce-photo-cover{position:absolute;left:0;bottom:0;right:0;text-align:center;padding:2px 0;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ud);background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
 .ce-photo-thumb-rm{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:var(--ch);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s}
 .ce-photo-thumb-rm:hover{background:var(--re);color:#fff}
+.ce-photo-thumb-rep{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:var(--ch);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s}
+.ce-photo-thumb-rep:hover{background:var(--ud);color:#111}
 .ce-photo-add{width:84px;height:84px;border-radius:var(--r);border:1px dashed var(--b3);background:var(--bg2);color:var(--di);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
 .ce-photo-add:hover{border-color:var(--ud);color:var(--ud)}
 .btn-catdig{position:relative;border-color:rgba(226,201,126,.3);transition:border-color .2s,box-shadow .2s,transform .15s}
@@ -4658,6 +4662,7 @@ function pgCat() {
         <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 5MB cada una.</div>
         <div id="ce-photos-wrap" class="ce-photos-wrap"></div>
         <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="addCePhoto(this)">
+        <input type="file" id="ce-photo-rep-inp" accept="image/*" style="display:none" onchange="_onCePhotoReplace(this)">
       </div>
       <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
       <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
@@ -4689,14 +4694,63 @@ function openAddCat(){document.getElementById('cat-edit-title').textContent='Agr
 function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;const _ephotos=DB.get('catalog_photos',{});const _eph=_ephotos[id]||{};c.photo=_eph.photo||c.photo||'';c.photos=_eph.photos||c.photos||[];document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();}
 function closeCatEdit(){document.getElementById('cat-edit-modal').style.display='none';unlockBody();}
 let cePhotos=[];
+let _ceDragIdx=null;
 function renderCePhotos(){
   const wrap=document.getElementById('ce-photos-wrap');
-  wrap.innerHTML=cePhotos.map((p,i)=>`<div class="ce-photo-thumb">
+  wrap.innerHTML=cePhotos.map((p,i)=>`<div class="ce-photo-thumb" draggable="true" data-idx="${i}"
+      ondragstart="ceDragStart(event,${i})" ondragover="ceDragOver(event,${i})" ondragend="ceDragEnd(event)" ondrop="ceDrop(event,${i})"
+      ontouchstart="ceTouchStart(event,${i})" ontouchmove="ceTouchMove(event)" ontouchend="ceTouchEnd(event,${i})">
       <img src="${p}" alt="">
       ${i===0?'<span class="ce-photo-cover">Portada</span>':''}
+      <button class="ce-photo-thumb-rep" onclick="replaceCePhoto(${i})" title="Reemplazar foto" aria-label="Reemplazar foto">${ic('camera',12)}</button>
       <button class="ce-photo-thumb-rm" onclick="removeCePhoto(${i})" title="Quitar foto" aria-label="Quitar foto">${ic('close',12)}</button>
     </div>`).join('')
     + (cePhotos.length<6?`<button class="ce-photo-add" onclick="document.getElementById('ce-photo-inp').click()" title="Agregar foto" aria-label="Agregar foto">${ic('camera',18)}</button>`:'');
+}
+function ceDragStart(e,i){_ceDragIdx=i;setTimeout(()=>{const el=document.querySelectorAll('.ce-photo-thumb')[i];if(el)el.classList.add('dragging');},0);}
+function ceDragOver(e,i){e.preventDefault();document.querySelectorAll('.ce-photo-thumb').forEach((el,j)=>el.classList.toggle('drag-over',j===i&&i!==_ceDragIdx));}
+function ceDragEnd(e){document.querySelectorAll('.ce-photo-thumb').forEach(el=>{el.classList.remove('dragging','drag-over');});_ceDragIdx=null;}
+function ceDrop(e,i){e.preventDefault();if(_ceDragIdx===null||_ceDragIdx===i)return;const moved=cePhotos.splice(_ceDragIdx,1)[0];cePhotos.splice(i,0,moved);renderCePhotos();}
+// Touch drag support
+let _ceTouchSrc=null,_ceTouchEl=null,_ceTouchGhost=null;
+function ceTouchStart(e,i){_ceTouchSrc=i;_ceTouchEl=e.currentTarget;_ceTouchEl.classList.add('dragging');}
+function ceTouchMove(e){
+  if(_ceTouchSrc===null)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  const els=document.querySelectorAll('.ce-photo-thumb');
+  els.forEach(el=>el.classList.remove('drag-over'));
+  const over=document.elementFromPoint(t.clientX,t.clientY)?.closest('.ce-photo-thumb');
+  if(over){const j=parseInt(over.dataset.idx);if(j!==_ceTouchSrc)over.classList.add('drag-over');}
+}
+function ceTouchEnd(e,i){
+  if(_ceTouchSrc===null)return;
+  const t=e.changedTouches[0];
+  const over=document.elementFromPoint(t.clientX,t.clientY)?.closest('.ce-photo-thumb');
+  if(over){const j=parseInt(over.dataset.idx);if(j!==_ceTouchSrc){const moved=cePhotos.splice(_ceTouchSrc,1)[0];cePhotos.splice(j,0,moved);}}
+  _ceTouchSrc=null;
+  renderCePhotos();
+}
+let _ceReplaceIdx=null;
+function replaceCePhoto(i){
+  _ceReplaceIdx=i;
+  const inp=document.getElementById('ce-photo-rep-inp');
+  inp.value='';
+  inp.click();
+}
+function _onCePhotoReplace(input){
+  const file=input.files&&input.files[0];
+  if(!file||_ceReplaceIdx===null)return;
+  if(file.size>15*1024*1024){toast('La imagen es muy grande (máx. 15MB)',false);return;}
+  const isHero=_ceReplaceIdx===0;
+  const maxPx=isHero?1400:800;
+  const quality=isHero?0.82:0.60;
+  _compressImage(file,maxPx,quality).then(dataUrl=>{
+    cePhotos[_ceReplaceIdx]=dataUrl;
+    _ceReplaceIdx=null;
+    renderCePhotos();
+  }).catch(()=>toast('No se pudo procesar la imagen',false));
+  input.value='';
 }
 // Redimensiona/comprime la imagen a un JPEG liviano antes de guardarla:
 // las fotos originales del celular (varios MB cada una) no entran en el
