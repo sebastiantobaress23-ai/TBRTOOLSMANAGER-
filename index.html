@@ -1925,7 +1925,7 @@ function purchaseGain(p) {
       gn=(pub.precio||0)*(1-com/100)-cu-env;
     } else {
       const com=defCom, env=defEnv, margin=30;
-      const precio=cu*(1+margin/100)/(1-com/100)+env;
+      const precio=(cu*(1+margin/100)+env)/(1-com/100);
       gn=precio*(1-com/100)-cu-env;
     }
     return s+gn*(pr.q||1);
@@ -3294,8 +3294,6 @@ function pgCompra() {
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Com. int.</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:var(--ch)">${conf.comInt}%</span></div>
       <div style="width:1px;height:32px;background:var(--b2);align-self:center"></div>
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Flete</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:var(--ch)">${fmtA(conf.flete)}</span></div>
-      <div style="width:1px;height:32px;background:var(--b2);align-self:center"></div>
-      <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Com. ML</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:var(--ch)">${conf.mlCom}%</span></div>
     </div>
   </div>
   <div class="card items-card">
@@ -3770,7 +3768,7 @@ function recalc(inp) {
   if (CALC) CALC.margins[id]=m;
   const envEl=document.querySelector(`[data-eid="${id}"]`);
   const env=envEl?parseFloat(envEl.value)||0:conf.mlEnv;
-  const pr=cu*(1+m/100)/(1-conf.mlCom/100)+env;
+  const pr=(cu*(1+m/100)+env)/(1-conf.mlCom/100);
   const gn=pr*(1-conf.mlCom/100)-cu-env;
   const prEl=document.getElementById('mlpr-'+id);
   if(prEl) prEl.textContent=fmtA(pr);
@@ -3783,7 +3781,7 @@ function recalcEnv(inp) {
   if (CALC) CALC.envios[id]=env;
   const mgEl=document.querySelector(`input[data-pid="${id}"]:not([data-eid])`);
   const m=mgEl?parseFloat(mgEl.value)||0:30;
-  const pr=cu*(1+m/100)/(1-conf.mlCom/100)+env;
+  const pr=(cu*(1+m/100)+env)/(1-conf.mlCom/100);
   const gn=pr*(1-conf.mlCom/100)-cu-env;
   const prEl=document.getElementById('mlpr-'+id);
   if(prEl) prEl.textContent=fmtA(pr);
@@ -3936,7 +3934,7 @@ function renderBreakEven(calc) {
     const cu = p.p * TCE;
     const env = calc.envios?.[p.id] ?? conf.mlEnv;
     const m = calc.margins?.[p.id] ?? 30;
-    const pr = cu*(1+m/100)/(1-conf.mlCom/100)+env;
+    const pr = (cu*(1+m/100)+env)/(1-conf.mlCom/100);
     const gn = pr*(1-conf.mlCom/100)-cu-env;
     const q = p.q||1;
     const be = gn > 0 ? Math.ceil(cu * q / gn) : null;
@@ -4244,7 +4242,7 @@ function syncSaleMargin(source){
     if(source==='margin'){
       if(!cost) return;
       const margin=parseFloat(marginEl.value)||0;
-      priceEl.value=Math.round(cost*(1+margin/100)/(1-com/100)+env);
+      priceEl.value=Math.round((cost*(1+margin/100)+env)/(1-com/100));
     } else {
       const price=parseFloat(priceEl.value)||0;
       marginEl.value = cost ? Math.round(((price-env)*(1-com/100)-cost)/cost*100) : '';
@@ -5209,7 +5207,7 @@ function _mlCards(products, glbCom, glbEnv) {
   return products.map(p => {
     const m   = ML.margins[p.id] !== undefined ? ML.margins[p.id] : 30;
     const env = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : glbEnv);
-    const pr  = p.cu*(1+m/100)/(1-glbCom/100)+env;
+    const pr  = (p.cu*(1+m/100)+env)/(1-glbCom/100);
     const gn  = pr*(1-glbCom/100)-p.cu-env;
     const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
     const rmBtn = ML.srcType==='manual'
@@ -5292,7 +5290,7 @@ function pgML() {
   products.forEach(p=>{
     const m   = ML.margins[p.id]!==undefined ? ML.margins[p.id] : 30;
     const env = ML.mode==='full' ? 0 : (ML.envios[p.id]!==undefined ? ML.envios[p.id] : glbEnv);
-    const pr  = p.cu*(1+m/100)/(1-glbCom/100)+env;
+    const pr  = (p.cu*(1+m/100)+env)/(1-glbCom/100);
     const gn  = pr*(1-glbCom/100)-p.cu-env;
     totP += pr*p.q; totG += gn*p.q;
   });
@@ -5482,7 +5480,7 @@ function mlSavePub() {
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
     const env    = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
     const com    = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const pr  = cu*(1+m/100)/(1-com/100)+env;
+    const pr  = (cu*(1+m/100)+env)/(1-com/100);
     const gn  = pr*(1-com/100)-cu-env;
     const card = document.getElementById('mlc-'+id);
     const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
@@ -5547,7 +5545,7 @@ function mlRecalc(inp) {
     m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
     env = envInp ? parseFloat(envInp.value)||0  : (ML.mode==='full'?0:glbEnv);
   } else return;
-  const pr  = cu*(1+m/100)/(1-com/100)+env;
+  const pr  = (cu*(1+m/100)+env)/(1-com/100);
   const gn  = pr*(1-com/100)-cu-env;
   const gnPct = cu > 0 ? ((gn/cu)*100).toFixed(1) : 0;
   const card  = document.getElementById('mlc-'+id);
@@ -5577,7 +5575,7 @@ function mlUpdateTotals() {
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
     const env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
     const com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const pr  = cu*(1+m/100)/(1-com/100)+env;
+    const pr  = (cu*(1+m/100)+env)/(1-com/100);
     const gn  = pr*(1-com/100)-cu-env;
     const card = document.getElementById('mlc-'+id);
     const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
@@ -5619,7 +5617,7 @@ function pgComp() {
     const margin=pub?(pub.margin??30):30;
     const env=pub?(pub.env||0):0;
     const com=pub?(pub.com||16):16;
-    const precio=pub?pub.precio:cu*(1+margin/100)/(1-com/100)+env;
+    const precio=pub?pub.precio:(cu*(1+margin/100)+env)/(1-com/100);
     return `<div class="card mb12">
     <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
     <div class="fg-w mb12" style="gap:24px">
@@ -5652,7 +5650,7 @@ function cmpSetSrc(id){
 }
 function cmpRecalc(i,cu,env,com){
   const m=parseFloat(document.getElementById('cmp-margin-'+i)?.value)||0;
-  const precio=cu*(1+m/100)/(1-com/100)+env;
+  const precio=(cu*(1+m/100)+env)/(1-com/100);
   const el=document.getElementById('cmp-precio-'+i);
   if (el) el.textContent=fmtA(precio);
   const inp=document.getElementById('cmp-comp-'+i);
