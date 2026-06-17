@@ -282,6 +282,32 @@ function restartHeroTimer(){
   heroTimer = setInterval(()=>{ if(!detailOpen && !cartOpen) nextHero(); }, 6500);
 }
 
+function initHeroParallax(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(matchMedia('(hover: none)').matches) return; // solo desktop (tiene hover)
+  const hero = document.querySelector('.hero');
+  if(!hero || hero._parallax) return;
+  hero._parallax = true;
+  let raf = null;
+  hero.addEventListener('mousemove', e=>{
+    if(raf) return;
+    raf = requestAnimationFrame(()=>{
+      raf = null;
+      const r = hero.getBoundingClientRect();
+      const cx = (e.clientX - r.left) / r.width  - 0.5; // -0.5 .. 0.5
+      const cy = (e.clientY - r.top)  / r.height - 0.5;
+      document.querySelectorAll('.bg-layer.on .kb:not(.kb-blur)').forEach(kb=>{
+        kb.style.transform = `translate(${(cx*22).toFixed(1)}px,${(cy*14).toFixed(1)}px)`;
+      });
+    });
+  }, {passive:true});
+  hero.addEventListener('mouseleave', ()=>{
+    document.querySelectorAll('.bg-layer .kb:not(.kb-blur)').forEach(kb=>{
+      kb.style.transform = 'translate(0px,0px)';
+    });
+  }, {passive:true});
+}
+
 /* ════════════════════════════════════════════════════════════════
    COLECCIÓN — grilla, filtros, búsqueda, orden
 ═════════════════════════════════════════════════════════════════ */
@@ -886,7 +912,7 @@ function observeReveal(){
 ═════════════════════════════════════════════════════════════════ */
 function bootUI(){
   buildItems(); buildFeatured(); buildCats(); renderHero(); renderGrid();
-  syncCartUI(); restartHeroTimer(); initHeroSwipe();
+  syncCartUI(); restartHeroTimer(); initHeroSwipe(); initHeroParallax();
 }
 
 document.addEventListener('keydown', e=>{
