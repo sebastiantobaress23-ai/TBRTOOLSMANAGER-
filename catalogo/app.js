@@ -320,30 +320,28 @@ function restartHeroTimer(){
 
 function initHeroParallax(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if(matchMedia('(hover: none)').matches) return; // solo desktop (tiene hover)
   const hero = document.querySelector('.hero');
   if(!hero || hero._parallax) return;
   hero._parallax = true;
   let raf = null;
+  function getKbs(){ return document.querySelectorAll('.bg-layer .kb:not(.kb-blur)'); }
   hero.addEventListener('mousemove', e=>{
     if(raf) return;
     raf = requestAnimationFrame(()=>{
       raf = null;
       const r = hero.getBoundingClientRect();
-      const cx = (e.clientX - r.left) / r.width  - 0.5; // -0.5 .. 0.5
+      const cx = (e.clientX - r.left) / r.width  - 0.5;
       const cy = (e.clientY - r.top)  / r.height - 0.5;
-      document.querySelectorAll('.bg-layer.on .kb:not(.kb-blur)').forEach(kb=>{
-        // Mover el elemento (parallax grueso) + ajustar background-position (parallax fino)
+      getKbs().forEach(kb=>{
         kb.style.transform = `translate(${(cx*48).toFixed(1)}px,${(cy*30).toFixed(1)}px)`;
-        // En desktop la imagen está a la derecha; desplazar posición para efecto tridimensional
-        const bpx = 10 - cx * 6; // right 10% → varía ±6%
-        const bpy = 50 + cy * 8; // center → varía ±8%
+        const bpx = 10 - cx * 6;
+        const bpy = 50 + cy * 8;
         kb.style.backgroundPosition = `right ${bpx.toFixed(1)}% ${bpy.toFixed(1)}%`;
       });
     });
   }, {passive:true});
   hero.addEventListener('mouseleave', ()=>{
-    document.querySelectorAll('.bg-layer .kb:not(.kb-blur)').forEach(kb=>{
+    getKbs().forEach(kb=>{
       kb.style.transform = 'translate(0px,0px)';
       kb.style.backgroundPosition = '';
     });
