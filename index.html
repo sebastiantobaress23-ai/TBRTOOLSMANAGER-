@@ -8754,29 +8754,35 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Migration: move photos from catalog objects to catalog_photos
-(function migrateCatalogPhotos() {
-  const cat = DB.get('catalog', []);
-  const hasInlinePhotos = cat.some(p =>
-    (p.photo && p.photo.startsWith('data:')) ||
-    (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))
-  );
-  if (!hasInlinePhotos) return;
-  const photosMap = DB.get('catalog_photos', {});
-  const cleanCat = cat.map(p => {
-    if ((p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))) {
-      photosMap[p.id] = { photo: p.photo || '', photos: p.photos || [] };
-    }
-    const { photo, photos, ...rest } = p;
-    const cleanP = { ...rest };
-    if (p.photo && !p.photo.startsWith('data:')) cleanP.photo = p.photo;
-    if (p.photos) cleanP.photos = p.photos.filter(ph => ph && !ph.startsWith('data:'));
-    return cleanP;
-  });
-  DB.set('catalog_photos', photosMap);
-  DB.set('catalog', cleanCat);
-  console.log('[Migration] Catalog photos separated from catalog data');
-})();
+function migrateCatalogPhotos() {
+  try {
+    const raw = localStorage.getItem('tbr_catalog');
+    if (!raw) return;
+    const cat = JSON.parse(raw);
+    if (!Array.isArray(cat)) return;
+    const hasInlinePhotos = cat.some(p =>
+      (p.photo && p.photo.startsWith('data:')) ||
+      (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))
+    );
+    if (!hasInlinePhotos) return;
+    const photosMap = DB.get('catalog_photos', {});
+    const cleanCat = cat.map(p => {
+      if ((p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))) {
+        photosMap[p.id] = { photo: p.photo || '', photos: p.photos || [] };
+      }
+      const cleanP = { ...p };
+      if (cleanP.photo && cleanP.photo.startsWith('data:')) delete cleanP.photo;
+      if (cleanP.photos) cleanP.photos = cleanP.photos.filter(ph => ph && !ph.startsWith('data:'));
+      return cleanP;
+    });
+    // Liberar espacio primero eliminando el catálogo viejo
+    localStorage.removeItem('tbr_catalog');
+    // Ahora hay espacio para guardar las fotos por separado
+    try { localStorage.setItem('tbr_catalog_photos', JSON.stringify({...DB.get('catalog_photos',{}), ...photosMap})); } catch(e) {}
+    try { localStorage.setItem('tbr_catalog', JSON.stringify(cleanCat)); } catch(e) {}
+    console.log('[Migration] Catalog photos separated from catalog data');
+  } catch(e) {}
+}
 
 window.onload = async function() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -8797,6 +8803,7 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
+  migrateCatalogPhotos(); // corre después del sync para no perder fotos restauradas
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados).
   // Se escriben directo en localStorage (sin pasar por DB.set) para no subir
   // estos valores por defecto a Firebase: si la sincronización inicial falló
