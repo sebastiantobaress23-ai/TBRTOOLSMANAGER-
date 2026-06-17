@@ -366,6 +366,9 @@ function cardHTML(item){
         <button class="card-quick" onclick="openDetail(${item.i},false,this.closest('.card'));event.stopPropagation()" aria-label="Ver ficha">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
+        <button class="card-compare" data-compare="${item.i}" onclick="toggleCompare(${item.i});event.stopPropagation()" aria-label="Comparar producto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        </button>
       </div>
     </div>
     <div class="card-body">
@@ -389,7 +392,182 @@ function renderGrid(){
     : `<div class="empty">Sin resultados para tu búsqueda</div>`;
   $('#secCount').textContent = `${pad3(list.length)} ${list.length===1?'producto':'productos'}`;
   syncAddButtons();
+  syncCompareButtons();
   observeReveal();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FEATURE 2: COMPARADOR FLOTANTE DE PRODUCTOS
+═════════════════════════════════════════════════════════════════ */
+let compareList = [];
+
+function toggleCompare(i){
+  const idx = compareList.indexOf(i);
+  if(idx !== -1){
+    compareList.splice(idx,1);
+  } else {
+    if(compareList.length >= 2){
+      showCompareToast('Solo podés comparar 2 productos');
+      shakeCompareBar();
+      return;
+    }
+    compareList.push(i);
+  }
+  syncCompareButtons();
+  renderCompareBar();
+}
+
+function syncCompareButtons(){
+  const set = new Set(compareList);
+  $$('[data-compare]').forEach(b=>{
+    const i = +b.dataset.compare;
+    const on = set.has(i);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+    // update icon: balanza = default, check = selected
+    b.innerHTML = on
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`;
+    b.closest('.card')?.classList.toggle('comparing', on);
+  });
+}
+
+function renderCompareBar(){
+  let bar = $('#compareBar');
+  if(!compareList.length){
+    if(bar) bar.classList.add('hidden');
+    return;
+  }
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'compareBar';
+    bar.className = 'compare-bar';
+    document.body.appendChild(bar);
+  }
+  bar.classList.remove('hidden');
+  const canCompare = compareList.length === 2;
+  const slots = [0,1].map(idx=>{
+    const item = compareList[idx] != null ? ITEMS[compareList[idx]] : null;
+    if(item){
+      return `<div class="compare-slot filled">
+        <div class="compare-slot-thumb" style="background-image:url('${item.photos[0]||''}')"></div>
+        <span class="compare-slot-name">${esc(item.displayName||shortName(item.name))}</span>
+        <button class="compare-slot-rm" onclick="toggleCompare(${item.i})" aria-label="Quitar">×</button>
+      </div>`;
+    }
+    return `<div class="compare-slot">
+      <div class="compare-slot-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>
+      <span class="compare-slot-name" style="color:var(--faint)">Seleccioná un producto</span>
+    </div>`;
+  }).join('');
+  bar.innerHTML = `
+    <div class="compare-slots">${slots}</div>
+    <div class="compare-bar-actions">
+      <button class="btn-compare-now" onclick="openCompareModal()" ${canCompare?'':'disabled'}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4M15 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M12 12H9m0 0-3 3m3-3L6 9"/></svg>
+        Comparar ahora
+      </button>
+      <button class="btn-compare-cancel" onclick="clearCompare()">Cancelar</button>
+    </div>`;
+}
+
+function clearCompare(){
+  compareList = [];
+  syncCompareButtons();
+  const bar = $('#compareBar'); if(bar) bar.classList.add('hidden');
+}
+
+let _compareToastTimer = null;
+function showCompareToast(msg){
+  const existing = $('.compare-toast'); if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'compare-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(_compareToastTimer);
+  _compareToastTimer = setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),220); },2200);
+}
+function shakeCompareBar(){
+  const bar = $('#compareBar'); if(!bar) return;
+  bar.style.animation='none';
+  void bar.offsetWidth;
+  bar.style.animation='shakeBar .32s ease';
+  setTimeout(()=>bar.style.animation='',400);
+}
+
+function openCompareModal(){
+  if(compareList.length < 2) return;
+  const [ia, ib] = compareList;
+  const a = ITEMS[ia], b = ITEMS[ib];
+  if(!a || !b) return;
+
+  // Recopilar todas las specs únicas de ambos productos
+  const allSpecKeys = [];
+  const specMapA = {}, specMapB = {};
+  a.specs.forEach(s=>{ specMapA[s.k]=s.v; if(!allSpecKeys.includes(s.k)) allSpecKeys.push(s.k); });
+  b.specs.forEach(s=>{ specMapB[s.k]=s.v; if(!allSpecKeys.includes(s.k)) allSpecKeys.push(s.k); });
+
+  function parseNum(v){ const m = String(v||'').replace(',','.').match(/[\d.]+/); return m?parseFloat(m[0]):null; }
+
+  function specRowsFor(specMap, otherMap){
+    return allSpecKeys.map(k=>{
+      const val = specMap[k]; const other = otherMap[k];
+      if(!val && !other) return '';
+      if(!val) return `<div class="compare-spec-row"><span class="compare-spec-k">${esc(k)}</span><span class="compare-spec-v spec-dash">—</span></div>`;
+      const numV = parseNum(val), numO = parseNum(other);
+      const isWinner = numV != null && numO != null && numV > numO;
+      return `<div class="compare-spec-row"><span class="compare-spec-k">${esc(k)}</span><span class="compare-spec-v${isWinner?' spec-win':''}">${esc(val)}</span></div>`;
+    }).join('');
+  }
+
+  function colHTML(item, specMap, otherMap){
+    const imgPart = item.photos[0]
+      ? `<div class="compare-col-img" style="background-image:url('${item.photos[0]}')"></div>`
+      : `<div class="compare-col-img-ph"><div class="ph-glyph">${esc(item.initial)}</div></div>`;
+    const stockVal = item.stock != null ? (item.stock > 0 ? item.stock+' u.' : 'Sin stock') : 'Disponible';
+    return `<div class="compare-col">
+      ${imgPart}
+      <div class="compare-col-body">
+        <div class="compare-col-name">${esc(item.displayName||shortName(item.name))}</div>
+        <div class="compare-col-prices">
+          <div class="compare-col-ef metal-gold">${fmt(item.salePrice)}</div>
+          <div class="compare-col-card">Tarjeta ${fmt(precioTarjeta(item.salePrice))} · ${getCuotasCant()} cuotas sin interés de ${fmt(valorCuota(item.salePrice))}</div>
+        </div>
+        <div class="compare-specs-table">${specRowsFor(specMap, otherMap)}</div>
+        <div class="compare-col-stock">
+          <span class="compare-col-stock-k">Stock</span>
+          <span class="compare-col-stock-v">${stockVal}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  let modal = $('#compareModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'compareModal';
+    modal.className = 'compare-modal';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="compare-modal-inner">
+      <div class="compare-modal-header">
+        <h2><span class="kicker" style="font-size:1rem">Comparando productos</span></h2>
+        <button class="compare-modal-close" onclick="closeCompareModal()" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="compare-cols">
+        ${colHTML(a, specMapA, specMapB)}
+        ${colHTML(b, specMapB, specMapA)}
+      </div>
+    </div>`;
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCompareModal(){
+  const modal=$('#compareModal'); if(modal) modal.classList.remove('open');
+  if(!detailOpen && !cartOpen) document.body.style.overflow='';
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -565,6 +743,7 @@ function renderRelated(item){
     <div class="related-head"><span class="kicker">También te puede interesar</span></div>
     <div class="related-grid">${pool.map(cardHTML).join('')}</div>`;
   syncAddButtons();
+  syncCompareButtons();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1062,7 +1241,7 @@ function bootUI(){
 function initPremiumCursor(){}
 
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ if(cartOpen) closeCart(); else if(detailOpen) closeDetail(); }
+  if(e.key==='Escape'){ if(cartOpen) closeCart(); else if($('#compareModal')?.classList.contains('open')) closeCompareModal(); else if(detailOpen) closeDetail(); }
   if(!detailOpen && !cartOpen){
     if(e.key==='ArrowRight') nextHero();
     else if(e.key==='ArrowLeft') goHero(heroIdx-1);
