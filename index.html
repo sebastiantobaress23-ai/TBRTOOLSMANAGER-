@@ -8803,7 +8803,33 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  migrateCatalogPhotos(); // corre después del sync para no perder fotos restauradas
+  migrateCatalogPhotos();
+  // Recuperar fotos desde Firebase si catalog_photos está vacío pero el catálogo tiene productos
+  await (async function recoverPhotosFromFirebase() {
+    try {
+      const cat = DB.get('catalog', []);
+      const photosMap = DB.get('catalog_photos', {});
+      const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
+      if (!cat.length || hasPhotos || !navigator.onLine) return;
+      const url = await fbUrl(FB+'.json', 't='+Date.now());
+      const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!Array.isArray(d && d.catalog)) return;
+      const recovered = {};
+      d.catalog.forEach(p => {
+        if (!p || !p.id) return;
+        const hasPhoto = (p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')));
+        if (hasPhoto) recovered[p.id] = { photo: p.photo||'', photos: p.photos||[] };
+      });
+      if (!Object.keys(recovered).length) return;
+      localStorage.removeItem('tbr_catalog'); // liberar espacio
+      try { localStorage.setItem('tbr_catalog_photos', JSON.stringify({...photosMap, ...recovered})); } catch(e) {}
+      try { localStorage.setItem('tbr_catalog', JSON.stringify(cat)); } catch(e) {}
+      render();
+      toast('Fotos del catálogo restauradas', true, 3000);
+    } catch(e) {}
+  })();
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados).
   // Se escriben directo en localStorage (sin pasar por DB.set) para no subir
   // estos valores por defecto a Firebase: si la sincronización inicial falló
