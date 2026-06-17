@@ -4731,7 +4731,11 @@ function addCePhoto(input){
   if(!file)return;
   if(file.size>15*1024*1024){toast('La imagen es muy grande (máx. 15MB)',false);return;}
   if(cePhotos.length>=6){toast('Máximo 6 fotos por producto.',false);return;}
-  _compressImage(file).then(dataUrl=>{
+  // Primera foto (portada/hero): mayor calidad; resto: más comprimidas
+  const isHero = cePhotos.length === 0;
+  const maxPx = isHero ? 1400 : 800;
+  const quality = isHero ? 0.82 : 0.60;
+  _compressImage(file, maxPx, quality).then(dataUrl=>{
     cePhotos.push(dataUrl);
     renderCePhotos();
   }).catch(()=>toast('No se pudo procesar la imagen',false));
@@ -4805,17 +4809,22 @@ async function saveCat(){
   // Re-comprimir fotos base64 existentes (las nuevas ya vienen comprimidas al subirse)
   const btn=document.getElementById('cat-edit-modal').querySelector('.btn-go');
   if(btn){btn.disabled=true;btn.textContent='Guardando...';}
-  const photos = await Promise.all(cePhotos.slice(0,6).map(async p=>{
+  const photos = await Promise.all(cePhotos.slice(0,6).map(async (p,idx)=>{
     if(!p.startsWith('data:')) return p; // URL externa → no tocar
+    // Primera foto (portada/hero): mayor resolución y calidad
+    // Resto (thumbs/cards): más comprimidas para ahorrar espacio
+    const isHero = idx === 0;
+    const maxPx = isHero ? 1400 : 800;
+    const quality = isHero ? 0.82 : 0.60;
     try{
       return await new Promise((res,rej)=>{
         const img=new Image(); img.onerror=rej;
         img.onload=()=>{
-          let w=img.width,h=img.height,max=800;
+          let w=img.width,h=img.height,max=maxPx;
           if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
           const c=document.createElement('canvas');c.width=w;c.height=h;
           c.getContext('2d').drawImage(img,0,0,w,h);
-          res(c.toDataURL('image/jpeg',0.60));
+          res(c.toDataURL('image/jpeg',quality));
         };
         img.src=p;
       });
