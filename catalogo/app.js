@@ -877,7 +877,7 @@ function renderRelated(item){
 ═════════════════════════════════════════════════════════════════ */
 let CART = loadCart();   // [{code, qty}]
 let cartOpen = false;
-let cartView = 'list';        // 'list' | 'checkout' | 'done'
+let cartView = 'list';        // 'list' | 'summary' | 'checkout' | 'done'
 let submitting = false;
 let lastOrder = null, lastVia = null;
 let selectedPayment = localStorage.getItem('tbr_paymethod') || 'efectivo'; // 'efectivo' | 'cuotas'
@@ -914,6 +914,7 @@ function buildOrder(cliente, tel){
     cuit: '',
     status: 'cotizacion',
     origen: 'catalogo-digital',
+    origen_contacto: ($('#coOrigen')?.value||''),
     sincronizado: false,
     formaPago: selectedPayment,
     cuotasCant: selectedPayment==='cuotas' ? getCuotasCant() : 0,
@@ -1073,8 +1074,8 @@ function goCheckoutForm(){
   cartView='checkout'; renderCart();
   setTimeout(()=>{ const el=$('#coName'); if(el) el.focus(); },120);
 }
+function goBackFromCheckout(){ cartView='summary'; renderCart(); }
 function backToList(){ cartView='list'; renderCart(); }
-function backToSummary(){ cartView='summary'; renderCart(); }
 
 function renderCart(){
   const lines = cartLines();
@@ -1095,58 +1096,99 @@ function renderCartBody(lines){
   /* ── DONE ── */
   if(cartView==='done' && lastOrder){
     const total = lastOrder.items.reduce((a,it)=>a+it.p*it.q,0);
-    const itemsList = lastOrder.items.map(it=>{
-      const prod = ITEMS.find(x=>x.code===it.c);
-      const thumb = prod?.photos[0]
-        ? `<img src="${prod.photos[0]}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:var(--bg-2)">`
-        : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg-2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--faint)">${esc((it.n||'?').charAt(0).toUpperCase())}</div>`;
-      return `<div class="od-item"><div class="od-item-thumb">${thumb}</div><div class="od-item-info"><div class="od-item-name">${esc(it.n)}</div><div class="od-item-sub mono">x${it.q} · ${fmt(it.p*it.q)}</div></div></div>`;
+    const itemLines = lastOrder.items.map(it=>{
+      const prod = ITEMS.find(x=>x.code===it.c)||ITEMS.find(x=>x.name===it.n);
+      const thumb = prod && prod.photos && prod.photos[0] ? `<img src="${prod.photos[0]}" alt="" style="width:100%;height:100%;object-fit:contain;">` : `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;color:rgba(226,201,126,.3)">${esc((it.n||'?').charAt(0).toUpperCase())}</div>`;
+      return `<div class="od-item">
+        <div class="od-item-thumb">${thumb}</div>
+        <div class="od-item-info">
+          <div class="od-item-name">${esc(it.n)}</div>
+          <div class="od-item-qty mono">x${it.q}</div>
+        </div>
+        <div class="od-item-sub metal-gold">${fmt(it.p*it.q)}</div>
+      </div>`;
     }).join('');
     body.innerHTML = `
       <div class="order-done">
-        <div class="od-anim">
-          <svg class="od-circle" viewBox="0 0 52 52"><circle class="od-circle-bg" cx="26" cy="26" r="22"/><circle class="od-circle-fill" cx="26" cy="26" r="22"/><path class="od-check-path" fill="none" stroke="#1a1206" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14 26l8 8 16-16"/></svg>
+        <div class="od-anim-wrap">
+          <svg class="od-circle-svg" viewBox="0 0 72 72">
+            <circle class="od-circle-bg" cx="36" cy="36" r="32" fill="none" stroke="rgba(226,201,126,.12)" stroke-width="3"/>
+            <circle class="od-circle-draw" cx="36" cy="36" r="32" fill="none" stroke="url(#goldGrad)" stroke-width="3"
+              stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round"/>
+            <defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#f3e3b0"/><stop offset="100%" stop-color="#b8975a"/>
+            </linearGradient></defs>
+          </svg>
+          <svg class="od-check-icon" viewBox="0 0 24 24" fill="none" stroke="url(#goldGrad2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <defs><linearGradient id="goldGrad2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#f3e3b0"/><stop offset="100%" stop-color="#e2c97e"/>
+            </linearGradient></defs>
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
         </div>
         <h4>¡Pedido enviado!</h4>
-        <div class="od-id mono">#${esc(lastOrder.id.slice(0,8).toUpperCase())}</div>
-        <p class="od-msg">${lastVia==='firestore'
-            ? 'Recibimos tu pedido. Te contactamos a la brevedad para confirmar disponibilidad y pago.'
+        <div class="od-order-num mono">#${esc(lastOrder.id.slice(0,8).toUpperCase())}</div>
+        <p>${lastVia==='firestore'
+            ? 'Recibimos tu pedido. Te contactamos a la brevedad para confirmar disponibilidad y forma de pago.'
             : 'Te abrimos WhatsApp con el detalle. Envialo y te respondemos enseguida.'}</p>
-        <div class="od-items-list">${itemsList}</div>
-        <div class="od-total-row"><span class="mono">Total estimado</span><span class="metal-gold od-total-val">${fmt(total)}</span></div>
-        <div class="od-actions">
-          ${lastVia==='firestore'?`<button class="btn btn-wa" onclick="sendOrderWhatsApp(lastOrder)"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Z"/></svg>Avisar por WhatsApp</button>`:''}
+        <div class="od-items-section">
+          <div class="od-items-head mono">Tu pedido incluye</div>
+          ${itemLines}
         </div>
+        <div class="od-total-final">
+          <span class="mono">Total</span>
+          <span class="metal-gold od-total-val">${fmt(total)}</span>
+        </div>
+        <div class="od-actions">
+          ${lastVia==='firestore'?`<button class="btn od-btn-wa" onclick="sendOrderWhatsApp(lastOrder)">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Z"/></svg>
+            Ver en WhatsApp
+          </button>`:''}
+          <button class="btn btn-ghost od-btn-continue" onclick="closeCart()">
+            Seguir comprando
+          </button>
+        </div>
+        <canvas id="confettiCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10"></canvas>
       </div>`;
-    spawnConfetti();
+    // Start confetti
+    setTimeout(()=>startConfetti(), 100);
     return;
   }
 
   /* ── SUMMARY ── */
   if(cartView==='summary'){
+    const lines2 = cartLines();
     body.innerHTML = `
       <div class="co-wrap">
         <button class="co-back" onclick="backToList()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          Volver
+          Volver al pedido
         </button>
-        <div class="co-sum-head"><span class="kicker">Tu pedido</span></div>
-        <div class="co-sum-items">
-          ${lines.map(({item,qty})=>`
-            <div class="co-sum-item">
-              <div class="co-sum-thumb">${_cartThumbHTML(item,40)}</div>
-              <div class="co-sum-info">
-                <div class="co-sum-name">${esc(item.displayName||shortName(item.name))}</div>
-                <div class="co-sum-qty mono">× ${qty}</div>
+        <div class="sum-head">
+          <span class="kicker">Tu pedido</span>
+          <span class="sum-count">${cartQtyTotal()} ${cartQtyTotal()===1?'ítem':'ítems'}</span>
+        </div>
+        <div class="sum-list">
+          ${lines2.map(({item,qty})=>`
+            <div class="sum-item">
+              <div class="sum-thumb">${item.photos[0]?`<img src="${item.photos[0]}" alt="" style="width:100%;height:100%;object-fit:contain;">`:`<div class="ph-glyph" style="font-size:18px">${esc(item.initial)}</div>`}</div>
+              <div class="sum-info">
+                <div class="sum-name">${esc(item.displayName||shortName(item.name))}</div>
+                <div class="sum-qty mono">x${qty}</div>
               </div>
-              <div class="co-sum-price metal-gold">${fmt(item.salePrice*qty)}</div>
+              <div class="sum-sub metal-gold">${fmt(item.salePrice*qty)}</div>
             </div>`).join('')}
         </div>
-        <div class="co-sum-total">
-          <span class="mono">Total estimado</span>
-          <span class="metal-gold co-sum-total-val">${fmt(cartTotal())}</span>
+        <div class="sum-divider"></div>
+        <div class="sum-total-row">
+          <span class="sum-total-label mono">Total estimado</span>
+          <span class="sum-total-val metal-gold">${fmt(cartTotal())}</span>
         </div>
-        <div class="co-sum-note mono">Confirmamos precio final y disponibilidad antes de cerrar la venta.</div>
+        <div class="sum-note mono">Confirmamos precio final antes de cerrar</div>
+        <button class="btn btn-gold" style="width:100%;margin-top:20px" onclick="goCheckoutForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Confirmar y continuar →
+        </button>
       </div>`;
     return;
   }
@@ -1157,36 +1199,41 @@ function renderCartBody(lines){
     const savedTel  = localStorage.getItem('tbr_tel')||'';
     body.innerHTML = `
       <div class="co-wrap">
-        <button class="co-back" onclick="backToSummary()">
+        <button class="co-back" onclick="goBackFromCheckout()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          Volver al resumen
+          Volver
         </button>
-        <div class="co-mini-total"><span class="mono">${cartQtyTotal()} ítem${cartQtyTotal()!==1?'s':''}</span><span class="metal-gold">${fmt(cartTotal())}</span></div>
-        <div class="co-field co-float">
+        <div class="co-mini-total">
+          <span class="mono">Total estimado</span>
+          <span class="metal-gold" style="font-family:'Rajdhani',sans-serif;font-weight:800;font-size:22px">${fmt(cartTotal())}</span>
+        </div>
+        <div class="co-field co-field-float">
           <input id="coName" class="co-input" type="text" autocomplete="name" placeholder=" " value="${esc(savedName)}" oninput="validateCheckout()">
-          <label class="co-flabel" for="coName">Nombre y apellido <i>· obligatorio</i></label>
+          <label class="co-label-float" for="coName">Nombre <i>· obligatorio</i></label>
+          <div class="co-field-err" id="coNameErr">Este campo es obligatorio</div>
         </div>
-        <div class="co-field co-float">
-          <input id="coTel" class="co-input" type="tel" autocomplete="tel" inputmode="numeric" placeholder=" " value="${esc(savedTel)}" oninput="fmtTel(this)">
-          <label class="co-flabel" for="coTel">Teléfono / WhatsApp <i>· opcional</i></label>
+        <div class="co-field co-field-float">
+          <input id="coTel" class="co-input" type="tel" autocomplete="tel" inputmode="numeric" placeholder=" " value="${esc(savedTel)}" oninput="formatTelInput(this)">
+          <label class="co-label-float" for="coTel">Teléfono / WhatsApp <i>· opcional</i></label>
         </div>
-        <div class="co-field co-float">
+        <div class="co-field">
+          <label class="co-label" for="coOrigen">¿Cómo nos conociste? <i>· opcional</i></label>
           <select id="coOrigen" class="co-input co-select">
-            <option value="">— Seleccioná —</option>
+            <option value="">— Seleccioná una opción —</option>
             <option value="Instagram">Instagram</option>
             <option value="WhatsApp">WhatsApp</option>
             <option value="Recomendación">Recomendación</option>
             <option value="Google">Google</option>
             <option value="Otro">Otro</option>
           </select>
-          <label class="co-flabel co-flabel-sel" for="coOrigen">¿Cómo nos conociste? <i>· opcional</i></label>
         </div>
         ${(EMPRESA.cuotasCant>0 && EMPRESA.cuotasRecargoPct>0) ? `
         <div class="co-field">
+          <label class="co-label">Forma de pago</label>
           <div class="co-pay-opts">
             <label class="co-pay-opt${selectedPayment==='efectivo'?' active':''}">
               <input type="radio" name="coPay" value="efectivo" ${selectedPayment==='efectivo'?'checked':''} onchange="setPaymentMethod('efectivo')">
-              Efectivo / Transferencia — ${fmt(cartTotal())}
+              Efectivo/Transferencia — ${fmt(cartTotal())}
             </label>
             <label class="co-pay-opt${selectedPayment==='cuotas'?' active':''}">
               <input type="radio" name="coPay" value="cuotas" ${selectedPayment==='cuotas'?'checked':''} onchange="setPaymentMethod('cuotas')">
@@ -1210,20 +1257,24 @@ function renderCartBody(lines){
     </div>`;
     return;
   }
-  body.innerHTML = lines.map(({item,qty})=>`
-    <div class="citem">
-      <div class="citem-thumb">${_cartThumbHTML(item,64)}</div>
+  body.innerHTML = lines.map(({item,qty},idx)=>`
+    <div class="citem" style="animation-delay:${idx*60}ms">
+      <div class="citem-img">
+        ${item.photos[0]
+          ? `<img src="${item.photos[0]}" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">`
+          : `<div class="ph"><div class="ph-glyph">${esc(item.initial)}</div></div>`}
+      </div>
       <div class="citem-info">
         <div class="citem-name">${esc(item.displayName||shortName(item.name))}</div>
         <div class="citem-code mono">${esc(item.code||'—')}</div>
-        <div class="citem-unit mono">${fmt(item.salePrice)} c/u</div>
+        <div class="citem-unit-price">Unitario: <span class="metal-gold-sm">${fmt(item.salePrice)}</span></div>
         <div class="citem-foot">
           <div class="qty-sm">
             <button onclick="cartChange('${esc(item.code)}',-1)" aria-label="Menos">−</button>
             <span>${qty}</span>
             <button onclick="cartChange('${esc(item.code)}',1)" aria-label="Más">+</button>
           </div>
-          <div class="citem-price metal-gold">${fmt(item.salePrice*qty)}</div>
+          <div class="citem-subtotal metal-gold">${fmt(item.salePrice*qty)}</div>
           <button class="citem-del" onclick="cartRemove('${esc(item.code)}')" aria-label="Quitar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
           </button>
@@ -1236,7 +1287,7 @@ function renderCartFoot(lines){
   const foot = $('#cartFoot');
 
   if(cartView==='done'){
-    foot.innerHTML = `<button class="btn btn-gold" onclick="closeCart()">Seguir viendo el catálogo</button>`;
+    foot.innerHTML = `<button class="btn btn-ghost" style="width:100%" onclick="closeCart()">Seguir comprando</button>`;
     return;
   }
 
@@ -1296,6 +1347,14 @@ function spawnConfetti(){
 function validateCheckout(){
   const ok = ($('#coName')?.value||'').trim().length>0;
   const b = $('#coSubmit'); if(b) b.classList.toggle('dim', !ok);
+  const errEl = $('#coNameErr'); 
+  if(errEl) errEl.style.display = 'none';
+}
+function formatTelInput(el){
+  let v = el.value.replace(/\D/g,'');
+  if(v.length>4 && v.length<=6) v = v.slice(0,4)+' '+v.slice(4);
+  else if(v.length>6) v = v.slice(0,4)+' '+v.slice(4,6)+'-'+v.slice(6,10);
+  el.value = v;
 }
 
 /* Envía el pedido: escribe en Firestore; si no está configurado, cae a WhatsApp */
@@ -1303,7 +1362,7 @@ async function submitOrder(){
   if(submitting) return;
   const cliente = ($('#coName')?.value||'').trim();
   const tel     = ($('#coTel')?.value||'').trim();
-  if(!cliente){ const el=$('#coName'); if(el){ el.focus(); el.classList.add('err'); } return; }
+  if(!cliente){ const el=$('#coName'); if(el){ el.focus(); el.classList.add('err'); const errEl=$('#coNameErr'); if(errEl) errEl.style.display='block'; } return; }
   localStorage.setItem('tbr_cliente', cliente);
   localStorage.setItem('tbr_tel', tel);
 
@@ -1361,6 +1420,37 @@ function startOrderWhatsApp(){
     db.collection(coll).doc(order.id).set(order).catch(()=>{});
   }
   sendOrderWhatsApp(order);
+}
+function startConfetti(){
+  const canvas = document.getElementById('confettiCanvas'); if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+  const particles = Array.from({length:28},()=>({
+    x: Math.random()*canvas.width,
+    y: -10 - Math.random()*40,
+    vy: 1.5+Math.random()*2.5,
+    vx: (Math.random()-.5)*1.8,
+    r: 3+Math.random()*4,
+    alpha: 1,
+    color: Math.random()>.5?'#e2c97e':'#f3e3b0',
+    rot: Math.random()*360,
+    rotV: (Math.random()-.5)*6
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    particles.forEach(p=>{
+      p.y+=p.vy; p.x+=p.vx; p.rot+=p.rotV; p.vy+=0.04;
+      if(p.y<canvas.height+20){ alive=true; }
+      p.alpha = Math.max(0, 1-(p.y/(canvas.height*0.9)));
+      ctx.save(); ctx.globalAlpha=p.alpha; ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle=p.color;
+      ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.6); ctx.restore();
+    });
+    if(alive && frame<120){ frame++; requestAnimationFrame(draw); }
+  }
+  draw();
 }
 function consultOne(i){
   const c = ITEMS[i]; if(!c) return;
