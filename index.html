@@ -8841,6 +8841,16 @@ window.onload = async function() {
       toast('Fotos del catálogo restauradas', true, 3000);
     } catch(e) {}
   })();
+  // Forzar sync del catálogo a Firebase con fotos incluidas si catalog_photos tiene datos
+  // (necesario para que el catálogo digital vea las fotos sin esperar a que el usuario edite algo)
+  await (async function forceCatalogSync() {
+    try {
+      const photosMap = DB.get('catalog_photos', {});
+      const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
+      if (!hasPhotos || !navigator.onLine) return;
+      await fbWrite('catalog', DB.get('catalog', []));
+    } catch(e) {}
+  })();
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados).
   // Se escriben directo en localStorage (sin pasar por DB.set) para no subir
   // estos valores por defecto a Firebase: si la sincronización inicial falló
