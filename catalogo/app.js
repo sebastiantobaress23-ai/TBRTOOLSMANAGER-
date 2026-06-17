@@ -218,11 +218,14 @@ function setHeroBg(item){
   bgToggle=!bgToggle;
 }
 
-function _heroMainHTML(item){
+function renderHero(){
+  if(!featured.length) return;
+  const item = featured[heroIdx];
+  setHeroBg(item);
   const specsHTML = item.specs.slice(0,3).map(s=>
     `<div class="spec"><div class="spec-v">${esc(s.v)}</div><div class="spec-k">${esc(s.k)}</div></div>`
   ).join('') || `<div class="spec"><div class="spec-v">${esc(item.cat)}</div><div class="spec-k">Categoría</div></div>`;
-  return `
+  $('#heroMain').innerHTML = `
     <div class="hero-kicker bfu" style="animation-delay:.05s">
       <span class="kicker">Destacado</span>
     </div>
@@ -250,52 +253,10 @@ function _heroMainHTML(item){
         </button>
       </div>
     </div>`;
-}
-
-let _heroTransiting = false;
-function renderHero(instant){
-  if(!featured.length) return;
-  const item = featured[heroIdx];
-
-  // Rieles siempre inmediatos
   $('#railDots').innerHTML = featured.map((_,i)=>
     `<button class="rail-dot ${i===heroIdx?'active':''}" onclick="goHero(${i})" aria-label="Destacado ${i+1}"><i></i></button>`
   ).join('');
   $('#railNow').textContent = `${pad3(heroIdx+1)} / ${pad3(featured.length)}`;
-
-  if(instant || _heroTransiting){
-    // Primera carga o transición encadenada: sin animación de salida
-    setHeroBg(item);
-    $('#heroMain').innerHTML = _heroMainHTML(item);
-    return;
-  }
-
-  _heroTransiting = true;
-  const heroMain = $('#heroMain');
-
-  // 1. Fade-out del texto actual
-  heroMain.style.transition = 'opacity .22s ease, transform .22s ease';
-  heroMain.style.opacity = '0';
-  heroMain.style.transform = 'translateY(10px)';
-
-  // 2. Flash overlay sobre el hero para suavizar el crossfade del fondo
-  const hero = document.querySelector('.hero');
-  const flash = document.createElement('div');
-  flash.className = 'hero-flash';
-  hero.appendChild(flash);
-  requestAnimationFrame(()=>{ flash.classList.add('hero-flash-go'); });
-
-  setTimeout(()=>{
-    // 3. Swap fondo e inyectar nuevo texto
-    setHeroBg(item);
-    heroMain.style.transition = '';
-    heroMain.style.opacity = '';
-    heroMain.style.transform = '';
-    heroMain.innerHTML = _heroMainHTML(item);
-
-    // 4. Limpiar flash
-    setTimeout(()=>{ flash.remove(); _heroTransiting = false; }, 700);
-  }, 240);
 }
 
 function goHero(i){ heroIdx=(i+featured.length)%featured.length; renderHero(); restartHeroTimer(); }
@@ -426,16 +387,8 @@ function renderGrid(){
 ═════════════════════════════════════════════════════════════════ */
 let detailOpen = false, detailItem = null, detailPhoto = 0, detailQty = 1;
 
-function _cancelHeroTransition(){
-  // Cancela cualquier transición de hero en curso para no interferir con el detalle
-  _heroTransiting = false;
-  const heroMain = $('#heroMain');
-  if(heroMain){ heroMain.style.transition=''; heroMain.style.opacity=''; heroMain.style.transform=''; }
-  document.querySelectorAll('.hero-flash').forEach(el=>el.remove());
-}
 function openDetail(i, fromHash){
   detailItem = ITEMS[i]; if(!detailItem) return;
-  _cancelHeroTransition();
   detailPhoto = 0; detailQty = 1; detailOpen = true;
   renderDetail();
   $('#detail').classList.add('open');
@@ -959,7 +912,7 @@ function observeReveal(){
    INIT
 ═════════════════════════════════════════════════════════════════ */
 function bootUI(){
-  buildItems(); buildFeatured(); buildCats(); renderHero(true); renderGrid();
+  buildItems(); buildFeatured(); buildCats(); renderHero(); renderGrid();
   syncCartUI(); restartHeroTimer(); initHeroSwipe(); initHeroParallax();
 }
 
