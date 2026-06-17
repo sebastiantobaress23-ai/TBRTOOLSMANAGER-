@@ -1434,7 +1434,7 @@ const DB = {
     try { const v=localStorage.getItem('tbr_'+k); return v!==null?JSON.parse(v):def; } catch { return def; }
   },
   set(k, v) {
-    try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch (e) { try { toast('No se pudo guardar (espacio lleno). Reducí el tamaño de las fotos.', false, 5000); } catch {} }
+    try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch (e) { try { toast('No se pudo guardar: almacenamiento lleno. Eliminá fotos de algunos productos para liberar espacio.', false, 6000); } catch {} }
     // Marcar como pendiente de confirmar en Firebase. Se saca de la lista
     // recién cuando fbWrite confirma el guardado remoto, así si la app se
     // cierra antes de que termine el guardado (debounce de 600ms) no se
@@ -4681,9 +4681,9 @@ function renderCePhotos(){
 // Redimensiona/comprime la imagen a un JPEG liviano antes de guardarla:
 // las fotos originales del celular (varios MB cada una) no entran en el
 // localStorage (límite ~5-10MB en iOS Safari) ni se sincronizan bien por
-// Firebase, y el guardado fallaba en silencio. Limitando a ~1000px y
-// calidad .72 el resultado suele quedar entre 80-200KB.
-function _compressImage(file, maxSize=1000, quality=0.72){
+// Firebase, y el guardado fallaba en silencio. Limitando a ~800px y
+// calidad .60 el resultado suele quedar entre 40-120KB.
+function _compressImage(file, maxSize=800, quality=0.60){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
     reader.onerror=reject;
