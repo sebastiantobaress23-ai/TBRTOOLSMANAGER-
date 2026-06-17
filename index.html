@@ -1511,7 +1511,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
+const FB_SYNC_KEYS = ['purchases','catalog','catalog_photos','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
 // Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
 // auth anónima fallida): trae solo los nodos de lectura pública (catalog,
