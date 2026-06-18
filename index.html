@@ -998,7 +998,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   color:var(--di);padding:8px 10px 6px}
 .dd-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:8px;background:transparent;
   border:none;color:var(--ch);font-size:13px;font-family:'Barlow',sans-serif;text-align:left;cursor:pointer;
-  white-space:nowrap;transition:background .15s,color .15s}
+  white-space:normal;transition:background .15s,color .15s}
 .dd-item .icon{color:var(--ud);flex-shrink:0}
 .dd-item:hover{background:rgba(226,201,126,.08);color:var(--ud)}
 @media(max-width:680px){
@@ -4737,7 +4737,7 @@ function pgCat() {
         <button class="btn-g btn-sm btn-catdig" style="color:var(--ud)" onclick="toggleDD('cat-dig-dd',event)">${ic('eye')} Catálogo digital ${ic('chevron',12)}</button>
         <div class="dd-menu">
           <button class="dd-item" onclick="closeAllDD();openCatalogoDigital()">${ic('eye')} Ver catálogo digital</button>
-          <button class="dd-item" onclick="closeAllDD();shareCatalog()">${ic('star')} Compartir catálogo (PDF)</button>
+          <button class="dd-item" onclick="closeAllDD();shareCatalog()">${ic('star')} Compartir catálogo&nbsp;(PDF)</button>
           <button class="dd-item" onclick="closeAllDD();generateCatalogDataFile()">${ic('download')} Generar catálogo digital</button>
           <button class="dd-item" onclick="closeAllDD();shareCatalogoDigitalLink()">${ic('link')} Compartir link</button>
         </div>
