@@ -693,6 +693,11 @@ function renderRelated(item){
   $('#related').innerHTML = `
     <div class="related-head"><span class="kicker">También te puede interesar</span></div>
     <div class="related-grid">${pool.map(cardHTML).join('')}</div>`;
+  // Cards dentro del panel de detalle tienen su propio scroll — el IntersectionObserver
+  // del window nunca las ve, así que las hacemos visibles directamente con stagger.
+  $$('#related .reveal').forEach((el,k)=>{
+    setTimeout(()=>el.classList.add('card-visible'), k * 60);
+  });
   syncAddButtons();
 }
 
