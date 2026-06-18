@@ -1438,7 +1438,7 @@ const DB = {
     try { const v=localStorage.getItem('tbr_'+k); return v!==null?JSON.parse(v):def; } catch { return def; }
   },
   set(k, v) {
-    try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch (e) { try { toast('No se pudo guardar: almacenamiento lleno. Eliminá fotos de algunos productos para liberar espacio.', false, 6000); } catch {} }
+    try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch (e) { try { toast('No se pudo guardar: almacenamiento lleno.', false, 6000); } catch {} }
     // Marcar como pendiente de confirmar en Firebase. Se saca de la lista
     // recién cuando fbWrite confirma el guardado remoto, así si la app se
     // cierra antes de que termine el guardado (debounce de 600ms) no se
@@ -1465,9 +1465,111 @@ const DB = {
   }
 };
 
+// ── IndexedDB Photo Storage ──────────────────────────────────────────────────
+// Reemplaza localStorage para fotos de productos, logo y QR.
+// Lecturas síncronas desde cache en memoria; escrituras asíncronas a IDB.
+const PhotoDB = (() => {
+  const IDB_NAME = 'tbr_photos', IDB_VER = 1;
+  let _db = null;
+  const _cache = { products: {}, logo: null, qr: null };
+
+  function _open() {
+    return new Promise((res, rej) => {
+      if (_db) return res(_db);
+      const req = indexedDB.open(IDB_NAME, IDB_VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('products')) db.createObjectStore('products');
+        if (!db.objectStoreNames.contains('assets'))   db.createObjectStore('assets');
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  function _tx(store, mode, fn) {
+    return _open().then(db => new Promise((res, rej) => {
+      const tx  = db.transaction(store, mode);
+      const req = fn(tx.objectStore(store));
+      req.onsuccess = e => res(e.target.result);
+      req.onerror   = e => rej(e.target.error);
+    }));
+  }
+
+  async function _loadAll() {
+    const db = await _open();
+    await new Promise(res => {
+      const req = db.transaction('products','readonly').objectStore('products').openCursor();
+      req.onsuccess = e => { const c=e.target.result; if(c){_cache.products[c.key]=c.value;c.continue();}else res(); };
+      req.onerror = res;
+    });
+    _cache.logo = await _tx('assets','readonly', s=>s.get('logo')).catch(()=>null) || null;
+    _cache.qr   = await _tx('assets','readonly', s=>s.get('qr')).catch(()=>null)   || null;
+  }
+
+  async function _migrate() {
+    try {
+      // catalog_photos
+      const raw = localStorage.getItem('tbr_catalog_photos');
+      if (raw && !Object.keys(_cache.products).length) {
+        const map = JSON.parse(raw);
+        for (const [id, data] of Object.entries(map)) {
+          await _tx('products','readwrite', s=>s.put(data, id));
+          _cache.products[id] = data;
+        }
+        localStorage.removeItem('tbr_catalog_photos');
+      }
+      // logo
+      const logo = localStorage.getItem('tbr_logo');
+      if (logo && !_cache.logo) {
+        await _tx('assets','readwrite', s=>s.put(logo,'logo'));
+        _cache.logo = logo;
+        localStorage.removeItem('tbr_logo');
+      }
+      // qr
+      const qr = localStorage.getItem('tbr_mpqr');
+      if (qr && !_cache.qr) {
+        await _tx('assets','readwrite', s=>s.put(qr,'qr'));
+        _cache.qr = qr;
+        localStorage.removeItem('tbr_mpqr');
+      }
+    } catch(e) { console.warn('PhotoDB migrate:', e); }
+  }
+
+  return {
+    async init() { await _loadAll(); await _migrate(); },
+
+    // Sync reads
+    getAllPhotos()       { return _cache.products; },
+    getProductPhotos(id){ return _cache.products[id] || null; },
+    getLogo()           { return _cache.logo; },
+    getQR()             { return _cache.qr; },
+
+    // Async writes
+    async setProductPhotos(id, data) {
+      _cache.products[id] = data;
+      await _tx('products','readwrite', s=>s.put(data, id));
+    },
+    async delProductPhotos(id) {
+      delete _cache.products[id];
+      await _tx('products','readwrite', s=>s.delete(id));
+    },
+    async setLogo(v) {
+      _cache.logo = v;
+      if (v) await _tx('assets','readwrite', s=>s.put(v,'logo'));
+      else   await _tx('assets','readwrite', s=>s.delete('logo'));
+    },
+    async setQR(v) {
+      _cache.qr = v;
+      if (v) await _tx('assets','readwrite', s=>s.put(v,'qr'));
+      else   await _tx('assets','readwrite', s=>s.delete('qr'));
+    },
+  };
+})();
+
 async function getCatalogWithPhotos() {
   const cat = DB.get('catalog', []);
-  const photos = DB.get('catalog_photos', {});
+  const photos = PhotoDB.getAllPhotos();
   return cat.map(p => {
     const ph = photos[p.id] || {};
     return { ...p, photo: ph.photo || p.photo || '', photos: ph.photos || p.photos || [] };
@@ -1480,7 +1582,7 @@ async function fbWrite(k, v) {
     // para que el catálogo digital las siga viendo en tbr/catalog.
     let payload = v;
     if (k === 'catalog' && Array.isArray(v)) {
-      const photosMap = DB.get('catalog_photos', {});
+      const photosMap = PhotoDB.getAllPhotos();
       payload = v.map(p => {
         const ph = photosMap[p.id];
         if (!ph) return p;
@@ -1538,7 +1640,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','catalog_photos','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
 // Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
 // auth anónima fallida): trae solo los nodos de lectura pública (catalog,
@@ -1609,11 +1711,11 @@ async function fbSync() {
       // Evita que syncs de otras secciones reseteen el scroll y el estado visual.
       const PAGE_KEYS = {
         dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa'],
-        compra:       ['catalog','configs','catalog_photos','settings'],
+        compra:       ['catalog','configs','settings'],
         historial:    ['purchases','configs'],
         ventas:       ['sales','catalog','settings'],
         pedidos:      ['pedidos','settings','empresa'],
-        catalogo:     ['catalog','catalog_photos','settings'],
+        catalogo:     ['catalog','settings'],
         stats:        ['purchases','sales','pedidos','catalog'],
         publicar:     ['mlpubs','catalog','settings'],
         competencia:  ['catalog'],
@@ -4622,7 +4724,7 @@ function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)retu
    CATÁLOGO
 ═══════════════════════════════════════════ */
 function pgCat() {
-  const _catRaw=DB.get('catalog',[]);const _catPh=DB.get('catalog_photos',{});const cat=_catRaw.map(p=>{const ph=_catPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};});
+  const _catRaw=DB.get('catalog',[]);const _catPh=PhotoDB.getAllPhotos();const cat=_catRaw.map(p=>{const ph=_catPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};});
   const ro=catReorderMode;
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
@@ -4735,7 +4837,7 @@ function pgCat() {
 let _pendingRender=false;
 let _catEditOpenedAt=0;
 function openAddCat(){document.getElementById('cat-edit-title').textContent='Agregar producto';document.getElementById('ce-name').value='';document.getElementById('ce-code').value='';document.getElementById('ce-barcode').value='';document.getElementById('ce-price').value='';document.getElementById('ce-stock').value='';document.getElementById('ce-saleprice').value='';document.getElementById('ce-margin').value='';document.getElementById('ce-id').value='';document.getElementById('ce-specs').value='';document.getElementById('ce-hero-x').value='';document.getElementById('ce-hero-y').value='';document.getElementById('ce-hero-size').value='';setCePhotos([]);updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();_catEditOpenedAt=Date.now();}
-function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;const _ephotos=DB.get('catalog_photos',{});const _eph=_ephotos[id]||{};c.photo=_eph.photo||c.photo||'';c.photos=_eph.photos||c.photos||[];document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();_catEditOpenedAt=Date.now();}
+function editCat(id){const c=DB.get('catalog',[]).find(x=>x.id===id);if(!c)return;const _eph=PhotoDB.getProductPhotos(id)||{};c.photo=_eph.photo||c.photo||'';c.photos=_eph.photos||c.photos||[];document.getElementById('cat-edit-title').textContent='Editar producto';document.getElementById('ce-name').value=c.name||'';document.getElementById('ce-code').value=c.code||'';document.getElementById('ce-barcode').value=c.barcode||'';document.getElementById('ce-price').value=c.lastPrice||c.defaultPrice||'';document.getElementById('ce-stock').value=c.stock!=null?c.stock:'';document.getElementById('ce-saleprice').value=c.salePrice||'';document.getElementById('ce-specs').value=c.specs||'';document.getElementById('ce-hero-x').value=c.heroX||'';document.getElementById('ce-hero-y').value=c.heroY||'';document.getElementById('ce-hero-size').value=c.heroSize||'';document.getElementById('ce-id').value=c.id;setCePhotos(c.photos&&c.photos.length?c.photos:(c.photo?[c.photo]:[]));updateCeCostHint();document.getElementById('cat-edit-modal').style.display='flex';lockBody();_catEditOpenedAt=Date.now();}
 function closeCatEdit(){if(Date.now()-_catEditOpenedAt<350)return;document.getElementById('cat-edit-modal').style.display='none';unlockBody();if(_pendingRender){_pendingRender=false;render();}}
 let cePhotos=[];
 let _ceDragIdx=null;
@@ -4931,10 +5033,8 @@ async function saveCat(){
   const photo=photos[0]||'';
   let cat=DB.get('catalog',[]);
   const prodId=eid||uid();
-  // Save photos separately in catalog_photos
-  const _photosMap=DB.get('catalog_photos',{});
-  _photosMap[prodId]={photo:photo,photos:photos};
-  DB.set('catalog_photos',_photosMap);
+  // Save photos in IndexedDB
+  await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
   if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
   else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
@@ -4944,17 +5044,15 @@ function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
   const idx=cat.findIndex(c=>c.id===id);
   if(idx<0) return;
   const [removed]=cat.splice(idx,1);
-  const _dp=DB.get('catalog_photos',{});
-  const _removedPhoto=_dp[id];
-  delete _dp[id];
-  DB.set('catalog_photos',_dp);
+  const _removedPhoto=PhotoDB.getProductPhotos(id);
+  PhotoDB.delProductPhotos(id);
   DB.set('catalog',cat);
   render();
   toast('Producto eliminado',true,4000,()=>{
     const c2=DB.get('catalog',[]);
     c2.splice(idx,0,removed);
     DB.set('catalog',c2);
-    if(_removedPhoto){const _rp=DB.get('catalog_photos',{});_rp[id]=_removedPhoto;DB.set('catalog_photos',_rp);}
+    if(_removedPhoto){ PhotoDB.setProductPhotos(id,_removedPhoto); }
     render();
     toast('Producto restaurado');
   });
@@ -6217,8 +6315,8 @@ function previewEmpLogo(input){
   const reader=new FileReader();
   reader.onload=()=>{
     const original=new Image();
-    original.onload=()=>{
-      const MAX=512;
+    original.onload=async()=>{
+      const MAX=800;
       const scale=Math.min(1,MAX/Math.max(original.width,original.height));
       const w=Math.round(original.width*scale),h=Math.round(original.height*scale);
       const canvas=document.createElement('canvas');
@@ -6226,7 +6324,7 @@ function previewEmpLogo(input){
       const ctx=canvas.getContext('2d');
       ctx.drawImage(original,0,0,w,h);
       const dataUrl=canvas.toDataURL('image/jpeg',0.88);
-      setEmpLogo(dataUrl);
+      await PhotoDB.setLogo(dataUrl);
       const img=document.getElementById('emp-logo-preview');
       if(img){img.src=dataUrl;img.style.display='';}
       const ph=document.getElementById('emp-logo-placeholder');
@@ -6240,14 +6338,12 @@ function previewEmpLogo(input){
   reader.readAsDataURL(file);
 }
 function removeEmpLogo(){
-  setEmpLogo(null);
+  PhotoDB.setLogo(null);
   render();
   toast('Logo eliminado');
 }
-function getMpQr(){ try{ return localStorage.getItem('tbr_mpqr')||null; }catch{ return null; } }
-function setMpQr(v){ try{ if(v) localStorage.setItem('tbr_mpqr',v); else localStorage.removeItem('tbr_mpqr'); }catch(e){ toast('No se pudo guardar el QR: almacenamiento lleno',false,5000); } }
-function getEmpLogo(){ try{ return localStorage.getItem('tbr_logo')||null; }catch{ return null; } }
-function setEmpLogo(v){ try{ if(v) localStorage.setItem('tbr_logo',v); else localStorage.removeItem('tbr_logo'); }catch(e){ toast('No se pudo guardar el logo: almacenamiento lleno',false,5000); } }
+function getMpQr()  { return PhotoDB.getQR(); }
+function getEmpLogo(){ return PhotoDB.getLogo(); }
 
 function previewEmpMpQr(input){
   const file=input.files&&input.files[0];
@@ -6256,7 +6352,7 @@ function previewEmpMpQr(input){
   const reader=new FileReader();
   reader.onload=()=>{
     const original=new Image();
-    original.onload=()=>{
+    original.onload=async()=>{
       const SIZE=400;
       const canvas=document.createElement('canvas');
       canvas.width=SIZE;canvas.height=SIZE;
@@ -6267,7 +6363,7 @@ function previewEmpMpQr(input){
       const ox=(original.width-s)/2,oy=(original.height-s)/2;
       ctx.drawImage(original,ox,oy,s,s,0,0,SIZE,SIZE);
       const dataUrl=canvas.toDataURL('image/png',0.92);
-      setMpQr(dataUrl);
+      await PhotoDB.setQR(dataUrl);
       const img=document.getElementById('emp-mpqr-preview');
       if(img){img.src=dataUrl;img.style.display='';}
       const ph=document.getElementById('emp-mpqr-placeholder');
@@ -6281,7 +6377,7 @@ function previewEmpMpQr(input){
   reader.readAsDataURL(file);
 }
 function removeEmpMpQr(){
-  setMpQr(null);
+  PhotoDB.setQR(null);
   render();
   toast('QR eliminado');
 }
@@ -8144,7 +8240,7 @@ function catalogDocBody(cat, emp){
   return {css: DOC_CSS + CATALOG_GRID_CSS, html};
 }
 function generateCatalogDataFile(){
-  const _gcdPh=DB.get('catalog_photos',{});const cat=DB.get('catalog',[]).map(p=>{const ph=_gcdPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
+  const _gcdPh=PhotoDB.getAllPhotos();const cat=DB.get('catalog',[]).map(p=>{const ph=_gcdPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
   if(!cat.length){toast('Cargá precios de venta en el catálogo para poder generarlo.',false);return;}
   const emp=DB.get('empresa',{});
   const data={
@@ -8185,7 +8281,7 @@ function shareCatalogoDigitalLink(){
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
 }
 async function shareCatalog(){
-  const _scPh=DB.get('catalog_photos',{});const cat=DB.get('catalog',[]).map(p=>{const ph=_scPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
+  const _scPh=PhotoDB.getAllPhotos();const cat=DB.get('catalog',[]).map(p=>{const ph=_scPh[p.id]||{};return {...p,photo:ph.photo||p.photo||'',photos:ph.photos||p.photos||[]};}).filter(c=>c.salePrice);
   if(!cat.length){toast('Cargá precios de venta en el catálogo para poder compartirlo.',false);return;}
   const emp=DB.get('empresa',{});
   if(!(await ensureJsPDF()) || !(await ensureHtml2Canvas())){toast('No se pudo generar el PDF del catálogo.',false);return;}
@@ -8909,22 +9005,18 @@ function migrateCatalogPhotos() {
       (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))
     );
     if (!hasInlinePhotos) return;
-    const photosMap = DB.get('catalog_photos', {});
     const cleanCat = cat.map(p => {
       if ((p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')))) {
-        photosMap[p.id] = { photo: p.photo || '', photos: p.photos || [] };
+        PhotoDB.setProductPhotos(p.id, { photo: p.photo || '', photos: p.photos || [] });
       }
       const cleanP = { ...p };
       if (cleanP.photo && cleanP.photo.startsWith('data:')) delete cleanP.photo;
       if (cleanP.photos) cleanP.photos = cleanP.photos.filter(ph => ph && !ph.startsWith('data:'));
       return cleanP;
     });
-    // Liberar espacio primero eliminando el catálogo viejo
     localStorage.removeItem('tbr_catalog');
-    // Ahora hay espacio para guardar las fotos por separado
-    try { localStorage.setItem('tbr_catalog_photos', JSON.stringify({...DB.get('catalog_photos',{}), ...photosMap})); } catch(e) {}
     try { localStorage.setItem('tbr_catalog', JSON.stringify(cleanCat)); } catch(e) {}
-    console.log('[Migration] Catalog photos separated from catalog data');
+    console.log('[Migration] Catalog photos moved to IndexedDB');
   } catch(e) {}
 }
 
@@ -8947,12 +9039,14 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
+  // Init IndexedDB photo storage (migrates from localStorage automatically)
+  await PhotoDB.init();
   migrateCatalogPhotos();
-  // Recuperar fotos desde Firebase si catalog_photos está vacío pero el catálogo tiene productos
+  // Recuperar fotos desde Firebase si IndexedDB está vacío pero el catálogo tiene productos
   await (async function recoverPhotosFromFirebase() {
     try {
       const cat = DB.get('catalog', []);
-      const photosMap = DB.get('catalog_photos', {});
+      const photosMap = PhotoDB.getAllPhotos();
       const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
       if (!cat.length || hasPhotos || !navigator.onLine) return;
       const url = await fbUrl(FB+'.json', 't='+Date.now());
@@ -8967,18 +9061,17 @@ window.onload = async function() {
         if (hasPhoto) recovered[p.id] = { photo: p.photo||'', photos: p.photos||[] };
       });
       if (!Object.keys(recovered).length) return;
-      localStorage.removeItem('tbr_catalog'); // liberar espacio
-      try { localStorage.setItem('tbr_catalog_photos', JSON.stringify({...photosMap, ...recovered})); } catch(e) {}
-      try { localStorage.setItem('tbr_catalog', JSON.stringify(cat)); } catch(e) {}
+      for (const [id, data] of Object.entries(recovered)) {
+        await PhotoDB.setProductPhotos(id, data);
+      }
       render();
       toast('Fotos del catálogo restauradas', true, 3000);
     } catch(e) {}
   })();
-  // Forzar sync del catálogo a Firebase con fotos incluidas si catalog_photos tiene datos
-  // (necesario para que el catálogo digital vea las fotos sin esperar a que el usuario edite algo)
+  // Forzar sync del catálogo a Firebase con fotos incluidas si IndexedDB tiene datos
   await (async function forceCatalogSync() {
     try {
-      const photosMap = DB.get('catalog_photos', {});
+      const photosMap = PhotoDB.getAllPhotos();
       const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
       if (!hasPhotos || !navigator.onLine) return;
       await fbWrite('catalog', DB.get('catalog', []));
