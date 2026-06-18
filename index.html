@@ -1837,7 +1837,7 @@ function paymentInfoHTML(emp){
   if(emp.alias) rows.push(`<div><strong>Alias:</strong> ${esc(emp.alias)}</div>`);
   if(emp.mp) rows.push(`<div><strong>Mercado Pago:</strong> ${esc(emp.mp)}</div>`);
   if(!rows.length) return '';
-  const qr = emp.mpQr ? `<img class="pay-qr" src="${emp.mpQr}" alt="QR de pago">` : '';
+  const qr = getMpQr() ? `<img class="pay-qr" src="${getMpQr()}" alt="QR de pago">` : '';
   return `<div class="pay-info"><div class="pay-info-flex"><div class="pay-info-rows"><div class="pay-info-t">Medios de pago</div>${rows.join('')}</div>${qr}</div></div>`;
 }
 
@@ -5928,8 +5928,8 @@ function pgConfig() {
     </div>
     <div class="fb mt16" style="gap:16px;align-items:center">
       <div style="width:64px;height:64px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-        <img id="emp-mpqr-preview" src="${esc(emp.mpQr||'')}" style="${emp.mpQr?'':'display:none;'}max-width:100%;max-height:100%;object-fit:contain">
-        <span id="emp-mpqr-placeholder" style="${emp.mpQr?'display:none':''};color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin QR</span>
+        <img id="emp-mpqr-preview" src="${esc(getMpQr()||'')}" style="${getMpQr()?'':'display:none;'}max-width:100%;max-height:100%;object-fit:contain">
+        <span id="emp-mpqr-placeholder" style="${getMpQr()?'display:none':''};color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin QR</span>
       </div>
       <div style="flex:1;min-width:160px">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">QR de cobro de Mercado Pago</div>
@@ -5937,7 +5937,7 @@ function pgConfig() {
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-g btn-sm" onclick="document.getElementById('emp-mpqr-inp').click()">${ic('camera')} Subir QR</button>
           <input type="file" id="emp-mpqr-inp" accept="image/*" style="display:none" onchange="previewEmpMpQr(this)">
-          <button id="emp-mpqr-rm" class="btn-g btn-sm" style="${emp.mpQr?'':'display:none'}" onclick="removeEmpMpQr()">${ic('trash')} Quitar</button>
+          <button id="emp-mpqr-rm" class="btn-g btn-sm" style="${getMpQr()?'':'display:none'}" onclick="removeEmpMpQr()">${ic('trash')} Quitar</button>
         </div>
       </div>
     </div>
@@ -6230,6 +6230,9 @@ function removeEmpLogo(){
   render();
   toast('Logo eliminado');
 }
+function getMpQr(){ try{ return localStorage.getItem('tbr_mpqr')||null; }catch{ return null; } }
+function setMpQr(v){ try{ if(v) localStorage.setItem('tbr_mpqr',v); else localStorage.removeItem('tbr_mpqr'); }catch(e){ toast('No se pudo guardar el QR: almacenamiento lleno',false,5000); } }
+
 function previewEmpMpQr(input){
   const file=input.files&&input.files[0];
   if(!file)return;
@@ -6248,9 +6251,7 @@ function previewEmpMpQr(input){
       const ox=(original.width-s)/2,oy=(original.height-s)/2;
       ctx.drawImage(original,ox,oy,s,s,0,0,SIZE,SIZE);
       const dataUrl=canvas.toDataURL('image/png',0.92);
-      const emp=DB.get('empresa',{});
-      emp.mpQr=dataUrl;
-      DB.set('empresa',emp);
+      setMpQr(dataUrl);
       const img=document.getElementById('emp-mpqr-preview');
       if(img){img.src=dataUrl;img.style.display='';}
       const ph=document.getElementById('emp-mpqr-placeholder');
@@ -6264,9 +6265,7 @@ function previewEmpMpQr(input){
   reader.readAsDataURL(file);
 }
 function removeEmpMpQr(){
-  const emp=DB.get('empresa',{});
-  delete emp.mpQr;
-  DB.set('empresa',emp);
+  setMpQr(null);
   render();
   toast('QR eliminado');
 }
@@ -7152,13 +7151,14 @@ function openCobrarModal(id){
   const total=pedFinalTotal(o);
   const body=document.getElementById('cobrar-body');
   if(!body)return;
-  if(!emp.mpQr){
+  const qrData=getMpQr();
+  if(!qrData){
     body.innerHTML=`<div class="empty" style="padding:16px">Subí tu QR de cobro de Mercado Pago en Configuración → Mi empresa → Datos de pago (Mercado Pago app → Cobros → Cobrar con QR) para poder mostrarlo aquí.</div>`;
   } else {
     body.innerHTML=`
       <div style="font-size:13px;color:var(--mu);margin-bottom:4px">${esc(o.cliente||'')}</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--ud);letter-spacing:-.5px;margin-bottom:16px">${fmtA(total)}</div>
-      <img src="${emp.mpQr}" alt="QR Mercado Pago" style="width:260px;height:260px;border-radius:12px;background:#fff;padding:8px;object-fit:contain">
+      <img src="${qrData}" alt="QR Mercado Pago" style="width:260px;height:260px;border-radius:12px;background:#fff;padding:8px;object-fit:contain">
       <div class="hint mt12">Pedile al cliente que escanee este código con la app de Mercado Pago e ingrese el monto ${o.nro?`del pedido ${esc(o.nro)}`:''} (${fmtA(total)}) para pagar.</div>
     `;
   }
