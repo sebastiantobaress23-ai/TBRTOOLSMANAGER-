@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=45">
+<link rel="stylesheet" href="styles.css?v=46">
 </head>
 <body style="background-color: rgb(7, 7, 7)">
 
@@ -108,7 +108,7 @@
       </button>
       <div class="search-box" style="position:relative">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="search" placeholder="Buscar producto o código" oninput="onSearch(this.value)" aria-label="Buscar">
+        <input type="text" inputmode="search" placeholder="Buscar producto o código" oninput="onSearch(this.value)" aria-label="Buscar" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <div id="searchAC" class="search-autocomplete" hidden></div>
       </div>
       <div class="sort-sel">
