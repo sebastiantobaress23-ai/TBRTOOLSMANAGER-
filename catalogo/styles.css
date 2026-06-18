@@ -415,9 +415,8 @@ a{color:inherit;text-decoration:none}
    DETALLE INMERSIVO (takeover)
 ═════════════════════════════════════════════════════════════════ */
 .detail{position:fixed;inset:0;z-index:120;background:var(--bg);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  opacity:0;visibility:hidden;transform:translateY(18px);will-change:transform,opacity;
-  transition:opacity .32s var(--ease),visibility .32s,transform .32s var(--ease)}
-.detail.open{opacity:1;visibility:visible;transform:translateY(0)}
+  visibility:hidden}
+.detail.open{visibility:visible}
 .detail-bg{position:fixed;inset:0;z-index:0}
 /* Vidrio esmerilado de la ficha */
 .detail-frost{position:absolute;inset:0;backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);opacity:.95;will-change:opacity}
@@ -428,7 +427,10 @@ a{color:inherit;text-decoration:none}
 .detail-back svg{width:16px;height:16px}
 .detail-grid{position:relative;z-index:2;max-width:var(--max);margin:0 auto;
   display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,64px);
-  padding:clamp(78px,11vh,120px) var(--pad) clamp(40px,7vh,80px);align-items:start;min-height:100svh}
+  padding:clamp(78px,11vh,120px) var(--pad) clamp(40px,7vh,80px);align-items:start;min-height:100svh;
+  opacity:0;transform:translateY(16px);will-change:transform,opacity;
+  transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.detail.open .detail-grid{opacity:1;transform:translateY(0)}
 .detail-media{position:relative;z-index:1}
 .detail-stage{position:relative;aspect-ratio:1;border-radius:var(--r-l);overflow:visible;
   border:1px solid var(--hair);background:transparent}

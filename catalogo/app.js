@@ -458,9 +458,11 @@ function openDetail(i, fromHash, clickedCardEl){
     ],{duration:300,easing:'ease-out',fill:'forwards'}).onfinish=()=>fly.remove();
   }
   renderDetail();
-  $('#detail').classList.add('open');
-  document.body.style.overflow='hidden';
   $('#detail').scrollTop = 0;
+  document.body.style.overflow='hidden';
+  // Forzar un frame antes de agregar 'open' para que el fondo opaco aparezca
+  // instantáneamente y solo el contenido (.detail-grid) haga el fade-in
+  requestAnimationFrame(()=>{ $('#detail').classList.add('open'); });
   // Deep link: refleja el producto en la URL (sin saltar el scroll)
   if(!fromHash && detailItem.code){
     try{ history.replaceState(null,'', '#'+encodeURIComponent(detailItem.code)); }catch{}
