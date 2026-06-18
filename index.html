@@ -1516,17 +1516,23 @@ async function fbWrite(k, v) {
   }
 }
 
-// Cuando vuelve internet, subir cambios pendientes
+// Cuando vuelve internet, subir cambios pendientes y reintentar sync
 window.addEventListener('online', async () => {
-  setSyncDot(true);
-  try {
-    const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
-    for (const k of pending) {
-      const v = DB.get(k);
-      if (v !== null) await fbWrite(k, v);
-    }
-  } catch {}
-  fbSync();
+  setSyncDot(false); // gris hasta confirmar conexión real con Firebase
+  const delays = [1000, 3000, 6000, 12000];
+  for (const delay of delays) {
+    await new Promise(r => setTimeout(r, delay));
+    if (!navigator.onLine) return; // se fue de nuevo
+    try {
+      const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+      for (const k of pending) {
+        const v = DB.get(k);
+        if (v !== null) await fbWrite(k, v);
+      }
+      await fbSync();
+      return; // éxito — el tilde lo pone fbSync
+    } catch {}
+  }
 });
 window.addEventListener('offline', () => setSyncDot(false));
 
