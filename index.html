@@ -6197,19 +6197,33 @@ function removeEmpLogo(){
 function previewEmpMpQr(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
+  if(file.size>10*1024*1024){toast('La imagen es muy grande (máx. 10MB)',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{
-    const emp=DB.get('empresa',{});
-    emp.mpQr=reader.result;
-    DB.set('empresa',emp);
-    const img=document.getElementById('emp-mpqr-preview');
-    if(img){img.src=emp.mpQr;img.style.display='';}
-    const ph=document.getElementById('emp-mpqr-placeholder');
-    if(ph)ph.style.display='none';
-    const rm=document.getElementById('emp-mpqr-rm');
-    if(rm)rm.style.display='';
-    toast('QR de Mercado Pago guardado');
+    const original=new Image();
+    original.onload=()=>{
+      const SIZE=400;
+      const canvas=document.createElement('canvas');
+      canvas.width=SIZE;canvas.height=SIZE;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#fff';
+      ctx.fillRect(0,0,SIZE,SIZE);
+      const s=Math.min(original.width,original.height);
+      const ox=(original.width-s)/2,oy=(original.height-s)/2;
+      ctx.drawImage(original,ox,oy,s,s,0,0,SIZE,SIZE);
+      const dataUrl=canvas.toDataURL('image/png',0.92);
+      const emp=DB.get('empresa',{});
+      emp.mpQr=dataUrl;
+      DB.set('empresa',emp);
+      const img=document.getElementById('emp-mpqr-preview');
+      if(img){img.src=dataUrl;img.style.display='';}
+      const ph=document.getElementById('emp-mpqr-placeholder');
+      if(ph)ph.style.display='none';
+      const rm=document.getElementById('emp-mpqr-rm');
+      if(rm)rm.style.display='';
+      toast('QR de Mercado Pago guardado');
+    };
+    original.src=reader.result;
   };
   reader.readAsDataURL(file);
 }
@@ -7070,7 +7084,7 @@ function pgPedidos() {
           ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" onclick="editPed('${o.id}')">${ic('edit')} Editar</button>`:''}
           <button class="btn-p btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
           <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
-          ${(o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-go btn-sm" onclick="openCobrarModal('${o.id}')">${ic('qrcode')} Cobrar</button>`:''}
+          ${(o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-p btn-sm" style="border-color:rgba(226,201,126,.4);color:var(--ud)" onclick="openCobrarModal('${o.id}')">${ic('qrcode')} Cobrar</button>`:''}
           ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-p btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
         </div>
         <div class="hi-acts-row hi-acts-danger">
