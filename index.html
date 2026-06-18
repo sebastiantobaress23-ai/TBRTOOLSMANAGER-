@@ -6213,17 +6213,29 @@ function saveEmpresa(){
 function previewEmpLogo(input){
   const file=input.files&&input.files[0];
   if(!file)return;
-  if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
+  if(file.size>10*1024*1024){toast('La imagen es muy grande (máx. 10MB)',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{
-    setEmpLogo(reader.result);
-    const img=document.getElementById('emp-logo-preview');
-    if(img){img.src=reader.result;img.style.display='';}
-    const ph=document.getElementById('emp-logo-placeholder');
-    if(ph)ph.style.display='none';
-    const rm=document.getElementById('emp-logo-rm');
-    if(rm)rm.style.display='';
-    toast('Logo guardado');
+    const original=new Image();
+    original.onload=()=>{
+      const MAX=512;
+      const scale=Math.min(1,MAX/Math.max(original.width,original.height));
+      const w=Math.round(original.width*scale),h=Math.round(original.height*scale);
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(original,0,0,w,h);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.88);
+      setEmpLogo(dataUrl);
+      const img=document.getElementById('emp-logo-preview');
+      if(img){img.src=dataUrl;img.style.display='';}
+      const ph=document.getElementById('emp-logo-placeholder');
+      if(ph)ph.style.display='none';
+      const rm=document.getElementById('emp-logo-rm');
+      if(rm)rm.style.display='';
+      toast('Logo guardado');
+    };
+    original.src=reader.result;
   };
   reader.readAsDataURL(file);
 }
