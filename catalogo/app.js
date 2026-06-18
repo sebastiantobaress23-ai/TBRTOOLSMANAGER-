@@ -252,7 +252,7 @@ function _heroMainHTML(item){
     </div>`;
 }
 
-let _heroTransiting = false;
+let _heroTransiting = false, _heroTransitTimer = null;
 function renderHero(instant){
   if(!featured.length) return;
   const item = featured[heroIdx];
@@ -286,7 +286,8 @@ function renderHero(instant){
   hero.appendChild(flash);
   requestAnimationFrame(()=>{ flash.classList.add('hero-flash-go'); });
 
-  setTimeout(()=>{
+  _heroTransitTimer = setTimeout(()=>{
+    _heroTransitTimer = null;
     // 3. Swap fondo e inyectar nuevo texto
     setHeroBg(item);
     heroMain.style.transition = '';
@@ -432,8 +433,8 @@ function renderGrid(){
 let detailOpen = false, detailItem = null, detailPhoto = 0, detailQty = 1;
 
 function _cancelHeroTransition(){
-  // Cancela cualquier transición de hero en curso para no interferir con el detalle
   _heroTransiting = false;
+  if(_heroTransitTimer){ clearTimeout(_heroTransitTimer); _heroTransitTimer = null; }
   const heroMain = $('#heroMain');
   if(heroMain){ heroMain.style.transition=''; heroMain.style.opacity=''; heroMain.style.transform=''; }
   document.querySelectorAll('.hero-flash').forEach(el=>el.remove());
