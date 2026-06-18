@@ -1823,7 +1823,7 @@ function highlight(text, query){
 // solo muestra los datos de la empresa que estén realmente cargados, sin placeholders vacíos.
 function empBrandHTML(emp){
   const line2 = [emp.condIVA, emp.tel?('Tel: '+emp.tel):'', emp.email].filter(Boolean).join(' · ');
-  return (emp.logo?`<img src="${emp.logo}" alt="">`:'')
+  return (getEmpLogo()?`<img src="${getEmpLogo()}" alt="">`:'')
     + `<h1>${esc(emp.razonSocial||'TBR TOOLS')}</h1>`
     + (emp.cuit?`<p>CUIT: ${esc(emp.cuit)}</p>`:'')
     + (emp.domicilio?`<p>${esc(emp.domicilio)}</p>`:'')
@@ -5895,8 +5895,8 @@ function pgConfig() {
   <div class="card mb24">
     <div class="fb mb16" style="gap:16px;align-items:center">
       <div style="width:64px;height:64px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-        <img id="emp-logo-preview" src="${esc(emp.logo||'')}" style="${emp.logo?'':'display:none;'}max-width:100%;max-height:100%;object-fit:contain">
-        <span id="emp-logo-placeholder" style="${emp.logo?'display:none':''};color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin logo</span>
+        <img id="emp-logo-preview" src="${esc(getEmpLogo()||'')}" style="${getEmpLogo()?'':'display:none;'}max-width:100%;max-height:100%;object-fit:contain">
+        <span id="emp-logo-placeholder" style="${getEmpLogo()?'display:none':''};color:var(--di);font-size:9px;text-align:center;letter-spacing:1px;text-transform:uppercase">Sin logo</span>
       </div>
       <div style="flex:1;min-width:160px">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Logo de la empresa</div>
@@ -5904,7 +5904,7 @@ function pgConfig() {
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-g btn-sm" onclick="document.getElementById('emp-logo-inp').click()">${ic('camera')} Subir logo</button>
           <input type="file" id="emp-logo-inp" accept="image/*" style="display:none" onchange="previewEmpLogo(this)">
-          <button id="emp-logo-rm" class="btn-g btn-sm" style="${emp.logo?'':'display:none'}" onclick="removeEmpLogo()">${ic('trash')} Quitar</button>
+          <button id="emp-logo-rm" class="btn-g btn-sm" style="${getEmpLogo()?'':'display:none'}" onclick="removeEmpLogo()">${ic('trash')} Quitar</button>
         </div>
       </div>
     </div>
@@ -6210,11 +6210,9 @@ function previewEmpLogo(input){
   if(file.size>5*1024*1024){toast('La imagen es muy grande (máx. 5MB)',false);return;}
   const reader=new FileReader();
   reader.onload=()=>{
-    const emp=DB.get('empresa',{});
-    emp.logo=reader.result;
-    DB.set('empresa',emp);
+    setEmpLogo(reader.result);
     const img=document.getElementById('emp-logo-preview');
-    if(img){img.src=emp.logo;img.style.display='';}
+    if(img){img.src=reader.result;img.style.display='';}
     const ph=document.getElementById('emp-logo-placeholder');
     if(ph)ph.style.display='none';
     const rm=document.getElementById('emp-logo-rm');
@@ -6224,14 +6222,14 @@ function previewEmpLogo(input){
   reader.readAsDataURL(file);
 }
 function removeEmpLogo(){
-  const emp=DB.get('empresa',{});
-  delete emp.logo;
-  DB.set('empresa',emp);
+  setEmpLogo(null);
   render();
   toast('Logo eliminado');
 }
 function getMpQr(){ try{ return localStorage.getItem('tbr_mpqr')||null; }catch{ return null; } }
 function setMpQr(v){ try{ if(v) localStorage.setItem('tbr_mpqr',v); else localStorage.removeItem('tbr_mpqr'); }catch(e){ toast('No se pudo guardar el QR: almacenamiento lleno',false,5000); } }
+function getEmpLogo(){ try{ return localStorage.getItem('tbr_logo')||null; }catch{ return null; } }
+function setEmpLogo(v){ try{ if(v) localStorage.setItem('tbr_logo',v); else localStorage.removeItem('tbr_logo'); }catch(e){ toast('No se pudo guardar el logo: almacenamiento lleno',false,5000); } }
 
 function previewEmpMpQr(input){
   const file=input.files&&input.files[0];
