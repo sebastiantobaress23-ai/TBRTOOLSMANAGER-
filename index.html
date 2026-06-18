@@ -1579,7 +1579,7 @@ async function fbSync() {
       d = await r.json();
     }
     if (!d) return;
-    let changed = false;
+    const changedKeys = [];
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
@@ -1594,16 +1594,38 @@ async function fbSync() {
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(incoming)) {
         try { localStorage.setItem('tbr_'+k, JSON.stringify(incoming)); } catch {}
-        changed = true;
+        changedKeys.push(k);
         if (k==='settings') settingsChanged = true;
       }
     }
-    if (changed) {
-      const ae = document.activeElement;
-      const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
-      const anyModalOpen = !!document.querySelector('.mol[style*="flex"]');
-      if (!typing && !anyModalOpen) render(); else _pendingRender = true;
-      // Si cambió la configuración de usuarios/PIN, re-evaluar el bloqueo
+    if (changedKeys.length) {
+      // Solo re-renderizar si algún dato relevante para la página actual cambió.
+      // Evita que syncs de otras secciones reseteen el scroll y el estado visual.
+      const PAGE_KEYS = {
+        dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa'],
+        compra:       ['catalog','configs','catalog_photos','settings'],
+        historial:    ['purchases','configs'],
+        ventas:       ['sales','catalog','settings'],
+        pedidos:      ['pedidos','settings','empresa'],
+        catalogo:     ['catalog','catalog_photos','settings'],
+        stats:        ['purchases','sales','pedidos','catalog'],
+        publicar:     ['mlpubs','catalog','settings'],
+        competencia:  ['catalog'],
+        config:       ['settings','empresa','configs'],
+        orden:        ['ordenes'],
+        cotizaciones: ['cotizaciones','catalog','configs'],
+        proveedores:  ['configs'],
+        clientes:     ['clientes','sales','pedidos'],
+        viaje:        ['trip','configs'],
+      };
+      const relevantKeys = PAGE_KEYS[PAGE] || changedKeys;
+      const hasRelevantChange = changedKeys.some(k => relevantKeys.includes(k));
+      if (hasRelevantChange) {
+        const ae = document.activeElement;
+        const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
+        const anyModalOpen = !!document.querySelector('.mol[style*="flex"]');
+        if (!typing && !anyModalOpen) render(); else _pendingRender = true;
+      }
       if (settingsChanged) checkAccessPin();
     }
     setSyncDot(true);
