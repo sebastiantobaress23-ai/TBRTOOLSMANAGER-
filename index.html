@@ -1487,6 +1487,12 @@ async function fbWrite(k, v) {
         return { ...p, ...(ph.photo ? {photo: ph.photo} : {}), ...(ph.photos && ph.photos.length ? {photos: ph.photos} : {}) };
       });
     }
+    // Strip binary blobs from empresa before writing to Firebase — they live
+    // only in localStorage to avoid oversize payloads and accidental overwrites.
+    if (k === 'empresa' && v && typeof v === 'object') {
+      const { logo, mpQr, ...rest } = v;
+      payload = rest;
+    }
     const url = await fbUrl(`${FB}/${k}.json`);
     const r = await fetch(url, {
       method:'PUT',
@@ -1577,9 +1583,17 @@ async function fbSync() {
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
+      let incoming = d[k];
+      // Preserve local binary blobs not stored in Firebase
+      if (k === 'empresa' && incoming && typeof incoming === 'object') {
+        const local = DB.get('empresa', {});
+        incoming = { ...incoming };
+        if (!incoming.logo && local.logo) incoming.logo = local.logo;
+        if (!incoming.mpQr && local.mpQr) incoming.mpQr = local.mpQr;
+      }
       const cur = JSON.stringify(DB.get(k));
-      if (cur !== JSON.stringify(d[k])) {
-        try { localStorage.setItem('tbr_'+k, JSON.stringify(d[k])); } catch {}
+      if (cur !== JSON.stringify(incoming)) {
+        try { localStorage.setItem('tbr_'+k, JSON.stringify(incoming)); } catch {}
         changed = true;
         if (k==='settings') settingsChanged = true;
       }
