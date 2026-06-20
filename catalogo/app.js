@@ -460,16 +460,21 @@ function openDetail(i, fromHash, clickedCardEl){
   renderDetail();
   $('#detail').scrollTop = 0;
   document.body.style.overflow='hidden';
-  // Forzar un frame antes de agregar 'open' para que el fondo opaco aparezca
-  // instantáneamente y solo el contenido (.detail-grid) haga el fade-in
-  requestAnimationFrame(()=>{ $('#detail').classList.add('open'); });
+  // Double RAF: asegura que el browser pinte el frame inicial antes de
+  // agregar 'open', para que la transición slide-up arranque desde el borde.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ $('#detail').classList.add('open'); }));
   // Deep link: refleja el producto en la URL (sin saltar el scroll)
   if(!fromHash && detailItem.code){
     try{ history.replaceState(null,'', '#'+encodeURIComponent(detailItem.code)); }catch{}
   }
 }
 function closeDetail(){
-  detailOpen=false; $('#detail').classList.remove('open');
+  detailOpen=false;
+  const d=$('#detail');
+  d.classList.remove('open');
+  // Reset grid opacity so next open starts clean
+  const g=d.querySelector('.detail-grid');
+  if(g){ g.style.transition='none'; g.style.opacity='0'; requestAnimationFrame(()=>{ g.style.transition=''; }); }
   if(!cartOpen) document.body.style.overflow='';
   if(location.hash){ try{ history.replaceState(null,'', location.pathname+location.search); }catch{} }
   renderHistory();
