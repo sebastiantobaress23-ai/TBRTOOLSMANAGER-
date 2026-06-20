@@ -444,6 +444,41 @@ function _cancelHeroTransition(){
   if(heroMain){ heroMain.style.transition=''; heroMain.style.opacity=''; heroMain.style.transform=''; }
   document.querySelectorAll('.hero-flash').forEach(el=>el.remove());
 }
+// Extrae el color dominante de una imagen y retorna {r,g,b}
+function extractDominantColor(imgSrc, cb){
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const size = 40;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    const d = ctx.getImageData(0, 0, size, size).data;
+    let r=0,g=0,b=0,n=0;
+    for(let i=0;i<d.length;i+=4){
+      const pr=d[i],pg=d[i+1],pb=d[i+2],a=d[i+3];
+      if(a<128) continue;
+      // ignorar píxeles muy claros (blancos de fondo) y muy oscuros
+      const bright=(pr+pg+pb)/3;
+      if(bright>230||bright<20) continue;
+      r+=pr;g+=pg;b+=pb;n++;
+    }
+    if(!n){ cb(null); return; }
+    cb({r:Math.round(r/n),g:Math.round(g/n),b:Math.round(b/n)});
+  };
+  img.onerror = ()=>cb(null);
+  img.src = imgSrc;
+}
+
+function applyDetailColor(color){
+  const detail = $('#detail');
+  if(!color){ detail.style.removeProperty('--dc-r'); detail.style.removeProperty('--dc-g'); detail.style.removeProperty('--dc-b'); return; }
+  detail.style.setProperty('--dc-r', color.r);
+  detail.style.setProperty('--dc-g', color.g);
+  detail.style.setProperty('--dc-b', color.b);
+}
+
 function openDetail(i, fromHash, clickedCardEl){
   detailItem = ITEMS[i]; if(!detailItem) return;
   saveHistory(i);
@@ -465,8 +500,10 @@ function openDetail(i, fromHash, clickedCardEl){
   renderDetail();
   $('#detail').scrollTop = 0;
   document.body.style.overflow='hidden';
-  // Double RAF: asegura que el browser pinte el frame inicial antes de
-  // agregar 'open', para que la transición slide-up arranque desde el borde.
+  applyDetailColor(null); // reset color previo
+  if(detailItem.photos[0]){
+    extractDominantColor(detailItem.photos[0], color => applyDetailColor(color));
+  }
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ $('#detail').classList.add('open'); }));
   // Deep link: refleja el producto en la URL (sin saltar el scroll)
   if(!fromHash && detailItem.code){
