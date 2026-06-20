@@ -1581,7 +1581,6 @@ async function fbWritePhotos(prodId, photoB64, photosB64) {
     const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
     const valid = list.filter(p=>p&&p.startsWith('data:'));
     if(!valid.length) return;
-    // Only upload hero photo to keep payload manageable
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
     const body = JSON.stringify({ photo: valid[0], photos: valid.slice(0,2) });
     const r = await fetch(url, {
