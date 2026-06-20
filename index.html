@@ -1577,18 +1577,27 @@ async function getCatalogWithPhotos() {
 }
 
 async function fbWritePhotos(prodId, photoB64, photosB64) {
-  // Store photos directly in RTDB as-is — already compressed by saveCat() at 1600px/0.92
   try {
     const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
     const valid = list.filter(p=>p&&p.startsWith('data:'));
     if(!valid.length) return;
+    // Only upload hero photo to keep payload manageable
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
-    await fetch(url, {
+    const body = JSON.stringify({ photo: valid[0], photos: valid.slice(0,2) });
+    const r = await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ photo: valid[0], photos: valid })
+      body
     });
-  } catch(e) { console.warn('fbWritePhotos:', e && e.message); }
+    if(!r.ok){
+      const txt = await r.text().catch(()=>'');
+      console.error('fbWritePhotos error', r.status, txt);
+      toast(`Error al subir foto al catálogo (${r.status}). Revisá la conexión.`, false, 5000);
+    }
+  } catch(e) {
+    console.error('fbWritePhotos:', e);
+    toast('No se pudo subir la foto al catálogo digital. Verificá tu conexión.', false, 5000);
+  }
 }
 async function fbWrite(k, v) {
   try {
@@ -5087,7 +5096,9 @@ async function saveCat(){
       const img=new Image(); img.onerror=rej;
       img.onload=()=>{
         let w=img.width,h=img.height;
-        if(w>maxPx||h>maxPx){if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}}
+        // Si ya entra en los límites, devolver tal cual sin re-comprimir
+        if(w<=maxPx && h<=maxPx){ res(p); return; }
+        if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}
         const c=document.createElement('canvas');c.width=w;c.height=h;
         c.getContext('2d').drawImage(img,0,0,w,h);
         res(c.toDataURL('image/jpeg',quality));
