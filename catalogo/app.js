@@ -38,27 +38,36 @@ const ahorroPct    = () => Math.round(getRecargoPct()/(100+getRecargoPct())*100)
    y /tbr/empresa al formato que usa el catálogo. Se usan tanto por el
    fetch inicial (REST, por si la DB SDK no carga) como por los listeners
    en tiempo real (onValue) que mantienen todo sincronizado. ── */
-function mapLiveCatalog(cat){
-  if(!Array.isArray(cat)) return null;
-  // Build a lookup from CATALOG_DATA (static file) to recover photos that
-  // Firebase doesn't store (they live in IndexedDB on the manager's device).
-  const staticByCode = {}, staticByName = {};
+// Lookup from static CATALOG_DATA for photo fallback
+let _staticByCode = null, _staticByName = null;
+function _buildStaticLookup(){
+  if(_staticByCode) return;
+  _staticByCode = {}; _staticByName = {};
   if(STATIC && Array.isArray(STATIC.products)){
     STATIC.products.forEach(p=>{
-      if(p.code) staticByCode[p.code.toLowerCase().trim()] = p;
-      if(p.name) staticByName[p.name.toLowerCase().trim()] = p;
+      if(p.code) _staticByCode[p.code.toLowerCase().trim()] = p;
+      if(p.name) _staticByName[p.name.toLowerCase().trim()] = p;
     });
   }
+}
+function _staticPhotosFor(x){
+  _buildStaticLookup();
+  const ck=(x.code||'').toLowerCase().trim(), nk=(x.name||'').toLowerCase().trim();
+  return (ck&&_staticByCode[ck]) || (nk&&_staticByName[nk]) || {};
+}
+// photosMap: optional { [id]: {photo, photos} } from catalog_photos node
+function mapLiveCatalog(cat, photosMap){
+  if(!Array.isArray(cat)) return null;
   const products = cat.filter(x=>x&&x.salePrice).map(x=>{
-    // Fallback to static data for photos when Firebase has none
-    const ck = (x.code||'').toLowerCase().trim();
-    const nk = (x.name||'').toLowerCase().trim();
-    const st = (ck && staticByCode[ck]) || (nk && staticByName[nk]) || {};
-    const photo  = x.photo  || st.photo  || undefined;
-    const photos = (x.photos&&x.photos.length)  ? x.photos
-                 : (st.photos&&st.photos.length) ? st.photos
+    const pm = (photosMap && x.id && photosMap[x.id]) || {};
+    const st = _staticPhotosFor(x);
+    const photo  = pm.photo  || x.photo  || st.photo  || undefined;
+    const photos = (pm.photos&&pm.photos.length)  ? pm.photos
+                 : (x.photos&&x.photos.length)    ? x.photos
+                 : (st.photos&&st.photos.length)  ? st.photos
                  : undefined;
     return {
+      id: x.id,
       name:x.name, code:x.code||'', salePrice:x.salePrice,
       stock:x.stock!=null?x.stock:undefined,
       photo, photos,
@@ -70,6 +79,18 @@ function mapLiveCatalog(cat){
   });
   return products.length ? products : null;
 }
+// Merge photo data into already-rendered ITEMS without full re-render
+function applyPhotosMap(photosMap){
+  if(!photosMap || !ITEMS.length) return;
+  let changed = false;
+  ITEMS.forEach(it=>{
+    if(!it.id) return;
+    const pm = photosMap[it.id];
+    if(!pm) return;
+    if(pm.photo && !it.photos[0]){ it.photos = pm.photos||[pm.photo]; it.photo = pm.photo; changed=true; }
+  });
+  if(changed){ buildFeatured(); renderGrid(); }
+}
 function mapLiveEmpresa(emp){
   return {
     nombre:EMPRESA.nombre,
@@ -80,14 +101,19 @@ function mapLiveEmpresa(emp){
 }
 async function fetchLive(){
   try{
+    // Fetch catalog metadata + empresa in parallel (fast, no photos)
     const [c,e] = await Promise.all([
       fetch(`${FB_LIVE}/catalog.json`,{cache:'no-store',signal:AbortSignal.timeout(4000)}),
       fetch(`${FB_LIVE}/empresa.json`,{cache:'no-store',signal:AbortSignal.timeout(4000)})
     ]);
     if(!c.ok) return null;
-    const products = mapLiveCatalog(await c.json());
+    const catRaw = await c.json();
+    const products = mapLiveCatalog(catRaw);
     if(!products) return null;
     const emp = e.ok ? await e.json() : null;
+    // Fetch photos separately in background — catalog renders immediately without them
+    fetch(`${FB_LIVE}/catalog_photos.json`,{cache:'no-store',signal:AbortSignal.timeout(8000)})
+      .then(r=>r.ok?r.json():null).then(pm=>{ if(pm) applyPhotosMap(pm); }).catch(()=>{});
     return { empresa: mapLiveEmpresa(emp), products };
   }catch{ return null; }
 }
@@ -1530,15 +1556,30 @@ function applyLiveData(){
     if(updated){ detailItem = updated; renderDetail(); }
   }
 }
+let _livePhotosMap = null;
 function startLiveSync(){
   if(!rtdb) return false;
+  // Catalog metadata listener (fast, no photos)
   rtdb.ref('tbr/catalog').on('value', snap=>{
-    const products = mapLiveCatalog(snap.val());
+    const products = mapLiveCatalog(snap.val(), _livePhotosMap);
     if(products){ liveCatalog = products; applyLiveData(); }
   });
   rtdb.ref('tbr/empresa').on('value', snap=>{
     liveEmpresa = snap.val();
     if(liveCatalog) applyLiveData();
+  });
+  // Photos listener (separate, doesn't block initial render)
+  rtdb.ref('tbr/catalog_photos').on('value', snap=>{
+    _livePhotosMap = snap.val();
+    if(liveCatalog){
+      // Re-map catalog with fresh photos
+      const products = mapLiveCatalog(
+        liveCatalog.map(p=>p), // already mapped items — use ITEMS source instead
+        _livePhotosMap
+      );
+      // Simpler: just apply photos directly to rendered ITEMS
+      if(_livePhotosMap) applyPhotosMap(_livePhotosMap);
+    }
   });
   return true;
 }
