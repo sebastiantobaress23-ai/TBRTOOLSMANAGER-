@@ -5039,34 +5039,32 @@ async function saveCat(){
   // Re-comprimir fotos base64 existentes (las nuevas ya vienen comprimidas al subirse)
   const btn=document.getElementById('cat-edit-modal').querySelector('.btn-go');
   if(btn){btn.disabled=true;btn.textContent='Guardando...';}
-  const photos = await Promise.all(cePhotos.slice(0,6).map(async (p,idx)=>{
-    if(!p.startsWith('data:')) return p; // URL externa → no tocar
-    // Primera foto (portada/hero): mayor resolución y calidad
-    // Resto (thumbs/cards): más comprimidas para ahorrar espacio
-    const isHero = idx === 0;
-    const maxPx = isHero ? 1600 : 1200;
-    const quality = isHero ? 0.92 : 0.88;
-    try{
-      return await new Promise((res,rej)=>{
-        const img=new Image(); img.onerror=rej;
-        img.onload=()=>{
-          let w=img.width,h=img.height,max=maxPx;
-          if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
-          const c=document.createElement('canvas');c.width=w;c.height=h;
-          c.getContext('2d').drawImage(img,0,0,w,h);
-          res(c.toDataURL('image/jpeg',quality));
-        };
-        img.src=p;
-      });
-    }catch{return p;}
-  }));
+  async function resizePhoto(p, maxPx, quality){
+    if(!p.startsWith('data:')) return p;
+    return new Promise((res,rej)=>{
+      const img=new Image(); img.onerror=rej;
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxPx||h>maxPx){if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}}
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',quality));
+      };
+      img.src=p;
+    }).catch(()=>p);
+  }
+  // Full-res photos for local use (IndexedDB / PDF / print)
+  const photos = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?1600:1200, idx===0?0.92:0.88)));
+  // Smaller versions for Firebase sync → catalog digital (keeps payload small)
+  const photosFB = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?900:700, idx===0?0.80:0.75)));
   const photo=photos[0]||'';
+  const photoFB=photosFB[0]||'';
   let cat=DB.get('catalog',[]);
   const prodId=eid||uid();
-  // Save photos in IndexedDB
+  // Save full-res photos in IndexedDB
   await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
-  else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
+  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:photoFB||undefined,photos:photosFB.length>1?photosFB:photosFB.length===1?[photoFB]:undefined}:c);
+  else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{}),...(photoFB?{photo:photoFB,photos:photosFB}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
