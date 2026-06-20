@@ -1661,7 +1661,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
 // Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
 // auth anónima fallida): trae solo los nodos de lectura pública (catalog,
@@ -5526,8 +5526,36 @@ function pgML() {
       <div class="sc-s">ya descontado comisión y envío</div>
     </div>
   </div>
-  <div class="hint">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>` : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`}
+  <div class="savebar mt8">
+    <div class="hint" style="flex:1">Guardá este precio para usarlo en Competencia y comparar con la competencia.</div>
+    <button class="btn-p" onclick="mlqSave()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar precio</button>
   </div>
+  <div class="hint mt8">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>` : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`}
+  </div>
+
+  <!-- Precios guardados -->
+  ${(()=>{
+    const saved = DB.get('mlprecios',[]);
+    if (!saved.length) return '';
+    return `<div class="mt24">
+    <div class="sh mb12">Precios guardados</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      ${saved.slice().reverse().map((s,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<saved.length-1?'border-bottom:1px solid var(--b2)':''}">
+        <div>
+          <div style="font-weight:600;font-size:14px">${esc(s.name||'Sin nombre')}</div>
+          <div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${fmtD(s.date)} · margen ${s.margin}% · ${s.mode==='flex'?'Flex':s.mode==='full'?'Full':'Clásico'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="text-align:right">
+            <div style="font-weight:700;color:var(--ch)">${fmtA(s.precio)}</div>
+            <div style="font-size:11px;color:var(--di)">gan. ${fmtA(s.gn)}</div>
+          </div>
+          <button class="btn-d btn-sm" onclick="mlqDelSaved('${s.id}')">${ic('trash')}</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  })()}
 </div>`;
 }
 
@@ -5572,6 +5600,25 @@ function mlqMode(m) {
   render();
 }
 
+function mlqSave() {
+  const cu = MLQ.cu; if (!cu) { toast('Ingresá el costo primero.', false); return; }
+  const { pr, gn } = _mlCalc(cu, MLQ.margin, MLQ.env, MLQ.com);
+  const name = MLQ.prodName || document.getElementById('mlq-prod')?.value.trim() || 'Sin nombre';
+  const cat = DB.get('catalog',[]);
+  const prod = cat.find(x=>x.name===name);
+  const entry = { id:uid(), date:new Date().toISOString(), name, code:prod?.code||'',
+    cu, precio:pr, gn, margin:MLQ.margin, com:MLQ.com, env:MLQ.env, mode:MLQ.mode };
+  const saved = DB.get('mlprecios',[]).filter(s=>s.name!==name); // reemplaza si ya existe
+  saved.push(entry);
+  DB.set('mlprecios', saved);
+  toast('Precio guardado');
+  render();
+}
+function mlqDelSaved(id) {
+  DB.set('mlprecios', DB.get('mlprecios',[]).filter(s=>s.id!==id));
+  render();
+}
+
 function mlqFillFromCatalog(val) {
   MLQ.prodName = val;
   const cat = DB.get('catalog',[]);
@@ -5589,14 +5636,14 @@ function pgComp() {
   const ps=DB.get('purchases',[]);
   if (!ps.length) return `<div class="pg"><div class="sh mb16">Comparar precios ML</div><div class="empty">Guardá una compra primero.</div></div>`;
   const last=ps.find(p=>p.id===compSrcId) || ps[ps.length-1];
-  const pubs=DB.get('mlpubs',[]);
-  const lastPub=pubs.length?pubs[pubs.length-1]:null;
-  // Mapa código/nombre -> producto publicado en ML (con margen ya aplicado)
-  const pubMap={};
-  if (lastPub) (lastPub.products||[]).forEach(pp=>{
-    const key=(pp.c||pp.n||'').toLowerCase();
-    if (key) pubMap[key]=pp;
+  // Mapa código/nombre -> precio guardado desde calculadora ML
+  const mlprecios=DB.get('mlprecios',[]);
+  const precioMap={};
+  mlprecios.forEach(s=>{
+    if(s.code) precioMap[s.code.toLowerCase().trim()]=s;
+    if(s.name) precioMap[s.name.toLowerCase().trim()]=s;
   });
+  const hasSaved = mlprecios.length > 0;
   return `<div class="pg">
   <div class="sh mb8">Comparar precios ML</div>
   <div class="fb mb12" style="flex-wrap:wrap;gap:8px 16px;align-items:center">
@@ -5607,15 +5654,15 @@ function pgComp() {
       </select>
     </div>
   </div>
-  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong>${lastPub?` · Precios de venta tomados de la publicación ML "<strong style="color:var(--ch)">${esc(lastPub.name||'')}</strong>"`:' · No tenés publicaciones ML guardadas: se muestra el costo real.'} · Ingresá precios de la competencia para comparar.</div>
+  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong> · ${hasSaved?'Precios de publicación tomados de tu calculadora ML.':'Guardá precios en <strong>Publicar ML</strong> para ver tus precios reales acá.'} Ingresá precios de la competencia para comparar.</div>
   ${(last.products||[]).map((p,i)=>{
     const cu=(p.p||0)*(last.r?.TCE||0);
-    const key=(p.c||p.n||'').toLowerCase();
-    const pub=pubMap[key];
-    const margin=pub?(pub.margin??30):30;
-    const env=pub?(pub.env||0):0;
-    const com=pub?(pub.com||16):16;
-    const precio=pub?pub.precio:(cu*(1+margin/100)+env)/(1-com/100);
+    const ck=(p.c||'').toLowerCase().trim(), nk=(p.n||'').toLowerCase().trim();
+    const saved=(ck&&precioMap[ck])||(nk&&precioMap[nk])||null;
+    const margin=saved?(saved.margin??30):30;
+    const env=saved?(saved.env||0):0;
+    const com=saved?(saved.com||16):16;
+    const precio=saved?saved.precio:(cu*(1+margin/100)+env)/(1-com/100);
     return `<div class="card mb12">
     <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
     <div class="fg-w mb12" style="gap:24px">
