@@ -40,13 +40,34 @@ const ahorroPct    = () => Math.round(getRecargoPct()/(100+getRecargoPct())*100)
    en tiempo real (onValue) que mantienen todo sincronizado. ── */
 function mapLiveCatalog(cat){
   if(!Array.isArray(cat)) return null;
-  const products = cat.filter(x=>x&&x.salePrice).map(x=>({
-    name:x.name, code:x.code||'', salePrice:x.salePrice,
-    stock:x.stock!=null?x.stock:undefined,
-    photo:x.photo||undefined,
-    photos:(x.photos&&x.photos.length>1)?x.photos:undefined,
-    description:x.specs||undefined
-  }));
+  // Build a lookup from CATALOG_DATA (static file) to recover photos that
+  // Firebase doesn't store (they live in IndexedDB on the manager's device).
+  const staticByCode = {}, staticByName = {};
+  if(STATIC && Array.isArray(STATIC.products)){
+    STATIC.products.forEach(p=>{
+      if(p.code) staticByCode[p.code.toLowerCase().trim()] = p;
+      if(p.name) staticByName[p.name.toLowerCase().trim()] = p;
+    });
+  }
+  const products = cat.filter(x=>x&&x.salePrice).map(x=>{
+    // Fallback to static data for photos when Firebase has none
+    const ck = (x.code||'').toLowerCase().trim();
+    const nk = (x.name||'').toLowerCase().trim();
+    const st = (ck && staticByCode[ck]) || (nk && staticByName[nk]) || {};
+    const photo  = x.photo  || st.photo  || undefined;
+    const photos = (x.photos&&x.photos.length)  ? x.photos
+                 : (st.photos&&st.photos.length) ? st.photos
+                 : undefined;
+    return {
+      name:x.name, code:x.code||'', salePrice:x.salePrice,
+      stock:x.stock!=null?x.stock:undefined,
+      photo, photos,
+      description:x.specs||x.description||st.description||undefined,
+      heroX:x.heroX||st.heroX||undefined,
+      heroY:x.heroY||st.heroY||undefined,
+      heroSize:x.heroSize||st.heroSize||undefined
+    };
+  });
   return products.length ? products : null;
 }
 function mapLiveEmpresa(emp){
