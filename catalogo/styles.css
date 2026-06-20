@@ -156,7 +156,6 @@ a{color:inherit;text-decoration:none}
   filter:drop-shadow(0 30px 42px rgba(0,0,0,.5));
   scale:1;animation:kenBurns 18s cubic-bezier(.22,.61,.36,1) forwards;
   transform:translate(0px,0px);transition:transform .18s ease-out}
-@media (prefers-reduced-motion: reduce){ .bg-layer .kb{animation:none;transition:none} }
 @keyframes kenBurns{from{scale:1.005;translate:0 0}to{scale:1.13;translate:-1.6% -1.2%}}
 @media (min-width: 768px) {
   .bg-layer .kb {
@@ -850,8 +849,7 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.12s!important}
-  .bg-layer .kb{transform:none}
-  .bg-layer .kb::after,.bg-layer::before{animation:none}
+  /* Ken Burns se mantiene activo — es decorativo y muy sutil */
   html{scroll-behavior:auto}
 }
 
