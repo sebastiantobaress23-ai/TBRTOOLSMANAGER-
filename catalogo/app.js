@@ -635,7 +635,7 @@ function renderDetail(){
       </div>
       ${thumbs}
     </div>
-    <div class="detail-info">${item.photos[0]?`<div class="detail-info-bg" style="background-image:url('${item.photos[0]}')"></div>`:''}
+    <div class="detail-info">${item.photos[0]?`<div class="detail-info-bg" style="background-image:url('${item.photos[0]}');background-size:cover;background-position:center"></div>`:''}
       <div class="detail-cat"><span class="kicker">${esc(item.cat)}</span></div>
       <h1 class="detail-title">${esc(item.displayName||shortName(item.name))}</h1>
       <div class="detail-meta">
