@@ -5617,7 +5617,7 @@ function mlqFillFromCatalog(val) {
   const cat = DB.get('catalog',[]);
   const prod = cat.find(x=>x.name===val);
   if (!prod) return;
-  const cu = prod.lastPrice || prod.defaultPrice || 0;
+  const cu = Math.round((prod.lastPrice || prod.defaultPrice || 0) * lastTCE());
   if (!cu) return;
   MLQ.cu = cu;
   const inp = document.getElementById('mlq-cu');
