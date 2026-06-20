@@ -836,12 +836,15 @@ video.card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0
   .cats::after{content:'';flex:0 0 4px}
   .cat{flex:0 0 auto;scroll-snap-align:start}
   .tools{width:100%;flex-wrap:nowrap;gap:8px}
-  .search-box{flex:0 0 auto;width:40px;transition:flex .25s var(--ease),width .25s var(--ease)}
-  .search-box input{font-size:16px;padding-right:12px}
-  /* Cuando el buscador está activo en mobile: expande a ancho completo */
-  .search-box:focus-within{flex:1 1 auto;width:auto}
+  /* Colapsado: mismo tamaño/estilo que el botón compartir */
+  .search-box{flex:0 0 40px;height:40px;
+    background:rgba(255,255,255,.06);border:1px solid var(--hair);border-radius:999px;
+    transition:flex .28s var(--ease),background .2s,border-color .2s}
+  .search-box input{font-size:16px;padding:0 12px 0 38px;background:transparent;border:none;box-shadow:none;height:40px}
+  .search-box input:focus{border:none;box-shadow:none;background:transparent}
+  /* Expandido: toma el espacio restante y oculta los otros controles */
+  .search-box:focus-within{flex:1 1 auto;border-color:var(--gd-soft);background:rgba(255,255,255,.07)}
   .search-box:focus-within~*{display:none}
-  /* Autocomplete en mobile: mismo ancho que el search-box expandido */
   .search-box:focus-within .search-autocomplete{left:0;right:0;width:auto;min-width:0}
   .detail-actions .btn{min-width:100%}
 }
