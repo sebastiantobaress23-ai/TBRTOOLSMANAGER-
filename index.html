@@ -5339,19 +5339,50 @@ after.stats=()=>{
 /* ═══════════════════════════════════════════
    PUBLICAR ML
 ═══════════════════════════════════════════ */
-let ML = { srcType:'calc', srcId:null, mode:'clasico', glbCom:null, glbEnv:null, margins:{}, envios:{}, manualProducts:[] };
+let ML = { srcType:'calc', srcId:null, mode:'clasico', glbCom:null, glbEnv:null, glbFlex:null, glbPub:0, margins:{}, envios:{}, manualProducts:[] };
 let compSrcId = null; // compra elegida como base para "Comparar precios ML" (por defecto, la última)
 
 /* ── helper: build product cards HTML ── */
+function _mlCalc(cu, m, envVal, com) {
+  // envVal: positive = flex bonus (income), negative/zero used as cost in clasico
+  if (ML.mode === 'flex') {
+    const flex = envVal;
+    const pr = (cu*(1+m/100) - flex) / (1 - com/100);
+    const gn = pr*(1-com/100) - cu + flex;
+    return { pr: Math.max(0, pr), gn };
+  } else if (ML.mode === 'full') {
+    const pr = (cu*(1+m/100)) / (1-com/100);
+    const gn = pr*(1-com/100) - cu;
+    return { pr, gn };
+  } else {
+    const env = envVal;
+    const pr = (cu*(1+m/100)+env) / (1-com/100);
+    const gn = pr*(1-com/100) - cu - env;
+    return { pr, gn };
+  }
+}
+
 function _mlCards(products, glbCom, glbEnv) {
+  const conf = getConf();
+  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
   return products.map(p => {
     const m   = ML.margins[p.id] !== undefined ? ML.margins[p.id] : 30;
-    const env = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : glbEnv);
-    const pr  = (p.cu*(1+m/100)+env)/(1-glbCom/100);
-    const gn  = pr*(1-glbCom/100)-p.cu-env;
+    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
+    const envVal = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : envDefault);
+    const { pr, gn } = _mlCalc(p.cu, m, envVal, glbCom);
     const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
     const rmBtn = ML.srcType==='manual'
       ? `<button class="btn-rm" onclick="mlRmManualProd('${p.id}')" title="Quitar artículo">${ic('close')}</button>` : '';
+
+    let envField = '';
+    if (ML.mode === 'clasico') {
+      envField = `<div class="ml-card-field"><label>Envío ML $</label><input type="number" value="${envVal}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`;
+    } else if (ML.mode === 'flex') {
+      envField = `<div class="ml-card-field"><label>Bonif. Flex $</label><input type="number" value="${envVal}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`;
+    } else {
+      envField = `<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">${ic('check')} Full incluido</div></div>`;
+    }
+
     return `<div class="ml-card" id="mlc-${p.id}">
       <div class="ml-card-top">
         <div>
@@ -5371,9 +5402,7 @@ function _mlCards(products, glbCom, glbEnv) {
           <label>Margen %</label>
           <input type="number" value="${m}" min="0" max="999" step="1" data-mlid="${p.id}" data-mlcu="${p.cu}" class="ml-margin-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
         </div>
-        ${ML.mode==='clasico'
-          ?`<div class="ml-card-field"><label>Envío ML $</label><input type="number" value="${env}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`
-          :`<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">${ic('check')} Full incluido</div></div>`}
+        ${envField}
         <div class="ml-card-field">
           <label>Com. ML %</label>
           <input type="number" value="${glbCom}" min="0" max="30" step="0.5" data-mlcid="${p.id}" data-mlcu="${p.cu}" class="ml-com-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
@@ -5424,14 +5453,16 @@ function pgML() {
   const hasSrc  = products.length > 0;
   const glbCom  = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
   const glbEnv  = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
+  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
+  const glbPub  = ML.glbPub || 0;
 
   // ── Totals for render ──
   let totP=0, totG=0;
   products.forEach(p=>{
     const m   = ML.margins[p.id]!==undefined ? ML.margins[p.id] : 30;
-    const env = ML.mode==='full' ? 0 : (ML.envios[p.id]!==undefined ? ML.envios[p.id] : glbEnv);
-    const pr  = (p.cu*(1+m/100)+env)/(1-glbCom/100);
-    const gn  = pr*(1-glbCom/100)-p.cu-env;
+    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
+    const envVal = ML.mode==='full' ? 0 : (ML.envios[p.id]!==undefined ? ML.envios[p.id] : envDefault);
+    const { pr, gn } = _mlCalc(p.cu, m, envVal, glbCom);
     totP += pr*p.q; totG += gn*p.q;
   });
 
@@ -5493,7 +5524,9 @@ function pgML() {
   <div class="ml-mode-bar mb16">
     <button class="ml-mode-btn${ML.mode==='clasico'?' on':''}" onclick="mlSetMode('clasico')">Clásico · con envío</button>
     <button class="ml-mode-btn${ML.mode==='full'?' on':''}" onclick="mlSetMode('full')">Full · envío gratis</button>
+    <button class="ml-mode-btn${ML.mode==='flex'?' on':''}" onclick="mlSetMode('flex')">Flex · ML te paga</button>
   </div>
+  ${ML.mode==='flex'?`<div class="hint mb12" style="color:var(--gr)">En Flex, ML te abona el costo del envío más un bonus cuando el comprador es de tu ciudad.</div>`:''}
 
   <!-- ── PARÁMETROS GLOBALES ── -->
   <div class="ml-global mb20">
@@ -5503,10 +5536,16 @@ function pgML() {
     </div>
     ${ML.mode==='clasico'
       ?`<div class="ml-gfield"><label>Envío ML $</label><input type="number" value="${glbEnv}" min="0" step="100" id="ml-glb-env" oninput="mlGlobal()"></div>`
-      :'<div style="font-size:12px;color:var(--di);align-self:center">Envío gratis para el comprador · ML cobra tarifa fija al vendedor.</div>'}
+      :ML.mode==='flex'
+        ?`<div class="ml-gfield"><label>Bonif. Flex $ (global)</label><input type="number" value="${glbFlex}" min="0" step="100" id="ml-glb-flex" oninput="mlGlobal()"></div>`
+        :'<div style="font-size:12px;color:var(--di);align-self:center">Envío gratis para el comprador · ML cobra tarifa fija al vendedor.</div>'}
     <div class="ml-gfield">
       <label>Margen global %</label>
       <input type="number" value="" placeholder="Aplicar a todos" min="0" max="999" step="1" id="ml-glb-margin" oninput="mlApplyGlobalMargin()" style="width:110px">
+    </div>
+    <div class="ml-gfield">
+      <label>Publicidad del mes $</label>
+      <input type="number" value="${glbPub}" min="0" step="100" id="ml-glb-pub" oninput="mlGlobal()">
     </div>
   </div>
 
@@ -5516,9 +5555,7 @@ function pgML() {
 
   <!-- ── TOTALES ── -->
   <div class="ml-totbar" id="ml-totbar">
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Ganancia total</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${ML.mode==='full'?'ML FULL':'CLÁSICO'}</div></div>
+    ${_mlTotHTML(totP, totG, glbPub, ML.mode)}
   </div>
 
   <!-- ── GUARDAR PUBLICACIÓN ── -->
@@ -5534,11 +5571,11 @@ function pgML() {
       <div class="hi-hdr" onclick="toggleHi('mlp${i}')">
         <div>
           <div class="hi-n">${esc(pub.name||'Sin nombre')}</div>
-          <div class="hi-d">${fmtD(pub.date)} · ${pub.products?.length||0} productos · ${pub.mode==='full'?'ML Full':'Clásico'}</div>
+          <div class="hi-d">${fmtD(pub.date)} · ${pub.products?.length||0} productos · ${pub.mode==='flex'?'Flex':pub.mode==='full'?'ML Full':'Clásico'}</div>
         </div>
         <div>
           <div class="hi-v" style="color:var(--ch)">${fmtA(pub.totFac||0)}</div>
-          <div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(pub.totGan||0)}</div>
+          <div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">${pub.glbPub>0?'neta '+fmtA(pub.totNeta||0):'gan. '+fmtA(pub.totGan||0)}</div>
         </div>
       </div>
       <div class="hi-body" id="mlp${i}">
@@ -5567,6 +5604,16 @@ function pgML() {
 </div>`;
 }
 
+function _mlTotHTML(totP, totG, pub, mode) {
+  const totNeta = totG - pub;
+  const modeLabel = mode==='full' ? 'ML FULL' : mode==='flex' ? 'FLEX' : 'CLÁSICO';
+  return `<div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
+    <div class="ml-tot-item"><div class="ml-tot-lbl">Gan. bruta</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
+    ${pub>0?`<div class="ml-tot-item"><div class="ml-tot-lbl">− Publicidad</div><div class="ml-tot-val" style="color:var(--re)">−${fmtA(pub)}</div></div>`:''}
+    <div class="ml-tot-item"><div class="ml-tot-lbl">${pub>0?'Gan. neta':'Ganancia total'}</div><div class="ml-tot-val" style="color:${totNeta>=0?'var(--gr)':'var(--re)'};font-size:${pub>0?'18px':'16px'}">${fmtA(totNeta)}</div></div>
+    <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${modeLabel}</div></div>`;
+}
+
 function mlSetSrc(type, id) {
   ML.srcType = type;
   ML.srcId   = (type==='purchase' && id) ? id : null;
@@ -5574,7 +5621,7 @@ function mlSetSrc(type, id) {
   ML.margins = {}; ML.envios = {};
   render();
 }
-function mlSetMode(m) { ML.mode = m; render(); }
+function mlSetMode(m) { ML.mode = m; ML.envios = {}; render(); }
 
 function mlAddManualProd() {
   const n = document.getElementById('mlm-n')?.value.trim();
@@ -5603,10 +5650,12 @@ function mlRmManualProd(id) {
 }
 
 function mlSavePub() {
-  const conf   = getConf();
-  const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
-  const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
-  const name   = document.getElementById('ml-pub-name')?.value.trim()
+  const conf    = getConf();
+  const glbCom  = ML.glbCom  !== null ? ML.glbCom  : conf.mlCom;
+  const glbEnv  = ML.glbEnv  !== null ? ML.glbEnv  : conf.mlEnv;
+  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
+  const glbPub  = ML.glbPub  || 0;
+  const name    = document.getElementById('ml-pub-name')?.value.trim()
                || 'ML ' + new Date().toLocaleDateString('es-AR');
 
   // Collect state from DOM at save time
@@ -5618,22 +5667,23 @@ function mlSavePub() {
     const m   = parseFloat(inp.value)||0;
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    const env    = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
+    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
+    const envVal = envInp ? parseFloat(envInp.value)||0 : envDefault;
     const com    = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const pr  = (cu*(1+m/100)+env)/(1-com/100);
-    const gn  = pr*(1-com/100)-cu-env;
+    const { pr, gn } = _mlCalc(cu, m, envVal, com);
     const card = document.getElementById('mlc-'+id);
     const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
     const pname = card?.querySelector('.ml-card-name')?.textContent||'';
     const codeRaw = card?.querySelector('.ml-card-code')?.textContent||'';
     const pcode = codeRaw.includes(' · ') ? codeRaw.split(' · ')[0] : '';
-    products.push({ id, n:pname, c:pcode, q, cu, margin:m, env, com, precio:pr, gn });
+    products.push({ id, n:pname, c:pcode, q, cu, margin:m, env:envVal, com, precio:pr, gn });
     totFac += pr*q; totGan += gn*q;
   });
 
   if (!products.length) { toast('Sin productos para guardar.', false); return; }
 
-  const pub = { id:uid(), date:new Date().toISOString(), name, mode:ML.mode, glbCom, glbEnv, totFac, totGan, products };
+  const totNeta = totGan - glbPub;
+  const pub = { id:uid(), date:new Date().toISOString(), name, mode:ML.mode, glbCom, glbEnv, glbFlex, glbPub, totFac, totGan, totNeta, products };
   const pubs = DB.get('mlpubs',[]);
   pubs.push(pub);
   DB.set('mlpubs', pubs);
@@ -5647,10 +5697,14 @@ function mlDelPub(id) {
 }
 
 function mlGlobal() {
-  const com = parseFloat(document.getElementById('ml-glb-com')?.value);
-  const env = parseFloat(document.getElementById('ml-glb-env')?.value);
-  if (!isNaN(com)) ML.glbCom = com;
-  if (!isNaN(env)) ML.glbEnv = env;
+  const com  = parseFloat(document.getElementById('ml-glb-com')?.value);
+  const env  = parseFloat(document.getElementById('ml-glb-env')?.value);
+  const flex = parseFloat(document.getElementById('ml-glb-flex')?.value);
+  const pub  = parseFloat(document.getElementById('ml-glb-pub')?.value);
+  if (!isNaN(com))  ML.glbCom = com;
+  if (!isNaN(env))  ML.glbEnv = env;
+  if (!isNaN(flex)) ML.glbFlex = flex;
+  if (!isNaN(pub))  ML.glbPub = pub;
   document.querySelectorAll('.ml-margin-inp').forEach(inp => mlRecalc(inp));
   mlUpdateTotals();
 }
@@ -5669,7 +5723,9 @@ function mlRecalc(inp) {
     ML.margins[id] = m;
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
+    const glbFlexInner = ML.glbFlex !== null ? ML.glbFlex : (getConf().mlFlex || 0);
+    const envDefault = ML.mode==='flex' ? glbFlexInner : (ML.mode==='full' ? 0 : glbEnv);
+    env = envInp ? parseFloat(envInp.value)||0 : envDefault;
     com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
   } else if (inp.dataset.mleid) {
     id = inp.dataset.mleid; cu = parseFloat(inp.dataset.mlcu); env = parseFloat(inp.value)||0;
@@ -5682,11 +5738,12 @@ function mlRecalc(inp) {
     id = inp.dataset.mlcid; cu = parseFloat(inp.dataset.mlcu); com = parseFloat(inp.value)||glbCom;
     const mgInp  = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
+    const glbFlexInner2 = ML.glbFlex !== null ? ML.glbFlex : (getConf().mlFlex || 0);
+    const envDefault2 = ML.mode==='flex' ? glbFlexInner2 : (ML.mode==='full' ? 0 : glbEnv);
     m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
-    env = envInp ? parseFloat(envInp.value)||0  : (ML.mode==='full'?0:glbEnv);
+    env = envInp ? parseFloat(envInp.value)||0  : envDefault2;
   } else return;
-  const pr  = (cu*(1+m/100)+env)/(1-com/100);
-  const gn  = pr*(1-com/100)-cu-env;
+  const { pr, gn } = _mlCalc(cu, m, env, com);
   const gnPct = cu > 0 ? ((gn/cu)*100).toFixed(1) : 0;
   const card  = document.getElementById('mlc-'+id);
   const q     = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
@@ -5703,9 +5760,11 @@ function mlRecalc(inp) {
   mlUpdateTotals();
 }
 function mlUpdateTotals() {
-  const conf   = getConf();
-  const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
-  const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
+  const conf    = getConf();
+  const glbCom  = ML.glbCom  !== null ? ML.glbCom  : conf.mlCom;
+  const glbEnv  = ML.glbEnv  !== null ? ML.glbEnv  : conf.mlEnv;
+  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
+  const glbPub  = ML.glbPub  || 0;
   let totP=0, totG=0;
   document.querySelectorAll('.ml-margin-inp').forEach(inp => {
     const id  = inp.dataset.mlid;
@@ -5713,19 +5772,17 @@ function mlUpdateTotals() {
     const m   = parseFloat(inp.value)||0;
     const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
     const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    const env = envInp ? parseFloat(envInp.value)||0 : (ML.mode==='full'?0:glbEnv);
+    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
+    const envVal = envInp ? parseFloat(envInp.value)||0 : envDefault;
     const com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const pr  = (cu*(1+m/100)+env)/(1-com/100);
-    const gn  = pr*(1-com/100)-cu-env;
+    const { pr, gn } = _mlCalc(cu, m, envVal, com);
     const card = document.getElementById('mlc-'+id);
     const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
     totP += pr*q; totG += gn*q;
   });
   const bar = document.getElementById('ml-totbar');
   if (!bar) return;
-  bar.innerHTML = `<div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Ganancia total</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${ML.mode==='full'?'ML FULL':'CLÁSICO'}</div></div>`;
+  bar.innerHTML = _mlTotHTML(totP, totG, glbPub, ML.mode);
 }
 function pgComp() {
   const ps=DB.get('purchases',[]);
