@@ -470,11 +470,7 @@ function openDetail(i, fromHash, clickedCardEl){
 }
 function closeDetail(){
   detailOpen=false;
-  const d=$('#detail');
-  d.classList.remove('open');
-  // Reset grid opacity so next open starts clean
-  const g=d.querySelector('.detail-grid');
-  if(g){ g.style.transition='none'; g.style.opacity='0'; requestAnimationFrame(()=>{ g.style.transition=''; }); }
+  $('#detail').classList.remove('open');
   if(!cartOpen) document.body.style.overflow='';
   if(location.hash){ try{ history.replaceState(null,'', location.pathname+location.search); }catch{} }
   renderHistory();
