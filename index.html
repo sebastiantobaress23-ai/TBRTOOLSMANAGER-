@@ -1576,47 +1576,27 @@ async function getCatalogWithPhotos() {
   });
 }
 
-async function uploadPhotoToStorage(prodId, photoB64, idx) {
-  if (!photoB64 || !photoB64.startsWith('data:')) return photoB64; // already a URL
-  try {
-    const bucket = 'tbr-tools-manager.firebasestorage.app';
-    const path = `catalog_photos/${prodId}/photo_${idx}.jpg`;
-    const encodedPath = encodeURIComponent(path);
-    const blob = b64toBlob(photoB64);
-    // Try with auth token first, fall back to unauthenticated (if Storage rules allow)
-    let token = '';
-    try { const u = await fbUrl(''); token = new URL(u).searchParams.get('auth') || ''; } catch {}
-    const headers = {'Content-Type': 'image/jpeg'};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(
-      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`,
-      { method: 'POST', headers, body: blob, signal: AbortSignal.timeout(15000) }
-    );
-    if (!r.ok) return null;
-    const data = await r.json();
-    const dlToken = data.downloadTokens;
-    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media${dlToken?'&token='+dlToken:''}`;
-  } catch(e) { console.warn('Storage upload failed:', e && e.message); return null; }
-}
-function b64toBlob(b64, type='image/jpeg'){
-  const bin = atob(b64.split(',')[1]);
-  const arr = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-  return new Blob([arr],{type});
-}
 async function fbWritePhotos(prodId, photoB64, photosB64) {
-  // Upload each photo to Storage, store URLs in RTDB catalog_photos node
   try {
-    const urls = await Promise.all((photosB64||[photoB64]).map((p,i)=>uploadPhotoToStorage(prodId,p,i)));
-    const validUrls = urls.filter(Boolean);
-    if (!validUrls.length) return;
+    const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
+    const valid = list.filter(p=>p&&p.startsWith('data:'));
+    if(!valid.length) return;
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
-    await fetch(url, {
+    const body = JSON.stringify({ photo: valid[0], photos: valid.slice(0,2) });
+    const r = await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ photo: validUrls[0], photos: validUrls })
+      body
     });
-  } catch(e) { console.warn('fbWritePhotos:', e && e.message); }
+    if(!r.ok){
+      const txt = await r.text().catch(()=>'');
+      console.error('fbWritePhotos error', r.status, txt);
+      toast(`Error al subir foto al catálogo (${r.status}). Revisá la conexión.`, false, 5000);
+    }
+  } catch(e) {
+    console.error('fbWritePhotos:', e);
+    toast('No se pudo subir la foto al catálogo digital. Verificá tu conexión.', false, 5000);
+  }
 }
 async function fbWrite(k, v) {
   try {
@@ -1671,7 +1651,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio'];
 
 // Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
 // auth anónima fallida): trae solo los nodos de lectura pública (catalog,
@@ -4586,13 +4566,18 @@ function saleProfit(s){
 function salesProductRanking(sales){
   const map={};
   sales.forEach(s=>{
-    saleItems(s).forEach(it=>{
+    const items=saleItems(s);
+    const totalProfit=saleProfit(s);
+    const totalRev=saleRevenue(s);
+    items.forEach(it=>{
       const key=(it.c||it.n||'').toLowerCase();
       if(!map[key]) map[key]={name:it.n,code:it.c,units:0,revenue:0,profit:0};
       map[key].units += (it.q||1);
-      map[key].revenue += it.p*(it.q||1);
-      // Ventas clásicas (un solo producto): el envío se descontaba por unidad, igual que en saleProfit()
-      map[key].profit += itemProfit(s,it) - (Array.isArray(s.items)||s.channel==='directa'?0:(s.mlEnv??0)*(it.q||1));
+      const itRev=it.p*(it.q||1);
+      map[key].revenue += itRev;
+      // Distribuir la ganancia real de la venta proporcional al revenue de cada item
+      // Esto asegura coherencia con saleProfit() en todos los casos (mlReceived, directa, legacy)
+      map[key].profit += totalRev>0 ? totalProfit*(itRev/totalRev) : 0;
     });
   });
   return Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
@@ -5110,7 +5095,9 @@ async function saveCat(){
       const img=new Image(); img.onerror=rej;
       img.onload=()=>{
         let w=img.width,h=img.height;
-        if(w>maxPx||h>maxPx){if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}}
+        // Si ya entra en los límites, devolver tal cual sin re-comprimir
+        if(w<=maxPx && h<=maxPx){ res(p); return; }
+        if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}
         const c=document.createElement('canvas');c.width=w;c.height=h;
         c.getContext('2d').drawImage(img,0,0,w,h);
         res(c.toDataURL('image/jpeg',quality));
@@ -5429,20 +5416,18 @@ after.stats=()=>{
 ═══════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════
-   PUBLICAR ML
+   PUBLICAR ML — calculadora simple de precio
 ═══════════════════════════════════════════ */
-let ML = { srcType:'calc', srcId:null, mode:'clasico', glbCom:null, glbEnv:null, glbFlex:null, glbPub:0, margins:{}, envios:{}, manualProducts:[] };
-let compSrcId = null; // compra elegida como base para "Comparar precios ML" (por defecto, la última)
+let MLQ = { mode:'clasico', com:16, env:0, margin:30, cu:0, prodName:'' };
+let compSrcId = null;
 
-/* ── helper: build product cards HTML ── */
 function _mlCalc(cu, m, envVal, com) {
-  // envVal: positive = flex bonus (income), negative/zero used as cost in clasico
-  if (ML.mode === 'flex') {
+  if (MLQ.mode === 'flex') {
     const flex = envVal;
     const pr = (cu*(1+m/100) - flex) / (1 - com/100);
     const gn = pr*(1-com/100) - cu + flex;
     return { pr: Math.max(0, pr), gn };
-  } else if (ML.mode === 'full') {
+  } else if (MLQ.mode === 'full') {
     const pr = (cu*(1+m/100)) / (1-com/100);
     const gn = pr*(1-com/100) - cu;
     return { pr, gn };
@@ -5454,461 +5439,203 @@ function _mlCalc(cu, m, envVal, com) {
   }
 }
 
-function _mlCards(products, glbCom, glbEnv) {
-  const conf = getConf();
-  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
-  return products.map(p => {
-    const m   = ML.margins[p.id] !== undefined ? ML.margins[p.id] : 30;
-    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
-    const envVal = ML.mode==='full' ? 0 : (ML.envios[p.id] !== undefined ? ML.envios[p.id] : envDefault);
-    const { pr, gn } = _mlCalc(p.cu, m, envVal, glbCom);
-    const gnPct = p.cu > 0 ? ((gn/p.cu)*100).toFixed(1) : 0;
-    const rmBtn = ML.srcType==='manual'
-      ? `<button class="btn-rm" onclick="mlRmManualProd('${p.id}')" title="Quitar artículo">${ic('close')}</button>` : '';
-
-    let envField = '';
-    if (ML.mode === 'clasico') {
-      envField = `<div class="ml-card-field"><label>Envío ML $</label><input type="number" value="${envVal}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`;
-    } else if (ML.mode === 'flex') {
-      envField = `<div class="ml-card-field"><label>Bonif. Flex $</label><input type="number" value="${envVal}" min="0" step="100" data-mleid="${p.id}" data-mlcu="${p.cu}" class="ml-env-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)"></div>`;
-    } else {
-      envField = `<div class="ml-card-field"><label>Envío</label><div style="height:36px;display:flex;align-items:center;font-size:12px;color:var(--gr)">${ic('check')} Full incluido</div></div>`;
-    }
-
-    return `<div class="ml-card" id="mlc-${p.id}">
-      <div class="ml-card-top">
-        <div>
-          <div class="ml-card-name">${esc(p.n||'Producto')}</div>
-          ${p.c?`<div class="ml-card-code">${esc(p.c)} · ${p.q} u.</div>`:`<div class="ml-card-code">${p.q} u.</div>`}
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div class="ml-card-cost">
-            <div class="ml-card-cost-lbl">Costo ARS</div>
-            <div class="ml-card-cost-val">${fmtA(p.cu)}</div>
-          </div>
-          ${rmBtn}
-        </div>
-      </div>
-      <div class="ml-card-inputs">
-        <div class="ml-card-field">
-          <label>Margen %</label>
-          <input type="number" value="${m}" min="0" max="999" step="1" data-mlid="${p.id}" data-mlcu="${p.cu}" class="ml-margin-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
-        </div>
-        ${envField}
-        <div class="ml-card-field">
-          <label>Com. ML %</label>
-          <input type="number" value="${glbCom}" min="0" max="30" step="0.5" data-mlcid="${p.id}" data-mlcu="${p.cu}" class="ml-com-inp" oninput="mlRecalc(this)" onchange="mlRecalc(this)">
-        </div>
-      </div>
-      <div class="ml-card-results" id="mlr-${p.id}">
-        <div class="ml-res-item">
-          <div class="ml-res-lbl">Precio ML</div>
-          <div class="ml-res-val cch" id="mlrp-${p.id}">${fmtA(pr)}</div>
-          <div class="ml-res-sub" id="mlrp2-${p.id}">× ${p.q} = ${fmtA(pr*p.q)}</div>
-        </div>
-        <div class="ml-res-item">
-          <div class="ml-res-lbl">Ganancia / u.</div>
-          <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrg-${p.id}">${fmtA(gn)}</div>
-          <div class="ml-res-sub" id="mlrg2-${p.id}">${gnPct}% sobre costo</div>
-        </div>
-        <div class="ml-res-item">
-          <div class="ml-res-lbl">Gan. total</div>
-          <div class="ml-res-val ${gn>=0?'cg':'cr'}" id="mlrgt-${p.id}">${fmtA(gn*p.q)}</div>
-          <div class="ml-res-sub">× ${p.q} unidades</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 function pgML() {
-  const ps   = DB.get('purchases',[]);
   const conf = getConf();
-  const pubs = DB.get('mlpubs',[]);
+  if (!MLQ.com) MLQ.com = conf.mlCom || 16;
+  const mode = MLQ.mode;
+  const { pr, gn } = MLQ.cu > 0
+    ? _mlCalc(MLQ.cu, MLQ.margin, MLQ.env, MLQ.com)
+    : { pr:0, gn:0 };
+  const gnPct = MLQ.cu > 0 ? (gn/MLQ.cu*100).toFixed(1) : '—';
+  const mlReceived = MLQ.mode==='clasico' ? pr*(1-MLQ.com/100)-MLQ.env
+                   : MLQ.mode==='flex'    ? pr*(1-MLQ.com/100)+MLQ.env
+                   :                        pr*(1-MLQ.com/100);
+  const hasResult = MLQ.cu > 0;
 
-  // ── Resolve source products ──
-  let products = [], srcLabel = '';
-  if (ML.srcType === 'calc' && CALC && CALC.v.length) {
-    products  = CALC.v.map(p => ({ id:p.id, n:p.n, c:p.c, q:p.q||1, cu: p.p * CALC.TCE }));
-    srcLabel  = 'Compra actual (sin guardar)';
-  } else if (ML.srcType === 'purchase' && ML.srcId) {
-    const p = ps.find(x=>x.id===ML.srcId);
-    if (p) {
-      products = (p.products||[]).map(pr => ({ id:pr.id, n:pr.n, c:pr.c, q:pr.q||1, cu: pr.p*(p.r?.TCE||0) }));
-      srcLabel = p.name||'Sin nombre';
-    }
-  } else if (ML.srcType === 'manual') {
-    products = ML.manualProducts;
-    srcLabel = 'Ingreso manual';
-  }
-
-  const hasSrc  = products.length > 0;
-  const glbCom  = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
-  const glbEnv  = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
-  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
-  const glbPub  = ML.glbPub || 0;
-
-  // ── Totals for render ──
-  let totP=0, totG=0;
-  products.forEach(p=>{
-    const m   = ML.margins[p.id]!==undefined ? ML.margins[p.id] : 30;
-    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
-    const envVal = ML.mode==='full' ? 0 : (ML.envios[p.id]!==undefined ? ML.envios[p.id] : envDefault);
-    const { pr, gn } = _mlCalc(p.cu, m, envVal, glbCom);
-    totP += pr*p.q; totG += gn*p.q;
-  });
+  const cat = DB.get('catalog',[]);
+  const catOpts = cat.filter(x=>x.name).map(x=>`<option value="${esc(x.name)}" data-cost="${x.lastPrice||x.defaultPrice||0}">`).join('');
 
   return `<div class="pg">
-  <div class="sh mb4">Publicar en Mercado Libre</div>
-  <div class="hint mb20">Calculá precios de venta a partir de tus costos reales.</div>
+  <div class="sh mb4">Calculadora de precio ML</div>
+  <div class="hint mb20">¿A cuánto tenés que publicar para ganar lo que querés?</div>
 
-  <!-- ── FUENTE ── -->
-  <div class="sh mb12" style="font-size:9px">FUENTE DE COSTOS</div>
-  <div class="ml-src-bar mb20">
-    ${CALC&&CALC.v.length?`<button class="ml-src-btn${ML.srcType==='calc'?' on':''}" onclick="mlSetSrc('calc',null)">${ic('star')} Compra actual</button>`:''}
-    <select class="ml-select" onchange="mlSetSrc('purchase',this.value)">
-      <option value="">— Elegir compra guardada —</option>
-      ${ps.slice().reverse().map(p=>`<option value="${p.id}"${ML.srcId===p.id&&ML.srcType==='purchase'?' selected':''}>${esc(p.name||'Sin nombre')} · ${fmtD(p.date)} · TCE ${fmtA(p.r?.TCE||0)}</option>`).join('')}
-    </select>
-    <button class="ml-src-btn${ML.srcType==='manual'?' on':''}" onclick="mlSetSrc('manual',null)">${ic('edit')} Manual</button>
-  </div>
-
-  <!-- ── FORMULARIO MANUAL ── -->
-  ${ML.srcType==='manual'?`<div class="card mb16">
-    <div class="sh mb12" style="font-size:9px;margin-bottom:14px">AGREGAR ARTÍCULO</div>
-    <div style="display:grid;grid-template-columns:2fr 1fr 80px;gap:10px;margin-bottom:12px">
-      <div><label class="fl">Nombre del artículo</label><div class="iw"><input type="text" id="mlm-n" placeholder="Ej: Taladro 20V DEWALT"></div></div>
-      <div><label class="fl">Código (opcional)</label><div class="iw"><input type="text" id="mlm-c" placeholder="SKU / ref."></div></div>
-      <div><label class="fl">Cant.</label><div class="iw"><input type="number" id="mlm-q" value="1" min="1" step="1"></div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div>
-        <label class="fl">Costo ARS (directo)</label>
-        <div class="iw"><span class="ipre">ARS</span><input type="number" id="mlm-ars" placeholder="0" step="100" min="0"></div>
-        <div class="hint">Ingresá el costo final en pesos.</div>
+  <div class="card mb20">
+    <div class="fg-w mb16">
+      <div style="flex:1;min-width:200px">
+        <label class="fl">Producto (opcional)</label>
+        <div class="iw"><input type="text" id="mlq-prod" placeholder="Buscá en tu catálogo…" list="mlq-cat-list" autocomplete="off" value="${esc(MLQ.prodName)}" oninput="mlqFillFromCatalog(this.value)"></div>
+        <datalist id="mlq-cat-list">${catOpts}</datalist>
       </div>
-      <div>
-        <label class="fl">— o — Costo USD × TCE</label>
-        <div style="display:flex;gap:6px">
-          <div class="iw" style="flex:1"><span class="ipre">USD</span><input type="number" id="mlm-usd" placeholder="0.00" step="0.5" min="0"></div>
-          <div class="iw" style="flex:1"><span class="ipre">TCE</span><input type="number" id="mlm-tce" placeholder="1200" step="10" min="1"></div>
-        </div>
-        <div class="hint">Se multiplican para obtener el costo ARS.</div>
+      <div style="min-width:180px">
+        <label class="fl">Costo ARS</label>
+        <div class="iw"><span class="ipre">$</span><input type="number" id="mlq-cu" value="${MLQ.cu||''}" placeholder="0" min="0" step="100" oninput="mlqCalc()"></div>
       </div>
     </div>
-    <div class="fe"><button class="btn-p" onclick="mlAddManualProd()">+ Agregar artículo</button></div>
-  </div>`:''}
 
-  <!-- ── EMPTY STATE ── -->
-  ${!hasSrc?`<div class="empty-state">
-    <svg class="empty-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M32 8L56 20V44L32 56L8 44V20L32 8Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M32 8V56M8 20L32 32L56 20" stroke="currentColor" stroke-width="2" opacity=".5"/>
-    </svg>
-    <div class="empty-title">Sin productos cargados</div>
-    <div class="empty-sub">${ML.srcType==='manual'
-      ?'Completá el formulario de arriba y hacé clic en + Agregar artículo.'
-      :`Elegí una compra guardada, calculá una compra nueva, o usá el modo ${ic('edit')} Manual.`}</div>
-  </div>`:`
-
-  <!-- ── MODALIDAD ── -->
-  <div class="sh mb12" style="font-size:9px">MODALIDAD DE PUBLICACIÓN</div>
-  <div class="ml-mode-bar mb16">
-    <button class="ml-mode-btn${ML.mode==='clasico'?' on':''}" onclick="mlSetMode('clasico')">Clásico · con envío</button>
-    <button class="ml-mode-btn${ML.mode==='full'?' on':''}" onclick="mlSetMode('full')">Full · envío gratis</button>
-    <button class="ml-mode-btn${ML.mode==='flex'?' on':''}" onclick="mlSetMode('flex')">Flex · ML te paga</button>
-  </div>
-  ${ML.mode==='flex'?`<div class="hint mb12" style="color:var(--gr)">En Flex, ML te abona el costo del envío más un bonus cuando el comprador es de tu ciudad.</div>`:''}
-
-  <!-- ── PARÁMETROS GLOBALES ── -->
-  <div class="ml-global mb20">
-    <div class="ml-gfield">
-      <label>Comisión ML %</label>
-      <input type="number" value="${glbCom}" min="0" max="30" step="0.5" id="ml-glb-com" oninput="mlGlobal()">
+    <div class="mb16">
+      <label class="fl mb8">Modalidad</label>
+      <div class="ml-mode-bar">
+        <button class="ml-mode-btn${mode==='clasico'?' on':''}" onclick="mlqMode('clasico')">Clásico · con envío</button>
+        <button class="ml-mode-btn${mode==='full'?' on':''}"    onclick="mlqMode('full')">Full · envío gratis</button>
+        <button class="ml-mode-btn${mode==='flex'?' on':''}"    onclick="mlqMode('flex')">Flex · ML te paga</button>
+      </div>
     </div>
-    ${ML.mode==='clasico'
-      ?`<div class="ml-gfield"><label>Envío ML $</label><input type="number" value="${glbEnv}" min="0" step="100" id="ml-glb-env" oninput="mlGlobal()"></div>`
-      :ML.mode==='flex'
-        ?`<div class="ml-gfield"><label>Bonif. Flex $ (global)</label><input type="number" value="${glbFlex}" min="0" step="100" id="ml-glb-flex" oninput="mlGlobal()"></div>`
-        :'<div style="font-size:12px;color:var(--di);align-self:center">Envío gratis para el comprador · ML cobra tarifa fija al vendedor.</div>'}
-    <div class="ml-gfield">
-      <label>Margen global %</label>
-      <input type="number" value="" placeholder="Aplicar a todos" min="0" max="999" step="1" id="ml-glb-margin" oninput="mlApplyGlobalMargin()" style="width:110px">
-    </div>
-    <div class="ml-gfield">
-      <label>Publicidad del mes $</label>
-      <input type="number" value="${glbPub}" min="0" step="100" id="ml-glb-pub" oninput="mlGlobal()">
+
+    <div class="fg-w mb8">
+      <div style="min-width:140px">
+        <label class="fl">Comisión ML %</label>
+        <div class="iw"><input type="number" id="mlq-com" value="${MLQ.com}" min="0" max="30" step="0.5" oninput="mlqCalc()"></div>
+      </div>
+      ${mode!=='full'?`<div style="min-width:140px">
+        <label class="fl">${mode==='flex'?'Bonif. Flex $':'Costo envío $'}</label>
+        <div class="iw"><span class="ipre">$</span><input type="number" id="mlq-env" value="${MLQ.env}" min="0" step="100" oninput="mlqCalc()"></div>
+        <div class="hint">${mode==='flex'?'Lo que ML te abona por entregar vos.':'Costo del envío que pagás vos.'}</div>
+      </div>`:'<div style="font-size:13px;color:var(--di);align-self:center">Con Full, ML cobra tarifa fija<br>al vendedor (sin costo de envío extra).</div>'}
+      <div style="min-width:140px">
+        <label class="fl">Margen deseado %</label>
+        <div class="iw"><input type="number" id="mlq-margin" value="${MLQ.margin}" min="0" max="999" step="1" oninput="mlqCalc()"></div>
+        <div class="hint">% de ganancia sobre el costo.</div>
+      </div>
     </div>
   </div>
 
-  <!-- ── TARJETAS DE PRODUCTOS ── -->
-  <div class="sh mb12" style="font-size:9px">PRODUCTOS · ${esc(srcLabel)}</div>
-  <div id="ml-products">${_mlCards(products, glbCom, glbEnv)}</div>
-
-  <!-- ── TOTALES ── -->
-  <div class="ml-totbar" id="ml-totbar">
-    ${_mlTotHTML(totP, totG, glbPub, ML.mode)}
+  <!-- Resultados -->
+  <div id="mlq-results">
+  ${hasResult ? `<div class="g3 mb8">
+    <div class="sc accent-u">
+      <div class="sc-l">Precio de publicación</div>
+      <div class="sc-v u">${fmtA(pr)}</div>
+      <div class="sc-s">lo que ve el comprador</div>
+    </div>
+    <div class="sc accent-g">
+      <div class="sc-l">Ganancia neta</div>
+      <div class="sc-v ${gn>=0?'g':'r'}">${fmtA(gn)}</div>
+      <div class="sc-s">${gnPct}% sobre el costo</div>
+    </div>
+    <div class="sc">
+      <div class="sc-l">Lo que te acredita ML</div>
+      <div class="sc-v">${fmtA(mlReceived)}</div>
+      <div class="sc-s">ya descontado comisión y envío</div>
+    </div>
+  </div>
+  <div class="savebar mt8">
+    <div class="hint" style="flex:1">Guardá este precio para usarlo en Competencia y comparar con la competencia.</div>
+    <button class="btn-p" onclick="mlqSave()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar precio</button>
+  </div>
+  <div class="hint mt8">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>` : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`}
   </div>
 
-  <!-- ── GUARDAR PUBLICACIÓN ── -->
-  <div class="savebar mt16">
-    <div style="flex:1"><input type="text" id="ml-pub-name" placeholder="Nombre de esta publicación (ej: Taladros Junio 2026)" style="width:100%"></div>
-    <button class="btn-p" onclick="mlSavePub()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar publicación</button>
-  </div>`}
-
-  <!-- ── PUBLICACIONES GUARDADAS ── -->
-  ${pubs.length?`<div class="mt24">
-    <div class="sh mb16">Publicaciones guardadas</div>
-    ${pubs.slice().reverse().map((pub,i)=>`<div class="hi"${stg(i)}>
-      <div class="hi-hdr" onclick="toggleHi('mlp${i}')">
+  <!-- Precios guardados -->
+  ${(()=>{
+    const saved = DB.get('mlprecios',[]);
+    if (!saved.length) return '';
+    return `<div class="mt24">
+    <div class="sh mb12">Precios guardados</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      ${saved.slice().reverse().map((s,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<saved.length-1?'border-bottom:1px solid var(--b2)':''}">
         <div>
-          <div class="hi-n">${esc(pub.name||'Sin nombre')}</div>
-          <div class="hi-d">${fmtD(pub.date)} · ${pub.products?.length||0} productos · ${pub.mode==='flex'?'Flex':pub.mode==='full'?'ML Full':'Clásico'}</div>
+          <div style="font-weight:600;font-size:14px">${esc(s.name||'Sin nombre')}</div>
+          <div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${fmtD(s.date)} · margen ${s.margin}% · ${s.mode==='flex'?'Flex':s.mode==='full'?'Full':'Clásico'}</div>
         </div>
-        <div>
-          <div class="hi-v" style="color:var(--ch)">${fmtA(pub.totFac||0)}</div>
-          <div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">${pub.glbPub>0?'neta '+fmtA(pub.totNeta||0):'gan. '+fmtA(pub.totGan||0)}</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="text-align:right">
+            <div style="font-weight:700;color:var(--ch)">${fmtA(s.precio)}</div>
+            <div style="font-size:11px;color:var(--di)">gan. ${fmtA(s.gn)}</div>
+          </div>
+          <button class="btn-d btn-sm" onclick="mlqDelSaved('${s.id}')">${ic('trash')}</button>
         </div>
-      </div>
-      <div class="hi-body" id="mlp${i}">
-        <div style="overflow-x:auto;margin-top:12px">
-          <table><thead><tr>
-            <th>Producto</th><th>Código</th><th class="tc2">Cant.</th>
-            <th class="tr">Costo ARS</th><th class="tc2">Margen</th>
-            <th class="tr">Precio ML</th><th class="tr">Gan./u.</th>
-          </tr></thead>
-          <tbody>${(pub.products||[]).map(pr=>`<tr>
-            <td class="tn">${esc(pr.n||'—')}</td>
-            <td class="tc">${esc(pr.c||'—')}</td>
-            <td class="tc2">${pr.q||1}</td>
-            <td class="tr tm csi">${fmtA(pr.cu||0)}</td>
-            <td class="tc2 tm">${pr.margin||30}%</td>
-            <td class="tr tm cch">${fmtA(pr.precio||0)}</td>
-            <td class="tr tm ${(pr.gn||0)>=0?'cg':'cr'}">${fmtA(pr.gn||0)}</td>
-          </tr>`).join('')}</tbody></table>
-        </div>
-        <div class="hi-acts">
-          <button class="btn-g" onclick="mlLoadPub('${pub.id}')">${ic('edit')} Cargar en calculadora</button>
-          <button class="btn-d" onclick="mlDelPub('${pub.id}')">${ic('trash')} Borrar</button>
-        </div>
-      </div>
-    </div>`).join('')}
-  </div>`:''}
+      </div>`).join('')}
+    </div>
+  </div>`;
+  })()}
 </div>`;
 }
 
-function _mlTotHTML(totP, totG, pub, mode) {
-  const totNeta = totG - pub;
-  const modeLabel = mode==='full' ? 'ML FULL' : mode==='flex' ? 'FLEX' : 'CLÁSICO';
-  return `<div class="ml-tot-item"><div class="ml-tot-lbl">Facturación total</div><div class="ml-tot-val">${fmtA(totP)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Gan. bruta</div><div class="ml-tot-val" style="color:${totG>=0?'var(--gr)':'var(--re)'}">${fmtA(totG)}</div></div>
-    ${pub>0?`<div class="ml-tot-item"><div class="ml-tot-lbl">− Publicidad</div><div class="ml-tot-val" style="color:var(--re)">−${fmtA(pub)}</div></div>`:''}
-    <div class="ml-tot-item"><div class="ml-tot-lbl">${pub>0?'Gan. neta':'Ganancia total'}</div><div class="ml-tot-val" style="color:${totNeta>=0?'var(--gr)':'var(--re)'};font-size:${pub>0?'18px':'16px'}">${fmtA(totNeta)}</div></div>
-    <div class="ml-tot-item"><div class="ml-tot-lbl">Modalidad</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--ye);letter-spacing:1px">${modeLabel}</div></div>`;
+function mlqCalc() {
+  MLQ.cu     = parseFloat(document.getElementById('mlq-cu')?.value)||0;
+  MLQ.com    = parseFloat(document.getElementById('mlq-com')?.value)||16;
+  MLQ.env    = parseFloat(document.getElementById('mlq-env')?.value)||0;
+  MLQ.margin = parseFloat(document.getElementById('mlq-margin')?.value)||30;
+  const { pr, gn } = MLQ.cu > 0
+    ? _mlCalc(MLQ.cu, MLQ.margin, MLQ.env, MLQ.com)
+    : { pr:0, gn:0 };
+  const gnPct = MLQ.cu > 0 ? (gn/MLQ.cu*100).toFixed(1) : '—';
+  const mlReceived = MLQ.mode==='clasico' ? pr*(1-MLQ.com/100)-MLQ.env
+                   : MLQ.mode==='flex'    ? pr*(1-MLQ.com/100)+MLQ.env
+                   :                        pr*(1-MLQ.com/100);
+  const el = document.getElementById('mlq-results');
+  if (!el) return;
+  el.innerHTML = MLQ.cu > 0 ? `<div class="g3 mb8">
+    <div class="sc accent-u">
+      <div class="sc-l">Precio de publicación</div>
+      <div class="sc-v u">${fmtA(pr)}</div>
+      <div class="sc-s">lo que ve el comprador</div>
+    </div>
+    <div class="sc accent-g">
+      <div class="sc-l">Ganancia neta</div>
+      <div class="sc-v ${gn>=0?'g':'r'}">${fmtA(gn)}</div>
+      <div class="sc-s">${gnPct}% sobre el costo</div>
+    </div>
+    <div class="sc">
+      <div class="sc-l">Lo que te acredita ML</div>
+      <div class="sc-v">${fmtA(mlReceived)}</div>
+      <div class="sc-s">ya descontado comisión y envío</div>
+    </div>
+  </div>
+  <div class="hint">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>`
+  : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`;
 }
 
-function mlSetSrc(type, id) {
-  ML.srcType = type;
-  ML.srcId   = (type==='purchase' && id) ? id : null;
-  if (type !== 'manual') ML.manualProducts = [];
-  ML.margins = {}; ML.envios = {};
-  render();
-}
-function mlSetMode(m) { ML.mode = m; ML.envios = {}; render(); }
-
-function mlAddManualProd() {
-  const n = document.getElementById('mlm-n')?.value.trim();
-  if (!n) { toast('Ingresá el nombre del artículo.', false); return; }
-  const q      = Math.max(1, parseInt(document.getElementById('mlm-q')?.value)||1);
-  const c      = document.getElementById('mlm-c')?.value.trim()||'';
-  const arsVal = parseFloat(document.getElementById('mlm-ars')?.value);
-  const usdVal = parseFloat(document.getElementById('mlm-usd')?.value);
-  const tceVal = parseFloat(document.getElementById('mlm-tce')?.value)||0;
-  let cu = 0;
-  if (!isNaN(arsVal) && arsVal > 0) {
-    cu = arsVal;
-  } else if (!isNaN(usdVal) && usdVal > 0 && tceVal > 0) {
-    cu = usdVal * tceVal;
-  }
-  if (cu <= 0) { toast('Ingresá el costo del artículo (ARS directo o USD × TCE).', false); return; }
-  ML.manualProducts.push({ id:uid(), n, c, q, cu });
-  render();
-}
-
-function mlRmManualProd(id) {
-  ML.manualProducts = ML.manualProducts.filter(p=>p.id!==id);
-  delete ML.margins[id];
-  delete ML.envios[id];
+function mlqMode(m) {
+  MLQ.mode = m;
+  MLQ.env = 0;
   render();
 }
 
-function mlSavePub() {
-  const conf    = getConf();
-  const glbCom  = ML.glbCom  !== null ? ML.glbCom  : conf.mlCom;
-  const glbEnv  = ML.glbEnv  !== null ? ML.glbEnv  : conf.mlEnv;
-  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
-  const glbPub  = ML.glbPub  || 0;
-  const name    = document.getElementById('ml-pub-name')?.value.trim()
-               || 'ML ' + new Date().toLocaleDateString('es-AR');
-
-  // Collect state from DOM at save time
-  const products = [];
-  let totFac = 0, totGan = 0;
-  document.querySelectorAll('.ml-margin-inp').forEach(inp => {
-    const id  = inp.dataset.mlid;
-    const cu  = parseFloat(inp.dataset.mlcu)||0;
-    const m   = parseFloat(inp.value)||0;
-    const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
-    const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
-    const envVal = envInp ? parseFloat(envInp.value)||0 : envDefault;
-    const com    = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const { pr, gn } = _mlCalc(cu, m, envVal, com);
-    const card = document.getElementById('mlc-'+id);
-    const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
-    const pname = card?.querySelector('.ml-card-name')?.textContent||'';
-    const codeRaw = card?.querySelector('.ml-card-code')?.textContent||'';
-    const pcode = codeRaw.includes(' · ') ? codeRaw.split(' · ')[0] : '';
-    products.push({ id, n:pname, c:pcode, q, cu, margin:m, env:envVal, com, precio:pr, gn });
-    totFac += pr*q; totGan += gn*q;
-  });
-
-  if (!products.length) { toast('Sin productos para guardar.', false); return; }
-
-  const totNeta = totGan - glbPub;
-  const pub = { id:uid(), date:new Date().toISOString(), name, mode:ML.mode, glbCom, glbEnv, glbFlex, glbPub, totFac, totGan, totNeta, products };
-  const pubs = DB.get('mlpubs',[]);
-  pubs.push(pub);
-  DB.set('mlpubs', pubs);
-  _lastWrite = Date.now();
-  toast('Publicación guardada');
+function mlqSave() {
+  const cu = MLQ.cu; if (!cu) { toast('Ingresá el costo primero.', false); return; }
+  const { pr, gn } = _mlCalc(cu, MLQ.margin, MLQ.env, MLQ.com);
+  const name = MLQ.prodName || document.getElementById('mlq-prod')?.value.trim() || 'Sin nombre';
+  const cat = DB.get('catalog',[]);
+  const prod = cat.find(x=>x.name===name);
+  const entry = { id:uid(), date:new Date().toISOString(), name, code:prod?.code||'',
+    cu, precio:pr, gn, margin:MLQ.margin, com:MLQ.com, env:MLQ.env, mode:MLQ.mode };
+  const saved = DB.get('mlprecios',[]).filter(s=>s.name!==name); // reemplaza si ya existe
+  saved.push(entry);
+  DB.set('mlprecios', saved);
+  toast('Precio guardado');
+  render();
+}
+function mlqDelSaved(id) {
+  DB.set('mlprecios', DB.get('mlprecios',[]).filter(s=>s.id!==id));
   render();
 }
 
-function mlLoadPub(id) {
-  const pub = DB.get('mlpubs',[]).find(p=>p.id===id);
-  if (!pub) return;
-  ML.mode = pub.mode || 'clasico';
-  ML.glbCom = pub.glbCom ?? null;
-  ML.glbEnv = pub.glbEnv ?? null;
-  ML.glbFlex = pub.glbFlex ?? null;
-  ML.glbPub = pub.glbPub || 0;
-  ML.margins = {};
-  ML.envios = {};
-  if (pub.products?.length) {
-    ML.srcType = 'manual';
-    ML.srcId = null;
-    ML.manualProducts = pub.products.map(p=>({ id:p.id||uid(), n:p.n, c:p.c, q:p.q||1, cu:p.cu||0 }));
-    pub.products.forEach(p=>{ if(p.margin!=null) ML.margins[p.id]=p.margin; if(p.env!=null) ML.envios[p.id]=p.env; });
-  }
-  toast('Publicación cargada en la calculadora');
-  render();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function mlDelPub(id) {
-  confirm2('¿Borrar esta publicación guardada?', ()=>{ DB.set('mlpubs', DB.get('mlpubs',[]).filter(p=>p.id!==id)); render(); });
+function mlqFillFromCatalog(val) {
+  MLQ.prodName = val;
+  const cat = DB.get('catalog',[]);
+  const prod = cat.find(x=>x.name===val);
+  if (!prod) return;
+  const cu = Math.round((prod.lastPrice || prod.defaultPrice || 0) * lastTCE());
+  if (!cu) return;
+  MLQ.cu = cu;
+  const inp = document.getElementById('mlq-cu');
+  if (inp) { inp.value = cu; mlqCalc(); }
 }
 
-function mlGlobal() {
-  const com  = parseFloat(document.getElementById('ml-glb-com')?.value);
-  const env  = parseFloat(document.getElementById('ml-glb-env')?.value);
-  const flex = parseFloat(document.getElementById('ml-glb-flex')?.value);
-  const pub  = parseFloat(document.getElementById('ml-glb-pub')?.value);
-  if (!isNaN(com))  ML.glbCom = com;
-  if (!isNaN(env))  ML.glbEnv = env;
-  if (!isNaN(flex)) ML.glbFlex = flex;
-  if (!isNaN(pub))  ML.glbPub = pub;
-  document.querySelectorAll('.ml-margin-inp').forEach(inp => mlRecalc(inp));
-  mlUpdateTotals();
-}
-function mlApplyGlobalMargin() {
-  const m = parseFloat(document.getElementById('ml-glb-margin')?.value);
-  if (isNaN(m)) return;
-  document.querySelectorAll('.ml-margin-inp').forEach(inp => { inp.value = m; mlRecalc(inp); });
-}
-function mlRecalc(inp) {
-  const conf   = getConf();
-  const glbCom = ML.glbCom !== null ? ML.glbCom : conf.mlCom;
-  const glbEnv = ML.glbEnv !== null ? ML.glbEnv : conf.mlEnv;
-  let id, cu, m, env, com;
-  if (inp.dataset.mlid) {
-    id = inp.dataset.mlid; cu = parseFloat(inp.dataset.mlcu); m = parseFloat(inp.value)||0;
-    ML.margins[id] = m;
-    const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
-    const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    const glbFlexInner = ML.glbFlex !== null ? ML.glbFlex : (getConf().mlFlex || 0);
-    const envDefault = ML.mode==='flex' ? glbFlexInner : (ML.mode==='full' ? 0 : glbEnv);
-    env = envInp ? parseFloat(envInp.value)||0 : envDefault;
-    com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-  } else if (inp.dataset.mleid) {
-    id = inp.dataset.mleid; cu = parseFloat(inp.dataset.mlcu); env = parseFloat(inp.value)||0;
-    ML.envios[id] = env;
-    const mgInp  = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
-    const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
-    com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-  } else if (inp.dataset.mlcid) {
-    id = inp.dataset.mlcid; cu = parseFloat(inp.dataset.mlcu); com = parseFloat(inp.value)||glbCom;
-    const mgInp  = document.querySelector(`.ml-margin-inp[data-mlid="${id}"]`);
-    const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
-    const glbFlexInner2 = ML.glbFlex !== null ? ML.glbFlex : (getConf().mlFlex || 0);
-    const envDefault2 = ML.mode==='flex' ? glbFlexInner2 : (ML.mode==='full' ? 0 : glbEnv);
-    m   = mgInp  ? parseFloat(mgInp.value)||0   : (ML.margins[id]||30);
-    env = envInp ? parseFloat(envInp.value)||0  : envDefault2;
-  } else return;
-  const { pr, gn } = _mlCalc(cu, m, env, com);
-  const gnPct = cu > 0 ? ((gn/cu)*100).toFixed(1) : 0;
-  const card  = document.getElementById('mlc-'+id);
-  const q     = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
-  const prEl  = document.getElementById('mlrp-'+id);
-  const p2El  = document.getElementById('mlrp2-'+id);
-  const gnEl  = document.getElementById('mlrg-'+id);
-  const gn2El = document.getElementById('mlrg2-'+id);
-  const gtEl  = document.getElementById('mlrgt-'+id);
-  if (prEl)  prEl.textContent  = fmtA(pr);
-  if (p2El)  p2El.textContent  = '× '+q+' = '+fmtA(pr*q);
-  if (gnEl)  { gnEl.textContent = fmtA(gn); gnEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
-  if (gn2El) gn2El.textContent = gnPct+'% sobre costo';
-  if (gtEl)  { gtEl.textContent = fmtA(gn*q); gtEl.className = 'ml-res-val '+(gn>=0?'cg':'cr'); }
-  mlUpdateTotals();
-}
-function mlUpdateTotals() {
-  const conf    = getConf();
-  const glbCom  = ML.glbCom  !== null ? ML.glbCom  : conf.mlCom;
-  const glbEnv  = ML.glbEnv  !== null ? ML.glbEnv  : conf.mlEnv;
-  const glbFlex = ML.glbFlex !== null ? ML.glbFlex : (conf.mlFlex || 0);
-  const glbPub  = ML.glbPub  || 0;
-  let totP=0, totG=0;
-  document.querySelectorAll('.ml-margin-inp').forEach(inp => {
-    const id  = inp.dataset.mlid;
-    const cu  = parseFloat(inp.dataset.mlcu)||0;
-    const m   = parseFloat(inp.value)||0;
-    const envInp = document.querySelector(`.ml-env-inp[data-mleid="${id}"]`);
-    const comInp = document.querySelector(`.ml-com-inp[data-mlcid="${id}"]`);
-    const envDefault = ML.mode==='flex' ? glbFlex : (ML.mode==='full' ? 0 : glbEnv);
-    const envVal = envInp ? parseFloat(envInp.value)||0 : envDefault;
-    const com = comInp ? parseFloat(comInp.value)||glbCom : glbCom;
-    const { pr, gn } = _mlCalc(cu, m, envVal, com);
-    const card = document.getElementById('mlc-'+id);
-    const q    = card ? parseInt(card.querySelector('.ml-card-code')?.textContent?.match(/(\d+)\s*u/)?.[1]||'1') : 1;
-    totP += pr*q; totG += gn*q;
-  });
-  const bar = document.getElementById('ml-totbar');
-  if (!bar) return;
-  bar.innerHTML = _mlTotHTML(totP, totG, glbPub, ML.mode);
-}
+
 function pgComp() {
   const ps=DB.get('purchases',[]);
   if (!ps.length) return `<div class="pg"><div class="sh mb16">Comparar precios ML</div><div class="empty">Guardá una compra primero.</div></div>`;
   const last=ps.find(p=>p.id===compSrcId) || ps[ps.length-1];
-  const pubs=DB.get('mlpubs',[]);
-  const lastPub=pubs.length?pubs[pubs.length-1]:null;
-  // Mapa código/nombre -> producto publicado en ML (con margen ya aplicado)
-  const pubMap={};
-  if (lastPub) (lastPub.products||[]).forEach(pp=>{
-    const key=(pp.c||pp.n||'').toLowerCase();
-    if (key) pubMap[key]=pp;
+  // Mapa código/nombre -> precio guardado desde calculadora ML
+  const mlprecios=DB.get('mlprecios',[]);
+  const precioMap={};
+  mlprecios.forEach(s=>{
+    if(s.code) precioMap[s.code.toLowerCase().trim()]=s;
+    if(s.name) precioMap[s.name.toLowerCase().trim()]=s;
   });
+  const hasSaved = mlprecios.length > 0;
   return `<div class="pg">
   <div class="sh mb8">Comparar precios ML</div>
   <div class="fb mb12" style="flex-wrap:wrap;gap:8px 16px;align-items:center">
@@ -5919,15 +5646,15 @@ function pgComp() {
       </select>
     </div>
   </div>
-  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong>${lastPub?` · Precios de venta tomados de la publicación ML "<strong style="color:var(--ch)">${esc(lastPub.name||'')}</strong>"`:' · No tenés publicaciones ML guardadas: se muestra el costo real.'} · Ingresá precios de la competencia para comparar.</div>
+  <div class="info mb20">Basado en: <strong style="color:var(--ch)">${esc(last.name||'última compra')}</strong> · ${hasSaved?'Precios de publicación tomados de tu calculadora ML.':'Guardá precios en <strong>Publicar ML</strong> para ver tus precios reales acá.'} Ingresá precios de la competencia para comparar.</div>
   ${(last.products||[]).map((p,i)=>{
     const cu=(p.p||0)*(last.r?.TCE||0);
-    const key=(p.c||p.n||'').toLowerCase();
-    const pub=pubMap[key];
-    const margin=pub?(pub.margin??30):30;
-    const env=pub?(pub.env||0):0;
-    const com=pub?(pub.com||16):16;
-    const precio=pub?pub.precio:(cu*(1+margin/100)+env)/(1-com/100);
+    const ck=(p.c||'').toLowerCase().trim(), nk=(p.n||'').toLowerCase().trim();
+    const saved=(ck&&precioMap[ck])||(nk&&precioMap[nk])||null;
+    const margin=saved?(saved.margin??30):30;
+    const env=saved?(saved.env||0):0;
+    const com=saved?(saved.com||16):16;
+    const precio=saved?saved.precio:(cu*(1+margin/100)+env)/(1-com/100);
     return `<div class="card mb12">
     <div style="font-weight:600;margin-bottom:10px">${esc(p.n||'Producto')} <span style="font-size:11px;color:var(--di);font-weight:400">${p.c?'· '+esc(p.c):''}</span></div>
     <div class="fg-w mb12" style="gap:24px">
