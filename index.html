@@ -4576,13 +4576,18 @@ function saleProfit(s){
 function salesProductRanking(sales){
   const map={};
   sales.forEach(s=>{
-    saleItems(s).forEach(it=>{
+    const items=saleItems(s);
+    const totalProfit=saleProfit(s);
+    const totalRev=saleRevenue(s);
+    items.forEach(it=>{
       const key=(it.c||it.n||'').toLowerCase();
       if(!map[key]) map[key]={name:it.n,code:it.c,units:0,revenue:0,profit:0};
       map[key].units += (it.q||1);
-      map[key].revenue += it.p*(it.q||1);
-      // Ventas clásicas (un solo producto): el envío se descontaba por unidad, igual que en saleProfit()
-      map[key].profit += itemProfit(s,it) - (Array.isArray(s.items)||s.channel==='directa'?0:(s.mlEnv??0)*(it.q||1));
+      const itRev=it.p*(it.q||1);
+      map[key].revenue += itRev;
+      // Distribuir la ganancia real de la venta proporcional al revenue de cada item
+      // Esto asegura coherencia con saleProfit() en todos los casos (mlReceived, directa, legacy)
+      map[key].profit += totalRev>0 ? totalProfit*(itRev/totalRev) : 0;
     });
   });
   return Object.values(map).map(r=>({...r, marginPct: r.revenue>0 ? r.profit/r.revenue*100 : 0})).sort((a,b)=>b.profit-a.profit);
