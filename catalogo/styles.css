@@ -408,7 +408,8 @@ a{color:inherit;text-decoration:none}
   background-position:center;filter:drop-shadow(0 16px 26px rgba(0,0,0,.55));
   transition:transform .6s var(--ease)}
 .card:hover .card-photo{transform:scale(1.05)}
-.stage-media{position:absolute;inset:0;border-radius:inherit;overflow:hidden}
+.stage-media{position:absolute;inset:0;border-radius:inherit;overflow:hidden;transition:transform .22s cubic-bezier(.32,.72,0,1)}
+.stage-media.swiping{transition:none}
 .stage-img{position:absolute;inset:3%;background-size:contain;background-repeat:no-repeat;background-position:center;
   filter:drop-shadow(0 24px 36px rgba(0,0,0,.6))}
 .stage-media::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
@@ -589,6 +590,8 @@ a{color:inherit;text-decoration:none}
   .bfu{opacity:0;animation:blurUp .8s var(--ease) forwards}
   /* Task 1: Scroll fade-up — cards start invisible, get .card-visible when observed */
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  /* Stagger on grid re-render: .card starts hidden, animates in with per-card delay */
+  .card{opacity:0;transform:translateY(20px);transition:opacity .45s var(--ease),transform .45s var(--ease)}
   .card-visible{opacity:1!important;transform:translateY(0)!important}
 }
 

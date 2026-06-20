@@ -425,6 +425,11 @@ function renderGrid(){
   $('#secCount').textContent = `${pad3(list.length)} ${list.length===1?'producto':'productos'}`;
   syncAddButtons();
   observeReveal();
+  // Stagger animation: fire immediately on re-render (no scroll required)
+  $$('#grid .card').forEach((el, i) => {
+    el.style.transitionDelay = Math.min(i * 50, 400) + 'ms';
+    requestAnimationFrame(() => el.classList.add('card-visible'));
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -686,6 +691,62 @@ function setDetailPhoto(j){
   $$('.dthumb').forEach((el,k)=>el.classList.toggle('cur',k===j));
 }
 function detailQtyChange(d){ detailQty=Math.max(1,detailQty+d); $('#detailQty').textContent=detailQty; }
+
+function initDetailSwipe(){
+  const panel = $('#detail');
+  if(!panel || panel._swipe) return;
+  panel._swipe = true;
+  let startX=0, startY=0, dragging=false, stageMedia=null;
+  panel.addEventListener('touchstart', e=>{
+    if(!detailItem || detailItem.photos.length < 2) return;
+    stageMedia = $('#detailStage')?.querySelector('.stage-media');
+    if(!stageMedia) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = false;
+  },{passive:true});
+  panel.addEventListener('touchmove', e=>{
+    if(!stageMedia) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if(!dragging){
+      if(Math.abs(dx) < 10) return;
+      if(Math.abs(dx) <= Math.abs(dy)) { stageMedia=null; return; } // vertical scroll
+      dragging = true;
+    }
+    stageMedia.classList.add('swiping');
+    stageMedia.style.transform = `translateX(${dx}px)`;
+  },{passive:true});
+  panel.addEventListener('touchend', e=>{
+    if(!stageMedia) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    stageMedia.classList.remove('swiping');
+    const threshold = 60;
+    if(Math.abs(dx) >= threshold && detailItem && detailItem.photos.length > 1){
+      const dir = dx < 0 ? 1 : -1; // left swipe = next, right = prev
+      const newIdx = (detailPhoto + dir + detailItem.photos.length) % detailItem.photos.length;
+      // Slide out current, then swap
+      stageMedia.style.transform = `translateX(${dir * -110}%)`;
+      setTimeout(()=>{
+        setDetailPhoto(newIdx);
+        // Slide in from opposite side
+        const next = $('#detailStage')?.querySelector('.stage-media');
+        if(next){
+          next.classList.add('swiping');
+          next.style.transform = `translateX(${dir * 110}%)`;
+          requestAnimationFrame(()=>{
+            next.classList.remove('swiping');
+            next.style.transform = '';
+          });
+        }
+      }, 220);
+    } else {
+      // Spring back
+      stageMedia.style.transform = '';
+    }
+    stageMedia = null; dragging = false;
+  },{passive:true});
+}
 
 function renderRelated(item){
   const rel = ITEMS.filter(x=>x.cat===item.cat && x.i!==item.i).slice(0,4);
@@ -1356,7 +1417,7 @@ function bootUI(){
   buildItems(); buildFeatured(); buildCats();
   applyUrlFilters();
   renderHero(true); renderGrid();
-  syncCartUI(); restartHeroTimer(); initHeroSwipe();
+  syncCartUI(); restartHeroTimer(); initHeroSwipe(); initDetailSwipe();
   renderHistory();
   initPremiumCursor();
 }
