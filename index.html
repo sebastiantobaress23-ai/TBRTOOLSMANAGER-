@@ -1576,13 +1576,45 @@ async function getCatalogWithPhotos() {
   });
 }
 
-async function fbWritePhotos(prodId, photo, photos) {
+async function uploadPhotoToStorage(prodId, photoB64, idx) {
+  if (!photoB64 || !photoB64.startsWith('data:')) return photoB64; // already a URL
   try {
+    const bucket = 'tbr-tools-manager.firebasestorage.app';
+    const path = `catalog_photos/${prodId}/photo_${idx}.jpg`;
+    const encodedPath = encodeURIComponent(path);
+    const blob = b64toBlob(photoB64);
+    // Try with auth token first, fall back to unauthenticated (if Storage rules allow)
+    let token = '';
+    try { const u = await fbUrl(''); token = new URL(u).searchParams.get('auth') || ''; } catch {}
+    const headers = {'Content-Type': 'image/jpeg'};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const r = await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`,
+      { method: 'POST', headers, body: blob, signal: AbortSignal.timeout(15000) }
+    );
+    if (!r.ok) return null;
+    const data = await r.json();
+    const dlToken = data.downloadTokens;
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media${dlToken?'&token='+dlToken:''}`;
+  } catch(e) { console.warn('Storage upload failed:', e && e.message); return null; }
+}
+function b64toBlob(b64, type='image/jpeg'){
+  const bin = atob(b64.split(',')[1]);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type});
+}
+async function fbWritePhotos(prodId, photoB64, photosB64) {
+  // Upload each photo to Storage, store URLs in RTDB catalog_photos node
+  try {
+    const urls = await Promise.all((photosB64||[photoB64]).map((p,i)=>uploadPhotoToStorage(prodId,p,i)));
+    const validUrls = urls.filter(Boolean);
+    if (!validUrls.length) return;
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
     await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ photo: photo||null, photos: photos||null })
+      body: JSON.stringify({ photo: validUrls[0], photos: validUrls })
     });
   } catch(e) { console.warn('fbWritePhotos:', e && e.message); }
 }
@@ -5056,16 +5088,13 @@ async function saveCat(){
   }
   // Full-res photos for local use (IndexedDB / PDF / print)
   const photos = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?1600:1200, idx===0?0.92:0.88)));
-  // Smaller versions for Firebase catalog_photos node (separate from catalog metadata)
-  const photosFB = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?900:700, idx===0?0.80:0.75)));
   const photo=photos[0]||'';
-  const photoFB=photosFB[0]||'';
   let cat=DB.get('catalog',[]);
   const prodId=eid||uid();
   // Save full-res photos in IndexedDB
   await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
-  // Save compact photos to Firebase under separate node (keeps catalog metadata fast)
-  if(photoFB) fbWritePhotos(prodId, photoFB, photosFB);
+  // Upload full-res photos to Firebase Storage (async, non-blocking)
+  if(photo) fbWritePhotos(prodId, photo, photos);
   if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
   else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
   DB.set('catalog',cat);closeCatEdit();render();
