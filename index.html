@@ -1576,29 +1576,11 @@ async function getCatalogWithPhotos() {
   });
 }
 
-// Resize a base64 image to maxW wide (JPEG quality 0.82) for RTDB storage
-function resizeForCatalog(b64, maxW=1400){
-  return new Promise(resolve=>{
-    if(!b64||!b64.startsWith('data:')){ resolve(b64); return; }
-    const img=new Image();
-    img.onload=()=>{
-      let w=img.width, h=img.height;
-      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
-      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-      cv.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(cv.toDataURL('image/jpeg',0.92));
-    };
-    img.onerror=()=>resolve(null);
-    img.src=b64;
-  });
-}
 async function fbWritePhotos(prodId, photoB64, photosB64) {
-  // Resize and store compact base64 directly in RTDB — no Firebase Storage needed
+  // Store photos directly in RTDB as-is — already compressed by saveCat() at 1600px/0.92
   try {
     const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
-    if(!list.length) return;
-    const resized = await Promise.all(list.map(p=>resizeForCatalog(p)));
-    const valid = resized.filter(Boolean);
+    const valid = list.filter(p=>p&&p.startsWith('data:'));
     if(!valid.length) return;
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
     await fetch(url, {
