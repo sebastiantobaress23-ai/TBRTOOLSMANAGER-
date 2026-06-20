@@ -1576,45 +1576,35 @@ async function getCatalogWithPhotos() {
   });
 }
 
-async function uploadPhotoToStorage(prodId, photoB64, idx) {
-  if (!photoB64 || !photoB64.startsWith('data:')) return photoB64; // already a URL
-  try {
-    const bucket = 'tbr-tools-manager.firebasestorage.app';
-    const path = `catalog_photos/${prodId}/photo_${idx}.jpg`;
-    const encodedPath = encodeURIComponent(path);
-    const blob = b64toBlob(photoB64);
-    // Try with auth token first, fall back to unauthenticated (if Storage rules allow)
-    let token = '';
-    try { const u = await fbUrl(''); token = new URL(u).searchParams.get('auth') || ''; } catch {}
-    const headers = {'Content-Type': 'image/jpeg'};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const r = await fetch(
-      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`,
-      { method: 'POST', headers, body: blob, signal: AbortSignal.timeout(15000) }
-    );
-    if (!r.ok) return null;
-    const data = await r.json();
-    const dlToken = data.downloadTokens;
-    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media${dlToken?'&token='+dlToken:''}`;
-  } catch(e) { console.warn('Storage upload failed:', e && e.message); return null; }
-}
-function b64toBlob(b64, type='image/jpeg'){
-  const bin = atob(b64.split(',')[1]);
-  const arr = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-  return new Blob([arr],{type});
+// Resize a base64 image to maxW wide (JPEG quality 0.82) for RTDB storage
+function resizeForCatalog(b64, maxW=700){
+  return new Promise(resolve=>{
+    if(!b64||!b64.startsWith('data:')){ resolve(b64); return; }
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(cv.toDataURL('image/jpeg',0.82));
+    };
+    img.onerror=()=>resolve(null);
+    img.src=b64;
+  });
 }
 async function fbWritePhotos(prodId, photoB64, photosB64) {
-  // Upload each photo to Storage, store URLs in RTDB catalog_photos node
+  // Resize and store compact base64 directly in RTDB — no Firebase Storage needed
   try {
-    const urls = await Promise.all((photosB64||[photoB64]).map((p,i)=>uploadPhotoToStorage(prodId,p,i)));
-    const validUrls = urls.filter(Boolean);
-    if (!validUrls.length) return;
+    const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
+    if(!list.length) return;
+    const resized = await Promise.all(list.map(p=>resizeForCatalog(p)));
+    const valid = resized.filter(Boolean);
+    if(!valid.length) return;
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
     await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ photo: validUrls[0], photos: validUrls })
+      body: JSON.stringify({ photo: valid[0], photos: valid })
     });
   } catch(e) { console.warn('fbWritePhotos:', e && e.message); }
 }

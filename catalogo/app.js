@@ -89,7 +89,7 @@ function applyPhotosMap(photosMap){
     if(!pm) return;
     if(pm.photo && !it.photos[0]){ it.photos = pm.photos||[pm.photo]; it.photo = pm.photo; changed=true; }
   });
-  if(changed){ buildFeatured(); renderGrid(); }
+  if(changed){ buildFeatured(); renderHero(true); renderGrid(); restartHeroTimer(); }
 }
 function mapLiveEmpresa(emp){
   return {
@@ -1538,7 +1538,7 @@ window.addEventListener('hashchange', ()=>{
    o descripción hecho en TBR Tools se escribe en /tbr/catalog y /tbr/empresa
    de Realtime Database, y onValue() empuja ese cambio a todos los clientes
    conectados de inmediato (sin polling, sin recargar). ── */
-let liveCatalog = null, liveEmpresa = null, firstLiveApplied = false;
+let liveCatalog = null, _rawCatalog = null, liveEmpresa = null, firstLiveApplied = false;
 function applyLiveData(){
   if(!liveCatalog) return;
   EMPRESA = mapLiveEmpresa(liveEmpresa);
@@ -1561,7 +1561,8 @@ function startLiveSync(){
   if(!rtdb) return false;
   // Catalog metadata listener (fast, no photos)
   rtdb.ref('tbr/catalog').on('value', snap=>{
-    const products = mapLiveCatalog(snap.val(), _livePhotosMap);
+    _rawCatalog = snap.val();
+    const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
     if(products){ liveCatalog = products; applyLiveData(); }
   });
   rtdb.ref('tbr/empresa').on('value', snap=>{
@@ -1571,26 +1572,26 @@ function startLiveSync(){
   // Photos listener (separate, doesn't block initial render)
   rtdb.ref('tbr/catalog_photos').on('value', snap=>{
     _livePhotosMap = snap.val();
-    if(liveCatalog){
-      // Re-map catalog with fresh photos
-      const products = mapLiveCatalog(
-        liveCatalog.map(p=>p), // already mapped items — use ITEMS source instead
-        _livePhotosMap
-      );
-      // Simpler: just apply photos directly to rendered ITEMS
-      if(_livePhotosMap) applyPhotosMap(_livePhotosMap);
+    if(!_livePhotosMap) return;
+    if(ITEMS.length){
+      // Products already rendered — patch photos in place
+      applyPhotosMap(_livePhotosMap);
+    } else if(_rawCatalog){
+      // Photos arrived before or alongside catalog — do a full remap
+      const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
+      if(products){ liveCatalog = products; applyLiveData(); }
     }
   });
   return true;
 }
 
 (async ()=>{
-  showSkeletons(); // Task 3: show skeleton immediately
+  showSkeletons();
   initFirebase();
-  bootUI();
-  applyHash();
+  // Try SDK real-time sync first — it will call bootUI() when data arrives
   if(startLiveSync()) return;
-  // Sin SDK de Realtime Database disponible: usar REST como respaldo
+  // SDK not available: REST fallback
   const live = await fetchLive();
-  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash(); }
+  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; }
+  bootUI(); applyHash();
 })();
