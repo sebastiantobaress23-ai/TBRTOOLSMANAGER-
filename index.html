@@ -2857,7 +2857,11 @@ function render() {
 }
 
 const after = {
-  ventas: () => setSaleChannel('ml')
+  ventas: () => {
+    setSaleChannel('ml');
+    // Sincroniza el scanner de barras con el select activo según canal
+    window._saleChannelForScan = 'ml';
+  }
 };
 
 /* ═══════════════════════════════════════════
@@ -3673,11 +3677,13 @@ function findCatalogByCode(code){
 function scanForVenta(){
   openScan(code=>{
     const match=findCatalogByCode(code);
-    const sel=document.getElementById('sale-prod');
     if(!match){ toast(`No se encontró ningún producto con el código ${code}.`,false); return; }
+    const ch=document.getElementById('sale-channel')?.value==='directa'?'directa':'ml';
+    const selId = ch==='directa'?'sale-prod-d':'sale-prod';
+    const sel=document.getElementById(selId);
     if(sel){
       sel.value=`${match.name}|||${match.code||''}`;
-      fillSaleCost();
+      ch==='directa'?fillSaleCostDirecta():fillSaleCost();
       toast('Producto encontrado: '+match.name);
     }
   });
@@ -4392,16 +4398,37 @@ function suggestSalePrice(code, name, channel){
   return suggestMLPrice(code, name);
 }
 function fillSaleCost(){
+  // ML form
   const sel=document.getElementById('sale-prod');
-  const opt=sel.options[sel.selectedIndex];
+  const opt=sel?.options[sel.selectedIndex];
   if(!opt||!opt.value) return;
   const [name,code]=opt.value.split('|||');
-  const cost = suggestSaleCost(code, name);
-  document.getElementById('sale-cost').value = cost || '';
-  const channel=document.getElementById('sale-channel')?.value==='directa'?'directa':'ml';
-  const price = suggestSalePrice(code, name, channel);
-  document.getElementById('sale-price').value = price || '';
-  syncSaleMargin('cost');
+  document.getElementById('sale-cost').value = suggestSaleCost(code,name)||'';
+  document.getElementById('sale-price').value = suggestMLPrice(code,name)||'';
+}
+function fillSaleCostDirecta(){
+  // Directa form
+  const sel=document.getElementById('sale-prod-d');
+  const opt=sel?.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  const [name,code]=opt.value.split('|||');
+  document.getElementById('sale-cost-d').value = suggestSaleCost(code,name)||'';
+  document.getElementById('sale-price-d').value = suggestSalePrice(code,name,'directa')||'';
+  syncSaleMarginDirecta('cost');
+}
+function syncSaleMarginDirecta(source){
+  const priceEl=document.getElementById('sale-price-d');
+  const costEl=document.getElementById('sale-cost-d');
+  const marginEl=document.getElementById('sale-margin-d');
+  if(!priceEl||!costEl||!marginEl) return;
+  const cost=parseFloat(costEl.value)||0;
+  if(source==='margin'){
+    if(!cost) return;
+    priceEl.value=Math.round(cost*(1+(parseFloat(marginEl.value)||0)/100));
+  } else {
+    const price=parseFloat(priceEl.value)||0;
+    marginEl.value=cost?Math.round((price-cost)/cost*100):'';
+  }
 }
 // Mantiene sincronizados precio de venta, costo y margen %: al editar el
 // margen se recalcula el precio; al editar precio o costo se recalcula el
@@ -4438,34 +4465,26 @@ function syncSaleMargin(source){
 // Cambia el canal de venta (Mercado Libre / Venta directa) en el formulario de
 // Ventas: actualiza el toggle visual y el texto de ayuda sobre qué costos se
 // descuentan de la rentabilidad real.
-function setSaleShipType(st){
-  const input=document.getElementById('sale-shiptype');
-  if(!input) return;
-  input.value=st;
-  document.querySelectorAll('#sale-shiptype-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.st===st));
-}
 function setSaleChannel(ch){
   const input=document.getElementById('sale-channel');
   if(!input) return;
   input.value=ch;
   document.querySelectorAll('#sale-channel-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.ch===ch));
-  document.querySelectorAll('.sale-ml-only').forEach(el=>el.style.display=ch==='ml'?'':'none');
+  // Mostrar/ocultar secciones según canal
+  document.querySelectorAll('.sale-ml-only').forEach(el=>{ el.style.display=ch==='ml'?'':'none'; });
+  document.querySelectorAll('.sale-directa-only').forEach(el=>{ el.style.display=ch==='directa'?'':'none'; });
   const hint=document.getElementById('sale-channel-hint');
   if(hint){
-    const s=DB.get('settings',{});
     hint.textContent = ch==='directa'
-      ? 'Venta directa: la rentabilidad real es precio − costo, sin descontar comisión ni envío de Mercado Libre.'
-      : `El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y, en envío Clásico, el costo de envío configurado (${fmtA(s.mlEnv??7500)}). En Flex y Full no se descuenta envío. Sumá el subsidio de oferta compartida si aplica.`;
+      ? 'Venta directa: la rentabilidad real es precio − costo. Podés generar un comprobante y enviarlo por WhatsApp.'
+      : 'Registrá a cuánto vendiste y cuánto te acreditó ML. La ganancia real es lo recibido menos el costo del producto.';
   }
   const sel=document.getElementById('sale-prod');
   const opt=sel?.options[sel.selectedIndex];
   if(opt&&opt.value){
     const [name,code]=opt.value.split('|||');
     const priceEl=document.getElementById('sale-price');
-    if(priceEl){
-      priceEl.value = suggestSalePrice(code, name, ch) || '';
-      syncSaleMargin('cost');
-    }
+    if(priceEl){ priceEl.value = suggestSalePrice(code, name, ch) || ''; syncSaleMargin('cost'); }
   }
 }
 // Si el nombre ingresado coincide con un cliente ya guardado, completa su
@@ -4479,23 +4498,32 @@ function onSaleClienteInput(name){
   if(tel && !tel.value) tel.value=c.tel||'';
 }
 function addSale(){
-  const sel=document.getElementById('sale-prod');
-  const opt=sel.options[sel.selectedIndex];
-  if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
-  const [name,code]=opt.value.split('|||');
-  const qty=parseInt(document.getElementById('sale-qty').value)||1;
-  const price=parseFloat(document.getElementById('sale-price').value)||0;
-  const cost=parseFloat(document.getElementById('sale-cost').value)||0;
-  const cliente=document.getElementById('sale-cliente')?.value.trim()||'';
-  const tel=document.getElementById('sale-tel')?.value.trim()||'';
   const channel=document.getElementById('sale-channel')?.value==='directa'?'directa':'ml';
-  const shipType=document.getElementById('sale-shiptype')?.value||'clasico';
-  const mlSubsidio=parseFloat(document.getElementById('sale-ml-subsidio')?.value)||0;
+  let name,code,qty,price,cost,cliente='',tel='';
+  if(channel==='ml'){
+    const sel=document.getElementById('sale-prod');
+    const opt=sel?.options[sel.selectedIndex];
+    if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
+    [name,code]=opt.value.split('|||');
+    qty=parseInt(document.getElementById('sale-qty').value)||1;
+    price=parseFloat(document.getElementById('sale-price').value)||0;
+    cost=parseFloat(document.getElementById('sale-cost').value)||0;
+  } else {
+    const sel=document.getElementById('sale-prod-d');
+    const opt=sel?.options[sel.selectedIndex];
+    if(!opt||!opt.value){ toast('Elegí un producto.',false); return; }
+    [name,code]=opt.value.split('|||');
+    qty=parseInt(document.getElementById('sale-qty-d').value)||1;
+    price=parseFloat(document.getElementById('sale-price-d').value)||0;
+    cost=parseFloat(document.getElementById('sale-cost-d').value)||0;
+    cliente=document.getElementById('sale-cliente')?.value.trim()||'';
+    tel=document.getElementById('sale-tel')?.value.trim()||'';
+  }
   const mlReceived=parseFloat(document.getElementById('sale-ml-received')?.value)||0;
   if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
-  const s=DB.get('settings',{});
+  if(channel==='ml' && !mlReceived){ toast('Ingresá lo que recibiste de ML.',false); return; }
   const sale={id:uid(),nro:nextVENTANumber(),date:new Date().toISOString(),name,code,qty,priceARS:price,costARS:cost,channel,cliente,tel};
-  if(channel==='ml'){ sale.mlCom=s.mlCom??16; sale.mlEnv=s.mlEnv??7500; sale.mlShipType=shipType; sale.mlSubsidio=mlSubsidio||undefined; sale.mlReceived=mlReceived||undefined; }
+  if(channel==='ml'){ sale.mlReceived=mlReceived; }
   if(cliente) saveCliente(cliente,tel);
   const sales=DB.get('sales',[]);
   sales.push(sale);
@@ -4509,15 +4537,8 @@ function addSale(){
     DB.set('catalog',cat);
   }
   toast(`Venta ${sale.nro} registrada`);
-  document.getElementById('sale-qty').value='1';
-  document.getElementById('sale-price').value='';
-  document.getElementById('sale-cost').value='';
-  document.getElementById('sale-margin').value='';
-  document.getElementById('sale-cliente').value='';
-  document.getElementById('sale-tel').value='';
-  const subsEl=document.getElementById('sale-ml-subsidio'); if(subsEl) subsEl.value='';
-  const recvEl=document.getElementById('sale-ml-received'); if(recvEl) recvEl.value='';
-  setSaleShipType('clasico');
+  ['sale-qty','sale-price','sale-cost','sale-ml-received'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='sale-qty'?'1':'';});
+  ['sale-qty-d','sale-price-d','sale-cost-d','sale-margin-d','sale-cliente','sale-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='sale-qty-d'?'1':'';});
   render();
 }
 function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
@@ -4544,23 +4565,21 @@ function saleUnits(s){
   return saleItems(s).reduce((a,it)=>a+(it.q||1),0);
 }
 function saleProfit(s){
+  // Ventas directas (multi-item desde pedidos/cotizaciones)
   if (Array.isArray(s.items)) {
-    const profit = saleItems(s).reduce((a,it)=>a+itemProfit(s,it),0);
-    if (s.channel==='directa') return profit;
-    const envCost = (s.mlShipType==='flex'||s.mlShipType==='full') ? 0 : (s.mlEnv??0);
-    return profit - envCost + (s.mlSubsidio||0);
+    return saleItems(s).reduce((a,it)=>a+itemProfit(s,it),0);
   }
+  // Venta directa simple
   if (s.channel === 'directa') {
     return (s.priceARS - (s.costARS||0)) * (s.qty||1);
   }
-  // If mlReceived is set, use it as the actual cash received from ML
+  // Venta ML: ganancia = lo que acreditó ML − costo del producto
   if (s.mlReceived) {
     return s.mlReceived - (s.costARS||0) * (s.qty||1);
   }
+  // Compatibilidad con ventas ML anteriores (sin mlReceived): estimación por comisión
   const com = (s.priceARS * (s.mlCom??16)/100);
-  const envCost = (s.mlShipType==='flex'||s.mlShipType==='full') ? 0 : (s.mlEnv??0);
-  const unitNet = s.priceARS - com - envCost - (s.costARS||0);
-  return unitNet * (s.qty||1) + (s.mlSubsidio||0);
+  return (s.priceARS - com - (s.mlEnv??0) - (s.costARS||0)) * (s.qty||1);
 }
 // Ranking de rentabilidad por producto a partir de las ventas registradas.
 // Lo usan tanto la página de Ventas como Estadísticas.
@@ -4593,38 +4612,51 @@ function pgVentas(){
   return `<div class="pg">
   <div class="sh mb16">Registrar venta</div>
   <div class="card mb24">
-    <div class="fg-w">
+    <div class="fg-w mb12">
       <div style="flex:1;min-width:220px"><label class="fl">Canal de venta</label><div class="ch-tg" id="sale-channel-tg">
         <button type="button" class="ch-tg-btn active" data-ch="ml" onclick="setSaleChannel('ml')">Mercado Libre</button>
         <button type="button" class="ch-tg-btn" data-ch="directa" onclick="setSaleChannel('directa')">Venta directa</button>
       </div><input type="hidden" id="sale-channel" value="ml"></div>
-      <div class="sale-ml-only" style="flex:1;min-width:200px"><label class="fl">Tipo de envío</label><div class="ch-tg" id="sale-shiptype-tg">
-        <button type="button" class="ch-tg-btn active" data-st="clasico" onclick="setSaleShipType('clasico')" title="Envío normal: se descuenta el costo de envío configurado">Clásico</button>
-        <button type="button" class="ch-tg-btn" data-st="flex" onclick="setSaleShipType('flex')" title="Flex: ML te paga el envío (no hay costo de envío para vos)">Flex</button>
-        <button type="button" class="ch-tg-btn" data-st="full" onclick="setSaleShipType('full')" title="Full: ML maneja la logística, sin cargo de envío al vendedor">Full</button>
-      </div><input type="hidden" id="sale-shiptype" value="clasico"></div>
     </div>
-    <div class="fg-w mt8 sale-ml-only">
-      <div style="flex:1;min-width:200px"><label class="fl">Oferta compartida ML (subsidio $)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-ml-subsidio" min="0" step="100" placeholder="0" title="Ingresá cuánto te subsidió ML por oferta compartida. Suma a tu ganancia."></div></div>
-      <div style="flex:1;min-width:200px"><label class="fl">Lo que recibí de ML (total $)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-ml-received" min="0" step="100" placeholder="Opcional — para comparar con lo calculado" title="Lo que te acreditó ML. Si lo completás, se usa como base real para la ganancia."></div></div>
-    </div>
-    <div class="fg-w mt12">
-      <div style="flex:2;min-width:200px"><label class="fl" style="min-height:28px">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
-        <option value="">Elegí un producto…</option>
-        ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
-      </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
-      <div style="flex:1;min-width:90px"><label class="fl" style="min-height:28px">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0" oninput="syncSaleMargin('price')"></div></div>
-      <div style="flex:1;min-width:140px"><label class="fl" style="min-height:28px">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0" oninput="syncSaleMargin('cost')"></div></div>
-      <div style="flex:0 0 100px;min-width:90px"><label class="fl" style="min-height:28px">Margen %</label><div class="iw"><input type="number" id="sale-margin" min="-100" step="1" placeholder="0" oninput="syncSaleMargin('margin')"><span class="isuf">%</span></div></div>
-    </div>
-    <div class="fg-w mt12">
-      <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" list="sale-clientes-list" autocomplete="off" oninput="onSaleClienteInput(this.value)"></div>
-      <datalist id="sale-clientes-list">${clientes.map(c=>`<option value="${esc(c.nombre)}">`).join('')}</datalist>
+
+    <!-- ── CAMPOS ML ── -->
+    <div class="sale-ml-only">
+      <div class="fg-w">
+        <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
+          <option value="">Elegí un producto…</option>
+          ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+        </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
+        <div style="flex:0 0 90px;min-width:80px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
       </div>
-      <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
+      <div class="fg-w mt10">
+        <div style="flex:1;min-width:160px"><label class="fl">Precio de venta al comprador (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
+        <div style="flex:1;min-width:160px"><label class="fl">Lo que recibí de ML (ARS) <span style="color:var(--re)">*</span></label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-ml-received" min="0" step="100" placeholder="Monto acreditado por ML"></div></div>
+        <div style="flex:1;min-width:160px"><label class="fl">Costo del producto (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0" oninput="syncSaleMargin('cost')"></div></div>
+      </div>
+      <div class="hint mt10">Ganancia real = <strong>Lo que recibí de ML</strong> − Costo. El monto de ML ya incluye la deducción de comisión, envío, y cualquier bonus (Flex, oferta compartida).</div>
     </div>
-    <div class="hint mt12" id="sale-channel-hint">El costo se sugiere automáticamente según el último TCE y el precio del catálogo — podés ajustarlo si pagaste distinto. La rentabilidad real descuenta comisión ML (${s.mlCom??16}%) y, en envío Clásico, el costo de envío configurado (${fmtA(s.mlEnv??7500)}). En Flex y Full no se descuenta envío. Sumá el subsidio de oferta compartida si aplica.</div>
+
+    <!-- ── CAMPOS VENTA DIRECTA ── -->
+    <div class="sale-directa-only" style="display:none">
+      <div class="fg-w">
+        <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod-d" onchange="fillSaleCostDirecta()">
+          <option value="">Elegí un producto…</option>
+          ${cat.map(c=>`<option value="${esc(c.name)}|||${esc(c.code||'')}">${esc(c.name)}${c.code?' · '+esc(c.code):''}</option>`).join('')}
+        </select></div><button class="btn-g btn-sm" onclick="scanForVenta()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
+        <div style="flex:0 0 90px;min-width:80px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty-d" value="1" min="1" step="1"></div></div>
+        <div style="flex:1;min-width:140px"><label class="fl">Precio de venta (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price-d" min="0" step="100" placeholder="0" oninput="syncSaleMarginDirecta('price')"></div></div>
+        <div style="flex:1;min-width:140px"><label class="fl">Costo real (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost-d" min="0" step="100" placeholder="0" oninput="syncSaleMarginDirecta('cost')"></div></div>
+        <div style="flex:0 0 100px;min-width:90px"><label class="fl">Margen %</label><div class="iw"><input type="number" id="sale-margin-d" min="-100" step="1" placeholder="0" oninput="syncSaleMarginDirecta('margin')"><span class="isuf">%</span></div></div>
+      </div>
+      <div class="fg-w mt10">
+        <div style="flex:1;min-width:160px"><label class="fl">Cliente (opcional)</label><div class="iw"><input type="text" id="sale-cliente" placeholder="Nombre del cliente" list="sale-clientes-list" autocomplete="off" oninput="onSaleClienteInput(this.value)"></div>
+        <datalist id="sale-clientes-list">${clientes.map(c=>`<option value="${esc(c.nombre)}">`).join('')}</datalist>
+        </div>
+        <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
+      </div>
+      <div class="hint mt10" id="sale-channel-hint">Venta directa: la rentabilidad real es precio − costo. Podés generar un comprobante y enviarlo por WhatsApp.</div>
+    </div>
+
     <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
   </div>
 
@@ -4649,14 +4681,14 @@ function pgVentas(){
       const items=saleItems(s);
       const multi=items.length>1;
       const titulo = multi ? `${items.length} artículos` : `${esc(items[0].n)}${items[0].q>1?` × ${items[0].q}`:''}`;
-      const shipLabel = s.mlShipType==='flex' ? 'Flex' : s.mlShipType==='full' ? 'Full' : 'Clásico';
-      const chBadge = s.channel==='directa' ? '<span class="badge badge-d">Directa</span>' : `<span class="badge badge-y">ML ${shipLabel}</span>`;
-      const subsidioInfo = s.mlSubsidio ? ` · subsidio ML ${fmtA(s.mlSubsidio)}` : '';
-      const receivedInfo = s.mlReceived ? ` · recibido ${fmtA(s.mlReceived)}` : '';
-      const detalle = `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)}${!multi?` · venta ${fmtA(items[0].p)} c/u · costo ${fmtA(items[0].cost||0)} c/u`:''}${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}${subsidioInfo}${receivedInfo}`;
+      const isML = s.channel !== 'directa';
+      const chBadge = isML ? '<span class="badge badge-y">ML</span>' : '<span class="badge badge-d">Directa</span>';
+      const detalleML = isML
+        ? `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)} · vendido ${fmtA(s.priceARS||items[0]?.p||0)}${s.mlReceived?' · recibido '+fmtA(s.mlReceived):''} · costo ${fmtA(s.costARS||items[0]?.cost||0)}`
+        : `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)}${!multi?` · venta ${fmtA(items[0].p)} c/u · costo ${fmtA(items[0].cost||0)} c/u`:''}${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}`;
       return `<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-weight:600;font-size:14px">${titulo}${chBadge}</div><div style="font-size:11px;color:var(--di)">${detalle}</div></div>
+        <div><div style="font-weight:600;font-size:14px">${titulo}${chBadge}</div><div style="font-size:11px;color:var(--di)">${detalleML}</div></div>
         <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">${ic('close')}</button></div>
       </div>
       ${multi?`<div style="overflow-x:auto;margin-top:10px">
@@ -4664,10 +4696,10 @@ function pgVentas(){
         <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
         </table>
       </div>`:''}
-      <div class="hi-acts" style="margin-top:8px">
+      ${!isML?`<div class="hi-acts" style="margin-top:8px">
         <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
         ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
-      </div>
+      </div>`:''}
     </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
