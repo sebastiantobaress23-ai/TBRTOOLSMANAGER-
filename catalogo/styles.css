@@ -432,7 +432,6 @@ a{color:inherit;text-decoration:none}
   -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   visibility:hidden;
   transform:translateY(100%);
-  will-change:transform;
   transition:transform .44s var(--ease-spring),visibility 0s linear .44s}
 .detail.open{visibility:visible;transform:translateY(0);transition:transform .44s var(--ease-spring),visibility 0s linear 0s}
 .detail-bg{position:fixed;inset:0;z-index:0}
