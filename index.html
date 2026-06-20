@@ -1577,7 +1577,7 @@ async function getCatalogWithPhotos() {
 }
 
 // Resize a base64 image to maxW wide (JPEG quality 0.82) for RTDB storage
-function resizeForCatalog(b64, maxW=700){
+function resizeForCatalog(b64, maxW=1400){
   return new Promise(resolve=>{
     if(!b64||!b64.startsWith('data:')){ resolve(b64); return; }
     const img=new Image();
@@ -1586,7 +1586,7 @@ function resizeForCatalog(b64, maxW=700){
       if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
       const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       cv.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(cv.toDataURL('image/jpeg',0.82));
+      resolve(cv.toDataURL('image/jpeg',0.92));
     };
     img.onerror=()=>resolve(null);
     img.src=b64;
