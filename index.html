@@ -6184,8 +6184,11 @@ function pmOptions(sel){
 }
 function pedFinalTotal(o){
   const base=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
-  const pct=o.pago?.pct||0;
-  return Math.round(base*(1+pct/100));
+  const withPago=Math.round(base*(1+(o.pago?.pct||0)/100));
+  const desc=o.descuento;
+  if(!desc||!desc.valor) return withPago;
+  const descMonto=desc.tipo==='pct'?Math.round(withPago*desc.valor/100):Math.round(desc.valor);
+  return withPago-descMonto;
 }
 function delConf(id){confirm2('¿Eliminar este proveedor?',()=>{DB.set('configs',DB.get('configs',[]).filter(c=>c.id!==id));const s=DB.get('settings',{});if(s.activeConfig===id){const remaining=DB.get('configs',[]);s.activeConfig=remaining[0]?.id||null;DB.set('settings',s);}render();});}
 function setActiveConf(id){const s=DB.get('settings',{});s.activeConfig=id;DB.set('settings',s);render();}
@@ -7065,6 +7068,13 @@ function pgPedidos() {
       <label class="fl" style="margin:0">Forma de pago</label>
       <div class="iw" style="flex:1;min-width:160px"><select id="ped-pago" onchange="refreshPedTotal()">${pmOptions(0)}</select></div>
     </div>
+    <div class="fb mt12" style="align-items:center;gap:12px;flex-wrap:wrap">
+      <label class="fl" style="margin:0">Descuento / Bonif.</label>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="iw" style="width:110px"><input type="number" id="ped-desc-val" min="0" step="1" value="0" placeholder="0" oninput="refreshPedTotal()"></div>
+        <select id="ped-desc-tipo" onchange="refreshPedTotal()" style="background:var(--bg3);border:1px solid var(--b2);color:var(--ch);padding:0 10px;height:42px;border-radius:8px;font-size:13px;cursor:pointer"><option value="pct">%</option><option value="monto">$</option></select>
+      </div>
+    </div>
     <div class="fb mt16" id="ped-total-wrap" style="padding-top:14px;border-top:1px solid rgba(255,255,255,.06);${PED.length?'':'display:none'}">
       <span class="sh-inline">Total presupuesto</span>
       <span id="ped-total-val" style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ud);letter-spacing:-.3px">${fmtA(pedTotal)}</span>
@@ -7123,7 +7133,7 @@ function pgPedidos() {
         <tbody>${(o.items||[]).map(p=>`<tr><td class="tn">${esc(p.n||'—')}</td><td class="tc">${esc(p.c||'—')}</td><td class="tc2">${p.q||1}</td><td class="tr">${fmtA(p.p||0)}</td><td class="tr">${fmtA((p.q||1)*(p.p||0))}</td></tr>`).join('')}</tbody>
         </table>
       </div>
-      ${o.pago?.pct?`<div class="hint mt8" style="text-align:right">Forma de pago: ${esc(o.pago.nombre)} · Recargo ${o.pago.pct}%: +${fmtA(pedFinalTotal(o)-(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0))} · <b>Total: ${fmtA(pedFinalTotal(o))}</b></div>`:''}
+      ${(()=>{const base=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);const withPago=Math.round(base*(1+(o.pago?.pct||0)/100));const desc=o.descuento;const dm=desc?.valor?(desc.tipo==='pct'?Math.round(withPago*desc.valor/100):Math.round(desc.valor)):0;const parts=[];if(o.pago?.pct)parts.push(`Forma de pago: ${esc(o.pago.nombre)} · Recargo ${o.pago.pct}%: +${fmtA(withPago-base)}`);if(dm)parts.push(`Descuento${desc.tipo==='pct'?' '+desc.valor+'%':''}: −${fmtA(dm)}`);return(parts.length||dm)?`<div class="hint mt8" style="text-align:right">${parts.join(' · ')} · <b>Total: ${fmtA(pedFinalTotal(o))}</b></div>`:'';})()}
       <div class="hi-acts-ped">
         ${o.status==='cotizacion'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','confirmado')">${ic('check')} Cliente confirmó pedido</button>`:''}
         ${o.status==='confirmado'?`<button class="btn-p btn-sm hi-act-main" onclick="advancePed('${o.id}','preparacion')">${ic('package')} En preparación</button>`:''}
@@ -7187,12 +7197,11 @@ function closeCobrarModal(){
 }
 
 function pedRow(p) {
-  const cost = suggestSaleCost(p.c, p.n);
   return `<div class="pr ord-row ped-row" id="ped-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPed('${p.id}','n',this.value)">
     <input value="${esc(p.c)}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPed('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPed('${p.id}','q',this.value)" onchange="updPed('${p.id}','q',this.value)">
-    <div style="min-width:0;align-self:start"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
+    <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPed('${p.id}','p',this.value)"></div>
     <button class="btn-rm" onclick="rmPed('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -7228,20 +7237,26 @@ function refreshPedTotal() {
   const base=PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
   const sel=document.getElementById('ped-pago');
   const m=getPM()[sel?parseInt(sel.value):0]||{pct:0};
-  const final=Math.round(base*(1+(m.pct||0)/100));
+  const withPago=Math.round(base*(1+(m.pct||0)/100));
+  const descVal=parseFloat(document.getElementById('ped-desc-val')?.value)||0;
+  const descTipo=document.getElementById('ped-desc-tipo')?.value||'pct';
+  const descMonto=descVal>0?(descTipo==='pct'?Math.round(withPago*descVal/100):Math.round(descVal)):0;
+  const final=withPago-descMonto;
   const recEl=document.getElementById('ped-total-rec');
-  if(recEl) recEl.textContent = m.pct?`Recargo ${m.pct}% (${esc(m.name)}): +${fmtA(final-base)}`:'';
+  const parts=[];
+  if(m.pct) parts.push(`Recargo ${m.pct}% (${esc(m.name)}): +${fmtA(withPago-base)}`);
+  if(descMonto) parts.push(`Descuento${descTipo==='pct'?` ${descVal}%`:''}: −${fmtA(descMonto)}`);
+  if(recEl) recEl.textContent = parts.join(' · ');
   val.textContent = fmtA(final);
 }
 function clearPed(){confirm2('¿Limpiar el pedido?',()=>{PED=[];render();});}
 
 function pedEditRow(p) {
-  const cost = suggestSaleCost(p.c, p.n);
   return `<div class="pr ord-row ped-row" id="pedit-${p.id}" style="grid-template-columns:1.4fr 85px 50px 150px 34px">
     <input value="${esc(p.n)}" placeholder="Descripción" oninput="updPedEditItem('${p.id}','n',this.value)">
     <input value="${esc(p.c||'')}" placeholder="Código" style="letter-spacing:1px;font-size:12px" oninput="updPedEditItem('${p.id}','c',this.value)">
     <input type="number" value="${p.q||1}" min="1" style="text-align:center" oninput="updPedEditItem('${p.id}','q',this.value)">
-    <div style="min-width:0;align-self:start"><div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>${cost?`<div class="ped-cost-ref" title="Costo de referencia: ${fmtA(cost)}">costo ${fmtAk(cost)}</div>`:''}</div>
+    <div class="iw"><span class="ipre">$</span><input type="number" value="${p.p||''}" min="0" step="100" placeholder="Precio venta" oninput="updPedEditItem('${p.id}','p',this.value)"></div>
     <button class="btn-rm" onclick="rmPedEditItem('${p.id}')">${ic('close')}</button>
   </div>`;
 }
@@ -7343,7 +7358,10 @@ function generatePedido() {
   const nro=nextPEDNumber();
   const sel=document.getElementById('ped-pago');
   const m=getPM()[sel?parseInt(sel.value):0]||{name:'Efectivo / Transferencia',pct:0};
-  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',cuit:cuit||'',items:PED.map(p=>({...p})),status:'cotizacion',pago:{nombre:m.name,pct:m.pct||0}};
+  const descVal=parseFloat(document.getElementById('ped-desc-val')?.value)||0;
+  const descTipo=document.getElementById('ped-desc-tipo')?.value||'pct';
+  const descuento=descVal>0?{tipo:descTipo,valor:descVal}:null;
+  const record={id:uid(),nro,date:new Date().toISOString(),cliente,tel:tel||'',cuit:cuit||'',items:PED.map(p=>({...p})),status:'cotizacion',pago:{nombre:m.name,pct:m.pct||0},descuento};
   const peds=DB.get('pedidos',[]);
   peds.push(record);
   DB.set('pedidos',peds);
@@ -7440,7 +7458,8 @@ function pedPrintDoc(o, reprint) {
   const emp = DB.get('empresa',{});
   const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
-  const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const base = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const total = pedFinalTotal(o);
   const items = (o.items||[]).map((p,i)=>`<tr>
     <td class="num">${i+1}</td>
     <td>${esc(p.n||'—')}</td>
@@ -7538,6 +7557,13 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   </div>
   <div class="doc-totals">
     <div class="totals-box">
+      ${(()=>{
+        const rows=[];
+        const withPago=Math.round(base*(1+(o.pago?.pct||0)/100));
+        if(o.pago?.pct) rows.push(`<div class="tot-row" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding:2px 0"><span>Recargo ${o.pago.pct}% (${esc(o.pago.nombre)})</span><span>+ $ ${(withPago-base).toFixed(2)}</span></div>`);
+        if(o.descuento?.valor){const dm=o.descuento.tipo==='pct'?Math.round(withPago*o.descuento.valor/100):Math.round(o.descuento.valor);rows.push(`<div class="tot-row" style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0"><span>Descuento${o.descuento.tipo==='pct'?' '+o.descuento.valor+'%':''}</span><span>− $ ${dm.toFixed(2)}</span></div>`);}
+        return rows.join('');
+      })()}
       <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
     </div>
   </div>
@@ -7553,7 +7579,8 @@ function pedDocBody(o){
   const emp = DB.get('empresa',{});
   const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
-  const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const base = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+  const total = pedFinalTotal(o);
   const items = (o.items||[]).map((p,i)=>`<tr>
     <td class="num">${i+1}</td>
     <td>${esc(p.n||'—')}</td>
@@ -7590,6 +7617,13 @@ function pedDocBody(o){
   </div>
   <div class="doc-totals">
     <div class="totals-box">
+      ${(()=>{
+        const rows=[];
+        const withPago=Math.round(base*(1+(o.pago?.pct||0)/100));
+        if(o.pago?.pct) rows.push(`<div class="tot-row" style="display:flex;justify-content:space-between;font-size:11px;color:#666;padding:2px 0"><span>Recargo ${o.pago.pct}% (${esc(o.pago.nombre)})</span><span>+ $ ${(withPago-base).toFixed(2)}</span></div>`);
+        if(o.descuento?.valor){const dm=o.descuento.tipo==='pct'?Math.round(withPago*o.descuento.valor/100):Math.round(o.descuento.valor);rows.push(`<div class="tot-row" style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:2px 0"><span>Descuento${o.descuento.tipo==='pct'?' '+o.descuento.valor+'%':''}</span><span>− $ ${dm.toFixed(2)}</span></div>`);}
+        return rows.join('');
+      })()}
       <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
     </div>
   </div>
