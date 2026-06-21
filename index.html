@@ -1578,16 +1578,12 @@ async function getCatalogWithPhotos() {
 
 async function fbWrite(k, v) {
   try {
-    // Al escribir el catálogo a Firebase, reincluir las fotos desde catalog_photos
-    // para que el catálogo digital las siga viendo en tbr/catalog.
     let payload = v;
     if (k === 'catalog' && Array.isArray(v)) {
-      const photosMap = PhotoDB.getAllPhotos();
-      payload = v.map(p => {
-        const ph = photosMap[p.id];
-        if (!ph) return p;
-        return { ...p, ...(ph.photo ? {photo: ph.photo} : {}), ...(ph.photos && ph.photos.length ? {photos: ph.photos} : {}) };
-      });
+      // Strip photos from Firebase — photos are large base64 blobs that make
+      // the catalog slow to load. Photos are served from the static catalog-data.js
+      // file on Vercel CDN. Firebase only syncs lightweight metadata.
+      payload = v.map(({ photo, photos, ...meta }) => meta);
     }
     // Strip binary blobs from empresa before writing to Firebase — they live
     // only in localStorage to avoid oversize payloads and accidental overwrites.

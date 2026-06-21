@@ -40,11 +40,11 @@ const ahorroPct    = () => Math.round(getRecargoPct()/(100+getRecargoPct())*100)
    en tiempo real (onValue) que mantienen todo sincronizado. ── */
 function mapLiveCatalog(cat){
   if(!Array.isArray(cat)) return null;
+  // Only sync lightweight metadata from Firebase — no photos.
+  // Photos come from the static catalog-data.js (Vercel CDN) for instant loading.
   const products = cat.filter(x=>x&&x.salePrice).map(x=>({
     name:x.name, code:x.code||'', salePrice:x.salePrice,
     stock:x.stock!=null?x.stock:undefined,
-    photo:x.photo||undefined,
-    photos:(x.photos&&x.photos.length>1)?x.photos:undefined,
     description:x.specs||undefined
   }));
   return products.length ? products : null;
@@ -1495,7 +1495,22 @@ let liveCatalog = null, liveEmpresa = null, firstLiveApplied = false;
 function applyLiveData(){
   if(!liveCatalog) return;
   EMPRESA = mapLiveEmpresa(liveEmpresa);
-  PRODUCTS = liveCatalog;
+  // Merge live metadata (price, stock) with static photos (from catalog-data.js CDN).
+  // This keeps loading fast and ensures all photos are visible.
+  if(STATIC && STATIC.products && STATIC.products.length){
+    const staticByCode = {}, staticByName = {};
+    STATIC.products.forEach(p=>{
+      if(p.code) staticByCode[p.code] = p;
+      staticByName[(p.name||'').toLowerCase().trim()] = p;
+    });
+    PRODUCTS = liveCatalog.map(p=>{
+      const s = (p.code && staticByCode[p.code]) || staticByName[(p.name||'').toLowerCase().trim()];
+      if(!s) return p;
+      return { ...s, salePrice:p.salePrice, stock:p.stock, name:p.name||s.name };
+    });
+  } else {
+    PRODUCTS = liveCatalog;
+  }
   const curCode = detailItem ? detailItem.code : null;
   if(!firstLiveApplied){
     firstLiveApplied = true;
@@ -1530,5 +1545,20 @@ function startLiveSync(){
   if(startLiveSync()) return;
   // Sin SDK de Realtime Database disponible: usar REST como respaldo
   const live = await fetchLive();
-  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); if(!detailOpen) applyHash(); }
+  if(live){
+    EMPRESA=live.empresa;
+    // Merge live metadata with static photos
+    if(STATIC && STATIC.products && STATIC.products.length){
+      const staticByCode={}, staticByName={};
+      STATIC.products.forEach(p=>{ if(p.code) staticByCode[p.code]=p; staticByName[(p.name||'').toLowerCase().trim()]=p; });
+      PRODUCTS = live.products.map(p=>{
+        const s=(p.code&&staticByCode[p.code])||staticByName[(p.name||'').toLowerCase().trim()];
+        if(!s) return p;
+        return { ...s, salePrice:p.salePrice, stock:p.stock, name:p.name||s.name };
+      });
+    } else {
+      PRODUCTS=live.products;
+    }
+    bootUI(); if(!detailOpen) applyHash();
+  }
 })();
