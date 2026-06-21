@@ -58,16 +58,31 @@ function _staticPhotosFor(x){
 // photosMap: optional { [id]: {photo, photos} } from catalog_photos node
 function mapLiveCatalog(cat, photosMap){
   if(!Array.isArray(cat)) return null;
-  // Only sync lightweight metadata from Firebase — no photos.
-  // Photos come from the static catalog-data.js (Vercel CDN) for instant loading.
-  const products = cat.filter(x=>x&&x.salePrice).map(x=>({
-    name:x.name, code:x.code||'', salePrice:x.salePrice,
-    stock:x.stock!=null?x.stock:undefined,
-    description:x.specs||undefined
-  }));
+  const products = cat.filter(x=>x&&x.salePrice).map(x=>{
+    const pm = (photosMap && x.id && photosMap[x.id]) || {};
+    const st = _staticPhotosFor(x);
+    // Prefer static photos — they contain ALL uploaded photos (full array).
+    // Firebase catalog_photos may have fewer due to transfer limits.
+    // Fall back to Firebase only for products not yet in the static file.
+    const stPhotos = st.photos && st.photos.length ? st.photos : null;
+    const fbPhotos = pm.photos && pm.photos.length ? pm.photos : null;
+    const photos = stPhotos ? stPhotos : (fbPhotos || undefined);
+    const photo  = st.photo || pm.photo || x.photo || undefined;
+    return {
+      id: x.id,
+      name:x.name, code:x.code||'', salePrice:x.salePrice,
+      stock:x.stock!=null?x.stock:undefined,
+      photo, photos,
+      description:x.specs||x.description||st.description||undefined,
+      heroX:x.heroX||st.heroX||undefined,
+      heroY:x.heroY||st.heroY||undefined,
+      heroSize:x.heroSize||st.heroSize||undefined
+    };
+  });
   return products.length ? products : null;
 }
-// Merge photo data into already-rendered ITEMS without full re-render
+// Merge photo data into already-rendered ITEMS without full re-render.
+// Only applies to items that have NO photos yet (new products not in static file).
 function applyPhotosMap(photosMap){
   if(!photosMap || !ITEMS.length) return;
   let changed = false;
@@ -75,6 +90,7 @@ function applyPhotosMap(photosMap){
     if(!it.id) return;
     const pm = photosMap[it.id];
     if(!pm) return;
+    // Only fill in photos for products that have none (not in static catalog-data.js)
     if(pm.photo && !it.photos[0]){ it.photos = pm.photos||[pm.photo]; it.photo = pm.photo; changed=true; }
   });
   if(changed){ buildFeatured(); renderHero(true); renderGrid(); restartHeroTimer(); }
@@ -1530,22 +1546,8 @@ let liveCatalog = null, _rawCatalog = null, liveEmpresa = null, firstLiveApplied
 function applyLiveData(){
   if(!liveCatalog) return;
   EMPRESA = mapLiveEmpresa(liveEmpresa);
-  // Merge live metadata (price, stock) with static photos (from catalog-data.js CDN).
-  // This keeps loading fast and ensures all photos are visible.
-  if(STATIC && STATIC.products && STATIC.products.length){
-    const staticByCode = {}, staticByName = {};
-    STATIC.products.forEach(p=>{
-      if(p.code) staticByCode[p.code] = p;
-      staticByName[(p.name||'').toLowerCase().trim()] = p;
-    });
-    PRODUCTS = liveCatalog.map(p=>{
-      const s = (p.code && staticByCode[p.code]) || staticByName[(p.name||'').toLowerCase().trim()];
-      if(!s) return p;
-      return { ...s, salePrice:p.salePrice, stock:p.stock, name:p.name||s.name };
-    });
-  } else {
-    PRODUCTS = liveCatalog;
-  }
+  // mapLiveCatalog already merged static photos; just assign.
+  PRODUCTS = liveCatalog;
   const curCode = detailItem ? detailItem.code : null;
   if(!firstLiveApplied){
     firstLiveApplied = true;
@@ -1595,20 +1597,7 @@ function startLiveSync(){
   if(startLiveSync()) return;
   // SDK not available: REST fallback
   const live = await fetchLive();
-  if(live){
-    EMPRESA=live.empresa;
-    // Merge live metadata with static photos
-    if(STATIC && STATIC.products && STATIC.products.length){
-      const staticByCode={}, staticByName={};
-      STATIC.products.forEach(p=>{ if(p.code) staticByCode[p.code]=p; staticByName[(p.name||'').toLowerCase().trim()]=p; });
-      PRODUCTS = live.products.map(p=>{
-        const s=(p.code&&staticByCode[p.code])||staticByName[(p.name||'').toLowerCase().trim()];
-        if(!s) return p;
-        return { ...s, salePrice:p.salePrice, stock:p.stock, name:p.name||s.name };
-      });
-    } else {
-      PRODUCTS=live.products;
-    }
-    bootUI(); if(!detailOpen) applyHash();
-  }
+  // mapLiveCatalog (inside fetchLive) already merged static photos; just assign.
+  if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; }
+  bootUI(); applyHash();
 })();

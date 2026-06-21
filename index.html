@@ -1576,13 +1576,30 @@ async function getCatalogWithPhotos() {
   });
 }
 
+async function _resizeForFirebase(dataUrl, maxPx, quality) {
+  if(!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+  return new Promise(res => {
+    const img = new Image();
+    img.onerror = () => res(dataUrl);
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if(w > maxPx || h > maxPx){ if(w>h){ h=Math.round(h*maxPx/w); w=maxPx; } else { w=Math.round(w*maxPx/h); h=maxPx; } }
+      const c = document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      res(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
 async function fbWritePhotos(prodId, photoB64, photosB64) {
   try {
     const list = photosB64&&photosB64.length ? photosB64 : (photoB64?[photoB64]:[]);
     const valid = list.filter(p=>p&&p.startsWith('data:'));
     if(!valid.length) return;
+    // Resize all photos to 800px/0.78 for Firebase transfer (compact but clear)
+    const compressed = await Promise.all(valid.map(p => _resizeForFirebase(p, 800, 0.78)));
     const url = await fbUrl(`${FB}/catalog_photos/${prodId}.json`);
-    const body = JSON.stringify({ photo: valid[0], photos: valid.slice(0,2) });
+    const body = JSON.stringify({ photo: compressed[0], photos: compressed });
     const r = await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
