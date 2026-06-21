@@ -5582,7 +5582,11 @@ function mlqCalc() {
       <div class="sc-s">ya descontado comisión y envío</div>
     </div>
   </div>
-  <div class="hint">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>`
+  <div class="savebar mt8">
+    <div class="hint" style="flex:1">Guardá este precio para usarlo en Competencia y comparar con la competencia.</div>
+    <button class="btn-p" onclick="mlqSave()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar precio</button>
+  </div>
+  <div class="hint mt8">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>`
   : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`;
 }
 
