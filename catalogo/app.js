@@ -38,7 +38,25 @@ const ahorroPct    = () => Math.round(getRecargoPct()/(100+getRecargoPct())*100)
    y /tbr/empresa al formato que usa el catálogo. Se usan tanto por el
    fetch inicial (REST, por si la DB SDK no carga) como por los listeners
    en tiempo real (onValue) que mantienen todo sincronizado. ── */
-function mapLiveCatalog(cat){
+// Lookup from static CATALOG_DATA for photo fallback
+let _staticByCode = null, _staticByName = null;
+function _buildStaticLookup(){
+  if(_staticByCode) return;
+  _staticByCode = {}; _staticByName = {};
+  if(STATIC && Array.isArray(STATIC.products)){
+    STATIC.products.forEach(p=>{
+      if(p.code) _staticByCode[p.code.toLowerCase().trim()] = p;
+      if(p.name) _staticByName[p.name.toLowerCase().trim()] = p;
+    });
+  }
+}
+function _staticPhotosFor(x){
+  _buildStaticLookup();
+  const ck=(x.code||'').toLowerCase().trim(), nk=(x.name||'').toLowerCase().trim();
+  return (ck&&_staticByCode[ck]) || (nk&&_staticByName[nk]) || {};
+}
+// photosMap: optional { [id]: {photo, photos} } from catalog_photos node
+function mapLiveCatalog(cat, photosMap){
   if(!Array.isArray(cat)) return null;
   // Only sync lightweight metadata from Firebase — no photos.
   // Photos come from the static catalog-data.js (Vercel CDN) for instant loading.
@@ -48,6 +66,18 @@ function mapLiveCatalog(cat){
     description:x.specs||undefined
   }));
   return products.length ? products : null;
+}
+// Merge photo data into already-rendered ITEMS without full re-render
+function applyPhotosMap(photosMap){
+  if(!photosMap || !ITEMS.length) return;
+  let changed = false;
+  ITEMS.forEach(it=>{
+    if(!it.id) return;
+    const pm = photosMap[it.id];
+    if(!pm) return;
+    if(pm.photo && !it.photos[0]){ it.photos = pm.photos||[pm.photo]; it.photo = pm.photo; changed=true; }
+  });
+  if(changed){ buildFeatured(); renderHero(true); renderGrid(); restartHeroTimer(); }
 }
 function mapLiveEmpresa(emp){
   return {
@@ -59,14 +89,19 @@ function mapLiveEmpresa(emp){
 }
 async function fetchLive(){
   try{
+    // Fetch catalog metadata + empresa in parallel (fast, no photos)
     const [c,e] = await Promise.all([
       fetch(`${FB_LIVE}/catalog.json`,{cache:'no-store',signal:AbortSignal.timeout(4000)}),
       fetch(`${FB_LIVE}/empresa.json`,{cache:'no-store',signal:AbortSignal.timeout(4000)})
     ]);
     if(!c.ok) return null;
-    const products = mapLiveCatalog(await c.json());
+    const catRaw = await c.json();
+    const products = mapLiveCatalog(catRaw);
     if(!products) return null;
     const emp = e.ok ? await e.json() : null;
+    // Fetch photos separately in background — catalog renders immediately without them
+    fetch(`${FB_LIVE}/catalog_photos.json`,{cache:'no-store',signal:AbortSignal.timeout(8000)})
+      .then(r=>r.ok?r.json():null).then(pm=>{ if(pm) applyPhotosMap(pm); }).catch(()=>{});
     return { empresa: mapLiveEmpresa(emp), products };
   }catch{ return null; }
 }
@@ -1491,7 +1526,7 @@ window.addEventListener('hashchange', ()=>{
    o descripción hecho en TBR Tools se escribe en /tbr/catalog y /tbr/empresa
    de Realtime Database, y onValue() empuja ese cambio a todos los clientes
    conectados de inmediato (sin polling, sin recargar). ── */
-let liveCatalog = null, liveEmpresa = null, firstLiveApplied = false;
+let liveCatalog = null, _rawCatalog = null, liveEmpresa = null, firstLiveApplied = false;
 function applyLiveData(){
   if(!liveCatalog) return;
   EMPRESA = mapLiveEmpresa(liveEmpresa);
@@ -1524,26 +1559,41 @@ function applyLiveData(){
     if(updated){ detailItem = updated; renderDetail(); }
   }
 }
+let _livePhotosMap = null;
 function startLiveSync(){
   if(!rtdb) return false;
+  // Catalog metadata listener (fast, no photos)
   rtdb.ref('tbr/catalog').on('value', snap=>{
-    const products = mapLiveCatalog(snap.val());
+    _rawCatalog = snap.val();
+    const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
     if(products){ liveCatalog = products; applyLiveData(); }
   });
   rtdb.ref('tbr/empresa').on('value', snap=>{
     liveEmpresa = snap.val();
     if(liveCatalog) applyLiveData();
   });
+  // Photos listener (separate, doesn't block initial render)
+  rtdb.ref('tbr/catalog_photos').on('value', snap=>{
+    _livePhotosMap = snap.val();
+    if(!_livePhotosMap) return;
+    if(ITEMS.length){
+      // Products already rendered — patch photos in place
+      applyPhotosMap(_livePhotosMap);
+    } else if(_rawCatalog){
+      // Photos arrived before or alongside catalog — do a full remap
+      const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
+      if(products){ liveCatalog = products; applyLiveData(); }
+    }
+  });
   return true;
 }
 
 (async ()=>{
-  showSkeletons(); // Task 3: show skeleton immediately
+  showSkeletons();
   initFirebase();
-  bootUI();
-  applyHash();
+  // Try SDK real-time sync first — it will call bootUI() when data arrives
   if(startLiveSync()) return;
-  // Sin SDK de Realtime Database disponible: usar REST como respaldo
+  // SDK not available: REST fallback
   const live = await fetchLive();
   if(live){
     EMPRESA=live.empresa;
