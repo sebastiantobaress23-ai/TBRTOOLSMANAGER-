@@ -61,13 +61,13 @@ function mapLiveCatalog(cat, photosMap){
   const products = cat.filter(x=>x&&x.salePrice).map(x=>{
     const pm = (photosMap && x.id && photosMap[x.id]) || {};
     const st = _staticPhotosFor(x);
-    // Prefer static photos — they contain ALL uploaded photos (full array).
-    // Firebase catalog_photos may have fewer due to transfer limits.
-    // Fall back to Firebase only for products not yet in the static file.
-    const stPhotos = st.photos && st.photos.length ? st.photos : null;
-    const fbPhotos = pm.photos && pm.photos.length ? pm.photos : null;
-    const photos = stPhotos ? stPhotos : (fbPhotos || undefined);
-    const photo  = st.photo || pm.photo || x.photo || undefined;
+    // Firebase catalog_photos has the latest photos (updated on every save).
+    // Fall back to static file, then to nothing.
+    const photos = (pm.photos&&pm.photos.length) ? pm.photos
+                 : (x.photos&&x.photos.length)   ? x.photos
+                 : (st.photos&&st.photos.length)  ? st.photos
+                 : undefined;
+    const photo  = pm.photo || x.photo || st.photo || undefined;
     return {
       id: x.id,
       name:x.name, code:x.code||'', salePrice:x.salePrice,
@@ -81,17 +81,21 @@ function mapLiveCatalog(cat, photosMap){
   });
   return products.length ? products : null;
 }
-// Merge photo data into already-rendered ITEMS without full re-render.
-// Only applies to items that have NO photos yet (new products not in static file).
+// Apply photo updates from Firebase catalog_photos into already-rendered ITEMS.
+// Updates any item whose photo changed (Firebase has the latest after every save).
 function applyPhotosMap(photosMap){
   if(!photosMap || !ITEMS.length) return;
   let changed = false;
   ITEMS.forEach(it=>{
     if(!it.id) return;
     const pm = photosMap[it.id];
-    if(!pm) return;
-    // Only fill in photos for products that have none (not in static catalog-data.js)
-    if(pm.photo && !it.photos[0]){ it.photos = pm.photos||[pm.photo]; it.photo = pm.photo; changed=true; }
+    if(!pm || !pm.photo) return;
+    // Update if Firebase has a different/newer photo than what's currently shown
+    if(pm.photo !== it.photos[0]){
+      it.photos = pm.photos||[pm.photo];
+      it.photo  = pm.photo;
+      changed = true;
+    }
   });
   if(changed){ buildFeatured(); renderHero(true); renderGrid(); restartHeroTimer(); }
 }
