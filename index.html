@@ -1599,6 +1599,21 @@ async function fbWritePhotos(prodId, photoB64, photosB64) {
     toast('No se pudo subir la foto al catálogo digital. Verificá tu conexión.', false, 5000);
   }
 }
+async function resyncAllPhotos() {
+  const allPhotos = PhotoDB.getAllPhotos();
+  const ids = Object.keys(allPhotos);
+  if(!ids.length){ toast('No hay fotos para sincronizar.', false); return; }
+  toast(`Sincronizando ${ids.length} producto(s)…`);
+  let ok = 0;
+  for(const id of ids){
+    const ph = allPhotos[id];
+    if(ph && ph.photo){
+      await fbWritePhotos(id, ph.photo, ph.photos||[]);
+      ok++;
+    }
+  }
+  toast(`✓ ${ok} producto(s) sincronizados al catálogo digital`);
+}
 async function fbWrite(k, v) {
   try {
     let payload = v;
@@ -4827,6 +4842,7 @@ function pgCat() {
           <button class="dd-item" onclick="closeAllDD();openCatalogoDigital()">${ic('eye')} Ver catálogo digital</button>
           <button class="dd-item" onclick="closeAllDD();shareCatalog()">${ic('star')} Compartir catálogo&nbsp;(PDF)</button>
           <button class="dd-item" onclick="closeAllDD();generateCatalogDataFile()">${ic('download')} Generar catálogo digital</button>
+          <button class="dd-item" onclick="closeAllDD();resyncAllPhotos()">${ic('zap')} Re-sincronizar fotos</button>
           <button class="dd-item" onclick="closeAllDD();shareCatalogoDigitalLink()">${ic('link')} Compartir link</button>
         </div>
       </div>`:''}
