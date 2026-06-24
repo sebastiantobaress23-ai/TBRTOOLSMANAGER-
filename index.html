@@ -1327,6 +1327,7 @@ select{cursor:pointer}
 </div>
 <div id="app"></div>
 <div id="factura-modal" class="mol" style="display:none" onclick="if(event.target===this)closeFacturaModal()"></div>
+<div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
 <div id="factura-preview-ol" class="mol" style="display:none;z-index:9999;flex-direction:column;background:rgba(0,0,0,.85);padding:0" onclick="if(event.target===this)closeFacturaPreview()">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(20,18,14,.97);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;gap:12px;flex-wrap:wrap">
     <span id="factura-preview-title" style="font-size:13px;font-weight:700;color:rgba(245,240,228,.9);letter-spacing:.3px"></span>
@@ -9226,10 +9227,13 @@ function pgFacturador() {
   const allFacturas = DB.get('facturas',[]);
   const periodos = [...new Set(allFacturas.map(f=>(f.fecha||'').slice(0,7)).filter(Boolean))].sort().reverse();
   const facturas = (_factFilter ? allFacturas.filter(f=>(f.fecha||'').startsWith(_factFilter)) : allFacturas).slice().sort((a,b)=>a.nro>b.nro?-1:1);
-  const pendientes = facturas.filter(f=>f.estado==='borrador'||f.estado==='emitida');
-  const pagadas = facturas.filter(f=>f.estado==='pagada');
-  const canceladas = facturas.filter(f=>f.estado==='cancelada');
-  const totEmitidas = facturas.filter(f=>f.estado!=='cancelada').reduce((s,f)=>s+(f.total||0),0);
+  const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
+  const notasCredito = facturas.filter(f=>f.tipo==='NC');
+  const remitos = facturas.filter(f=>f.tipo==='RM');
+  const pendientes = soloFacturas.filter(f=>f.estado==='borrador'||f.estado==='emitida');
+  const pagadas = soloFacturas.filter(f=>f.estado==='pagada');
+  const canceladas = soloFacturas.filter(f=>f.estado==='cancelada');
+  const totEmitidas = soloFacturas.filter(f=>f.estado!=='cancelada').reduce((s,f)=>s+(f.total||0),0);
   const totPagadas = pagadas.reduce((s,f)=>s+(f.total||0),0);
   const totPendiente = pendientes.reduce((s,f)=>s+(f.total||0),0);
   const statCard = (label,val,color='var(--ch)')=>
@@ -9237,10 +9241,12 @@ function pgFacturador() {
   function factRow(f) {
     const ec = {borrador:'var(--di)',emitida:'var(--ye)',pagada:'var(--gr)',cancelada:'var(--re)'}[f.estado]||'var(--di)';
     const el = {borrador:'Borrador',emitida:'Emitida',pagada:'Pagada',cancelada:'Cancelada'}[f.estado]||f.estado;
+    const tipoLabel = f.tipo==='NC' ? 'Nota de Crédito C' : f.tipo==='RM' ? 'Remito' : 'Factura C';
+    const tipoColor = f.tipo==='NC' ? 'var(--re)' : f.tipo==='RM' ? 'var(--di)' : 'inherit';
     return `<div class="hi" style="margin-bottom:8px">
-      <div class="hi-hdr" style="cursor:pointer" onclick="openFactura('${f.id}')">
+      <div class="hi-hdr" style="cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
         <div>
-          <div class="hi-n" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700">Factura C Nº ${esc(f.nro||'—')}</div>
+          <div class="hi-n" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:${tipoColor}">${tipoLabel} Nº ${esc(f.nro||'—')}</div>
           <div class="hi-d">${fmtD(f.fecha)} · ${esc(f.comprador?.nombre||'Sin nombre')}</div>
         </div>
         <div style="text-align:right">
@@ -9254,6 +9260,8 @@ function pgFacturador() {
         <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')">${ic('share')} WhatsApp</button>
         ${f.estado==='emitida'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
         ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${ic('zap')} Emitir</button>`:''}
+        ${(f.estado==='emitida'||f.estado==='pagada')?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito por esta factura">${ic('fileText')} NC</button>`:''}
+        ${f.tipo==='FC'||f.tipo==='C'?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Emitir Remito de entrega">${ic('package')} Remito</button>`:''}
         <button class="btn-d btn-sm" onclick="deleteFactura('${f.id}')">${ic('trash')}</button>
       </div>
     </div>`;
@@ -9281,6 +9289,8 @@ function pgFacturador() {
   ${pendientes.length?`<div class="sh mb12" style="font-size:9px">PENDIENTES · ${pendientes.length}</div>${pendientes.map(factRow).join('')}`:''}
   ${pagadas.length?`<div class="sh mb12 mt20" style="font-size:9px">PAGADAS · ${pagadas.length}</div>${pagadas.map(factRow).join('')}`:''}
   ${canceladas.length?`<div class="sh mb12 mt20" style="font-size:9px">CANCELADAS</div>${canceladas.map(factRow).join('')}`:''}
+  ${notasCredito.length?`<div class="sh mb12 mt20" style="font-size:9px;color:var(--re)">NOTAS DE CRÉDITO · ${notasCredito.length}</div>${notasCredito.map(factRow).join('')}`:''}
+  ${remitos.length?`<div class="sh mb12 mt20" style="font-size:9px">REMITOS · ${remitos.length}</div>${remitos.map(factRow).join('')}`:''}
   `}
   </div>`;
 }
@@ -9693,9 +9703,11 @@ function facturaPreview(id){
   const frame = document.getElementById('factura-preview-frame');
   const title = document.getElementById('factura-preview-title');
   const waBtn = document.getElementById('factura-preview-wa');
-  title.textContent = `Factura C Nº ${f.nro||''} · ${f.comprador?.nombre||''}`;
+  const tipoLabel = f.tipo==='NC'?'Nota de Crédito C':f.tipo==='RM'?'Remito':'Factura C';
+  title.textContent = `${tipoLabel} Nº ${f.nro||''} · ${f.comprador?.nombre||''}`;
   waBtn.onclick = ()=>facturaShareWA(id);
-  frame.srcdoc = facturaDocBody(f);
+  const body = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
+  frame.srcdoc = body;
   ol.style.display = 'flex';
   lockBody();
 }
@@ -9817,15 +9829,351 @@ function verFacturasCli(nombre) {
   setTimeout(()=>toast(`Facturas de ${nombre} — filtrá por nombre en el período`),300);
 }
 
+/* ─── NOTA DE CRÉDITO ─── */
+function emitirNotaCredito(facturaId) {
+  const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
+  if(!orig){ toast('Factura no encontrada',false); return; }
+  confirm2(`¿Emitir Nota de Crédito C por la Factura ${orig.nro}?\nEsto creará un documento que anula o ajusta el importe original.`, ()=>{
+    const conf = getConf();
+    const emp = DB.get('empresa',{});
+    const pdv = String(parseInt(conf.facturaPdv)||1).padStart(5,'0');
+    const allDocs = DB.get('facturas',[]);
+    const maxNC = allDocs.filter(f=>f.tipo==='NC').reduce((m,f)=>{
+      const p = (f.nro||'').split('-');
+      if(p[0]===pdv) return Math.max(m, parseInt(p[1])||0);
+      return m;
+    },0);
+    const nroNC = pdv + '-' + String(maxNC+1).padStart(8,'0');
+    const today = new Date().toISOString().slice(0,10);
+    const nc = {
+      id: uid(),
+      nro: nroNC,
+      tipo: 'NC',
+      facturaOrigen: orig.nro,
+      facturaOrigenId: orig.id,
+      fecha: today,
+      vencimiento: today,
+      comprador: {...(orig.comprador||{})},
+      items: (orig.items||[]).map(it=>({...it})),
+      subtotal: orig.total||0,
+      descuentoPct: 0,
+      otrosImpuestos: 0,
+      total: orig.total||0,
+      totalLetras: numToWords(orig.total||0),
+      cae: '', caeFecha: '',
+      observaciones: `Nota de Crédito correspondiente a Factura C Nº ${orig.nro}`,
+      estado: 'emitida',
+      emisor: {...(orig.emisor||{nombre:emp.nombre||'TBR TOOLS',cuit:conf.facturaCuit||emp.cuit||'',condIVA:'Monotributo'})},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    allDocs.push(nc);
+    DB.set('facturas', allDocs);
+    render();
+    toast(`Nota de Crédito ${nroNC} emitida`);
+    setTimeout(()=>facturaPreview(nc.id), 400);
+  }, 'Emitir NC', 'cm-ok');
+}
+
+function ncDocBody(f) {
+  const emp = f.emisor||{};
+  const logo = PhotoDB.getLogo();
+  const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
+    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px}
+    .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee}
+    .biz-name{font-size:18px;font-weight:800}
+    .biz-cond{font-size:10px;color:#666;border:1px solid #999;display:inline-block;padding:1px 6px;margin:2px 0}
+    .tipo-letra{font-size:48px;font-weight:800;line-height:1;color:#c00;border:2px solid #c00;width:90px;height:90px;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 4px;text-align:center}
+    .tipo-sub{font-size:9px;color:#444;text-align:center}
+    .hdr-right{font-size:11px;text-align:right}
+    .hdr-right .fact-nro{font-size:15px;font-weight:700;margin-bottom:6px}
+    .hdr-right table{margin-left:auto}
+    .hdr-right td{padding:1px 0 1px 12px}
+    .lbl{color:#666}
+    .nc-ref{background:#fff5f5;border:1px solid #fcc;border-radius:4px;padding:8px 14px;margin-bottom:12px;font-size:11px}
+    .section{border:1px solid #ddd;padding:12px 16px;margin-bottom:12px}
+    .section-title{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+    .grid2 .val{font-weight:500}
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    .items-table th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:2px solid #ddd}
+    .items-table td{padding:7px 10px;border-bottom:1px solid #eee}
+    .items-table .tr{text-align:right}
+    .items-table .tc{text-align:center}
+    .totales{display:flex;justify-content:flex-end;padding:8px 0;margin-bottom:12px}
+    .total-box{text-align:right}
+    .gran-total{font-size:18px;font-weight:800;color:#c00;margin-top:4px}
+    .letras{font-size:10px;color:#555;margin-top:6px}
+    .obs-box{font-size:10px;color:#666;border-top:1px solid #eee;padding-top:10px}
+    .original-badge{font-size:9px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase}
+    @media print{body{padding:0}.page{border:none;padding:16px}}
+  </style></head><body>
+  <div class="page">
+    <div class="hdr">
+      <div>
+        ${logo?`<img src="${logo}" style="height:48px;margin-bottom:6px;display:block" alt="Logo">`:''}
+        <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div class="biz-cond">[MONOTRIBUTO]</div>
+        <div style="font-size:10px;color:#666;margin-top:4px">${esc(emp.dir||'')}</div>
+      </div>
+      <div style="text-align:center">
+        <div class="original-badge">Original</div>
+        <div class="tipo-letra"><span>NC</span><span style="font-size:18px">C</span></div>
+        <div class="tipo-sub">Nota de Crédito</div>
+      </div>
+      <div class="hdr-right">
+        <div class="fact-nro">NC: ${esc(f.nro||'')}</div>
+        <table><tbody>
+          <tr><td class="lbl">Fecha:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
+          <tr><td class="lbl">CUIT:</td><td>${esc(emp.cuit||'')}</td></tr>
+          <tr><td class="lbl">Ing. Brutos:</td><td>${esc(emp.ingBrutos||'')}</td></tr>
+          <tr><td class="lbl">Inicio actividad:</td><td>${esc(emp.inicioActividad||'')}</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="nc-ref">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen||'—')}</b></div>
+    <div class="section">
+      <div class="section-title">Datos del comprador</div>
+      <div class="grid2">
+        <div><span class="lbl">Nombre:</span> <span class="val">${esc(f.comprador?.nombre||'—')}</span></div>
+        <div><span class="lbl">CUIT/DNI/CUIL:</span> <span class="val">${esc(f.comprador?.cuitDniCuil||'—')}</span></div>
+        <div><span class="lbl">Dirección:</span> <span class="val">${esc(f.comprador?.dir||'—')}</span></div>
+        <div><span class="lbl">Ciudad:</span> <span class="val">${esc(f.comprador?.ciudad||'—')}</span></div>
+      </div>
+    </div>
+    <table class="items-table">
+      <thead><tr>
+        <th>SKU</th><th>Descripción</th>
+        <th class="tc">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th>
+      </tr></thead>
+      <tbody>${(f.items||[]).map(it=>`<tr>
+        <td>${esc(it.sku||'—')}</td>
+        <td>${esc(it.descripcion||'—')}</td>
+        <td class="tc">${it.qty||0}</td>
+        <td class="tr">$${(it.precioUnit||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+        <td class="tr">$${(it.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div class="totales">
+      <div class="total-box">
+        <div><span class="lbl">Importe Subtotal</span> <b>$${(f.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</b></div>
+        <div class="gran-total">Total NC $${(f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+        <div class="letras">${esc(f.totalLetras||numToWords(f.total||0))}</div>
+      </div>
+    </div>
+    <div class="section"><div class="obs-box"><b>Observaciones:</b> ${esc(f.observaciones||'')}</div></div>
+  </div>
+  </body></html>`;
+}
+
+/* ─── REMITO ─── */
+let _remitoFacturaId = null;
+
+function abrirRemito(facturaId) {
+  const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
+  if(!orig){ toast('Factura no encontrada',false); return; }
+  _remitoFacturaId = facturaId;
+  const conf = getConf();
+  const emp = DB.get('empresa',{});
+  const today = new Date().toISOString().slice(0,10);
+  const pdv = String(parseInt(conf.facturaPdv)||1).padStart(5,'0');
+  const allDocs = DB.get('facturas',[]);
+  const maxRM = allDocs.filter(f=>f.tipo==='RM').reduce((m,f)=>{
+    const p = (f.nro||'').split('-');
+    if(p[0]===pdv) return Math.max(m, parseInt(p[1])||0);
+    return m;
+  },0);
+  const nroRM = pdv + '-' + String(maxRM+1).padStart(8,'0');
+  const modal = document.getElementById('remito-modal');
+  modal.innerHTML = `<div class="mol-box" style="max-width:680px;width:95vw;max-height:93vh;overflow-y:auto">
+    <div class="mol-hdr"><span class="mol-title">Remito de entrega — Factura ${esc(orig.nro||'')}</span><button class="mol-cls" onclick="closeRemitoModal()">×</button></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fl">Nro. Remito</label><div class="iw"><input type="text" id="rm-nro" value="${esc(nroRM)}" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px"></div></div>
+        <div><label class="fl">Fecha</label><div class="iw"><input type="date" id="rm-fecha" value="${today}"></div></div>
+      </div>
+      <div class="sh" style="font-size:9px;margin-bottom:4px">DESTINATARIO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="rm-nombre" value="${esc(orig.comprador?.nombre||'')}"></div></div>
+        <div><label class="fl">Domicilio de entrega</label><div class="iw"><input type="text" id="rm-dir" value="${esc(orig.comprador?.dir||orig.comprador?.ciudad||'')}"></div></div>
+        <div><label class="fl">Localidad</label><div class="iw"><input type="text" id="rm-localidad" value="${esc(orig.comprador?.localidad||orig.comprador?.ciudad||'')}"></div></div>
+        <div><label class="fl">Teléfono</label><div class="iw"><input type="text" id="rm-tel" value="${esc(orig.comprador?.tel||'')}"></div></div>
+      </div>
+      <div><label class="fl">Transportista / Forma de entrega</label><div class="iw"><input type="text" id="rm-transp" placeholder="Ej: Retira en local · Andreani · Correo Argentino" value=""></div></div>
+      <div class="sh" style="font-size:9px;margin-bottom:4px">PRODUCTOS A ENTREGAR</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--b2)">
+            <th style="text-align:left;padding:6px 4px;color:var(--di);font-weight:500">SKU</th>
+            <th style="text-align:left;padding:6px 4px;color:var(--di);font-weight:500">Descripción</th>
+            <th style="text-align:center;padding:6px 4px;color:var(--di);font-weight:500">Cant.</th>
+          </tr></thead>
+          <tbody>${(orig.items||[]).map((it,i)=>`<tr style="border-bottom:1px solid var(--b2)">
+            <td style="padding:6px 4px;font-size:12px">${esc(it.sku||'—')}</td>
+            <td style="padding:6px 4px;font-size:12px">${esc(it.descripcion||'—')}</td>
+            <td style="padding:6px 4px;text-align:center"><input type="number" id="rm-qty-${i}" value="${it.qty||1}" min="0" style="width:60px;text-align:center;background:transparent;border:1px solid var(--b2);border-radius:4px;padding:2px 4px;color:inherit;font-size:12px"></td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div><label class="fl">Observaciones</label><div class="iw"><textarea id="rm-obs" rows="2" style="width:100%;resize:vertical" placeholder="Ej: Embalaje original · Mercadería revisada y conforme">${esc(orig.observaciones||'')}</textarea></div></div>
+    </div>
+    <div class="savebar">
+      <button class="btn-g" onclick="closeRemitoModal()">Cancelar</button>
+      <button class="btn-p" onclick="guardarRemito('${facturaId}',${JSON.stringify(orig.items||[]).replace(/'/g,"\\'")})">${ic('package')} Generar Remito</button>
+    </div>
+  </div>`;
+  modal.style.display='flex';
+  lockBody();
+}
+
+function closeRemitoModal(){
+  document.getElementById('remito-modal').style.display='none';
+  unlockBody();
+  _remitoFacturaId = null;
+}
+
+function guardarRemito(facturaId, itemsOrig) {
+  const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
+  if(!orig){ toast('Factura no encontrada',false); return; }
+  const conf = getConf();
+  const emp = DB.get('empresa',{});
+  const nro = document.getElementById('rm-nro')?.value.trim();
+  if(!nro){ toast('Ingresá el número de remito',false); return; }
+  const items = (orig.items||[]).map((it,i)=>({
+    ...it,
+    qty: parseInt(document.getElementById(`rm-qty-${i}`)?.value)||it.qty||1
+  })).filter(it=>it.qty>0);
+  const remito = {
+    id: uid(),
+    nro,
+    tipo: 'RM',
+    facturaOrigen: orig.nro,
+    facturaOrigenId: orig.id,
+    fecha: document.getElementById('rm-fecha')?.value,
+    comprador:{
+      nombre: document.getElementById('rm-nombre')?.value.trim()||orig.comprador?.nombre||'',
+      dir: document.getElementById('rm-dir')?.value.trim()||'',
+      localidad: document.getElementById('rm-localidad')?.value.trim()||'',
+      tel: document.getElementById('rm-tel')?.value.trim()||''
+    },
+    transportista: document.getElementById('rm-transp')?.value.trim()||'',
+    items,
+    subtotal:0, otrosImpuestos:0, total:0, totalLetras:'',
+    descuentoPct:0,
+    observaciones: document.getElementById('rm-obs')?.value.trim()||'',
+    estado: 'emitida',
+    emisor:{
+      nombre: emp.nombre||'TBR TOOLS',
+      cuit: conf.facturaCuit||emp.cuit||'',
+      dir: conf.facturaDir||'',
+      ingBrutos: conf.facturaIngBrutos||'',
+      inicioActividad: conf.facturaInicioActividad||'',
+      condIVA:'Monotributo'
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const allDocs = DB.get('facturas',[]);
+  allDocs.push(remito);
+  DB.set('facturas', allDocs);
+  closeRemitoModal();
+  render();
+  toast(`Remito ${nro} generado`);
+  setTimeout(()=>facturaPreview(remito.id), 400);
+}
+
+function remitoDocBody(f) {
+  const emp = f.emisor||{};
+  const logo = PhotoDB.getLogo();
+  const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
+    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px}
+    .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee}
+    .biz-name{font-size:18px;font-weight:800}
+    .tipo-box{text-align:center}
+    .tipo-rm{font-size:28px;font-weight:800;color:#333;border:2px solid #333;padding:8px 20px;letter-spacing:2px;display:inline-block}
+    .hdr-right{font-size:11px;text-align:right}
+    .hdr-right .fact-nro{font-size:15px;font-weight:700;margin-bottom:6px}
+    .hdr-right table{margin-left:auto}
+    .hdr-right td{padding:1px 0 1px 12px}
+    .lbl{color:#666}
+    .ref-box{background:#f8f8f8;border:1px solid #eee;border-radius:4px;padding:8px 14px;margin-bottom:12px;font-size:11px}
+    .dest-box{border:1px solid #ddd;padding:12px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    .items-table th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:2px solid #ddd}
+    .items-table td{padding:8px 10px;border-bottom:1px solid #eee}
+    .items-table .tc{text-align:center}
+    .firma-row{display:flex;justify-content:space-between;margin-top:32px;gap:24px}
+    .firma-box{flex:1;border-top:1px solid #666;padding-top:6px;text-align:center;font-size:10px;color:#555}
+    .obs-box{font-size:10px;color:#666;border-top:1px solid #eee;padding-top:10px;margin-bottom:16px}
+    @media print{body{padding:0}.page{border:none;padding:16px}}
+  </style></head><body>
+  <div class="page">
+    <div class="hdr">
+      <div>
+        ${logo?`<img src="${logo}" style="height:48px;margin-bottom:6px;display:block" alt="Logo">`:''}
+        <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div style="font-size:10px;color:#666;margin-top:4px">${esc(emp.dir||'')}</div>
+        <div style="font-size:10px;color:#666">CUIT: ${esc(emp.cuit||'')}</div>
+      </div>
+      <div class="tipo-box">
+        <div class="tipo-rm">REMITO</div>
+        <div style="font-size:10px;color:#666;margin-top:6px">Sin valor fiscal</div>
+      </div>
+      <div class="hdr-right">
+        <div class="fact-nro">Nº ${esc(f.nro||'')}</div>
+        <table><tbody>
+          <tr><td class="lbl">Fecha:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
+          ${f.transportista?`<tr><td class="lbl">Entrega:</td><td>${esc(f.transportista)}</td></tr>`:''}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="ref-box">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen||'—')}</b></div>
+    <div class="dest-box">
+      <div><span class="lbl">Destinatario:</span> <b>${esc(f.comprador?.nombre||'—')}</b></div>
+      <div><span class="lbl">Tel.:</span> ${esc(f.comprador?.tel||'—')}</div>
+      <div><span class="lbl">Domicilio:</span> ${esc(f.comprador?.dir||'—')}</div>
+      <div><span class="lbl">Localidad:</span> ${esc(f.comprador?.localidad||'—')}</div>
+    </div>
+    ${f.observaciones?`<div class="obs-box"><b>Obs:</b> ${esc(f.observaciones)}</div>`:''}
+    <table class="items-table">
+      <thead><tr>
+        <th style="width:80px">SKU</th>
+        <th>Descripción</th>
+        <th class="tc" style="width:80px">Cantidad</th>
+        <th style="width:120px">Estado</th>
+      </tr></thead>
+      <tbody>${(f.items||[]).map(it=>`<tr>
+        <td>${esc(it.sku||'—')}</td>
+        <td>${esc(it.descripcion||'—')}</td>
+        <td class="tc"><b>${it.qty||0}</b></td>
+        <td style="border-bottom:1px solid #ccc;color:#aaa">&nbsp;</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div class="firma-row">
+      <div class="firma-box">Entregué conforme<br><br><br>${esc(emp.nombre||'TBR TOOLS')}</div>
+      <div class="firma-box">Recibí conforme<br><br><br>${esc(f.comprador?.nombre||'Cliente')}</div>
+    </div>
+  </div>
+  </body></html>`;
+}
+
 async function facturaShareWA(id){
   const f = DB.get('facturas',[]).find(x=>x.id===id);
   if(!f){ toast('Factura no encontrada',false); return; }
   const phone = (f.comprador?.tel||'').replace(/\D/g,'');
   const s = DB.get('settings',{});
-  const txt = s.waTplVenta||`Hola${f.comprador?.nombre?' '+f.comprador.nombre:''}! Te comparto la Factura C Nº ${f.nro||''} de TBR Tools. Total: ${fmtA(f.total||0)}.`;
+  const tipoLbl = f.tipo==='NC'?'Nota de Crédito C':f.tipo==='RM'?'Remito':'Factura C';
+  const txt = s.waTplVenta||`Hola${f.comprador?.nombre?' '+f.comprador.nombre:''}! Te comparto ${tipoLbl} Nº ${f.nro||''} de TBR Tools.${f.total?' Total: '+fmtA(f.total)+'.':''}`;
   let pdf = null;
   if (await ensureJsPDF() && await ensureHtml2Canvas()) {
-    const bodyHTML = facturaDocBody(f);
+    const bodyHTML = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
     const tmp = document.createElement('div');
     tmp.innerHTML = bodyHTML;
     const styleEl = tmp.querySelector('style');
