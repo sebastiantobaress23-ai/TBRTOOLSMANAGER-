@@ -129,7 +129,7 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
         Tipo:   parseInt(cbteAsoc.tipo) || 11,
         PtoVta: parseInt(cbteAsoc.pdv)  || parseInt(pdv),
         Nro:    parseInt(cbteAsoc.nro),
-        Cuit:   String(cbteAsoc.cuit || cuit)
+        Cuit:   parseInt(cbteAsoc.cuit || cuit)
       }]
     };
   }
