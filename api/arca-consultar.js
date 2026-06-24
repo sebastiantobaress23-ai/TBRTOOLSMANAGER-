@@ -114,8 +114,8 @@ module.exports = async function handler(req, res) {
       console.error('FECompUltimoAutorizado error:', e.message);
     }
 
-    // Determinar rango a consultar (máx 12 para no superar timeout Vercel ~10s)
-    const MAX_CONSULTAS = 12;
+    // Máx 3 FECompConsultar para no superar el timeout de 10s de Vercel (cada llamada ~2s + WSAA ~4s)
+    const MAX_CONSULTAS = 3;
     let inicio, fin;
     if (ultimoARCA > 0 && ultimoARCA >= desdeParam) {
       // Caso normal: sabemos hasta dónde hay comprobantes
@@ -134,6 +134,7 @@ module.exports = async function handler(req, res) {
     console.log(`Consultando comprobantes ${inicio} a ${fin}`);
 
     const facturas = [];
+    const errores = [];
     for (let nro = inicio; nro <= fin; nro++) {
       try {
         const [r] = await client.FECompConsultarAsync({
@@ -169,11 +170,12 @@ module.exports = async function handler(req, res) {
           docNro:     String(d.DocNro||'0'),
           resultado:  d.Resultado,
         });
-      } catch(e) { console.log(`Comprobante ${nro} error: ${e.message}`); }
+      } catch(e) { errores.push(`nro${nro}:${e.message.slice(0,60)}`); console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
 
-    console.log(`Resultado: ${facturas.length} facturas encontradas en rango ${inicio}-${fin}`);
-    return res.status(200).json({ facturas, ultimo: ultimoARCA || fin });
+    const dbg = { ultimoARCA, desdeParam, inicio, fin, encontrados: facturas.length, errores };
+    console.log(`Resultado:`, JSON.stringify(dbg));
+    return res.status(200).json({ facturas, ultimo: ultimoARCA || fin, _debug: dbg });
   } catch (e) {
     console.error('Consultar error:', e.message);
     return res.status(500).json({ error: e.message });

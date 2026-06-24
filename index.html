@@ -10149,8 +10149,10 @@ async function sincronizarARCA() {
       importados++;
     }
 
+    const dbg = data._debug;
+    const dbgTxt = dbg ? ` [ultimo:${dbg.ultimoARCA} rango:${dbg.inicio}-${dbg.fin} enc:${dbg.encontrados}${dbg.errores?.length?' err:'+dbg.errores.join('|'):''}]` : '';
     if (importados === 0) {
-      toast('Todo sincronizado — no hay facturas nuevas en ARCA');
+      toast('Todo sincronizado — no hay facturas nuevas en ARCA' + dbgTxt, true, 8000);
     } else {
       toast(`${importados} factura${importados>1?'s':''} importada${importados>1?'s':''} de ARCA`);
       renderFacturador();
