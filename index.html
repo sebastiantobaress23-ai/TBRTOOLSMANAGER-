@@ -9413,7 +9413,15 @@ function openFactura(id) {
               </button>
             </div>
           </div>
-          <div><label class="fl">CUIT / DNI / CUIL</label><div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div></div>
+          <div><label class="fl">CUIT / DNI / CUIL</label>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+              <div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div>
+              <button class="btn-g" onclick="buscarPadronARCA()" style="height:42px;padding:0 12px;border-radius:10px;flex-shrink:0;white-space:nowrap;font-size:12px;gap:6px;display:flex;align-items:center" title="Buscar datos en ARCA">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                ARCA
+              </button>
+            </div>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div><label class="fl">Dirección</label><div class="iw"><input type="text" id="f-dir" placeholder="Calle 123" value="${esc(f?.comprador?.dir||'')}"></div></div>
             <div><label class="fl">Ciudad</label><div class="iw"><input type="text" id="f-ciudad" placeholder="Buenos Aires" value="${esc(f?.comprador?.ciudad||'')}"></div></div>
@@ -9513,6 +9521,43 @@ function facturaToggleCuotas(val) {
   const isCuotas = val==='Cuotas';
   document.getElementById('f-cuotas-wrap').style.display = isCuotas?'':'none';
   document.getElementById('f-recargo-wrap').style.display = isCuotas?'':'none';
+}
+
+async function buscarPadronARCA() {
+  const cuitInput = document.getElementById('f-cuit');
+  const cuit = (cuitInput?.value||'').replace(/\D/g,'');
+  if (cuit.length !== 11) {
+    toast('Ingresá un CUIT de 11 dígitos para buscar en ARCA', false);
+    return;
+  }
+  const btn = event?.currentTarget;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
+  try {
+    const resp = await fetch(`/api/arca-padron?cuit=${cuit}`);
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      toast('ARCA: ' + (data.error || 'No encontrado'), false, 5000);
+      return;
+    }
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+    // Desactivar CF si estaba activo
+    const cfCheck = document.getElementById('f-cf');
+    if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
+    set('f-nombre',   data.nombre);
+    set('f-cuit',     data.cuit);
+    set('f-dir',      data.direccion);
+    set('f-ciudad',   data.provincia);
+    set('f-localidad',data.localidad);
+    set('f-cp',       data.codPostal);
+    toast(`Datos cargados: ${data.nombre}${data.categoriaIVA ? ' · ' + data.categoriaIVA : ''}`);
+  } catch (e) {
+    toast('Error consultando padrón: ' + e.message, false);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> ARCA';
+    }
+  }
 }
 
 function facturaToggleCF(isCF) {
