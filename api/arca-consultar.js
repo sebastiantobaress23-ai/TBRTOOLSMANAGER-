@@ -149,19 +149,25 @@ module.exports = async function handler(req, res) {
         const d = Array.isArray(rawResult) ? rawResult[0] : rawResult;
         if (!d) { errores.push(`n${nro}:noD`); continue; }
 
-        // FECompConsultar usa AUTORIZACION (no CAE) y FCHVTO (no CAEFchVto)
-        const cae      = d.CAE || d.AUTORIZACION || d.Autorizacion || d.NroCAE || '';
-        const fchVto   = d.CAEFchVto || d.CAEFCHVTO || d.FchVto || d.FCHVTO || '';
-        const resultado = d.Resultado || d.RESULTADO || '';
+        // Buscar dinámicamente la clave que contiene el número de autorización (CAE)
+        // FECompConsultar puede usar CAE, AUTORIZACION, NROAUTORIZACION, etc. según la versión del WSDL
+        const keys = Object.keys(d);
+        const caeKey = keys.find(k => /^(CAE|AUTORIZACION|NROAUTORIZACION|NroCAE|Autorizacion)$/i.test(k))
+          || keys.find(k => k.toUpperCase().endsWith('RIZACION') || k.toUpperCase() === 'CAE');
+        const fchKey = keys.find(k => /^(CAEFchVto|CAEFCHVTO|FchVto|FCHVTO)$/i.test(k));
+
+        const cae      = caeKey ? String(d[caeKey] || '') : '';
+        const fchVto   = fchKey ? String(d[fchKey]  || '') : '';
+        const resultado = String(d.Resultado || d.RESULTADO || '');
         const fechaRaw  = String(d.CbteFch || d.CBTEFCH || '');
         const impTotal  = parseFloat(d.ImpTotal || d.IMPTOTAL) || 0;
         const docTipo   = d.DocTipo || d.DOCTIPO;
         const docNro    = String(d.DocNro || d.DOCNRO || '0');
 
-        console.log(`Comprobante ${nro}: cae=${cae} res=${resultado} fchVto=${fchVto}`);
+        console.log(`Comprobante ${nro}: caeKey=${caeKey} cae=${cae} fchKey=${fchKey} res=${resultado}`);
 
         if (!cae) {
-          errores.push(`n${nro}:noCAE res=${resultado}`);
+          errores.push(`n${nro}:noCAE caeKey=${caeKey} allkeys=${keys.join(',')}`);
           continue;
         }
 
