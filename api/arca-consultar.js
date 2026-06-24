@@ -151,7 +151,10 @@ module.exports = async function handler(req, res) {
         console.log(`Comprobante ${nro} raw:`, rawStr);
         if (!d) { errores.push(`n${nro}:noD`); continue; }
         if (!d.CAE) {
-          errores.push(`n${nro}:${rawStr}`);
+          const allKeys = Object.keys(d).join(',');
+          const caeVal = JSON.stringify(d.CAE);
+          const caeUp  = JSON.stringify(d['CAE']);
+          errores.push(`n${nro}:CAE=${caeVal}|keys=${allKeys}`);
           continue;
         }
 
