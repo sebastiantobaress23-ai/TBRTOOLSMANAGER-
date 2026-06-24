@@ -10022,7 +10022,7 @@ function facturaDocBody(f){
           <b>Fecha de Emisión:</b> ${fmtF(f.fecha)}<br>
           <b>Fecha de Vencimiento:</b> ${fmtF(f.vencimiento||f.fecha)}<br>
           <b>CUIT:</b> ${esc(empCuit)}<br>
-          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos)}<br>`:''}
+          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos.replace(/-+$/,''))}<br>`:''}
           ${empInicioActividad?`<b>Inicio de Actividad:</b> ${esc(empInicioActividad)}<br>`:''}
           <b>Razón Social:</b> ${esc(empRazonSocial)}
         </div>
@@ -10461,7 +10461,7 @@ function ncDocBody(f){
         <div class="meta">
           <b>Fecha de Emisión:</b> ${fmtF(f.fecha)}<br>
           <b>CUIT:</b> ${esc(empCuit)}<br>
-          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos)}<br>`:''}
+          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos.replace(/-+$/,''))}<br>`:''}
           ${empInicioActividad?`<b>Inicio de Actividad:</b> ${esc(empInicioActividad)}<br>`:''}
           <b>Razón Social:</b> ${esc(empRazonSocial)}
         </div>
