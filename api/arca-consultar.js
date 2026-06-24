@@ -151,10 +151,10 @@ module.exports = async function handler(req, res) {
         console.log(`Comprobante ${nro} raw:`, rawStr);
         if (!d) { errores.push(`n${nro}:noD`); continue; }
         if (!d.CAE) {
-          const allKeys = Object.keys(d).join(',');
-          const caeVal = JSON.stringify(d.CAE);
-          const caeUp  = JSON.stringify(d['CAE']);
-          errores.push(`n${nro}:CAE=${caeVal}|keys=${allKeys}`);
+          const caeKeys = Object.keys(d).filter(k => k.toUpperCase().includes('CAE'));
+          const caeInfo = caeKeys.map(k=>`${k}=${JSON.stringify(d[k])}`).join(',');
+          const lastKeys = Object.keys(d).slice(-8).join(',');
+          errores.push(`n${nro}:caefields=[${caeInfo}] last8=${lastKeys}`);
           continue;
         }
 
