@@ -9333,6 +9333,10 @@ function pgFacturador() {
   <div class="fe mb20" style="gap:8px;flex-wrap:wrap">
     <button class="btn-p" onclick="openFactura(null)">${ic('edit')} Nueva Factura C</button>
     <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')} Libro IVA (CSV)</button>
+    <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca" style="gap:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Sincronizar ARCA
+    </button>
   </div>
   ${facturas.length===0?`<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`:`
   ${pendientes.length?`<div class="sh mb12" style="font-size:9px">PENDIENTES · ${pendientes.length}</div>${pendientes.map(factRow).join('')}`:''}
@@ -10096,6 +10100,70 @@ function pedidoToFactura(id) {
   DB.set('facturas', facturas);
   navigate('facturador');
   toast(`Factura ${nro} creada desde ${o.nro}`);
+}
+
+async function sincronizarARCA() {
+  const btn = document.getElementById('btn-sync-arca');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Consultando ARCA…</span>'; }
+  try {
+    // Obtener último número autorizado para saber el rango
+    const facturas = DB.get('facturas', []);
+    const numerosLocales = new Set(
+      facturas.map(f => parseInt((f.nro||'').split('-')[1]||'0')).filter(Boolean)
+    );
+    // Consultar desde 1 hasta el último + 5 para no perder ninguno
+    const maxLocal = Math.max(0, ...Array.from(numerosLocales));
+    const desde = 1;
+    const hasta = maxLocal + 10;
+
+    const resp = await fetch(`/api/arca-consultar?desde=${desde}&hasta=${hasta}`);
+    const data = await resp.json();
+    if (!resp.ok || data.error) { toast('Error sincronizando: ' + (data.error||''), false, 5000); return; }
+
+    let importados = 0;
+    const ahora = new Date().toISOString().slice(0,10);
+    for (const f of (data.facturas || [])) {
+      if (numerosLocales.has(f.cbteNro)) continue; // ya existe
+      // Importar como factura emitida con los datos de ARCA
+      const nueva = {
+        id:       'arca-' + f.cbteNro,
+        nro:      f.nro,
+        fecha:    f.fecha,
+        vencimiento: ahora,
+        estado:   'emitida',
+        tipo:     'C',
+        cae:      f.cae,
+        caeFecha: f.caeFecha,
+        importadoDeARCA: true,
+        comprador: {
+          nombre: f.docNro === '0' ? 'Consumidor Final' : '',
+          cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
+        },
+        items: [],
+        total: f.importe,
+        subtotal: f.importe,
+        descuento: 0,
+      };
+      const lista = DB.get('facturas', []);
+      lista.unshift(nueva);
+      DB.set('facturas', lista);
+      importados++;
+    }
+
+    if (importados === 0) {
+      toast('Todo sincronizado — no hay facturas nuevas en ARCA');
+    } else {
+      toast(`${importados} factura${importados>1?'s':''} importada${importados>1?'s':''} de ARCA`);
+      renderFacturador();
+    }
+  } catch (e) {
+    toast('Error: ' + e.message, false, 5000);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sincronizar ARCA';
+    }
+  }
 }
 
 function exportLibroIVA() {
