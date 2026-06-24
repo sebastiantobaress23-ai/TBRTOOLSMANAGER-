@@ -9131,6 +9131,16 @@ window.onload = async function() {
   // usa la configuración ya guardada localmente). Antes se pedía recién
   // después de initialSyncIfFresh, que puede tardar varios segundos.
   checkAccessPin();
+  // Migración: corregir nombre de empresa si quedó como el default antiguo 'TBR TOOLS'
+  (function migrateEmpNombre(){
+    const emp = DB.get('empresa',{});
+    const bad = /^tbr tools$/i;
+    if(bad.test(emp.razonSocial||'') || bad.test(emp.nombre||'')){
+      if(bad.test(emp.razonSocial||'')) emp.razonSocial = 'TOBARES ALEXIS SEBASTIAN';
+      if(bad.test(emp.nombre||''))      emp.nombre      = 'TOBARES ALEXIS SEBASTIAN';
+      DB.set('empresa', emp);
+    }
+  })();
   // Si el dispositivo no tiene datos locales (instalación nueva / incógnito),
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
@@ -10118,23 +10128,27 @@ function facturaPreview(id){
     </div>`;
   ov.appendChild(bar);
 
-  // Iframe
+  // Wrapper para escalar el iframe con transform (más confiable que zoom en iOS)
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'flex:1;overflow:hidden;position:relative;background:#e8e8e8;';
+  ov.appendChild(wrap);
+
   var fr = document.createElement('iframe');
   fr.id = 'fp-frame';
-  fr.style.cssText = 'flex:1;width:100%;border:none;background:#fff;';
+  fr.style.cssText = 'position:absolute;top:0;left:0;width:595px;border:none;background:#fff;transform-origin:top left;';
   fr.setAttribute('sandbox','allow-same-origin allow-scripts allow-modals allow-popups allow-forms');
   fr.srcdoc = docBody;
   fr.onload = function(){
     try {
-      var iw = fr.clientWidth || fr.offsetWidth || 390;
-      if(iw < 595){
-        var z = iw / 595;
-        fr.contentDocument.documentElement.style.zoom = z;
-        fr.contentDocument.body.style.zoom = z;
-      }
+      var sw = wrap.clientWidth || window.innerWidth || 390;
+      var sh = wrap.clientHeight || (window.innerHeight - (bar.offsetHeight||50));
+      var scale = Math.min(sw / 595, 1);
+      fr.style.transform = 'scale(' + scale + ')';
+      fr.style.width = '595px';
+      fr.style.height = Math.ceil(sh / scale) + 'px';
     } catch(e){}
   };
-  ov.appendChild(fr);
+  wrap.appendChild(fr);
 
   document.body.appendChild(ov);
   document.body.style.overflow = 'hidden';
