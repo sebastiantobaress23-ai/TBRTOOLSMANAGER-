@@ -1,9 +1,0 @@
-{
-  "name": "tbr-api",
-  "version": "1.0.0",
-  "dependencies": {
-    "node-soap": "^1.1.6",
-    "node-forge": "^1.3.1",
-    "xmlbuilder2": "^3.1.1"
-  }
-}

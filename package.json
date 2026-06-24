@@ -1,0 +1,7 @@
+{
+  "name": "tbrtoolsmanager",
+  "version": "1.0.0",
+  "dependencies": {
+    "node-forge": "^1.3.1"
+  }
+}
