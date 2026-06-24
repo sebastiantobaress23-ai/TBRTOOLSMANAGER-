@@ -9954,10 +9954,10 @@ function facturaDocBody(f){
   const descuento = f.descuentoPct>0 ? subtotal*f.descuentoPct/100 : 0;
   const total = f.total||0;
   const GOLD='#b8973a';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#111;background:#e8e8e8}
-    .page{max-width:800px;margin:16px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    .page{max-width:800px;margin:8px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15)}
     /* HEADER */
     .hdr{display:grid;grid-template-columns:1fr 96px 1fr;border-bottom:1px solid #bbb}
     .hdr-left{padding:16px 18px 14px}
@@ -10398,10 +10398,10 @@ function ncDocBody(f){
   const subtotal = f.subtotal||f.total||0;
   const total = f.total||0;
   const GOLD='#b8973a';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#111;background:#e8e8e8}
-    .page{max-width:800px;margin:16px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    .page{max-width:800px;margin:8px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15)}
     .hdr{display:grid;grid-template-columns:1fr 96px 1fr;border-bottom:1px solid #bbb}
     .hdr-left{padding:16px 18px 14px}
     .biz-logo{height:36px;max-width:120px;object-fit:contain;display:block;margin-bottom:8px}
@@ -10649,7 +10649,7 @@ function remitoDocBody(f) {
   const emp = f.emisor||{};
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
     .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px}
