@@ -10135,7 +10135,10 @@ async function sincronizarARCA() {
         caeFecha: f.caeFecha,
         importadoDeARCA: true,
         comprador: {
-          nombre: f.docNro === '0' ? 'Consumidor Final' : '',
+          nombre: f.docNro === '0' ? 'Consumidor Final'
+            : f.docTipo == 80 ? `CUIT ${f.docNro}`
+            : f.docTipo == 96 ? `DNI ${f.docNro}`
+            : f.docNro,
           cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
         },
         items: [],
