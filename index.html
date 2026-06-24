@@ -10094,8 +10094,10 @@ function facturaPreview(id){
   frame.onload = function(){
     try {
       var iw = frame.clientWidth||frame.offsetWidth||390;
-      var z = Math.min(1, iw/750);
-      frame.contentDocument.documentElement.style.zoom = z;
+      if(iw < 595){
+        var z = iw/595;
+        frame.contentDocument.documentElement.style.zoom = z;
+      }
     } catch(e){}
   };
   ol.style.display = 'flex';
