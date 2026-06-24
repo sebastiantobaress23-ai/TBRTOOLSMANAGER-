@@ -1,4 +1,4 @@
-const CACHE = 'tbr-cache-v174';
+const CACHE = 'tbr-cache-v175';
 
 const PRECACHE_SAME = [
   '/',
@@ -20,6 +20,7 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then(cache => Promise.all([
       ...PRECACHE_SAME.map(url => cache.add(url).catch(() => {})),

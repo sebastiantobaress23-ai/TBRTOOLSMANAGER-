@@ -10102,13 +10102,15 @@ function facturaPreview(id){
     } catch(e){}
   };
   ol.style.display = 'flex';
-  lockBody();
+  // NO usar lockBody() aquí — body.modal-open aplica position:fixed al body
+  // lo que rompe position:fixed de hijos en iOS Safari (se posicionan relativo al body, no al viewport)
+  document.body.style.overflow = 'hidden';
 }
 
 function closeFacturaPreview(){
   const ol = document.getElementById('factura-preview-ol');
   if(ol) ol.style.display='none';
-  unlockBody();
+  document.body.style.overflow = '';
 }
 
 function pedidoToFactura(id) {
