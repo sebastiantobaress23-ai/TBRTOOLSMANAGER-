@@ -9277,12 +9277,13 @@ function numToWords(n) {
 
 function nextFacturaNro() {
   const conf = getConf();
-  const pdv = String(parseInt(conf.facturaPdv)||1).padStart(5,'0');
+  const pdvInt = parseInt(conf.facturaPdv)||1;
+  const pdv = String(pdvInt).padStart(5,'0');
   const facturas = DB.get('facturas',[]);
   const max = facturas.reduce((m,f)=>{
     if(!f.nro) return m;
     const p = f.nro.split('-');
-    if(p[0]===pdv) return Math.max(m, parseInt(p[1])||0);
+    if(parseInt(p[0])===pdvInt) return Math.max(m, parseInt(p[1])||0);
     return m;
   },0);
   return pdv + '-' + String(max+1).padStart(8,'0');
@@ -9441,7 +9442,7 @@ function openFactura(id) {
           <div><label class="fl">CUIT / DNI / CUIL</label>
             <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
               <div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div>
-              <button class="btn-g" onclick="buscarPadronARCA()" style="height:42px;padding:0 12px;border-radius:10px;flex-shrink:0;white-space:nowrap;font-size:12px;gap:6px;display:flex;align-items:center" title="Buscar datos en ARCA">
+              <button class="btn-g" onclick="buscarPadronARCA(event)" style="height:42px;padding:0 12px;border-radius:10px;flex-shrink:0;white-space:nowrap;font-size:12px;gap:6px;display:flex;align-items:center" title="Buscar datos en ARCA">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 ARCA
               </button>
@@ -9548,7 +9549,7 @@ function facturaToggleCuotas(val) {
   document.getElementById('f-recargo-wrap').style.display = isCuotas?'':'none';
 }
 
-async function buscarPadronARCA() {
+async function buscarPadronARCA(ev) {
   const cuitInput = document.getElementById('f-cuit');
   const cuit = (cuitInput?.value||'').replace(/\D/g,'');
   if (!cuit) {
@@ -9560,7 +9561,7 @@ async function buscarPadronARCA() {
   if (cuit.length !== 11) {
     toast('CUIT inválido — debe tener exactamente 11 dígitos', false); return;
   }
-  const btn = event?.currentTarget;
+  const btn = ev?.currentTarget || ev?.target;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
   try {
     const resp = await fetch(`/api/arca-padron?doc=${cuit}`);
@@ -9935,6 +9936,13 @@ async function solicitarCAE(){
 
 function facturaDocBody(f){
   const emp = f.emisor||{};
+  const conf = getConf();
+  const empNombre = emp.nombre||emp.razonSocial||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empCuit = emp.cuit||conf.facturaCuit||'';
+  const empDir = emp.dir||conf.facturaDir||'';
+  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||'';
+  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||'';
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const fmtA = n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -10006,9 +10014,9 @@ function facturaDocBody(f){
     <div class="hdr">
       <div class="hdr-left">
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
-        <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div class="biz-name">${esc(empNombre)}</div>
         <div class="biz-cond">Monotributo</div>
-        <div class="biz-addr">${esc(emp.dir||'')}</div>
+        <div class="biz-addr">${esc(empDir)}</div>
       </div>
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
@@ -10021,10 +10029,10 @@ function facturaDocBody(f){
         <table class="meta-table"><tbody>
           <tr><td class="lbl">Fecha de Emisión:</td><td class="val">${fmtF(f.fecha)}</td></tr>
           <tr><td class="lbl">Fecha de Vencimiento:</td><td class="val">${fmtF(f.vencimiento||f.fecha)}</td></tr>
-          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(emp.cuit)}</td></tr>
-          ${emp.ingBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(emp.ingBrutos)}</td></tr>`:''}
-          ${emp.inicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(emp.inicioActividad)}</td></tr>`:''}
-          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(emp.razonSocial||emp.nombre||'TBR TOOLS')}</td></tr>
+          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(empCuit)}</td></tr>
+          ${empIngBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(empIngBrutos)}</td></tr>`:''}
+          ${empInicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(empInicioActividad)}</td></tr>`:''}
+          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(empRazonSocial)}</td></tr>
         </tbody></table>
       </div>
     </div>
@@ -10373,6 +10381,13 @@ function emitirNotaCredito(facturaId) {
 
 function ncDocBody(f){
   const emp = f.emisor||{};
+  const conf = getConf();
+  const empNombre = emp.nombre||emp.razonSocial||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empCuit = emp.cuit||conf.facturaCuit||'';
+  const empDir = emp.dir||conf.facturaDir||'';
+  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||'';
+  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||'';
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const fmtA = n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -10382,7 +10397,7 @@ function ncDocBody(f){
   const nroStr = (parseInt(pdvNro[1])||0).toString().padStart(8,'0');
   const subtotal = f.subtotal||f.total||0;
   const total = f.total||0;
-  const RED='#a01515';
+  const GOLD='#b8973a';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#111;background:#e8e8e8}
@@ -10393,20 +10408,20 @@ function ncDocBody(f){
     .biz-name{font-size:14px;font-weight:700;letter-spacing:.5px}
     .biz-cond{font-size:9.5px;color:#555;margin:2px 0 6px}
     .biz-addr{font-size:9px;color:#666;line-height:1.6}
-    .tipo-col{border-left:1px solid #bbb;border-right:1px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;text-align:center;background:#fdf8f8}
-    .tipo-original{font-size:8.5px;color:${RED};font-style:italic;margin-bottom:3px}
-    .tipo-letra{font-size:46px;font-weight:700;line-height:1;color:${RED};font-style:italic}
-    .tipo-num{font-size:8.5px;color:#999;margin-top:4px;letter-spacing:.5px}
+    .tipo-col{border-left:1px solid #bbb;border-right:1px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;text-align:center;background:#fafafa}
+    .tipo-original{font-size:8.5px;color:#777;font-style:italic;margin-bottom:3px}
+    .tipo-letra{font-size:46px;font-weight:700;line-height:1;color:#111;font-style:italic}
+    .tipo-num{font-size:8.5px;color:#888;margin-top:4px;letter-spacing:.5px}
     .hdr-right{padding:16px 18px 14px}
-    .doc-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${RED};margin-bottom:4px}
+    .doc-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#333;margin-bottom:4px}
     .doc-nro{font-size:15px;font-weight:700;color:#111;margin-bottom:8px}
     .meta-table{width:100%;border-collapse:collapse;font-size:9.5px}
     .meta-table td{padding:1.5px 0;vertical-align:top}
     .meta-table td.lbl{color:#666;padding-right:6px;white-space:nowrap}
     .meta-table td.val{font-weight:600;color:#111}
-    .red-line{height:2px;background:${RED}}
-    .ref-bar{background:#fff5f5;border-bottom:1px solid #f0d0d0;padding:7px 18px;font-size:10px;color:${RED};font-weight:600;border-top:1px solid #f0d0d0}
-    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ddd;padding:5px 18px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888}
+    .gold-line{height:2px;background:${GOLD}}
+    .ref-bar{background:#f5f5f5;border-bottom:1px solid #ddd;padding:7px 18px;font-size:10px;color:#444;font-weight:600;border-top:1px solid #ddd}
+    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ddd;border-top:1px solid #ddd;padding:5px 18px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:flex;justify-content:space-between;align-items:center}
     .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ddd;font-size:10px}
     .buyer-left{padding:12px 18px;border-right:1px solid #ddd}
     .buyer-right{padding:12px 18px}
@@ -10414,8 +10429,8 @@ function ncDocBody(f){
     .buyer td{padding:2px 0;vertical-align:top}
     .buyer td.lbl{color:#666;padding-right:6px;white-space:nowrap;font-weight:700;font-size:9.5px}
     .items-table{width:100%;border-collapse:collapse;font-size:10px}
-    .items-table thead tr{background:#fff5f5;border-bottom:2px solid ${RED};border-top:1px solid #ddd}
-    .items-table th{padding:7px 12px;text-align:left;font-weight:700;font-size:8.5px;letter-spacing:.8px;text-transform:uppercase;color:${RED}}
+    .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD};border-top:1px solid #ddd}
+    .items-table th{padding:7px 12px;text-align:left;font-weight:700;font-size:8.5px;letter-spacing:.8px;text-transform:uppercase;color:#444}
     .items-table td{padding:9px 12px;border-bottom:1px solid #eee;vertical-align:top}
     .items-table tbody tr:last-child td{border-bottom:none}
     .items-table .tr{text-align:right} .items-table .tc{text-align:center}
@@ -10426,20 +10441,21 @@ function ncDocBody(f){
     .letras{font-size:9px;color:#666;margin-top:10px;line-height:1.5;font-style:italic}
     .footer-right{padding:12px 18px}
     .tot-row{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;font-size:10px;margin-bottom:2px}
-    .tot-row.sub{background:#fff5f5;color:#444}
-    .tot-row.big{background:${RED};color:#fff;font-weight:700;font-size:12.5px;padding:8px 10px;margin-top:3px}
+    .tot-row.sub{background:#f5f5f5;color:#444}
+    .tot-row.big{background:#111;color:#fff;font-weight:700;font-size:12.5px;padding:8px 10px;margin-top:3px}
+    .tot-row.big .gold{color:${GOLD}}
     .tot-val{font-weight:700;white-space:nowrap}
     .moneda{font-size:8.5px;color:#aaa;text-align:right;margin-top:5px}
-    .obs{border-top:1px solid #ddd;padding:10px 18px;font-size:9.5px;color:#444;line-height:1.6;background:#fff9f9}
+    .obs{border-top:1px solid #ddd;padding:10px 18px;font-size:9.5px;color:#444;line-height:1.6}
     .obs b{color:#111}
     @media print{body{background:#fff;print-color-adjust:exact}.page{box-shadow:none;margin:0;border:none}}
   </style></head><body><div class="page">
     <div class="hdr">
       <div class="hdr-left">
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
-        <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div class="biz-name">${esc(empNombre)}</div>
         <div class="biz-cond">Monotributo</div>
-        <div class="biz-addr">${esc(emp.dir||'')}</div>
+        <div class="biz-addr">${esc(empDir)}</div>
       </div>
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
@@ -10451,14 +10467,14 @@ function ncDocBody(f){
         <div class="doc-nro">${pdvNum}-${nroStr}</div>
         <table class="meta-table"><tbody>
           <tr><td class="lbl">Fecha de Emisión:</td><td class="val">${fmtF(f.fecha)}</td></tr>
-          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(emp.cuit)}</td></tr>
-          ${emp.ingBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(emp.ingBrutos)}</td></tr>`:''}
-          ${emp.inicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(emp.inicioActividad)}</td></tr>`:''}
-          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(emp.razonSocial||emp.nombre||'TBR TOOLS')}</td></tr>
+          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(empCuit)}</td></tr>
+          ${empIngBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(empIngBrutos)}</td></tr>`:''}
+          ${empInicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(empInicioActividad)}</td></tr>`:''}
+          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(empRazonSocial)}</td></tr>
         </tbody></table>
       </div>
     </div>
-    <div class="red-line"></div>
+    <div class="gold-line"></div>
     <div class="ref-bar">Corresponde a: Factura C Nº ${esc(f.facturaOrigen||'—')}</div>
     <div class="buyer-hdr">Datos del Receptor</div>
     <div class="buyer">
@@ -10485,7 +10501,7 @@ function ncDocBody(f){
       <th class="tr" style="width:115px">Precio Unitario</th>
       <th class="tr" style="width:120px">Importe Subtotal</th>
     </tr></thead><tbody>
-    ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fff9f9"':''}>
+    ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
       <td style="color:#888">${esc(it.sku||'—')}</td>
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
@@ -10503,7 +10519,7 @@ function ncDocBody(f){
       <div class="footer-right">
         <div class="tot-row sub"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
         <div class="tot-row sub"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>
-        <div class="tot-row big"><span>Importe Total NC</span><span class="tot-val">$ ${fmtA(total)}</span></div>
+        <div class="tot-row big"><span>Importe Total NC</span><span class="tot-val gold">$ ${fmtA(total)}</span></div>
         <div class="moneda">Moneda: Pesos Argentinos</div>
       </div>
     </div>

@@ -180,7 +180,7 @@ module.exports = async function handler(req, res) {
 
         facturas.push({
           cbteNro:    nro,
-          nro:        `${pdv}-${String(nro).padStart(8,'0')}`,
+          nro:        `${String(pdv).padStart(5,'0')}-${String(nro).padStart(8,'0')}`,
           fecha,
           cae:        String(cae),
           caeFecha,
