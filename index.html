@@ -9397,25 +9397,19 @@ function openFactura(id) {
         </div>
       </div>
 
-      <!-- CAE -->
-      <div style="${fCardStyle}">
-        ${fSecLbl('CAE · Código de Autorización Electrónico · ARCA')}
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+      <!-- CAE (solo visible al editar) -->
+      ${!isNew ? `<div style="${fCardStyle}">
+        ${fSecLbl('CAE · Código de Autorización Electrónico')}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div><label class="fl">Código CAE</label><div class="iw"><input type="text" id="f-cae" placeholder="00000000000000" value="${esc(f?.cae||'')}" maxlength="14" style="font-family:'DM Mono',monospace;letter-spacing:2px"></div></div>
           <div><label class="fl">Vencimiento CAE</label><div class="iw"><input type="date" id="f-caefecha" value="${f?.caeFecha||''}"></div></div>
-          <button class="btn-p" id="f-cae-btn" onclick="solicitarCAE()" style="height:42px;white-space:nowrap">${ic('zap')} Solicitar</button>
         </div>
-      </div>
+      </div>` : `<input type="hidden" id="f-cae" value=""><input type="hidden" id="f-caefecha" value="">`}
 
-      <!-- Obs + Estado -->
+      <!-- Obs -->
       <div style="${fCardStyle}">
-        ${fSecLbl('Cierre')}
-        <div style="display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:start">
-          <div><label class="fl">Observaciones</label>
-            <div class="iw"><textarea id="f-obs" rows="3" style="width:100%;resize:vertical;min-height:68px;font-size:13px">${esc(f?.observaciones||conf.facturaObs||'Gracias por elegir TBR Tools. Trabajamos con productos nuevos, originales y con garantía. Contás con 30 días para cambios o devoluciones.')}</textarea></div></div>
-          <div><label class="fl">Estado</label>
-            <div class="iw"><select id="f-estado" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px">${['borrador','emitida','pagada','cancelada'].map(s=>`<option value="${s}"${(f?.estado||'borrador')===s?' selected':''}>${{borrador:'Borrador',emitida:'Emitida',pagada:'Pagada',cancelada:'Cancelada'}[s]}</option>`).join('')}</select></div></div>
-        </div>
+        ${fSecLbl('Observaciones')}
+        <div class="iw"><textarea id="f-obs" rows="3" style="width:100%;resize:vertical;min-height:68px;font-size:13px">${esc(f?.observaciones||conf.facturaObs||'Gracias por elegir TBR Tools. Trabajamos con productos nuevos, originales y con garantía. Contás con 30 días para cambios o devoluciones.')}</textarea></div>
       </div>
 
     </div>
@@ -9423,7 +9417,11 @@ function openFactura(id) {
     <!-- Footer -->
     <div class="savebar" style="border-top:1px solid var(--b2);border-radius:0 0 14px 14px;padding:14px 22px">
       <button class="btn-g" onclick="closeFacturaModal()">Cancelar</button>
-      <button class="btn-p" onclick="saveFactura()">${ic('save')} ${isNew?'Crear factura':'Guardar cambios'}</button>
+      ${isNew
+        ? `<button class="btn-g" onclick="saveFactura(false)" style="border-color:var(--b3)">${ic('save')} Guardar borrador</button>
+           <button class="btn-p" onclick="saveFactura(true)" id="f-emit-btn">${ic('zap')} Emitir y solicitar CAE</button>`
+        : `<button class="btn-p" onclick="saveFactura(false)">${ic('save')} Guardar cambios</button>`
+      }
     </div>
   </div>`;
   modal.style.display='flex';
@@ -9517,7 +9515,7 @@ function updateFactTotals(){
   if(totEl) totEl.textContent = fmtA(total);
 }
 
-function saveFactura(){
+async function saveFactura(emitir=false){
   const conf = getConf();
   const emp = DB.get('empresa',{});
   const nro = document.getElementById('f-nro')?.value.trim();
@@ -9528,6 +9526,29 @@ function saveFactura(){
   const subtotalItems = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
   const descuentoPct = parseFloat(document.getElementById('f-desc')?.value)||0;
   const total = subtotalItems * (1 - descuentoPct/100);
+  // Si emitir, solicitar CAE antes de guardar
+  let cae = document.getElementById('f-cae')?.value.trim()||'';
+  let caeFecha = document.getElementById('f-caefecha')?.value||'';
+  if(emitir && !cae){
+    const btn = document.getElementById('f-emit-btn');
+    if(btn){ btn.disabled=true; btn.textContent='Solicitando CAE…'; }
+    try {
+      const cuitVal = (document.getElementById('f-cuit')?.value||'').replace(/\D/g,'');
+      const fecha = document.getElementById('f-fecha')?.value||new Date().toISOString().slice(0,10);
+      const parts = nro.split('-');
+      const pdv = parseInt(parts[0])||1;
+      const cbteNro = parseInt(parts[1])||1;
+      const resp = await fetch('/api/arca-cae',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({pdv,cbteNro,fecha:fecha.replace(/-/g,''),cuitComprador:cuitVal||'0',docTipo:cuitVal.length===11?80:96,importe:total})});
+      const data = await resp.json();
+      if(data.cae){ cae=data.cae; caeFecha=data.caeFecha; toast('CAE obtenido'); }
+      else { toast('ARCA: '+(data.error||'Sin CAE'),false,6000); if(btn){btn.disabled=false;btn.innerHTML=`${ic('zap')} Emitir y solicitar CAE`;} return; }
+    } catch(e){
+      toast('Error CAE: '+e.message,false,6000);
+      if(btn){btn.disabled=false;btn.innerHTML=`${ic('zap')} Emitir y solicitar CAE`;}
+      return;
+    }
+  }
   const factura = {
     id: _facturaEdit?.id || uid(),
     nro, tipo:'C',
@@ -9550,10 +9571,9 @@ function saveFactura(){
     items: _factItems.map(it=>({...it})),
     subtotal: subtotalItems, otrosImpuestos:0, total,
     totalLetras: numToWords(total),
-    cae: document.getElementById('f-cae')?.value.trim()||'',
-    caeFecha: document.getElementById('f-caefecha')?.value||'',
+    cae, caeFecha,
     observaciones: document.getElementById('f-obs')?.value.trim()||'',
-    estado: document.getElementById('f-estado')?.value||'borrador',
+    estado: emitir ? 'emitida' : (_facturaEdit?.estado||'borrador'),
     emisor:{
       nombre: emp.nombre||'TBR TOOLS',
       cuit: conf.facturaCuit||emp.cuit||'',
@@ -9571,7 +9591,8 @@ function saveFactura(){
   DB.set('facturas',facturas);
   closeFacturaModal();
   render();
-  toast(`Factura ${nro} guardada`);
+  if(emitir) { setTimeout(()=>facturaPreview(factura.id),300); toast(`Factura ${nro} emitida`); }
+  else toast(`Borrador ${nro} guardado`);
 }
 
 function deleteFactura(id){
