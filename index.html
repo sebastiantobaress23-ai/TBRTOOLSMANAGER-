@@ -1691,7 +1691,7 @@ async function _syncPhotosFromFirebase() {
   } catch(e) { console.log('_syncPhotosFromFirebase:', e); }
 }
 
-// Download logo/QR from Firebase into local PhotoDB if not present locally
+// Download logo/QR from Firebase into local PhotoDB (always overwrite to keep in sync)
 async function _syncAssetsFromFirebase() {
   try {
     const url = await fbUrl(`${FB}/empresa_assets.json`);
@@ -1699,12 +1699,16 @@ async function _syncAssetsFromFirebase() {
     if (!r.ok) return;
     const assets = await r.json();
     if (!assets) return;
-    if (assets.logo) {
+    let changed = false;
+    if (assets.logo && assets.logo !== PhotoDB.getLogo()) {
       await PhotoDB.setLogo(assets.logo);
+      changed = true;
     }
-    if (assets.mpQr) {
+    if (assets.mpQr && assets.mpQr !== PhotoDB.getQR()) {
       await PhotoDB.setQR(assets.mpQr);
+      changed = true;
     }
+    if (changed) render();
   } catch(e) { console.log('_syncAssetsFromFirebase:', e); }
 }
 
@@ -9216,6 +9220,18 @@ window.onload = async function() {
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
   fbSync();
+  // Backup proactivo: si hay logo/QR en IDB pero no en Firebase, subirlos
+  setTimeout(async () => {
+    try {
+      const url = await fbUrl(`${FB}/empresa_assets.json`);
+      const r = await fetch(url, { cache:'no-store', signal: AbortSignal.timeout(5000) });
+      const remote = r.ok ? await r.json().catch(()=>null) : null;
+      const localLogo = PhotoDB.getLogo();
+      const localQR   = PhotoDB.getQR();
+      const needUpload = (localLogo && !remote?.logo) || (localQR && !remote?.mpQr);
+      if (needUpload) await _fbWriteAssets(localLogo, localQR);
+    } catch(e) { console.log('assets backup check:', e); }
+  }, 3000);
   // Pedidos nuevos del catálogo digital (Firestore) cada 20s
   setInterval(syncCatalogOrders, 20000);
   syncCatalogOrders();
