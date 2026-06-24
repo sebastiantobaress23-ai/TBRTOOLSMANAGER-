@@ -9954,59 +9954,55 @@ function facturaDocBody(f){
   const descuento = f.descuentoPct>0 ? subtotal*f.descuentoPct/100 : 0;
   const total = f.total||0;
   const GOLD='#b8973a';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820,initial-scale=1"><style>
+  const qr = PhotoDB.getQR();
+  const afipQrData = f.cae ? btoa(JSON.stringify({ver:1,fecha:f.fecha||'',cuit:parseInt((empCuit||'').replace(/\D/g,'')),ptoVta:parseInt(pdvNro[0])||1,tipoCmp:11,nroCmp:parseInt(pdvNro[1])||0,importe:total,moneda:'PES',ctz:1,tipoDocRec:99,nroDocRec:0,tipoCodAut:'E',codAut:parseInt(f.cae)||0})) : '';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#111;background:#e8e8e8}
-    .page{width:800px;margin:8px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15);transform-origin:top center}
-    .hdr{display:grid;grid-template-columns:1fr 96px 1fr;border-bottom:1px solid #bbb}
-    .hdr-left{padding:14px 16px 12px}
-    .biz-logo{height:34px;max-width:110px;object-fit:contain;display:block;margin-bottom:6px}
-    .biz-name{font-size:13px;font-weight:700;letter-spacing:.5px}
-    .biz-cond{font-size:9px;color:#555;margin:1px 0 5px}
-    .biz-addr{font-size:8.5px;color:#666;line-height:1.5}
-    .tipo-col{border-left:1px solid #bbb;border-right:1px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;text-align:center;background:#fafafa}
-    .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:2px}
-    .tipo-letra{font-size:52px;font-weight:700;line-height:1;color:#111;font-style:italic}
-    .tipo-num{font-size:8px;color:#888;margin-top:3px;letter-spacing:.5px}
-    .hdr-right{padding:14px 16px 12px}
-    .doc-label{font-size:9.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#333;margin-bottom:3px}
-    .doc-nro{font-size:14px;font-weight:700;color:#111;margin-bottom:6px}
-    .meta-table{width:100%;border-collapse:collapse;font-size:9px}
-    .meta-table td{padding:1.5px 0;vertical-align:top}
-    .meta-table td.lbl{color:#555;padding-right:6px;white-space:nowrap}
-    .meta-table td.val{font-weight:700;color:#111}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#fff}
+    .page{width:100%;max-width:780px;margin:0 auto;background:#fff;border:1px solid #ccc}
+    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid #ccc}
+    .hdr-left{padding:12px 14px 10px}
+    .biz-logo{height:32px;max-width:100px;object-fit:contain;display:block;margin-bottom:6px}
+    .biz-name{font-size:13px;font-weight:700}
+    .biz-cond{font-size:9px;color:#555;margin:2px 0 4px}
+    .biz-addr{font-size:9px;color:#555;line-height:1.5}
+    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;text-align:center}
+    .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:1px}
+    .tipo-letra{font-size:48px;font-weight:700;line-height:1;color:#111;font-style:italic}
+    .tipo-num{font-size:8px;color:#888;margin-top:2px}
+    .hdr-right{padding:12px 14px 10px}
+    .doc-title{font-size:11px;font-weight:700;letter-spacing:.5px;color:#111;margin-bottom:2px}
+    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:6px;letter-spacing:1px}
+    .meta{font-size:9.5px;line-height:1.7;color:#111}
+    .meta b{font-weight:700}
     .gold-line{height:2px;background:${GOLD}}
-    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ddd;border-top:1px solid #ddd;padding:4px 16px;font-size:7.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:flex;justify-content:space-between;align-items:center}
-    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ddd;font-size:9.5px}
-    .buyer-left{padding:10px 16px;border-right:1px solid #ddd}
-    .buyer-right{padding:10px 16px}
-    .buyer table{width:100%;border-collapse:collapse}
-    .buyer td{padding:2px 0;vertical-align:top}
-    .buyer td.lbl{color:#555;padding-right:6px;white-space:nowrap;font-weight:700;font-size:9px}
+    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777;display:flex;justify-content:space-between}
+    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9.5px;line-height:1.7}
+    .buyer-left{padding:8px 14px;border-right:1px solid #ccc}
+    .buyer-right{padding:8px 14px}
+    .buyer b{font-weight:700}
     .items-table{width:100%;border-collapse:collapse;font-size:9.5px}
-    .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD};border-top:1px solid #ddd}
-    .items-table th{padding:6px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#444}
-    .items-table td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}
+    .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD}}
+    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#555}
+    .items-table td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
     .items-table tbody tr:last-child td{border-bottom:none}
-    .items-table .tr{text-align:right} .items-table .tc{text-align:center}
-    .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ddd}
-    .footer-left{padding:12px 16px;border-right:1px solid #ddd;font-size:9.5px}
-    .cae-num{font-size:10.5px;font-weight:700;color:#111;margin-bottom:2px}
-    .cae-vto{font-size:9px;color:#555}
-    .letras{font-size:8.5px;color:#666;margin-top:8px;line-height:1.5;font-style:italic}
-    .footer-right{padding:10px 16px}
-    .tot-row{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;font-size:9.5px;margin-bottom:2px}
-    .tot-row.sub{background:#f5f5f5;color:#444}
-    .tot-row.big{background:#111;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;margin-top:3px}
-    .tot-row.big .gold{color:${GOLD}}
-    .tot-val{font-weight:700;white-space:nowrap}
+    .items-table .tr{text-align:right}.items-table .tc{text-align:center}
+    .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ccc}
+    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9.5px}
+    .cae-num{font-size:10px;font-weight:700;color:#111;margin-bottom:1px}
+    .cae-vto{font-size:9px;color:#555;margin-bottom:6px}
+    .letras{font-size:9px;color:#555;line-height:1.4;font-style:italic;margin-top:6px}
+    .footer-right{padding:10px 14px}
+    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9.5px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
+    .tot-row.big{background:#fff;font-size:11px;font-weight:700;padding:6px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
+    .tot-val{white-space:nowrap}
+    .letras{font-size:8.5px;color:#555;line-height:1.4;font-style:italic;margin-top:5px;padding:0 2px}
     .moneda{font-size:8px;color:#aaa;text-align:right;margin-top:4px}
-    .obs{border-top:1px solid #ddd;padding:8px 16px;font-size:9px;color:#444;line-height:1.6}
-    .obs b{color:#111}
+    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:9px;color:#444;line-height:1.6}
     @media print{
-      @page{size:A4 portrait;margin:8mm 10mm}
+      @page{size:A4 portrait;margin:8mm 12mm}
       body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-      .page{width:100%;max-width:100%;box-shadow:none;margin:0;border:none;transform:none!important}
+      .page{width:100%;max-width:100%;border:none}
     }
   </style></head><body><div class="page">
     <div class="hdr">
@@ -10019,71 +10015,66 @@ function facturaDocBody(f){
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
         <div class="tipo-letra">C</div>
-        <div class="tipo-num">Cod. 011</div>
+        <div class="tipo-num">011</div>
       </div>
       <div class="hdr-right">
-        <div class="doc-label">Factura C</div>
+        <div class="doc-title">FACTURA C</div>
         <div class="doc-nro">${pdvNum}-${nroStr}</div>
-        <table class="meta-table"><tbody>
-          <tr><td class="lbl">Fecha de Emisión:</td><td class="val">${fmtF(f.fecha)}</td></tr>
-          <tr><td class="lbl">Fecha de Vencimiento:</td><td class="val">${fmtF(f.vencimiento||f.fecha)}</td></tr>
-          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(empCuit)}</td></tr>
-          ${empIngBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(empIngBrutos)}</td></tr>`:''}
-          ${empInicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(empInicioActividad)}</td></tr>`:''}
-          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(empRazonSocial)}</td></tr>
-        </tbody></table>
+        <div class="meta">
+          <b>Fecha de Emisión:</b> ${fmtF(f.fecha)}<br>
+          <b>Fecha de Vencimiento:</b> ${fmtF(f.vencimiento||f.fecha)}<br>
+          <b>CUIT:</b> ${esc(empCuit)}<br>
+          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos)}<br>`:''}
+          ${empInicioActividad?`<b>Inicio de Actividad:</b> ${esc(empInicioActividad)}<br>`:''}
+          <b>Razón Social:</b> ${esc(empRazonSocial)}
+        </div>
       </div>
     </div>
     <div class="gold-line"></div>
     <div class="buyer-hdr"><span>Datos del Receptor</span><span>IVA Receptor: Monotributo / Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
-        <table><tbody>
-          <tr><td class="lbl">Nombre:</td><td>${esc(f.comprador?.nombre||'Consumidor Final')}</td></tr>
-          <tr><td class="lbl">CUIT/DNI/CUIL:</td><td>${esc(f.comprador?.cuitDniCuil||'—')}</td></tr>
-          <tr><td class="lbl">Dirección:</td><td>${esc(f.comprador?.dir||'—')}</td></tr>
-          <tr><td class="lbl">Ciudad:</td><td>${esc(f.comprador?.ciudad||'—')}</td></tr>
-          <tr><td class="lbl">Localidad:</td><td>${esc(f.comprador?.localidad||'—')}</td></tr>
-        </tbody></table>
+        <b>Nombre:</b> ${esc(f.comprador?.nombre||'Consumidor Final')}<br>
+        <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
+        <b>Dirección:</b> ${esc(f.comprador?.dir||'—')}<br>
+        <b>Ciudad:</b> ${esc(f.comprador?.ciudad||'—')}<br>
+        <b>Localidad:</b> ${esc(f.comprador?.localidad||'—')}
       </div>
       <div class="buyer-right">
-        <table><tbody>
-          <tr><td class="lbl">IVA:</td><td>Monotributo</td></tr>
-          <tr><td class="lbl">CP:</td><td>${esc(f.comprador?.cp||'—')}</td></tr>
-          <tr><td class="lbl">Tel.:</td><td>${esc(f.comprador?.tel||'—')}</td></tr>
-          <tr><td class="lbl">Condición de Venta:</td><td>${esc(f.comprador?.condVenta||'Contado')}</td></tr>
-          <tr><td class="lbl">Método de Pago:</td><td>${esc(f.comprador?.metodoPago||'Efectivo')}${f.cuotas>1?' · '+f.cuotas+' cuotas':''}</td></tr>
-        </tbody></table>
+        <b>IVA:</b> Monotributo<br>
+        <b>CP:</b> ${esc(f.comprador?.cp||'—')}<br>
+        <b>Tel.:</b> ${esc(f.comprador?.tel||'—')}<br>
+        <b>Condición de Venta:</b> ${esc(f.comprador?.condVenta||'Contado')}<br>
+        <b>Método de Pago:</b> ${esc(f.comprador?.metodoPago||'Efectivo')}${f.cuotas>1?' · '+f.cuotas+' cuotas':''}
       </div>
     </div>
     <table class="items-table"><thead><tr>
-      <th style="width:64px">SKU</th>
-      <th>Descripción</th>
-      <th class="tc" style="width:68px">Cantidad</th>
-      <th class="tr" style="width:115px">Precio Unitario</th>
-      <th class="tr" style="width:120px">Importe Subtotal</th>
+      <th style="width:9%">SKU</th>
+      <th style="width:45%">Descripción</th>
+      <th class="tc" style="width:10%">Cantidad</th>
+      <th class="tr" style="width:18%">Precio Unitario</th>
+      <th class="tr" style="width:18%">Importe Subtotal</th>
     </tr></thead><tbody>
     ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
-      <td style="color:#888">${esc(it.sku||'—')}</td>
+      <td style="color:#888;font-size:9px">${esc(it.sku||'—')}</td>
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
-      <td class="tr">$ ${fmtA(it.precioUnit||0)}</td>
-      <td class="tr" style="font-weight:700">$ ${fmtA(it.subtotal||0)}</td>
-    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:18px;font-style:italic">Sin ítems detallados</td></tr>`}
+      <td class="tr">${fmtA(it.precioUnit||0)}</td>
+      <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px;font-style:italic">Sin ítems detallados</td></tr>`}
     </tbody></table>
     <div class="footer">
       <div class="footer-left">
-        ${f.cae
-          ?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`
-          :'<div style="color:#ccc;font-style:italic">CAE pendiente</div>'}
-        <div class="letras">Importe en Letras: ${esc(f.totalLetras||numToWords(f.total||0))}</div>
+        ${afipQrData?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrData)}" width="80" height="80" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
+        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:#aaa;font-style:italic">CAE pendiente</div>'}
       </div>
       <div class="footer-right">
-        <div class="tot-row sub"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
+        <div class="tot-row"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
         ${f.descuentoPct>0
-          ?`<div class="tot-row sub"><span>Descuento ${f.descuentoPct}%</span><span class="tot-val" style="color:#a00">-$ ${fmtA(descuento)}</span></div>`
-          :`<div class="tot-row sub"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>`}
-        <div class="tot-row big"><span>Importe Total</span><span class="tot-val gold">$ ${fmtA(total)}</span></div>
+          ?`<div class="tot-row"><span>Descuento ${f.descuentoPct}%</span><span class="tot-val" style="color:#a00">-$ ${fmtA(descuento)}</span></div>`
+          :`<div class="tot-row"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>`}
+        <div class="tot-row big"><span>Importe Total</span><span class="tot-val">$ ${fmtA(total)}</span></div>
+        <div class="letras"><b>Importe en Letras:</b> ${esc(f.totalLetras||numToWords(f.total||0))}</div>
         <div class="moneda">Moneda: Pesos Argentinos</div>
       </div>
     </div>
@@ -10103,27 +10094,6 @@ function facturaPreview(id){
   waBtn.onclick = ()=>facturaShareWA(id);
   const body = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
   frame.srcdoc = body;
-  frame.onload = function(){
-    try {
-      var fw = frame.contentWindow;
-      function fitPage(){
-        var p = fw.document.querySelector('.page');
-        if(!p) return;
-        var vw = fw.innerWidth || fw.document.documentElement.clientWidth;
-        var pw = 800;
-        if(vw < pw+20){
-          var sc = (vw-4)/pw;
-          p.style.transform = 'scale('+sc+')';
-          p.style.marginBottom = (-pw*(1-sc)*1.2)+'px';
-        } else {
-          p.style.transform = '';
-          p.style.marginBottom = '';
-        }
-      }
-      fitPage();
-      fw.addEventListener('resize', fitPage);
-    } catch(e){}
-  };
   ol.style.display = 'flex';
   lockBody();
 }
@@ -10417,60 +10387,54 @@ function ncDocBody(f){
   const subtotal = f.subtotal||f.total||0;
   const total = f.total||0;
   const GOLD='#b8973a';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820,initial-scale=1"><style>
+  const afipQrDataNC = f.cae ? btoa(JSON.stringify({ver:1,fecha:f.fecha||'',cuit:parseInt((empCuit||'').replace(/\D/g,'')),ptoVta:parseInt(pdvNro[0])||1,tipoCmp:13,nroCmp:parseInt(pdvNro[1])||0,importe:total,moneda:'PES',ctz:1,tipoDocRec:99,nroDocRec:0,tipoCodAut:'E',codAut:parseInt(f.cae)||0})) : '';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#111;background:#e8e8e8}
-    .page{width:800px;margin:8px auto;background:#fff;border:1px solid #999;box-shadow:0 2px 12px rgba(0,0,0,.15);transform-origin:top center}
-    .hdr{display:grid;grid-template-columns:1fr 96px 1fr;border-bottom:1px solid #bbb}
-    .hdr-left{padding:14px 16px 12px}
-    .biz-logo{height:34px;max-width:110px;object-fit:contain;display:block;margin-bottom:6px}
-    .biz-name{font-size:13px;font-weight:700;letter-spacing:.5px}
-    .biz-cond{font-size:9px;color:#555;margin:1px 0 5px}
-    .biz-addr{font-size:8.5px;color:#666;line-height:1.5}
-    .tipo-col{border-left:1px solid #bbb;border-right:1px solid #bbb;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;text-align:center;background:#fafafa}
-    .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:2px}
-    .tipo-letra{font-size:44px;font-weight:700;line-height:1;color:#111;font-style:italic}
-    .tipo-num{font-size:8px;color:#888;margin-top:3px;letter-spacing:.5px}
-    .hdr-right{padding:14px 16px 12px}
-    .doc-label{font-size:9.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#333;margin-bottom:3px}
-    .doc-nro{font-size:14px;font-weight:700;color:#111;margin-bottom:6px}
-    .meta-table{width:100%;border-collapse:collapse;font-size:9px}
-    .meta-table td{padding:1.5px 0;vertical-align:top}
-    .meta-table td.lbl{color:#555;padding-right:6px;white-space:nowrap}
-    .meta-table td.val{font-weight:700;color:#111}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#fff}
+    .page{width:100%;max-width:780px;margin:0 auto;background:#fff;border:1px solid #ccc}
+    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid #ccc}
+    .hdr-left{padding:12px 14px 10px}
+    .biz-logo{height:32px;max-width:100px;object-fit:contain;display:block;margin-bottom:6px}
+    .biz-name{font-size:13px;font-weight:700}
+    .biz-cond{font-size:9px;color:#555;margin:2px 0 4px}
+    .biz-addr{font-size:9px;color:#555;line-height:1.5}
+    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;text-align:center}
+    .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:1px}
+    .tipo-letra{font-size:38px;font-weight:700;line-height:1;color:#111;font-style:italic}
+    .tipo-num{font-size:8px;color:#888;margin-top:2px}
+    .hdr-right{padding:12px 14px 10px}
+    .doc-title{font-size:11px;font-weight:700;letter-spacing:.5px;color:#111;margin-bottom:2px}
+    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:6px;letter-spacing:1px}
+    .meta{font-size:9.5px;line-height:1.7;color:#111}
+    .meta b{font-weight:700}
     .gold-line{height:2px;background:${GOLD}}
-    .ref-bar{background:#f5f5f5;border-bottom:1px solid #ddd;padding:6px 16px;font-size:9.5px;color:#444;font-weight:600;border-top:1px solid #ddd}
-    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ddd;border-top:1px solid #ddd;padding:4px 16px;font-size:7.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;display:flex;justify-content:space-between;align-items:center}
-    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ddd;font-size:9.5px}
-    .buyer-left{padding:10px 16px;border-right:1px solid #ddd}
-    .buyer-right{padding:10px 16px}
-    .buyer table{width:100%;border-collapse:collapse}
-    .buyer td{padding:2px 0;vertical-align:top}
-    .buyer td.lbl{color:#555;padding-right:6px;white-space:nowrap;font-weight:700;font-size:9px}
+    .ref-bar{background:#f5f5f5;border-bottom:1px solid #ccc;padding:5px 14px;font-size:9.5px;color:#333;font-weight:700}
+    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777}
+    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9.5px;line-height:1.7}
+    .buyer-left{padding:8px 14px;border-right:1px solid #ccc}
+    .buyer-right{padding:8px 14px}
+    .buyer b{font-weight:700}
     .items-table{width:100%;border-collapse:collapse;font-size:9.5px}
-    .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD};border-top:1px solid #ddd}
-    .items-table th{padding:6px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#444}
-    .items-table td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}
+    .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD}}
+    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#555}
+    .items-table td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
     .items-table tbody tr:last-child td{border-bottom:none}
-    .items-table .tr{text-align:right} .items-table .tc{text-align:center}
-    .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ddd}
-    .footer-left{padding:12px 16px;border-right:1px solid #ddd;font-size:9.5px}
-    .cae-num{font-size:10.5px;font-weight:700;color:#111;margin-bottom:2px}
+    .items-table .tr{text-align:right}.items-table .tc{text-align:center}
+    .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ccc}
+    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9.5px}
+    .cae-num{font-size:10px;font-weight:700;color:#111;margin-bottom:1px}
     .cae-vto{font-size:9px;color:#555}
-    .letras{font-size:8.5px;color:#666;margin-top:8px;line-height:1.5;font-style:italic}
-    .footer-right{padding:10px 16px}
-    .tot-row{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;font-size:9.5px;margin-bottom:2px}
-    .tot-row.sub{background:#f5f5f5;color:#444}
-    .tot-row.big{background:#111;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;margin-top:3px}
-    .tot-row.big .gold{color:${GOLD}}
-    .tot-val{font-weight:700;white-space:nowrap}
+    .footer-right{padding:10px 14px}
+    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9.5px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
+    .tot-row.big{background:#fff;font-size:11px;font-weight:700;padding:6px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
+    .tot-val{white-space:nowrap}
+    .letras{font-size:8.5px;color:#555;line-height:1.4;font-style:italic;margin-top:5px;padding:0 2px}
     .moneda{font-size:8px;color:#aaa;text-align:right;margin-top:4px}
-    .obs{border-top:1px solid #ddd;padding:8px 16px;font-size:9px;color:#444;line-height:1.6}
-    .obs b{color:#111}
+    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:9px;color:#444;line-height:1.6}
     @media print{
-      @page{size:A4 portrait;margin:8mm 10mm}
+      @page{size:A4 portrait;margin:8mm 12mm}
       body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-      .page{width:100%;max-width:100%;box-shadow:none;margin:0;border:none;transform:none!important}
+      .page{width:100%;max-width:100%;border:none}
     }
   </style></head><body><div class="page">
     <div class="hdr">
@@ -10483,18 +10447,18 @@ function ncDocBody(f){
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
         <div class="tipo-letra">NC</div>
-        <div class="tipo-num">Cod. 013</div>
+        <div class="tipo-num">013</div>
       </div>
       <div class="hdr-right">
-        <div class="doc-label">Nota de Crédito C</div>
+        <div class="doc-title">NOTA DE CRÉDITO C</div>
         <div class="doc-nro">${pdvNum}-${nroStr}</div>
-        <table class="meta-table"><tbody>
-          <tr><td class="lbl">Fecha de Emisión:</td><td class="val">${fmtF(f.fecha)}</td></tr>
-          <tr><td class="lbl">CUIT:</td><td class="val">${fmtCuit(empCuit)}</td></tr>
-          ${empIngBrutos?`<tr><td class="lbl">Ing. Brutos C.M:</td><td class="val">${esc(empIngBrutos)}</td></tr>`:''}
-          ${empInicioActividad?`<tr><td class="lbl">Inicio de Actividad:</td><td class="val">${esc(empInicioActividad)}</td></tr>`:''}
-          <tr><td class="lbl">Razón Social:</td><td class="val">${esc(empRazonSocial)}</td></tr>
-        </tbody></table>
+        <div class="meta">
+          <b>Fecha de Emisión:</b> ${fmtF(f.fecha)}<br>
+          <b>CUIT:</b> ${esc(empCuit)}<br>
+          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos)}<br>`:''}
+          ${empInicioActividad?`<b>Inicio de Actividad:</b> ${esc(empInicioActividad)}<br>`:''}
+          <b>Razón Social:</b> ${esc(empRazonSocial)}
+        </div>
       </div>
     </div>
     <div class="gold-line"></div>
@@ -10502,47 +10466,42 @@ function ncDocBody(f){
     <div class="buyer-hdr">Datos del Receptor</div>
     <div class="buyer">
       <div class="buyer-left">
-        <table><tbody>
-          <tr><td class="lbl">Nombre:</td><td>${esc(f.comprador?.nombre||'Consumidor Final')}</td></tr>
-          <tr><td class="lbl">CUIT/DNI/CUIL:</td><td>${esc(f.comprador?.cuitDniCuil||'—')}</td></tr>
-          <tr><td class="lbl">Dirección:</td><td>${esc(f.comprador?.dir||'—')}</td></tr>
-          <tr><td class="lbl">Ciudad:</td><td>${esc(f.comprador?.ciudad||'—')}</td></tr>
-        </tbody></table>
+        <b>Nombre:</b> ${esc(f.comprador?.nombre||'Consumidor Final')}<br>
+        <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
+        <b>Dirección:</b> ${esc(f.comprador?.dir||'—')}<br>
+        <b>Ciudad:</b> ${esc(f.comprador?.ciudad||'—')}
       </div>
       <div class="buyer-right">
-        <table><tbody>
-          <tr><td class="lbl">IVA:</td><td>Monotributo / Cons. Final</td></tr>
-          <tr><td class="lbl">CP:</td><td>${esc(f.comprador?.cp||'—')}</td></tr>
-          <tr><td class="lbl">Tel.:</td><td>${esc(f.comprador?.tel||'—')}</td></tr>
-        </tbody></table>
+        <b>IVA:</b> Monotributo / Cons. Final<br>
+        <b>CP:</b> ${esc(f.comprador?.cp||'—')}<br>
+        <b>Tel.:</b> ${esc(f.comprador?.tel||'—')}
       </div>
     </div>
     <table class="items-table"><thead><tr>
-      <th style="width:64px">SKU</th>
-      <th>Descripción</th>
-      <th class="tc" style="width:68px">Cantidad</th>
-      <th class="tr" style="width:115px">Precio Unitario</th>
-      <th class="tr" style="width:120px">Importe Subtotal</th>
+      <th style="width:9%">SKU</th>
+      <th style="width:45%">Descripción</th>
+      <th class="tc" style="width:10%">Cantidad</th>
+      <th class="tr" style="width:18%">Precio Unitario</th>
+      <th class="tr" style="width:18%">Importe Subtotal</th>
     </tr></thead><tbody>
     ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
-      <td style="color:#888">${esc(it.sku||'—')}</td>
+      <td style="color:#888;font-size:9px">${esc(it.sku||'—')}</td>
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
-      <td class="tr">$ ${fmtA(it.precioUnit||0)}</td>
-      <td class="tr" style="font-weight:700">$ ${fmtA(it.subtotal||0)}</td>
-    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:18px;font-style:italic">Crédito total por la factura original</td></tr>`}
+      <td class="tr">${fmtA(it.precioUnit||0)}</td>
+      <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px;font-style:italic">Crédito total por la factura original</td></tr>`}
     </tbody></table>
     <div class="footer">
       <div class="footer-left">
-        ${f.cae
-          ?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`
-          :'<div style="color:#ccc;font-style:italic">CAE pendiente</div>'}
-        <div class="letras">Importe en Letras: ${esc(f.totalLetras||numToWords(f.total||0))}</div>
+        ${afipQrDataNC?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrDataNC)}" width="80" height="80" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
+        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:#aaa;font-style:italic">CAE pendiente</div>'}
       </div>
       <div class="footer-right">
-        <div class="tot-row sub"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
-        <div class="tot-row sub"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>
-        <div class="tot-row big"><span>Importe Total NC</span><span class="tot-val gold">$ ${fmtA(total)}</span></div>
+        <div class="tot-row"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
+        <div class="tot-row"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>
+        <div class="tot-row big"><span>Importe Total NC</span><span class="tot-val">$ ${fmtA(total)}</span></div>
+        <div class="letras"><b>Importe en Letras:</b> ${esc(f.totalLetras||numToWords(f.total||0))}</div>
         <div class="moneda">Moneda: Pesos Argentinos</div>
       </div>
     </div>
