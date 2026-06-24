@@ -919,6 +919,20 @@ body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%;top:calc(-
 .asheet-action.danger{color:var(--re)}
 html.light .asheet-action{color:#222}
 
+/* CATALOG SHEET */
+#catalog-sheet-ol{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10010;display:none;align-items:flex-end;animation:modalBackdropIn .18s ease both}
+#catalog-sheet-ol.open{display:flex}
+#catalog-sheet-box{background:var(--bg);border:1px solid var(--b2);border-radius:18px 18px 0 0;width:100%;max-height:82vh;display:flex;flex-direction:column;animation:sheetUpIn .3s cubic-bezier(.22,.61,.36,1) both;padding-bottom:env(safe-area-inset-bottom,0px)}
+#catalog-sheet-box::before{content:'';display:block;width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);margin:10px auto 0}
+#catalog-sheet-search{display:flex;align-items:center;gap:8px;padding:14px 16px 10px;flex-shrink:0}
+#catalog-sheet-input{flex:1;background:var(--b1);border:1px solid var(--b2);border-radius:10px;color:var(--ch);font-size:15px;font-family:'Barlow',sans-serif;padding:10px 14px;outline:none}
+#catalog-sheet-input:focus{border-color:var(--si)}
+#catalog-sheet-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:0 8px 16px}
+.cs-item{display:flex;align-items:center;justify-content:space-between;padding:13px 10px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:12px}
+.cs-item:active{background:var(--b1)}
+.cs-item-name{font-size:14px;font-family:'Barlow',sans-serif;color:var(--ch);flex:1}
+.cs-item-price{font-size:13px;font-family:'DM Mono',monospace;color:var(--si);white-space:nowrap}
+.cs-empty{text-align:center;padding:40px 20px;color:var(--di);font-size:13px;font-family:'Barlow',sans-serif}
 /* CONFIRM MODAL */
 .cm-ol{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10006;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
 .cm-box{background:#111;border:1px solid var(--b3);border-radius:var(--r2);padding:26px;width:100%;max-width:320px;text-align:center;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both}
@@ -1322,6 +1336,14 @@ select{cursor:pointer}
 
 <div id="offline-banner" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>Sin conexión</div>
 <div id="ptr-indicator" class="ptr-indicator"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+<div id="catalog-sheet-ol" onclick="if(event.target===this)closeCatalogSheet()">
+  <div id="catalog-sheet-box">
+    <div id="catalog-sheet-search">
+      <input id="catalog-sheet-input" type="text" placeholder="Buscar producto…" oninput="filterCatalogSheet(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div id="catalog-sheet-list"></div>
+  </div>
+</div>
 <div id="asheet-ol" class="mol" style="display:none" onclick="if(event.target===this)closeActionSheet()">
   <div class="mbox asheet-box" style="max-width:380px">
     <div class="mhdr"><span id="asheet-title"></span><button class="btn-rm" onclick="closeActionSheet()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -9368,10 +9390,10 @@ function openFactura(id) {
       <!-- Items -->
       <div style="${fCardStyle}">
         ${fSecLbl('Productos / Servicios')}
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
-          <div class="iw"><input type="text" id="f-item-buscar" list="f-prod-list" placeholder="Buscar en catálogo…"><datalist id="f-prod-list">${prodOpts}</datalist></div>
-          <button class="btn-p" onclick="facturaAddItemFromSearch()" style="height:42px;padding:0 14px;white-space:nowrap;font-size:13px">+ Agregar</button>
-        </div>
+        <button class="btn-g" onclick="openCatalogSheet()" style="width:100%;height:44px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;border-radius:10px;justify-content:flex-start">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="opacity:.55;font-family:'Barlow',sans-serif">Buscar en catálogo…</span>
+        </button>
         <div id="f-items-wrap"></div>
         <div style="display:flex;justify-content:flex-end">
           <button class="btn-g btn-sm" onclick="facturaAddManualItem()">+ Ítem manual</button>
@@ -9449,16 +9471,51 @@ function facturaAutoFillCliente(nombre){
   set('f-cuit',c.cuit||''); set('f-tel',c.tel||'');
 }
 
-function facturaAddItemFromSearch(){
-  const input = document.getElementById('f-item-buscar');
-  const val = input.value.trim();
-  if(!val) return;
-  const catalog = DB.get('catalog',[]);
-  const prod = catalog.find(p=>p.name.toLowerCase()===val.toLowerCase()||p.code===val);
-  if(prod) _factItems.push({sku:prod.code||'',descripcion:prod.name,qty:1,precioUnit:prod.salePrice||0,subtotal:prod.salePrice||0});
-  else _factItems.push({sku:'',descripcion:val,qty:1,precioUnit:0,subtotal:0});
-  input.value='';
+let _catalogSheetItems = [];
+
+function openCatalogSheet(){
+  _catalogSheetItems = DB.get('catalog',[]);
+  const ol = document.getElementById('catalog-sheet-ol');
+  ol.classList.add('open');
+  document.body.classList.add('modal-open');
+  const inp = document.getElementById('catalog-sheet-input');
+  inp.value = '';
+  renderCatalogSheet('');
+  setTimeout(()=>inp.focus(), 120);
+}
+
+function closeCatalogSheet(){
+  const ol = document.getElementById('catalog-sheet-ol');
+  ol.classList.remove('open');
+  document.body.classList.remove('modal-open');
+}
+
+function filterCatalogSheet(q){
+  renderCatalogSheet(q.trim().toLowerCase());
+}
+
+function renderCatalogSheet(q){
+  const list = document.getElementById('catalog-sheet-list');
+  const items = q
+    ? _catalogSheetItems.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q))
+    : _catalogSheetItems;
+  if(!items.length){
+    list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+q+'"':'El catálogo está vacío'}</div>`;
+    return;
+  }
+  list.innerHTML = items.map((p,i)=>`
+    <div class="cs-item" onclick="catalogSheetSelect(${_catalogSheetItems.indexOf(p)})">
+      <span class="cs-item-name">${esc(p.name||'')}</span>
+      <span class="cs-item-price">${fmtA(p.salePrice||0)}</span>
+    </div>`).join('');
+}
+
+function catalogSheetSelect(idx){
+  const prod = _catalogSheetItems[idx];
+  if(!prod) return;
+  _factItems.push({sku:prod.code||'',descripcion:prod.name,qty:1,precioUnit:prod.salePrice||0,subtotal:prod.salePrice||0});
   renderFactItems();
+  closeCatalogSheet();
 }
 
 function facturaAddManualItem(){
