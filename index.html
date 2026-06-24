@@ -10155,7 +10155,7 @@ async function sincronizarARCA() {
       toast('Todo sincronizado — no hay facturas nuevas en ARCA' + dbgTxt, true, 8000);
     } else {
       toast(`${importados} factura${importados>1?'s':''} importada${importados>1?'s':''} de ARCA`);
-      renderFacturador();
+      render();
     }
   } catch (e) {
     toast('Error: ' + e.message, false, 5000);
