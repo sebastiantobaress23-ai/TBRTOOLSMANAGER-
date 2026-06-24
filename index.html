@@ -9545,7 +9545,7 @@ async function buscarPadronARCA() {
     const resp = await fetch(`/api/arca-padron?doc=${cuit}`);
     const data = await resp.json();
     if (!resp.ok || data.error) {
-      toast('ARCA: ' + (data.error || 'No encontrado'), false, 5000);
+      toast('Padrón ARCA: ' + (data.error || 'No encontrado'), false, 8000);
       return;
     }
     const fillPersona = (p) => {
