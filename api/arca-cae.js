@@ -16,6 +16,13 @@
 const https = require('https');
 const crypto = require('crypto');
 
+// ARCA/AFIP servers use legacy SSL with weak DH keys — allow it
+const arcaAgent = new https.Agent({
+  secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
+  minDHSize: 512,
+  rejectUnauthorized: false
+});
+
 const WSAA_URL_HOMO = 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms?wsdl';
 const WSAA_URL_PROD = 'https://wsaa.afip.gov.ar/ws/services/LoginCms?wsdl';
 const WSFEV1_URL_HOMO = 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL';
@@ -92,6 +99,7 @@ function soapCall(url, action, body) {
       hostname: u.hostname,
       path: u.pathname + u.search,
       method: 'POST',
+      agent: arcaAgent,
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
         'SOAPAction': action,
