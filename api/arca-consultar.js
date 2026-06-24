@@ -96,17 +96,22 @@ module.exports = async function handler(req, res) {
     const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
     const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
 
-    // Si no se especifica hasta, consultar el último autorizado en ARCA
+    // Consultar el último autorizado en ARCA para determinar el rango
     let hasta = parseInt(req.query?.hasta) || 0;
-    if (!hasta) {
+    try {
       const [ru] = await client.FECompUltimoAutorizadoAsync({
         Auth: { Token: token, Sign: sign, Cuit: cuit },
         PtoVta: pdv,
         CbteTipo: 11
       });
-      hasta = parseInt(ru?.FECompUltimoAutorizadoResult?.CbteNro) || 0;
+      const ultimo = ru?.FECompUltimoAutorizadoResult?.CbteNro;
+      console.log('FECompUltimoAutorizado raw:', JSON.stringify(ru?.FECompUltimoAutorizadoResult));
+      hasta = Math.max(hasta, parseInt(ultimo) || 0);
+    } catch(e) {
+      console.error('FECompUltimoAutorizado error:', e.message);
     }
-    if (!hasta) return res.status(200).json({ facturas: [], ultimo: 0 });
+    // Mínimo 30 por si FECompUltimoAutorizado devuelve 0
+    hasta = Math.max(hasta, desde + 29);
     const max = Math.min(hasta - desde + 1, 50);
     const auth = { Token: token, Sign: sign, Cuit: cuit };
 
