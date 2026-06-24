@@ -1370,7 +1370,7 @@ select{cursor:pointer}
 <div id="app"></div>
 <div id="factura-modal" class="mol" style="display:none;align-items:flex-end;padding:0" onclick="if(event.target===this)closeFacturaModal()"></div>
 <div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
-<div id="factura-preview-ol" class="mol" style="display:none;z-index:9999;flex-direction:column;background:rgba(0,0,0,.85);padding:0" onclick="if(event.target===this)closeFacturaPreview()">
+<div id="factura-preview-ol" class="mol" style="display:none;z-index:10010;flex-direction:column;background:rgba(0,0,0,.85);padding:0" onclick="if(event.target===this)closeFacturaPreview()">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(20,18,14,.97);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;gap:12px;flex-wrap:wrap">
     <span id="factura-preview-title" style="font-size:13px;font-weight:700;color:rgba(245,240,228,.9);letter-spacing:.3px"></span>
     <div style="display:flex;gap:8px;align-items:center">
@@ -9429,7 +9429,7 @@ function openFactura(id) {
         </div>
 
         <!-- Campos identificación (ocultos si CF) -->
-        <div id="f-comprador-fields" style="${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'display:none':''}display:flex;flex-direction:column;gap:12px">
+        <div id="f-comprador-fields" style="${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'display:none':'display:flex'};flex-direction:column;gap:12px">
           <div>
             <label class="fl">Nombre / Razón social</label>
             <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
@@ -9804,9 +9804,10 @@ async function saveFactura(emitir=false){
   const conf = getConf();
   const emp = DB.get('empresa',{});
   const nro = document.getElementById('f-nro')?.value.trim();
-  const nombre = document.getElementById('f-nombre')?.value.trim();
+  const isCFcheck = document.getElementById('f-cf')?.checked;
+  const nombre = isCFcheck ? 'Consumidor Final' : (document.getElementById('f-nombre')?.value.trim()||'');
   if(!nro){ toast('Ingresá el número de factura.',false); return; }
-  if(!nombre){ toast('Ingresá el nombre del comprador.',false); return; }
+  if(!isCFcheck && !nombre){ toast('Ingresá el nombre del comprador.',false); return; }
   if(!_factItems.length){ toast('Agregá al menos un ítem.',false); return; }
   const subtotalItems = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
   const descuentoPct = parseFloat(document.getElementById('f-desc')?.value)||0;
@@ -9842,12 +9843,12 @@ async function saveFactura(emitir=false){
     vencimiento: document.getElementById('f-vto')?.value,
     comprador:{
       nombre,
-      cuitDniCuil: document.getElementById('f-cuit')?.value.trim()||'',
-      dir: document.getElementById('f-dir')?.value.trim()||'',
-      ciudad: document.getElementById('f-ciudad')?.value.trim()||'',
-      localidad: document.getElementById('f-localidad')?.value.trim()||'',
-      cp: document.getElementById('f-cp')?.value.trim()||'',
-      tel: document.getElementById('f-tel')?.value.trim()||'',
+      cuitDniCuil: isCFcheck ? '' : (document.getElementById('f-cuit')?.value.trim()||''),
+      dir:         isCFcheck ? '' : (document.getElementById('f-dir')?.value.trim()||''),
+      ciudad:      isCFcheck ? '' : (document.getElementById('f-ciudad')?.value.trim()||''),
+      localidad:   isCFcheck ? '' : (document.getElementById('f-localidad')?.value.trim()||''),
+      cp:          isCFcheck ? '' : (document.getElementById('f-cp')?.value.trim()||''),
+      tel:         isCFcheck ? '' : (document.getElementById('f-tel')?.value.trim()||''),
       condVenta: document.getElementById('f-condventa')?.value||'Contado',
       metodoPago: document.getElementById('f-metpago')?.value||'Efectivo',
     },
