@@ -10111,12 +10111,10 @@ async function sincronizarARCA() {
     const numerosLocales = new Set(
       facturas.map(f => parseInt((f.nro||'').split('-')[1]||'0')).filter(Boolean)
     );
-    // Consultar desde 1 hasta el último + 5 para no perder ninguno
+    // Pasar desde=maxLocal+1 para que el backend sepa desde dónde buscar novedades
     const maxLocal = Math.max(0, ...Array.from(numerosLocales));
-    const desde = 1;
-    const hasta = maxLocal + 10;
+    const desde = maxLocal + 1;
 
-    // No enviar hasta — el backend consulta FECompUltimoAutorizado para determinarlo
     const resp = await fetch(`/api/arca-consultar?desde=${desde}`);
     const data = await resp.json();
     if (!resp.ok || data.error) { toast('Error sincronizando: ' + (data.error||''), false, 5000); return; }

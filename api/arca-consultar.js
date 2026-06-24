@@ -89,34 +89,43 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Faltan variables de entorno ARCA' });
 
   const pdv   = parseInt(process.env.ARCA_PDV) || 1;
-  const desde = parseInt(req.query?.desde) || 1;
+  // desde = último número local + 1 (o 1 si no hay locales)
+  const desdeParam = parseInt(req.query?.desde) || 1;
 
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
     const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
     const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
+    const auth = { Token: token, Sign: sign, Cuit: cuit };
 
-    // Consultar el último autorizado en ARCA para determinar el rango
-    let hasta = parseInt(req.query?.hasta) || 0;
+    // Consultar el último autorizado en ARCA
+    let ultimoARCA = 0;
     try {
       const [ru] = await client.FECompUltimoAutorizadoAsync({
-        Auth: { Token: token, Sign: sign, Cuit: cuit },
+        Auth: auth,
         PtoVta: pdv,
         CbteTipo: 11
       });
-      const ultimo = ru?.FECompUltimoAutorizadoResult?.CbteNro;
-      console.log('FECompUltimoAutorizado raw:', JSON.stringify(ru?.FECompUltimoAutorizadoResult));
-      hasta = Math.max(hasta, parseInt(ultimo) || 0);
+      ultimoARCA = parseInt(ru?.FECompUltimoAutorizadoResult?.CbteNro) || 0;
+      console.log('FECompUltimoAutorizado:', ultimoARCA, JSON.stringify(ru?.FECompUltimoAutorizadoResult));
     } catch(e) {
       console.error('FECompUltimoAutorizado error:', e.message);
     }
-    // Mínimo 30 por si FECompUltimoAutorizado devuelve 0
-    hasta = Math.max(hasta, desde + 29);
-    const max = Math.min(hasta - desde + 1, 50);
-    const auth = { Token: token, Sign: sign, Cuit: cuit };
+
+    // Si ARCA no tiene nada nuevo respecto al desde del cliente, salir ya
+    if (ultimoARCA < desdeParam) {
+      console.log(`Sin novedades: ultimoARCA=${ultimoARCA} < desde=${desdeParam}`);
+      return res.status(200).json({ facturas: [], ultimo: ultimoARCA });
+    }
+
+    // Limitar a máximo 12 comprobantes para no exceder timeout de Vercel (~10s)
+    // Empezar por el más reciente (ultimoARCA) hacia atrás hasta desdeParam
+    const MAX_CONSULTAS = 12;
+    const inicio = Math.max(desdeParam, ultimoARCA - MAX_CONSULTAS + 1);
+    console.log(`Consultando comprobantes ${inicio} a ${ultimoARCA}`);
 
     const facturas = [];
-    for (let nro = desde; nro < desde + max; nro++) {
+    for (let nro = inicio; nro <= ultimoARCA; nro++) {
       try {
         const [r] = await client.FECompConsultarAsync({
           Auth: auth,
@@ -127,7 +136,8 @@ module.exports = async function handler(req, res) {
           }
         });
         const d = r?.FECompConsultarResult?.ResultGet;
-        if (!d || !d.CAE) continue; // no existe o sin CAE
+        console.log(`Comprobante ${nro}:`, d ? `CAE=${d.CAE} Res=${d.Resultado}` : 'sin resultado');
+        if (!d || !d.CAE) continue;
 
         const fechaStr = String(d.CbteFch||'');
         const fecha = fechaStr.length === 8
@@ -149,10 +159,10 @@ module.exports = async function handler(req, res) {
           docNro:     String(d.DocNro||'0'),
           resultado:  d.Resultado,
         });
-      } catch { /* comprobante no existe, continuar */ }
+      } catch(e) { console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
 
-    return res.status(200).json({ facturas, ultimo: desde + max - 1 });
+    return res.status(200).json({ facturas, ultimo: ultimoARCA });
   } catch (e) {
     console.error('Consultar error:', e.message);
     return res.status(500).json({ error: e.message });
