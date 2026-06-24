@@ -9860,7 +9860,7 @@ async function saveFactura(emitir=false){
     observaciones: document.getElementById('f-obs')?.value.trim()||'',
     estado: emitir ? 'emitida' : (_facturaEdit?.estado||'borrador'),
     emisor:{
-      nombre: emp.nombre||'TBR TOOLS',
+      nombre: (emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN').replace(/^TBR TOOLS$/i,'TOBARES ALEXIS SEBASTIAN'),
       razonSocial: emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN',
       cuit: conf.facturaCuit||emp.cuit||'',
       dir: conf.facturaDir||emp.dir||'',
@@ -9937,8 +9937,9 @@ function facturaDocBody(f){
   const emp = f.emisor||{};
   const conf = getConf();
   const dbEmp = DB.get('empresa',{});
-  const empNombre = emp.nombre||emp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
-  const empRazonSocial = emp.razonSocial||emp.nombre||dbEmp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const _n = (v) => (!v||v==='TBR TOOLS'||v==='TBR Tools')?null:v;
+  const empNombre = _n(emp.nombre)||_n(emp.razonSocial)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = _n(emp.razonSocial)||_n(emp.nombre)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
   const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
   const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
   const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
@@ -9957,7 +9958,8 @@ function facturaDocBody(f){
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=595"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:9.5px;color:#111;background:#fff}
-    .page{width:595px;margin:0 auto;background:#fff}
+    .page{width:595px;margin:0 auto;background:#fff;min-height:842px;display:flex;flex-direction:column}
+    .items-section{flex:1;display:flex;flex-direction:column}
     .hdr{display:grid;grid-template-columns:220px 70px 1fr;border-bottom:1px solid #ccc}
     .hdr-left{padding:10px 12px 8px;overflow:hidden}
     .biz-logo{height:28px;max-width:80px;object-fit:contain;display:block;margin-bottom:4px}
@@ -10043,6 +10045,7 @@ function facturaDocBody(f){
         <b>Método de Pago:</b> ${esc(f.comprador?.metodoPago||'Efectivo')}${f.cuotas>1?' · '+f.cuotas+' cuotas':''}
       </div>
     </div>
+    <div class="items-section">
     <table class="items-table"><thead><tr>
       <th style="width:8%">SKU</th>
       <th style="width:44%">DESCRIPCIÓN</th>
@@ -10058,6 +10061,7 @@ function facturaDocBody(f){
       <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
     </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:16px;font-style:italic">Sin ítems detallados</td></tr>`}
     </tbody></table>
+    </div>
     <div class="footer">
       <div class="footer-left">
         ${afipQrData?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrData)}" width="90" height="90" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
@@ -10111,6 +10115,16 @@ function facturaPreview(id){
   fr.style.cssText = 'flex:1;width:100%;border:none;background:#fff;';
   fr.setAttribute('sandbox','allow-same-origin allow-scripts allow-modals allow-popups allow-forms');
   fr.srcdoc = docBody;
+  fr.onload = function(){
+    try {
+      var iw = fr.clientWidth || fr.offsetWidth || 390;
+      if(iw < 595){
+        var z = iw / 595;
+        fr.contentDocument.documentElement.style.zoom = z;
+        fr.contentDocument.body.style.zoom = z;
+      }
+    } catch(e){}
+  };
   ov.appendChild(fr);
 
   document.body.appendChild(ov);
@@ -10164,7 +10178,7 @@ function pedidoToFactura(id) {
     observaciones: conf.facturaObs||'',
     estado:'borrador',
     emisor:{
-      nombre: emp.nombre||'TBR TOOLS',
+      nombre: (emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN').replace(/^TBR TOOLS$/i,'TOBARES ALEXIS SEBASTIAN'),
       razonSocial: emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN',
       cuit: conf.facturaCuit||emp.cuit||'',
       dir: conf.facturaDir||emp.dir||'',
@@ -10402,8 +10416,9 @@ function ncDocBody(f){
   const emp = f.emisor||{};
   const conf = getConf();
   const dbEmp = DB.get('empresa',{});
-  const empNombre = emp.nombre||emp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
-  const empRazonSocial = emp.razonSocial||emp.nombre||dbEmp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const _n = (v) => (!v||v==='TBR TOOLS'||v==='TBR Tools')?null:v;
+  const empNombre = _n(emp.nombre)||_n(emp.razonSocial)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = _n(emp.razonSocial)||_n(emp.nombre)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
   const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
   const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
   const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
@@ -10421,7 +10436,8 @@ function ncDocBody(f){
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=595"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:9.5px;color:#111;background:#fff}
-    .page{width:595px;margin:0 auto;background:#fff}
+    .page{width:595px;margin:0 auto;background:#fff;min-height:842px;display:flex;flex-direction:column}
+    .items-section{flex:1;display:flex;flex-direction:column}
     .hdr{display:grid;grid-template-columns:220px 70px 1fr;border-bottom:1px solid #ccc}
     .hdr-left{padding:10px 12px 8px;overflow:hidden}
     .biz-logo{height:28px;max-width:80px;object-fit:contain;display:block;margin-bottom:4px}
@@ -10506,6 +10522,7 @@ function ncDocBody(f){
         <b>Tel.:</b> ${esc(f.comprador?.tel||'—')}
       </div>
     </div>
+    <div class="items-section">
     <table class="items-table"><thead><tr>
       <th style="width:8%">SKU</th>
       <th style="width:44%">DESCRIPCIÓN</th>
@@ -10521,6 +10538,7 @@ function ncDocBody(f){
       <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
     </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:16px;font-style:italic">Crédito total por la factura original</td></tr>`}
     </tbody></table>
+    </div>
     <div class="footer">
       <div class="footer-left">
         ${afipQrDataNC?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrDataNC)}" width="90" height="90" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
@@ -10637,7 +10655,7 @@ function guardarRemito(facturaId, itemsOrig) {
     observaciones: document.getElementById('rm-obs')?.value.trim()||'',
     estado: 'emitida',
     emisor:{
-      nombre: emp.nombre||'TBR TOOLS',
+      nombre: (emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN').replace(/^TBR TOOLS$/i,'TOBARES ALEXIS SEBASTIAN'),
       razonSocial: emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN',
       cuit: conf.facturaCuit||emp.cuit||'',
       dir: conf.facturaDir||emp.dir||'',
