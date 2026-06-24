@@ -15,10 +15,14 @@
 
 const https = require('https');
 const crypto = require('crypto');
+const tls = require('tls');
 
-// ARCA/AFIP servers use legacy SSL with weak DH keys — allow it
+// ARCA/AFIP servers use outdated SSL with weak DH (512-bit) — must allow legacy
 const arcaAgent = new https.Agent({
-  secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
+  secureOptions:
+    crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT |
+    crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
+  ciphers: tls.DEFAULT_CIPHERS + ':DH:@SECLEVEL=0',
   minDHSize: 512,
   rejectUnauthorized: false
 });
