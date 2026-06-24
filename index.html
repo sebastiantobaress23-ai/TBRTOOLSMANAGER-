@@ -10115,7 +10115,7 @@ async function sincronizarARCA() {
     const maxLocal = Math.max(0, ...Array.from(numerosLocales));
     const desde = maxLocal + 1;
 
-    const resp = await fetch(`/api/arca-consultar?desde=${desde}`);
+    const resp = await fetch(`/api/arca-consultar?desde=${desde}&t=${Date.now()}`, { cache: 'no-store' });
     const data = await resp.json();
     if (!resp.ok || data.error) { toast('Error sincronizando: ' + (data.error||''), false, 5000); return; }
 
