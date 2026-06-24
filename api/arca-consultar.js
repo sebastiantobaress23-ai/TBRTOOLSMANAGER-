@@ -90,13 +90,24 @@ module.exports = async function handler(req, res) {
 
   const pdv   = parseInt(process.env.ARCA_PDV) || 1;
   const desde = parseInt(req.query?.desde) || 1;
-  const hasta = parseInt(req.query?.hasta) || desde;
-  const max   = Math.min(hasta - desde + 1, 50); // máximo 50 comprobantes por consulta
 
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
     const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
     const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
+
+    // Si no se especifica hasta, consultar el último autorizado en ARCA
+    let hasta = parseInt(req.query?.hasta) || 0;
+    if (!hasta) {
+      const [ru] = await client.FECompUltimoAutorizadoAsync({
+        Auth: { Token: token, Sign: sign, Cuit: cuit },
+        PtoVta: pdv,
+        CbteTipo: 11
+      });
+      hasta = parseInt(ru?.FECompUltimoAutorizadoResult?.CbteNro) || 0;
+    }
+    if (!hasta) return res.status(200).json({ facturas: [], ultimo: 0 });
+    const max = Math.min(hasta - desde + 1, 50);
     const auth = { Token: token, Sign: sign, Cuit: cuit };
 
     const facturas = [];
