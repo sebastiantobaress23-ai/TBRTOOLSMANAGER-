@@ -137,7 +137,8 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
   client.on('request', xml => console.log('SOAP FECAESolicitar request:\n', xml));
 
   const [result] = await client.FECAESolicitarAsync(args);
-  const det = result?.FECAESolicitarResult?.FeDetResp?.FECAEDetResponse;
+  const detRaw = result?.FECAESolicitarResult?.FeDetResp?.FECAEDetResponse;
+  const det = Array.isArray(detRaw) ? detRaw[0] : detRaw;
   const cae = det?.CAE;
   const caeFchVto = det?.CAEFchVto;
   if (!cae) {
