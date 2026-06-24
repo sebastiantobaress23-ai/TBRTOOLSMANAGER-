@@ -102,7 +102,6 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
   const ultimo = await getUltimoComprobante(client, token, sign, cuit, pdv);
   const cbteNro = Number(ultimo) + 1;
 
-  // All numeric fields must be integers, not strings — soap serializes them differently
   const docNroInt = parseInt(cuitComprador) || 0;
 
   const args = {
@@ -114,7 +113,7 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
         CbteTipo: 11
       },
       FeDetReq: {
-        FECAEDetRequest: {
+        FECAEDetRequest: [{
           Concepto:   parseInt(concepto) || 1,
           DocTipo:    parseInt(docTipo),
           DocNro:     docNroInt,
@@ -129,10 +128,13 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
           ImpTrib:    0,
           MonId:      'PES',
           MonCotiz:   1
-        }
+        }]
       }
     }
   };
+
+  // Log SOAP XML for debugging
+  client.on('request', xml => console.log('SOAP FECAESolicitar request:\n', xml));
 
   const [result] = await client.FECAESolicitarAsync(args);
   const det = result?.FECAESolicitarResult?.FeDetResp?.FECAEDetResponse;
