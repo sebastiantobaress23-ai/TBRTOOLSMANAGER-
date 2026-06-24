@@ -9422,14 +9422,14 @@ function openFactura(id) {
             <div style="font-size:11px;color:var(--di);margin-top:2px">Sin identificación del comprador</div>
           </div>
           <label style="position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0">
-            <input type="checkbox" id="f-cf" onchange="facturaToggleCF(this.checked)" ${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'checked':''} style="opacity:0;width:0;height:0">
-            <span style="position:absolute;inset:0;background:${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'var(--si)':'var(--b3)'};border-radius:13px;transition:.2s;cursor:pointer" id="f-cf-track"></span>
-            <span style="position:absolute;left:${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'20px':'2px'};top:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none" id="f-cf-thumb"></span>
+            <input type="checkbox" id="f-cf" onchange="facturaToggleCF(this.checked)" ${(!f?.comprador?.cuitDniCuil&&(!f?.comprador?.nombre||f?.comprador?.nombre==='Consumidor Final'))?'checked':''} style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:${(!f?.comprador?.cuitDniCuil&&(!f?.comprador?.nombre||f?.comprador?.nombre==='Consumidor Final'))?'var(--si)':'var(--b3)'};border-radius:13px;transition:.2s;cursor:pointer" id="f-cf-track"></span>
+            <span style="position:absolute;left:${(!f?.comprador?.cuitDniCuil&&(!f?.comprador?.nombre||f?.comprador?.nombre==='Consumidor Final'))?'20px':'2px'};top:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none" id="f-cf-thumb"></span>
           </label>
         </div>
 
         <!-- Campos identificación (ocultos si CF) -->
-        <div id="f-comprador-fields" style="${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'display:none':'display:flex'};flex-direction:column;gap:12px">
+        <div id="f-comprador-fields" style="${(!f?.comprador?.cuitDniCuil&&(!f?.comprador?.nombre||f?.comprador?.nombre==='Consumidor Final'))?'display:none':'display:flex'};flex-direction:column;gap:12px">
           <div>
             <label class="fl">Nombre / Razón social</label>
             <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
@@ -9561,7 +9561,7 @@ async function buscarPadronARCA(ev) {
   if (cuit.length !== 11) {
     toast('CUIT inválido — debe tener exactamente 11 dígitos', false); return;
   }
-  const btn = ev?.currentTarget || ev?.target;
+  const btn = ev?.target?.closest('button') || ev?.currentTarget || ev?.target;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
   try {
     const resp = await fetch(`/api/arca-padron?doc=${cuit}`);
