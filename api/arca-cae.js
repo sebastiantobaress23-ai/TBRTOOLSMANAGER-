@@ -159,13 +159,20 @@ module.exports = async function handler(req, res) {
     try { body=JSON.parse(body); } catch { return res.status(400).json({ error:'JSON inválido' }); }
   }
 
-  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', docTipo=96, importe } = body||{};
+  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', importe } = body||{};
   if (!fecha||importe==null)
     return res.status(400).json({ error:'Faltan parámetros: fecha, importe' });
 
+  // Auto-detect DocTipo from document number
+  const docNro  = String(cuitComprador||'0').replace(/\D/g,'') || '0';
+  const docTipo = docNro==='0'||docNro==='' ? 99
+    : docNro.length===11 ? 80   // CUIT
+    : docNro.length<=8   ? 96   // DNI
+    : 99;
+
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
-    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, importe });
+    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, importe });
     return res.status(200).json(result);
   } catch(e) {
     console.error('ARCA error:', e.message);
