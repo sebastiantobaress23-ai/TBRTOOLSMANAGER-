@@ -9915,113 +9915,115 @@ function facturaDocBody(f){
   const emp = f.emisor||{};
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  const fmtCuit = c=>{const s=String(c||'').replace(/\D/g,'');return s.length===11?`${s.slice(0,2)}-${s.slice(2,10)}-${s.slice(10)}`:s||'—';};
+  const pdvNro = (f.nro||'').split('-');
+  const pdvStr = (parseInt(pdvNro[0])||1).toString().padStart(5,'0');
+  const nroStr = (parseInt(pdvNro[1])||0).toString().padStart(8,'0');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
-    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px}
-    .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee}
-    .biz-name{font-size:18px;font-weight:800;letter-spacing:.5px}
-    .biz-cond{font-size:10px;color:#666;border:1px solid #999;display:inline-block;padding:1px 6px;margin:2px 0}
-    .tipo-letra{font-size:72px;font-weight:800;line-height:1;color:#111;border:2px solid #111;width:90px;height:90px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-    .tipo-sub{font-size:10px;color:#444;text-align:center}
-    .hdr-right{font-size:11px;text-align:right}
-    .hdr-right .fact-nro{font-size:15px;font-weight:700;margin-bottom:6px}
-    .hdr-right table{margin-left:auto}
-    .hdr-right td{padding:1px 0 1px 12px}
-    .lbl{color:#666}
-    .section{border:1px solid #ddd;padding:12px 16px;margin-bottom:12px}
-    .section-title{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
-    .grid2 .val{font-weight:500}
-    .items-table{width:100%;border-collapse:collapse;margin-bottom:12px}
-    .items-table th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:2px solid #ddd}
-    .items-table td{padding:7px 10px;border-bottom:1px solid #eee}
-    .items-table .tr{text-align:right}
-    .items-table .tc{text-align:center}
-    .totales{display:flex;justify-content:space-between;align-items:flex-end;padding:8px 0;margin-bottom:12px}
-    .cae-box{font-size:10px;color:#666}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;background:#fff}
+    .page{max-width:760px;margin:0 auto;padding:20px}
+    /* HEADER */
+    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;gap:12px;align-items:start;padding-bottom:14px;border-bottom:2px solid #222;margin-bottom:14px}
+    .biz-logo{height:44px;max-width:120px;object-fit:contain;display:block;margin-bottom:5px}
+    .biz-name{font-size:16px;font-weight:800;line-height:1.2}
+    .biz-detail{font-size:9.5px;color:#555;margin-top:3px;line-height:1.5}
+    .biz-cond{display:inline-block;border:1px solid #888;padding:1px 5px;font-size:9px;font-weight:700;color:#555;margin-top:3px}
+    .tipo-box{border:2px solid #111;text-align:center;padding:6px 0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .tipo-letra{font-size:46px;font-weight:900;line-height:1;color:#111}
+    .tipo-sub{font-size:8px;color:#555;margin-top:2px;text-align:center}
+    .original-lbl{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#666;margin-bottom:4px;text-align:center}
+    .hdr-right{font-size:10.5px;text-align:right}
+    .fact-nro{font-size:13px;font-weight:800;margin-bottom:6px}
+    .hdr-right table{width:100%;border-collapse:collapse}
+    .hdr-right td{padding:2px 0;vertical-align:top}
+    .hdr-right td:first-child{color:#666;padding-right:8px;white-space:nowrap}
+    .hdr-right td:last-child{font-weight:500;text-align:right}
+    /* SECTIONS */
+    .section{border:1px solid #ddd;padding:10px 14px;margin-bottom:10px;border-radius:2px}
+    .section-title{font-size:9px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px}
+    .grid2 span.lbl{color:#666}
+    .grid2 span.val{font-weight:500}
+    /* ITEMS */
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.5px}
+    .items-table th{background:#f4f4f4;padding:6px 8px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;border-top:1px solid #ddd;border-bottom:1px solid #ddd}
+    .items-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0}
+    .items-table .tr{text-align:right} .items-table .tc{text-align:center}
+    /* TOTALS */
+    .totals-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;gap:12px}
+    .cae-box{font-size:9.5px;color:#666;line-height:1.6}
     .cae-box b{color:#222}
-    .total-box{text-align:right}
-    .gran-total{font-size:18px;font-weight:800;color:#111;margin-top:4px}
-    .letras{font-size:10px;color:#555;margin-top:6px}
-    .obs-box{font-size:10px;color:#666;border-top:1px solid #eee;padding-top:10px}
-    .original-badge{font-size:9px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase}
-    @media print{body{padding:0}.page{border:none;padding:16px}}
-  </style></head><body>
-  <div class="page">
+    .total-box{text-align:right;min-width:200px}
+    .total-line{display:flex;justify-content:space-between;gap:16px;padding:2px 0;font-size:10.5px}
+    .total-line.big{font-size:16px;font-weight:800;border-top:2px solid #222;padding-top:6px;margin-top:4px}
+    .letras{font-size:9px;color:#555;margin-top:5px;font-style:italic}
+    .obs{font-size:9.5px;color:#555;border-top:1px solid #eee;padding-top:8px;margin-top:4px}
+    @media print{body{print-color-adjust:exact}}
+  </style></head><body><div class="page">
     <div class="hdr">
       <div>
-        ${logo?`<img src="${logo}" style="height:48px;margin-bottom:6px;display:block" alt="Logo">`:''}
+        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
-        <div class="biz-cond">[MONOTRIBUTO]</div>
-        <div style="font-size:10px;color:#666;margin-top:4px">${esc(emp.dir||'')}</div>
+        <div class="biz-cond">MONOTRIBUTO</div>
+        <div class="biz-detail">${esc(emp.dir||'')}${emp.dir&&emp.ingBrutos?'<br>':''}<span>Ing. Brutos: ${esc(emp.ingBrutos||'—')}</span></div>
       </div>
-      <div style="text-align:center">
-        <div class="original-badge">Original</div>
-        <div class="tipo-letra">C</div>
-        <div class="tipo-sub">PDV</div>
+      <div>
+        <div class="original-lbl">Original</div>
+        <div class="tipo-box">
+          <span class="tipo-letra">C</span>
+          <span class="tipo-sub">Factura</span>
+        </div>
+        <div class="tipo-sub" style="margin-top:4px;font-size:9px;color:#666">PDV ${pdvStr}</div>
       </div>
       <div class="hdr-right">
-        <div class="fact-nro">Factura: ${esc(f.nro||'')}</div>
+        <div class="fact-nro">Nº ${pdvStr}-${nroStr}</div>
         <table><tbody>
-          <tr><td class="lbl">Fecha de emisión:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
-          <tr><td class="lbl">Fecha de vencimiento:</td><td>${fmtF(f.vencimiento)}</td></tr>
-          <tr><td class="lbl">CUIT:</td><td>${esc(emp.cuit||'')}</td></tr>
-          <tr><td class="lbl">Ing. Brutos:</td><td>${esc(emp.ingBrutos||'')}</td></tr>
-          <tr><td class="lbl">Inicio actividad:</td><td>${esc(emp.inicioActividad||'')}</td></tr>
+          <tr><td>Fecha:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
+          <tr><td>Vencimiento:</td><td>${fmtF(f.vencimiento)}</td></tr>
+          <tr><td>CUIT:</td><td>${fmtCuit(emp.cuit)}</td></tr>
+          ${emp.ingBrutos?`<tr><td>Ing.Brutos:</td><td>${esc(emp.ingBrutos)}</td></tr>`:''}
+          ${emp.inicioActividad?`<tr><td>Inicio act.:</td><td>${esc(emp.inicioActividad)}</td></tr>`:''}
         </tbody></table>
       </div>
     </div>
     <div class="section">
-      <div class="section-title">Datos de la persona compradora</div>
+      <div class="section-title">Datos del comprador</div>
       <div class="grid2">
-        <div><span class="lbl">Nombre y Apellido:</span> <span class="val">${esc(f.comprador?.nombre||'—')}</span></div>
-        <div><span class="lbl">IVA:</span> <span class="val">Consumidor Final</span></div>
-        <div><span class="lbl">CUIT/DNI/CUIL:</span> <span class="val">${esc(f.comprador?.cuitDniCuil||'—')}</span></div>
-        <div><span class="lbl">Ing. Brutos:</span> <span class="val">—</span></div>
-        <div><span class="lbl">Dirección:</span> <span class="val">${esc(f.comprador?.dir||'—')}</span></div>
-        <div><span class="lbl">CP:</span> <span class="val">${esc(f.comprador?.cp||'—')}</span></div>
-        <div><span class="lbl">Ciudad:</span> <span class="val">${esc(f.comprador?.ciudad||'—')}</span></div>
-        <div><span class="lbl">Tel.:</span> <span class="val">${esc(f.comprador?.tel||'—')}</span></div>
-        <div><span class="lbl">Localidad:</span> <span class="val">${esc(f.comprador?.localidad||'—')}</span></div>
-        <div><span class="lbl">Condición de venta:</span> <span class="val">${esc(f.comprador?.condVenta||'—')}</span></div>
-        <div></div>
-        <div><span class="lbl">Método de pago:</span> <span class="val">${esc(f.comprador?.metodoPago||'—')}${f.cuotas>1?` · ${f.cuotas} cuotas`:''}</span></div>
+        <div><span class="lbl">Nombre: </span><span class="val">${esc(f.comprador?.nombre||'Consumidor Final')}</span></div>
+        <div><span class="lbl">CUIT/DNI: </span><span class="val">${esc(f.comprador?.cuitDniCuil||'—')}</span></div>
+        <div><span class="lbl">Dirección: </span><span class="val">${esc(f.comprador?.dir||'—')}</span></div>
+        <div><span class="lbl">Ciudad: </span><span class="val">${esc(f.comprador?.ciudad||'—')}</span></div>
+        <div><span class="lbl">Cond. venta: </span><span class="val">${esc(f.comprador?.condVenta||'Contado')}</span></div>
+        <div><span class="lbl">Pago: </span><span class="val">${esc(f.comprador?.metodoPago||'Efectivo')}${f.cuotas>1?' · '+f.cuotas+' cuotas':''}</span></div>
       </div>
     </div>
-    <table class="items-table">
-      <thead><tr>
-        <th style="width:80px">SKU</th>
-        <th>Descripción</th>
-        <th class="tc" style="width:70px">Cantidad</th>
-        <th class="tr" style="width:110px">Precio unitario</th>
-        <th class="tr" style="width:120px">Importe subtotal</th>
-      </tr></thead>
-      <tbody>${(f.items||[]).map(it=>`<tr>
-        <td>${esc(it.sku||'—')}</td>
-        <td>${esc(it.descripcion||'—')}</td>
-        <td class="tc">${it.qty||0}</td>
-        <td class="tr">$${(it.precioUnit||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-        <td class="tr">$${(it.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-      </tr>`).join('')}</tbody>
-    </table>
-    <div class="totales">
+    <table class="items-table"><thead><tr>
+      <th style="width:72px">SKU</th><th>Descripción</th>
+      <th class="tc" style="width:55px">Cant.</th>
+      <th class="tr" style="width:100px">P. Unit.</th>
+      <th class="tr" style="width:110px">Subtotal</th>
+    </tr></thead><tbody>
+    ${(f.items||[]).length?f.items.map(it=>`<tr>
+      <td>${esc(it.sku||'—')}</td><td>${esc(it.descripcion||'—')}</td>
+      <td class="tc">${it.qty||1}</td>
+      <td class="tr">$${(it.precioUnit||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+      <td class="tr">$${(it.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#aaa;padding:14px">Sin ítems detallados</td></tr>`}
+    </tbody></table>
+    <div class="totals-row">
       <div class="cae-box">
-        ${f.cae?`CAE: <b>${esc(f.cae)}</b><br>Vencimiento CAE: <b>${fmtF(f.caeFecha)}</b>`:'<span style="color:#aaa">CAE pendiente</span>'}
-        <div class="letras">Importe en letras: ${esc(f.totalLetras||numToWords(f.total||0))}</div>
+        ${f.cae?`CAE: <b>${esc(f.cae)}</b><br>Vto. CAE: <b>${fmtF(f.caeFecha)}</b>`:'<span style="color:#bbb">CAE pendiente</span>'}
+        <div class="letras">${esc(f.totalLetras||numToWords(f.total||0))}</div>
       </div>
       <div class="total-box">
-        <div><span class="lbl">Importe Subtotal</span> <b>$${((f.subtotal||0)).toLocaleString('es-AR',{minimumFractionDigits:2})}</b></div>
-        ${f.descuentoPct>0?`<div><span class="lbl">Descuento (${f.descuentoPct}%)</span> <span style="color:#c00">-$${((f.subtotal||0)*f.descuentoPct/100).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>`:''}
-        <div><span class="lbl">Otros impuestos</span> <span class="lbl">—</span></div>
-        <div class="gran-total">Importe total $${((f.total||0)).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+        <div class="total-line"><span style="color:#666">Subtotal</span><span>$${(f.subtotal||f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>
+        ${f.descuentoPct>0?`<div class="total-line"><span style="color:#666">Descuento ${f.descuentoPct}%</span><span style="color:#c00">-$${((f.subtotal||0)*f.descuentoPct/100).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>`:''}
+        <div class="total-line big"><span>TOTAL</span><span>$${(f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>
       </div>
     </div>
-    <div class="section">
-      <div class="obs-box"><b>Observaciones:</b> ${esc(f.observaciones||'')}</div>
-    </div>
-  </div>
-  </body></html>`;
+    ${f.observaciones?`<div class="obs"><b>Obs.:</b> ${esc(f.observaciones)}</div>`:''}
+  </div></body></html>`;
 }
 
 function facturaPreview(id){
@@ -10309,98 +10311,111 @@ function emitirNotaCredito(facturaId) {
   }, 'Emitir NC', 'cm-ok');
 }
 
-function ncDocBody(f) {
+function ncDocBody(f){
   const emp = f.emisor||{};
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  const fmtCuit = c=>{const s=String(c||'').replace(/\D/g,'');return s.length===11?`${s.slice(0,2)}-${s.slice(2,10)}-${s.slice(10)}`:s||'—';};
+  const pdvNro = (f.nro||'').split('-');
+  const pdvStr = (parseInt(pdvNro[0])||1).toString().padStart(5,'0');
+  const nroStr = (parseInt(pdvNro[1])||0).toString().padStart(8,'0');
+  const RED = '#c00';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
-    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px}
-    .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee}
-    .biz-name{font-size:18px;font-weight:800}
-    .biz-cond{font-size:10px;color:#666;border:1px solid #999;display:inline-block;padding:1px 6px;margin:2px 0}
-    .tipo-letra{font-size:48px;font-weight:800;line-height:1;color:#c00;border:2px solid #c00;width:90px;height:90px;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 4px;text-align:center}
-    .tipo-sub{font-size:9px;color:#444;text-align:center}
-    .hdr-right{font-size:11px;text-align:right}
-    .hdr-right .fact-nro{font-size:15px;font-weight:700;margin-bottom:6px}
-    .hdr-right table{margin-left:auto}
-    .hdr-right td{padding:1px 0 1px 12px}
-    .lbl{color:#666}
-    .nc-ref{background:#fff5f5;border:1px solid #fcc;border-radius:4px;padding:8px 14px;margin-bottom:12px;font-size:11px}
-    .section{border:1px solid #ddd;padding:12px 16px;margin-bottom:12px}
-    .section-title{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
-    .grid2 .val{font-weight:500}
-    .items-table{width:100%;border-collapse:collapse;margin-bottom:12px}
-    .items-table th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:2px solid #ddd}
-    .items-table td{padding:7px 10px;border-bottom:1px solid #eee}
-    .items-table .tr{text-align:right}
-    .items-table .tc{text-align:center}
-    .totales{display:flex;justify-content:flex-end;padding:8px 0;margin-bottom:12px}
-    .total-box{text-align:right}
-    .gran-total{font-size:18px;font-weight:800;color:#c00;margin-top:4px}
-    .letras{font-size:10px;color:#555;margin-top:6px}
-    .obs-box{font-size:10px;color:#666;border-top:1px solid #eee;padding-top:10px}
-    .original-badge{font-size:9px;font-weight:700;color:#555;letter-spacing:1px;text-transform:uppercase}
-    @media print{body{padding:0}.page{border:none;padding:16px}}
-  </style></head><body>
-  <div class="page">
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;background:#fff}
+    .page{max-width:760px;margin:0 auto;padding:20px}
+    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;gap:12px;align-items:start;padding-bottom:14px;border-bottom:2px solid ${RED};margin-bottom:14px}
+    .biz-logo{height:44px;max-width:120px;object-fit:contain;display:block;margin-bottom:5px}
+    .biz-name{font-size:16px;font-weight:800;line-height:1.2}
+    .biz-detail{font-size:9.5px;color:#555;margin-top:3px;line-height:1.5}
+    .biz-cond{display:inline-block;border:1px solid #888;padding:1px 5px;font-size:9px;font-weight:700;color:#555;margin-top:3px}
+    .tipo-box{border:2px solid ${RED};text-align:center;padding:6px 0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .tipo-letra{font-size:46px;font-weight:900;line-height:1;color:${RED}}
+    .tipo-sub{font-size:8px;color:#666;margin-top:2px;text-align:center}
+    .original-lbl{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#666;margin-bottom:4px;text-align:center}
+    .hdr-right{font-size:10.5px;text-align:right}
+    .fact-nro{font-size:13px;font-weight:800;margin-bottom:6px;color:${RED}}
+    .hdr-right table{width:100%;border-collapse:collapse}
+    .hdr-right td{padding:2px 0;vertical-align:top}
+    .hdr-right td:first-child{color:#666;padding-right:8px;white-space:nowrap}
+    .hdr-right td:last-child{font-weight:500;text-align:right}
+    .ref-box{background:#fff5f5;border:1px solid #fcc;padding:8px 14px;margin-bottom:10px;font-size:10.5px;border-radius:2px}
+    .section{border:1px solid #ddd;padding:10px 14px;margin-bottom:10px;border-radius:2px}
+    .section-title{font-size:9px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px}
+    .grid2 span.lbl{color:#666} .grid2 span.val{font-weight:500}
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.5px}
+    .items-table th{background:#fff0f0;padding:6px 8px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;border-top:1px solid #fcc;border-bottom:1px solid #fcc}
+    .items-table td{padding:6px 8px;border-bottom:1px solid #f9f0f0}
+    .items-table .tr{text-align:right} .items-table .tc{text-align:center}
+    .totals-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;gap:12px}
+    .cae-box{font-size:9.5px;color:#666;line-height:1.6} .cae-box b{color:#222}
+    .total-box{text-align:right;min-width:200px}
+    .total-line{display:flex;justify-content:space-between;gap:16px;padding:2px 0;font-size:10.5px}
+    .total-line.big{font-size:16px;font-weight:800;color:${RED};border-top:2px solid ${RED};padding-top:6px;margin-top:4px}
+    .letras{font-size:9px;color:#555;margin-top:5px;font-style:italic}
+    .obs{font-size:9.5px;color:#555;border-top:1px solid #eee;padding-top:8px;margin-top:4px}
+    @media print{body{print-color-adjust:exact}}
+  </style></head><body><div class="page">
     <div class="hdr">
       <div>
-        ${logo?`<img src="${logo}" style="height:48px;margin-bottom:6px;display:block" alt="Logo">`:''}
+        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">${esc(emp.nombre||'TBR TOOLS')}</div>
-        <div class="biz-cond">[MONOTRIBUTO]</div>
-        <div style="font-size:10px;color:#666;margin-top:4px">${esc(emp.dir||'')}</div>
+        <div class="biz-cond">MONOTRIBUTO</div>
+        <div class="biz-detail">${esc(emp.dir||'')}${emp.dir&&emp.ingBrutos?'<br>':''}<span>Ing. Brutos: ${esc(emp.ingBrutos||'—')}</span></div>
       </div>
-      <div style="text-align:center">
-        <div class="original-badge">Original</div>
-        <div class="tipo-letra"><span>NC</span><span style="font-size:18px">C</span></div>
-        <div class="tipo-sub">Nota de Crédito</div>
+      <div>
+        <div class="original-lbl">Original</div>
+        <div class="tipo-box">
+          <span class="tipo-letra">NC</span>
+          <span class="tipo-sub">Nota de Crédito C</span>
+        </div>
+        <div class="tipo-sub" style="margin-top:4px;font-size:9px;color:#666">PDV ${pdvStr}</div>
       </div>
       <div class="hdr-right">
-        <div class="fact-nro">NC: ${esc(f.nro||'')}</div>
+        <div class="fact-nro">Nº ${pdvStr}-${nroStr}</div>
         <table><tbody>
-          <tr><td class="lbl">Fecha:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
-          <tr><td class="lbl">CUIT:</td><td>${esc(emp.cuit||'')}</td></tr>
-          <tr><td class="lbl">Ing. Brutos:</td><td>${esc(emp.ingBrutos||'')}</td></tr>
-          <tr><td class="lbl">Inicio actividad:</td><td>${esc(emp.inicioActividad||'')}</td></tr>
+          <tr><td>Fecha:</td><td><b>${fmtF(f.fecha)}</b></td></tr>
+          <tr><td>CUIT:</td><td>${fmtCuit(emp.cuit)}</td></tr>
+          ${emp.ingBrutos?`<tr><td>Ing.Brutos:</td><td>${esc(emp.ingBrutos)}</td></tr>`:''}
         </tbody></table>
       </div>
     </div>
-    <div class="nc-ref">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen||'—')}</b></div>
+    <div class="ref-box">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen||'—')}</b></div>
     <div class="section">
       <div class="section-title">Datos del comprador</div>
       <div class="grid2">
-        <div><span class="lbl">Nombre:</span> <span class="val">${esc(f.comprador?.nombre||'—')}</span></div>
-        <div><span class="lbl">CUIT/DNI/CUIL:</span> <span class="val">${esc(f.comprador?.cuitDniCuil||'—')}</span></div>
-        <div><span class="lbl">Dirección:</span> <span class="val">${esc(f.comprador?.dir||'—')}</span></div>
-        <div><span class="lbl">Ciudad:</span> <span class="val">${esc(f.comprador?.ciudad||'—')}</span></div>
+        <div><span class="lbl">Nombre: </span><span class="val">${esc(f.comprador?.nombre||'Consumidor Final')}</span></div>
+        <div><span class="lbl">CUIT/DNI: </span><span class="val">${esc(f.comprador?.cuitDniCuil||'—')}</span></div>
+        <div><span class="lbl">Dirección: </span><span class="val">${esc(f.comprador?.dir||'—')}</span></div>
+        <div><span class="lbl">Ciudad: </span><span class="val">${esc(f.comprador?.ciudad||'—')}</span></div>
       </div>
     </div>
-    <table class="items-table">
-      <thead><tr>
-        <th>SKU</th><th>Descripción</th>
-        <th class="tc">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th>
-      </tr></thead>
-      <tbody>${(f.items||[]).map(it=>`<tr>
-        <td>${esc(it.sku||'—')}</td>
-        <td>${esc(it.descripcion||'—')}</td>
-        <td class="tc">${it.qty||0}</td>
-        <td class="tr">$${(it.precioUnit||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-        <td class="tr">$${(it.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-      </tr>`).join('')}</tbody>
-    </table>
-    <div class="totales">
-      <div class="total-box">
-        <div><span class="lbl">Importe Subtotal</span> <b>$${(f.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</b></div>
-        <div class="gran-total">Total NC $${(f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+    <table class="items-table"><thead><tr>
+      <th style="width:72px">SKU</th><th>Descripción</th>
+      <th class="tc" style="width:55px">Cant.</th>
+      <th class="tr" style="width:100px">P. Unit.</th>
+      <th class="tr" style="width:110px">Subtotal</th>
+    </tr></thead><tbody>
+    ${(f.items||[]).length?f.items.map(it=>`<tr>
+      <td>${esc(it.sku||'—')}</td><td>${esc(it.descripcion||'—')}</td>
+      <td class="tc">${it.qty||1}</td>
+      <td class="tr">$${(it.precioUnit||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+      <td class="tr">$${(it.subtotal||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#aaa;padding:14px">Crédito total por la factura original</td></tr>`}
+    </tbody></table>
+    <div class="totals-row">
+      <div class="cae-box">
+        ${f.cae?`CAE: <b>${esc(f.cae)}</b><br>Vto. CAE: <b>${fmtF(f.caeFecha)}</b>`:'<span style="color:#bbb">CAE pendiente</span>'}
         <div class="letras">${esc(f.totalLetras||numToWords(f.total||0))}</div>
       </div>
+      <div class="total-box">
+        <div class="total-line"><span style="color:#666">Subtotal NC</span><span>$${(f.subtotal||f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>
+        <div class="total-line big"><span>TOTAL NC</span><span>$${(f.total||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>
+      </div>
     </div>
-    <div class="section"><div class="obs-box"><b>Observaciones:</b> ${esc(f.observaciones||'')}</div></div>
-  </div>
-  </body></html>`;
+    ${f.observaciones?`<div class="obs"><b>Obs.:</b> ${esc(f.observaciones)}</div>`:''}
+  </div></body></html>`;
 }
 
 /* ─── REMITO ─── */
