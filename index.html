@@ -10116,7 +10116,8 @@ async function sincronizarARCA() {
     const desde = 1;
     const hasta = maxLocal + 10;
 
-    const resp = await fetch(`/api/arca-consultar?desde=${desde}&hasta=${hasta}`);
+    // No enviar hasta — el backend consulta FECompUltimoAutorizado para determinarlo
+    const resp = await fetch(`/api/arca-consultar?desde=${desde}`);
     const data = await resp.json();
     if (!resp.ok || data.error) { toast('Error sincronizando: ' + (data.error||''), false, 5000); return; }
 
