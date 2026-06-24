@@ -11,7 +11,7 @@
  */
 
 'use strict';
-const soap   = require('node-soap');
+const soap   = require('soap');
 const forge  = require('node-forge');
 const https  = require('https');
 const crypto = require('crypto');
