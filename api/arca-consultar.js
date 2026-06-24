@@ -144,7 +144,8 @@ module.exports = async function handler(req, res) {
             PtoVta:   pdv
           }
         });
-        const d = r?.FECompConsultarResult?.ResultGet;
+        const rawResult = r?.FECompConsultarResult?.ResultGet;
+        const d = Array.isArray(rawResult) ? rawResult[0] : rawResult;
         console.log(`Comprobante ${nro}:`, d ? `CAE=${d.CAE} Res=${d.Resultado}` : 'sin resultado');
         if (!d || !d.CAE) continue;
 
@@ -171,6 +172,7 @@ module.exports = async function handler(req, res) {
       } catch(e) { console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
 
+    console.log(`Resultado: ${facturas.length} facturas encontradas en rango ${inicio}-${fin}`);
     return res.status(200).json({ facturas, ultimo: ultimoARCA || fin });
   } catch (e) {
     console.error('Consultar error:', e.message);
