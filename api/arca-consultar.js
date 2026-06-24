@@ -147,8 +147,13 @@ module.exports = async function handler(req, res) {
         });
         const rawResult = r?.FECompConsultarResult?.ResultGet;
         const d = Array.isArray(rawResult) ? rawResult[0] : rawResult;
-        console.log(`Comprobante ${nro}:`, d ? `CAE=${d.CAE} Res=${d.Resultado}` : 'sin resultado');
-        if (!d || !d.CAE) continue;
+        const rawStr = JSON.stringify(r?.FECompConsultarResult).slice(0,300);
+        console.log(`Comprobante ${nro} raw:`, rawStr);
+        if (!d) { errores.push(`n${nro}:noD`); continue; }
+        if (!d.CAE) {
+          errores.push(`n${nro}:noCAE Res=${d.Resultado} k=${Object.keys(d).slice(0,8).join(',')}`);
+          continue;
+        }
 
         const fechaStr = String(d.CbteFch||'');
         const fecha = fechaStr.length === 8
