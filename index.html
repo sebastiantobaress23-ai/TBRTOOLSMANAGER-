@@ -8452,10 +8452,19 @@ async function shareViaWA(phone, text, pdfDoc, filename){
     const a = document.createElement('a'); a.href=u; a.download=filename; a.click();
     URL.revokeObjectURL(u);
     try { await navigator.clipboard?.writeText(text); } catch {}
-    toast('PDF descargado y texto copiado — adjuntalo en WhatsApp desde "Archivos" y pegá el texto', true, 5000);
+    toast('PDF descargado — adjuntalo en WhatsApp desde Archivos y pegá el texto copiado', true, 5500);
   }
+  // Use location.href so mobile browsers don't block it as a popup
   const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
-  window.open(`${base}?text=${encodeURIComponent(text)}`,'_blank');
+  const waUrl = `${base}?text=${encodeURIComponent(text)}`;
+  try { window.open(waUrl, '_blank', 'noopener'); } catch {}
+  // Fallback: anchor click (bypasses popup blocker on iOS Safari)
+  const wa = document.createElement('a');
+  wa.href = waUrl; wa.target = '_blank'; wa.rel = 'noopener';
+  wa.style.display = 'none';
+  document.body.appendChild(wa);
+  wa.click();
+  setTimeout(() => wa.remove(), 300);
 }
 
 function reportDocBody(period, since, now, ps, sales, emp){
@@ -10759,20 +10768,61 @@ async function facturaShareWA(id){
   const phone = (f.comprador?.tel||'').replace(/\D/g,'');
   const s = DB.get('settings',{});
   const tipoLbl = f.tipo==='NC'?'Nota de Crédito C':f.tipo==='RM'?'Remito':'Factura C';
-  const txt = s.waTplVenta||`Hola${f.comprador?.nombre?' '+f.comprador.nombre:''}! Te comparto ${tipoLbl} Nº ${f.nro||''} de TBR Tools.${f.total?' Total: '+fmtA(f.total)+'.':''}`;
-  let pdf = null;
-  if (await ensureJsPDF() && await ensureHtml2Canvas()) {
-    const bodyHTML = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
-    const tmp = document.createElement('div');
-    tmp.innerHTML = bodyHTML;
-    const styleEl = tmp.querySelector('style');
-    const css = styleEl ? styleEl.textContent : '';
-    styleEl && styleEl.remove();
-    pdf = await renderBrandedPDF(css, tmp.innerHTML, f.nro||'factura');
-  } else {
-    toast('No se pudo cargar el generador de PDF — se enviará solo el texto',false,4500);
-  }
-  shareViaWA(phone, txt, pdf, `Factura_${(f.nro||'').replace('-','_')}.pdf`);
+  const comp = f.tipo==='NC'?'NC':'FC';
+  const emp = DB.get('empresa',{});
+  const empNombre = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
+
+  // Build informative text message with invoice details
+  const items = (f.items||[]).map(it=>`  • ${it.desc||it.nombre||''} x${it.qty||1} = ${fmtA((it.precio||0)*(it.qty||1))}`).join('\n');
+  const nombreComprador = f.comprador?.nombre||'';
+  const saludo = nombreComprador&&nombreComprador!=='Consumidor Final' ? `Hola ${nombreComprador}! ` : 'Hola! ';
+  const defaultTxt = `${saludo}Te comparto tu ${tipoLbl} Nº ${f.nro||''}\n\nEmisor: ${empNombre}\nFecha: ${f.fecha||''}\n${items?items+'\n':''}\nTotal: ${fmtA(f.total||0)}${f.cae?'\nCAE: '+f.cae:''}`;
+  const txt = s.waTplVenta ? s.waTplVenta.replace(/\{nro\}/g,f.nro||'').replace(/\{total\}/g,fmtA(f.total||0)).replace(/\{nombre\}/g,nombreComprador) : defaultTxt;
+
+  // Try PDF generation using iframe approach (same as preview)
+  let pdfDoc = null;
+  try {
+    if (await ensureJsPDF() && await ensureHtml2Canvas()) {
+      const docHTML = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
+      // Render via off-screen iframe to get proper 595px layout
+      const ifr = document.createElement('iframe');
+      ifr.style.cssText = 'position:fixed;left:-9999px;top:0;width:595px;height:842px;border:none;background:#fff;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();
+      ifr.contentDocument.write(docHTML);
+      ifr.contentDocument.close();
+      await new Promise(r => setTimeout(r, 800)); // wait for fonts/images
+      const canvas = await window.html2canvas(ifr.contentDocument.body, {
+        scale:2, backgroundColor:'#ffffff', useCORS:true, allowTaint:true,
+        width:595, windowWidth:595
+      });
+      document.body.removeChild(ifr);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({unit:'pt', format:'a4'});
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgH = pageW * canvas.height / canvas.width;
+      if (imgH <= pageH) {
+        doc.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+      } else {
+        // multi-page
+        let yOff = 0;
+        while (yOff < canvas.height) {
+          const sliceH = Math.min(Math.floor(pageH * canvas.width / pageW), canvas.height - yOff);
+          const sc = document.createElement('canvas');
+          sc.width = canvas.width; sc.height = sliceH;
+          sc.getContext('2d').drawImage(canvas, 0, yOff, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          if (yOff > 0) doc.addPage();
+          doc.addImage(sc.toDataURL('image/jpeg',0.92), 'JPEG', 0, 0, pageW, sliceH * pageW / canvas.width);
+          yOff += sliceH;
+        }
+      }
+      pdfDoc = doc;
+    }
+  } catch(e) { pdfDoc = null; }
+
+  shareViaWA(phone, txt, pdfDoc, `${comp}_${(f.nro||'').replace(/\//g,'_')}.pdf`);
 }
 </script>
 </body>
