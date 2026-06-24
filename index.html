@@ -10137,21 +10137,27 @@ function facturaPreview(id){
   fr.id = 'fp-frame';
   fr.style.cssText = 'position:absolute;top:0;left:0;width:595px;border:none;background:#fff;transform-origin:top left;';
   fr.setAttribute('sandbox','allow-same-origin allow-scripts allow-modals allow-popups allow-forms');
-  fr.srcdoc = docBody;
-  fr.onload = function(){
-    try {
-      var sw = wrap.clientWidth || window.innerWidth || 390;
-      var sh = wrap.clientHeight || (window.innerHeight - (bar.offsetHeight||50));
-      var scale = Math.min(sw / 595, 1);
-      fr.style.transform = 'scale(' + scale + ')';
-      fr.style.width = '595px';
-      fr.style.height = Math.ceil(sh / scale) + 'px';
-    } catch(e){}
-  };
   wrap.appendChild(fr);
 
   document.body.appendChild(ov);
   document.body.style.overflow = 'hidden';
+
+  function applyScale(){
+    var sw = wrap.getBoundingClientRect().width || window.innerWidth || 390;
+    var sh = wrap.getBoundingClientRect().height || (window.innerHeight - bar.offsetHeight - 2);
+    var scale = sw / 595; // siempre escalar para llenar el ancho exacto
+    fr.style.transform = 'scale(' + scale + ')';
+    fr.style.height = Math.ceil(sh / scale) + 'px';
+  }
+
+  // Aplicar escala tan pronto el DOM esté listo (antes del srcdoc para evitar flash)
+  requestAnimationFrame(function(){ applyScale(); });
+  window.addEventListener('resize', applyScale);
+
+  fr.onload = function(){ applyScale(); };
+
+  // Asignar srcdoc DESPUÉS de appender al DOM para que el iframe tenga dimensiones reales
+  fr.srcdoc = docBody;
 }
 
 function closeFacturaPreview(){
