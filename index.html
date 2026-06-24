@@ -9937,12 +9937,13 @@ async function solicitarCAE(){
 function facturaDocBody(f){
   const emp = f.emisor||{};
   const conf = getConf();
-  const empNombre = emp.nombre||emp.razonSocial||'TOBARES ALEXIS SEBASTIAN';
-  const empRazonSocial = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
-  const empCuit = emp.cuit||conf.facturaCuit||'';
-  const empDir = emp.dir||conf.facturaDir||'';
-  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||'';
-  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||'';
+  const dbEmp = DB.get('empresa',{});
+  const empNombre = emp.nombre||emp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = emp.razonSocial||emp.nombre||dbEmp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
+  const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
+  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
+  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||dbEmp.inicioActividad||'';
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const fmtA = n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -9958,51 +9959,51 @@ function facturaDocBody(f){
   const afipQrData = f.cae ? btoa(JSON.stringify({ver:1,fecha:f.fecha||'',cuit:parseInt((empCuit||'').replace(/\D/g,'')),ptoVta:parseInt(pdvNro[0])||1,tipoCmp:11,nroCmp:parseInt(pdvNro[1])||0,importe:total,moneda:'PES',ctz:1,tipoDocRec:99,nroDocRec:0,tipoCodAut:'E',codAut:parseInt(f.cae)||0})) : '';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#fff}
-    .page{width:100%;max-width:780px;margin:0 auto;background:#fff;border:1px solid #ccc}
-    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid #ccc}
-    .hdr-left{padding:12px 14px 10px}
-    .biz-logo{height:32px;max-width:100px;object-fit:contain;display:block;margin-bottom:6px}
-    .biz-name{font-size:13px;font-weight:700}
-    .biz-cond{font-size:9px;color:#555;margin:2px 0 4px}
-    .biz-addr{font-size:9px;color:#555;line-height:1.5}
-    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;text-align:center}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#f0f0f0;min-height:100vh}
+    .page{width:750px;background:#fff;border:1px solid #ccc;margin:0 auto}
+    .hdr{display:grid;grid-template-columns:240px 80px 1fr;border-bottom:1px solid #ccc}
+    .hdr-left{padding:12px 14px 10px;overflow:hidden}
+    .biz-logo{height:32px;max-width:90px;object-fit:contain;display:block;margin-bottom:5px}
+    .biz-name{font-size:12px;font-weight:700;line-height:1.3}
+    .biz-cond{font-size:8.5px;color:#555;margin:2px 0 3px}
+    .biz-addr{font-size:8px;color:#555;line-height:1.45}
+    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;text-align:center}
     .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:1px}
-    .tipo-letra{font-size:48px;font-weight:700;line-height:1;color:#111;font-style:italic}
+    .tipo-letra{font-size:50px;font-weight:700;line-height:1;color:#111;font-style:italic}
     .tipo-num{font-size:8px;color:#888;margin-top:2px}
     .hdr-right{padding:12px 14px 10px}
-    .doc-title{font-size:11px;font-weight:700;letter-spacing:.5px;color:#111;margin-bottom:2px}
-    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:6px;letter-spacing:1px}
-    .meta{font-size:9.5px;line-height:1.7;color:#111}
+    .doc-title{font-size:10.5px;font-weight:700;color:#111;margin-bottom:1px}
+    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:5px;letter-spacing:.5px}
+    .meta{font-size:9px;line-height:1.65;color:#111}
     .meta b{font-weight:700}
     .gold-line{height:2px;background:${GOLD}}
-    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777;display:flex;justify-content:space-between}
-    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9.5px;line-height:1.7}
+    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:7.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777;display:flex;justify-content:space-between}
+    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9px;line-height:1.65}
     .buyer-left{padding:8px 14px;border-right:1px solid #ccc}
     .buyer-right{padding:8px 14px}
     .buyer b{font-weight:700}
-    .items-table{width:100%;border-collapse:collapse;font-size:9.5px}
+    .items-table{width:100%;border-collapse:collapse;font-size:9px}
     .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD}}
-    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#555}
+    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:7.5px;letter-spacing:.8px;text-transform:uppercase;color:#555}
     .items-table td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
     .items-table tbody tr:last-child td{border-bottom:none}
     .items-table .tr{text-align:right}.items-table .tc{text-align:center}
     .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ccc}
-    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9.5px}
-    .cae-num{font-size:10px;font-weight:700;color:#111;margin-bottom:1px}
-    .cae-vto{font-size:9px;color:#555;margin-bottom:6px}
-    .letras{font-size:9px;color:#555;line-height:1.4;font-style:italic;margin-top:6px}
+    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9px}
+    .cae-num{font-size:9.5px;font-weight:700;color:#111;margin-bottom:1px}
+    .cae-vto{font-size:8.5px;color:#555}
     .footer-right{padding:10px 14px}
-    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9.5px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
-    .tot-row.big{background:#fff;font-size:11px;font-weight:700;padding:6px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
+    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
+    .tot-row.big{background:#fff;font-size:10.5px;font-weight:700;padding:5px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
     .tot-val{white-space:nowrap}
-    .letras{font-size:8.5px;color:#555;line-height:1.4;font-style:italic;margin-top:5px;padding:0 2px}
-    .moneda{font-size:8px;color:#aaa;text-align:right;margin-top:4px}
-    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:9px;color:#444;line-height:1.6}
+    .letras{font-size:8px;color:#555;line-height:1.4;font-style:italic;margin-top:5px}
+    .moneda{font-size:7.5px;color:#aaa;text-align:right;margin-top:4px}
+    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:8.5px;color:#444;line-height:1.6}
     @media print{
-      @page{size:A4 portrait;margin:8mm 12mm}
+      @page{size:A4 portrait;margin:10mm 12mm}
+      html{zoom:1!important}
       body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-      .page{width:100%;max-width:100%;border:none}
+      .page{width:100%;border:none}
     }
   </style></head><body><div class="page">
     <div class="hdr">
@@ -10094,6 +10095,13 @@ function facturaPreview(id){
   waBtn.onclick = ()=>facturaShareWA(id);
   const body = f.tipo==='NC' ? ncDocBody(f) : f.tipo==='RM' ? remitoDocBody(f) : facturaDocBody(f);
   frame.srcdoc = body;
+  frame.onload = function(){
+    try {
+      var iw = frame.clientWidth||frame.offsetWidth||390;
+      var z = Math.min(1, iw/750);
+      frame.contentDocument.documentElement.style.zoom = z;
+    } catch(e){}
+  };
   ol.style.display = 'flex';
   lockBody();
 }
@@ -10371,12 +10379,13 @@ function emitirNotaCredito(facturaId) {
 function ncDocBody(f){
   const emp = f.emisor||{};
   const conf = getConf();
-  const empNombre = emp.nombre||emp.razonSocial||'TOBARES ALEXIS SEBASTIAN';
-  const empRazonSocial = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
-  const empCuit = emp.cuit||conf.facturaCuit||'';
-  const empDir = emp.dir||conf.facturaDir||'';
-  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||'';
-  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||'';
+  const dbEmp = DB.get('empresa',{});
+  const empNombre = emp.nombre||emp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empRazonSocial = emp.razonSocial||emp.nombre||dbEmp.razonSocial||dbEmp.nombre||'TOBARES ALEXIS SEBASTIAN';
+  const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
+  const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
+  const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
+  const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||dbEmp.inicioActividad||'';
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const fmtA = n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -10390,51 +10399,52 @@ function ncDocBody(f){
   const afipQrDataNC = f.cae ? btoa(JSON.stringify({ver:1,fecha:f.fecha||'',cuit:parseInt((empCuit||'').replace(/\D/g,'')),ptoVta:parseInt(pdvNro[0])||1,tipoCmp:13,nroCmp:parseInt(pdvNro[1])||0,importe:total,moneda:'PES',ctz:1,tipoDocRec:99,nroDocRec:0,tipoCodAut:'E',codAut:parseInt(f.cae)||0})) : '';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#fff}
-    .page{width:100%;max-width:780px;margin:0 auto;background:#fff;border:1px solid #ccc}
-    .hdr{display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid #ccc}
-    .hdr-left{padding:12px 14px 10px}
-    .biz-logo{height:32px;max-width:100px;object-fit:contain;display:block;margin-bottom:6px}
-    .biz-name{font-size:13px;font-weight:700}
-    .biz-cond{font-size:9px;color:#555;margin:2px 0 4px}
-    .biz-addr{font-size:9px;color:#555;line-height:1.5}
-    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;text-align:center}
+    body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#111;background:#f0f0f0;min-height:100vh}
+    .page{width:750px;background:#fff;border:1px solid #ccc;margin:0 auto}
+    .hdr{display:grid;grid-template-columns:240px 80px 1fr;border-bottom:1px solid #ccc}
+    .hdr-left{padding:12px 14px 10px;overflow:hidden}
+    .biz-logo{height:32px;max-width:90px;object-fit:contain;display:block;margin-bottom:5px}
+    .biz-name{font-size:12px;font-weight:700;line-height:1.3}
+    .biz-cond{font-size:8.5px;color:#555;margin:2px 0 3px}
+    .biz-addr{font-size:8px;color:#555;line-height:1.45}
+    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;text-align:center}
     .tipo-original{font-size:8px;color:#777;font-style:italic;margin-bottom:1px}
-    .tipo-letra{font-size:38px;font-weight:700;line-height:1;color:#111;font-style:italic}
+    .tipo-letra{font-size:40px;font-weight:700;line-height:1;color:#111;font-style:italic}
     .tipo-num{font-size:8px;color:#888;margin-top:2px}
     .hdr-right{padding:12px 14px 10px}
-    .doc-title{font-size:11px;font-weight:700;letter-spacing:.5px;color:#111;margin-bottom:2px}
-    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:6px;letter-spacing:1px}
-    .meta{font-size:9.5px;line-height:1.7;color:#111}
+    .doc-title{font-size:10.5px;font-weight:700;color:#111;margin-bottom:1px}
+    .doc-nro{font-size:13px;font-weight:700;color:#111;margin-bottom:5px;letter-spacing:.5px}
+    .meta{font-size:9px;line-height:1.65;color:#111}
     .meta b{font-weight:700}
     .gold-line{height:2px;background:${GOLD}}
-    .ref-bar{background:#f5f5f5;border-bottom:1px solid #ccc;padding:5px 14px;font-size:9.5px;color:#333;font-weight:700}
-    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777}
-    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9.5px;line-height:1.7}
+    .ref-bar{background:#f5f5f5;border-bottom:1px solid #ccc;padding:5px 14px;font-size:9px;color:#333;font-weight:700}
+    .buyer-hdr{background:#f5f5f5;border-bottom:1px solid #ccc;padding:4px 14px;font-size:7.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#777}
+    .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9px;line-height:1.65}
     .buyer-left{padding:8px 14px;border-right:1px solid #ccc}
     .buyer-right{padding:8px 14px}
     .buyer b{font-weight:700}
-    .items-table{width:100%;border-collapse:collapse;font-size:9.5px}
+    .items-table{width:100%;border-collapse:collapse;font-size:9px}
     .items-table thead tr{background:#f5f5f5;border-bottom:2px solid ${GOLD}}
-    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#555}
+    .items-table th{padding:5px 10px;text-align:left;font-weight:700;font-size:7.5px;letter-spacing:.8px;text-transform:uppercase;color:#555}
     .items-table td{padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top}
     .items-table tbody tr:last-child td{border-bottom:none}
     .items-table .tr{text-align:right}.items-table .tc{text-align:center}
     .footer{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #ccc}
-    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9.5px}
-    .cae-num{font-size:10px;font-weight:700;color:#111;margin-bottom:1px}
-    .cae-vto{font-size:9px;color:#555}
+    .footer-left{padding:12px 14px;border-right:1px solid #ccc;font-size:9px}
+    .cae-num{font-size:9.5px;font-weight:700;color:#111;margin-bottom:1px}
+    .cae-vto{font-size:8.5px;color:#555}
     .footer-right{padding:10px 14px}
-    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9.5px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
-    .tot-row.big{background:#fff;font-size:11px;font-weight:700;padding:6px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
+    .tot-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:9px;font-weight:700;margin-bottom:1px;background:#f5f5f5}
+    .tot-row.big{background:#fff;font-size:10.5px;font-weight:700;padding:5px 8px;margin-top:1px;border-top:2px solid ${GOLD}}
     .tot-val{white-space:nowrap}
-    .letras{font-size:8.5px;color:#555;line-height:1.4;font-style:italic;margin-top:5px;padding:0 2px}
-    .moneda{font-size:8px;color:#aaa;text-align:right;margin-top:4px}
-    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:9px;color:#444;line-height:1.6}
+    .letras{font-size:8px;color:#555;line-height:1.4;font-style:italic;margin-top:5px}
+    .moneda{font-size:7.5px;color:#aaa;text-align:right;margin-top:4px}
+    .obs{border-top:1px solid #ccc;padding:8px 14px;font-size:8.5px;color:#444;line-height:1.6}
     @media print{
-      @page{size:A4 portrait;margin:8mm 12mm}
+      @page{size:A4 portrait;margin:10mm 12mm}
+      html{zoom:1!important}
       body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-      .page{width:100%;max-width:100%;border:none}
+      .page{width:100%;border:none}
     }
   </style></head><body><div class="page">
     <div class="hdr">
