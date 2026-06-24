@@ -112,20 +112,27 @@ module.exports = async function handler(req, res) {
       console.error('FECompUltimoAutorizado error:', e.message);
     }
 
-    // Si ARCA no tiene nada nuevo respecto al desde del cliente, salir ya
-    if (ultimoARCA < desdeParam) {
+    // Determinar rango a consultar (máx 12 para no superar timeout Vercel ~10s)
+    const MAX_CONSULTAS = 12;
+    let inicio, fin;
+    if (ultimoARCA > 0 && ultimoARCA >= desdeParam) {
+      // Caso normal: sabemos hasta dónde hay comprobantes
+      fin   = ultimoARCA;
+      inicio = Math.max(desdeParam, fin - MAX_CONSULTAS + 1);
+    } else if (ultimoARCA > 0 && ultimoARCA < desdeParam) {
+      // ARCA no tiene nada nuevo
       console.log(`Sin novedades: ultimoARCA=${ultimoARCA} < desde=${desdeParam}`);
       return res.status(200).json({ facturas: [], ultimo: ultimoARCA });
+    } else {
+      // FECompUltimoAutorizado falló o devolvió 0 — intentar las primeras consultas igual
+      fin   = desdeParam + MAX_CONSULTAS - 1;
+      inicio = desdeParam;
+      console.log(`ultimoARCA=0, consultando rango fallback ${inicio}-${fin}`);
     }
-
-    // Limitar a máximo 12 comprobantes para no exceder timeout de Vercel (~10s)
-    // Empezar por el más reciente (ultimoARCA) hacia atrás hasta desdeParam
-    const MAX_CONSULTAS = 12;
-    const inicio = Math.max(desdeParam, ultimoARCA - MAX_CONSULTAS + 1);
-    console.log(`Consultando comprobantes ${inicio} a ${ultimoARCA}`);
+    console.log(`Consultando comprobantes ${inicio} a ${fin}`);
 
     const facturas = [];
-    for (let nro = inicio; nro <= ultimoARCA; nro++) {
+    for (let nro = inicio; nro <= fin; nro++) {
       try {
         const [r] = await client.FECompConsultarAsync({
           Auth: auth,
@@ -162,7 +169,7 @@ module.exports = async function handler(req, res) {
       } catch(e) { console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
 
-    return res.status(200).json({ facturas, ultimo: ultimoARCA });
+    return res.status(200).json({ facturas, ultimo: ultimoARCA || fin });
   } catch (e) {
     console.error('Consultar error:', e.message);
     return res.status(500).json({ error: e.message });
