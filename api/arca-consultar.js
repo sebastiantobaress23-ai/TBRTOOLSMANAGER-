@@ -90,8 +90,8 @@ module.exports = async function handler(req, res) {
   if (!certPem||!keyPem||!cuit)
     return res.status(500).json({ error: 'Faltan variables de entorno ARCA' });
 
-  const pdv   = parseInt(process.env.ARCA_PDV) || 1;
-  // desde = último número local + 1 (o 1 si no hay locales)
+  const pdv        = parseInt(process.env.ARCA_PDV) || 1;
+  const cbteTipo   = parseInt(req.query?.tipo) || 11; // 11=Factura C, 13=NC C
   const desdeParam = parseInt(req.query?.desde) || 1;
 
   try {
@@ -106,7 +106,7 @@ module.exports = async function handler(req, res) {
       const [ru] = await client.FECompUltimoAutorizadoAsync({
         Auth: auth,
         PtoVta: pdv,
-        CbteTipo: 11
+        CbteTipo: cbteTipo
       });
       ultimoARCA = parseInt(ru?.FECompUltimoAutorizadoResult?.CbteNro) || 0;
       console.log('FECompUltimoAutorizado:', ultimoARCA, JSON.stringify(ru?.FECompUltimoAutorizadoResult));
@@ -140,7 +140,7 @@ module.exports = async function handler(req, res) {
         const [r] = await client.FECompConsultarAsync({
           Auth: auth,
           FeCompConsReq: {
-            CbteTipo: 11,
+            CbteTipo: cbteTipo,
             CbteNro:  nro,
             PtoVta:   pdv
           }

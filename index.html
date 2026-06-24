@@ -9275,11 +9275,12 @@ function numToWords(n) {
   return result;
 }
 
-function nextFacturaNro() {
+function nextFacturaNro(tipo) {
+  // tipo='C' para Factura C, tipo='NC' para NC — series SEPARADAS por tipo
   const conf = getConf();
   const pdvInt = parseInt(conf.facturaPdv)||1;
   const pdv = String(pdvInt).padStart(5,'0');
-  const facturas = DB.get('facturas',[]);
+  const facturas = DB.get('facturas',[]).filter(f=>(tipo||'C')==='NC' ? f.tipo==='NC' : f.tipo!=='NC');
   const max = facturas.reduce((m,f)=>{
     if(!f.nro) return m;
     const p = f.nro.split('-');
@@ -9329,10 +9330,10 @@ function pgFacturador() {
         <button class="btn-g btn-sm" onclick="openFactura('${f.id}')">${ic('edit')} Editar</button>
         <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')} Ver PDF</button>
         <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')">${ic('share')} WhatsApp</button>
-        ${f.estado==='emitida'&&!tieneNC?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
+        ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
         ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${ic('zap')} Emitir</button>`:''}
-        ${(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito por esta factura">${ic('fileText')} NC</button>`:''}
-        ${(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Emitir Remito de entrega">${ic('package')} Remito</button>`:''}
+        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito por esta factura">${ic('fileText')} NC</button>`:''}
+        ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Emitir Remito de entrega">${ic('package')} Remito</button>`:''}
         <button class="btn-d btn-sm" onclick="deleteFactura('${f.id}')">${ic('trash')}</button>
       </div>
     </div>`;
@@ -9555,11 +9556,8 @@ async function buscarPadronARCA(ev) {
   if (!cuit) {
     toast('Ingresá un CUIT para buscar en el padrón de ARCA', false); return;
   }
-  if (cuit.length < 11) {
-    toast('El padrón de ARCA solo funciona con CUIT (11 dígitos). Para DNI ingresá los datos manualmente.', false, 5000); return;
-  }
-  if (cuit.length !== 11) {
-    toast('CUIT inválido — debe tener exactamente 11 dígitos', false); return;
+  if (cuit.length < 7 || cuit.length > 11) {
+    toast('Ingresá un CUIT (11 dígitos) o DNI (7-8 dígitos)', false, 4000); return;
   }
   const btn = ev?.target?.closest('button') || ev?.currentTarget || ev?.target;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
@@ -9959,7 +9957,7 @@ function facturaDocBody(f){
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=595"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:9.5px;color:#111;background:#fff}
-    .page{width:595px;margin:0;background:#fff}
+    .page{width:595px;margin:0 auto;background:#fff}
     .hdr{display:grid;grid-template-columns:220px 70px 1fr;border-bottom:1px solid #ccc}
     .hdr-left{padding:10px 12px 8px;overflow:hidden}
     .biz-logo{height:28px;max-width:80px;object-fit:contain;display:block;margin-bottom:4px}
@@ -10189,58 +10187,64 @@ async function sincronizarARCA() {
   const btn = document.getElementById('btn-sync-arca');
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Consultando ARCA…</span>'; }
   try {
-    // Obtener último número autorizado para saber el rango
     const facturas = DB.get('facturas', []);
-    const numerosLocales = new Set(
-      facturas.map(f => parseInt((f.nro||'').split('-')[1]||'0')).filter(Boolean)
+    // Clave única por tipo+nro para evitar duplicados cross-tipo (FC#5 ≠ NC#5)
+    const clavesLocales = new Set(
+      facturas.map(f => (f.tipo||'C') + ':' + (f.nro||''))
     );
-    // Pasar desde=maxLocal+1 para que el backend sepa desde dónde buscar novedades
-    const maxLocal = Math.max(0, ...Array.from(numerosLocales));
-    const desde = maxLocal + 1;
+    const nrosFCLocales = facturas.filter(f=>f.tipo!=='NC').map(f=>parseInt((f.nro||'').split('-')[1]||'0')).filter(Boolean);
+    const nrosNCLocales = facturas.filter(f=>f.tipo==='NC').map(f=>parseInt((f.nro||'').split('-')[1]||'0')).filter(Boolean);
+    const desdeFC = Math.max(0, ...nrosFCLocales) + 1;
+    const desdeNC = Math.max(0, ...nrosNCLocales) + 1;
 
-    const resp = await fetch(`/api/arca-consultar?desde=${desde}&t=${Date.now()}`, { cache: 'no-store' });
-    const data = await resp.json();
-    if (!resp.ok || data.error) { toast('Error sincronizando: ' + (data.error||''), false, 5000); return; }
-
-    let importados = 0;
     const ahora = new Date().toISOString().slice(0,10);
-    for (const f of (data.facturas || [])) {
-      if (numerosLocales.has(f.cbteNro)) continue; // ya existe
-      // Importar como factura emitida con los datos de ARCA
-      const nueva = {
-        id:       'arca-' + f.cbteNro,
-        nro:      f.nro,
-        fecha:    f.fecha,
-        vencimiento: ahora,
-        estado:   'emitida',
-        tipo:     'C',
-        cae:      f.cae,
-        caeFecha: f.caeFecha,
-        importadoDeARCA: true,
-        comprador: {
-          nombre: f.docNro === '0' ? 'Consumidor Final'
-            : f.docTipo == 80 ? `CUIT ${f.docNro}`
-            : f.docTipo == 96 ? `DNI ${f.docNro}`
-            : f.docNro,
-          cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
-        },
-        items: [],
-        total: f.importe,
-        subtotal: f.importe,
-        descuento: 0,
-      };
-      const lista = DB.get('facturas', []);
-      lista.unshift(nueva);
-      DB.set('facturas', lista);
-      importados++;
-    }
+    let importados = 0;
 
-    const dbg = data._debug;
-    const dbgTxt = dbg ? ` [ultimo:${dbg.ultimoARCA} rango:${dbg.inicio}-${dbg.fin} enc:${dbg.encontrados}${dbg.errores?.length?' err:'+dbg.errores.join('|'):''}]` : '';
+    const importarTipo = async (cbteT, desde, tipoLocal) => {
+      const resp = await fetch(`/api/arca-consultar?desde=${desde}&tipo=${cbteT}&t=${Date.now()}`, { cache: 'no-store' });
+      const data = await resp.json();
+      if (!resp.ok || data.error) { toast(`Error sync tipo ${cbteT}: ` + (data.error||''), false, 5000); return; }
+      for (const f of (data.facturas || [])) {
+        const clave = tipoLocal + ':' + (f.nro||'');
+        if (clavesLocales.has(clave)) continue;
+        clavesLocales.add(clave);
+        const nueva = {
+          id:       `arca-${cbteT}-${f.cbteNro}`,
+          nro:      f.nro,
+          fecha:    f.fecha,
+          vencimiento: ahora,
+          estado:   'emitida',
+          tipo:     tipoLocal,
+          cae:      f.cae,
+          caeFecha: f.caeFecha,
+          importadoDeARCA: true,
+          comprador: {
+            nombre: f.docNro === '0' ? 'Consumidor Final'
+              : f.docTipo == 80 ? `CUIT ${f.docNro}`
+              : f.docTipo == 96 ? `DNI ${f.docNro}`
+              : f.docNro,
+            cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
+          },
+          items: [],
+          total: f.importe,
+          subtotal: f.importe,
+          descuentoPct: 0,
+          totalLetras: numToWords(f.importe||0),
+        };
+        const lista = DB.get('facturas', []);
+        lista.unshift(nueva);
+        DB.set('facturas', lista);
+        importados++;
+      }
+    };
+
+    await importarTipo(11, desdeFC, 'C');   // Facturas C
+    await importarTipo(13, desdeNC, 'NC');  // Notas de Crédito C
+
     if (importados === 0) {
-      toast('Todo sincronizado — no hay facturas nuevas en ARCA' + dbgTxt, true, 8000);
+      toast('Todo sincronizado — no hay comprobantes nuevos en ARCA', true, 6000);
     } else {
-      toast(`${importados} factura${importados>1?'s':''} importada${importados>1?'s':''} de ARCA`);
+      toast(`${importados} comprobante${importados>1?'s':''} importado${importados>1?'s':''} de ARCA`);
       render();
     }
   } catch (e) {
@@ -10312,6 +10316,8 @@ function verFacturasCli(nombre) {
 function emitirNotaCredito(facturaId) {
   const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
   if(!orig){ toast('Factura no encontrada',false); return; }
+  const ncExistente = DB.get('facturas',[]).find(d=>d.tipo==='NC'&&d.facturaOrigenId===orig.id);
+  if(ncExistente){ toast(`Ya existe NC ${ncExistente.nro} para esta factura`,false,5000); return; }
   confirm2(`¿Emitir Nota de Crédito C por la Factura ${orig.nro}?\nEsto solicitará un CAE a ARCA (CbteTipo 13) y anulará el comprobante original.`, async ()=>{
     const conf = getConf();
     const emp = DB.get('empresa',{});
@@ -10415,7 +10421,7 @@ function ncDocBody(f){
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=595"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Courier New',Courier,monospace;font-size:9.5px;color:#111;background:#fff}
-    .page{width:595px;margin:0;background:#fff}
+    .page{width:595px;margin:0 auto;background:#fff}
     .hdr{display:grid;grid-template-columns:220px 70px 1fr;border-bottom:1px solid #ccc}
     .hdr-left{padding:10px 12px 8px;overflow:hidden}
     .biz-logo{height:28px;max-width:80px;object-fit:contain;display:block;margin-bottom:4px}
