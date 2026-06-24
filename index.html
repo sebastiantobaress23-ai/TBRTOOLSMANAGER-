@@ -1599,6 +1599,60 @@ async function fbWritePhotos(prodId, photoB64, photosB64) {
     toast('No se pudo subir la foto al catálogo digital. Verificá tu conexión.', false, 5000);
   }
 }
+// Write logo/QR to Firebase so other devices can receive them
+async function _fbWriteAssets(logo, mpQr) {
+  try {
+    if (!logo && !mpQr) return;
+    const url = await fbUrl(`${FB}/empresa_assets.json`);
+    await fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ ...(logo ? {logo} : {}), ...(mpQr ? {mpQr} : {}) })
+    });
+  } catch(e) { console.log('_fbWriteAssets:', e); }
+}
+
+// Download product photos from Firebase into local PhotoDB for devices that don't have them.
+// Runs in background after fbSync — only imports products with no local photos.
+async function _syncPhotosFromFirebase() {
+  try {
+    const url = await fbUrl(`${FB}/catalog_photos.json`);
+    const r = await fetch(url, { cache:'no-store', signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return;
+    const photosMap = await r.json();
+    if (!photosMap || typeof photosMap !== 'object') return;
+    let imported = 0;
+    for (const [id, ph] of Object.entries(photosMap)) {
+      if (!ph || !ph.photo) continue;
+      const existing = PhotoDB.getProductPhotos(id);
+      if (!existing || !existing.photo) {
+        await PhotoDB.setProductPhotos(id, { photo: ph.photo, photos: ph.photos || [ph.photo] });
+        imported++;
+      }
+    }
+    if (imported > 0) { console.log(`Imported ${imported} product photo(s) from Firebase`); render(); }
+  } catch(e) { console.log('_syncPhotosFromFirebase:', e); }
+}
+
+// Download logo/QR from Firebase into local PhotoDB if not present locally
+async function _syncAssetsFromFirebase() {
+  try {
+    const url = await fbUrl(`${FB}/empresa_assets.json`);
+    const r = await fetch(url, { cache:'no-store', signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    const assets = await r.json();
+    if (!assets) return;
+    if (assets.logo && !PhotoDB.getLogo()) {
+      await PhotoDB.setLogo(assets.logo);
+      render();
+    }
+    if (assets.mpQr && !PhotoDB.getQR()) {
+      await PhotoDB.setQR(assets.mpQr);
+      render();
+    }
+  } catch(e) { console.log('_syncAssetsFromFirebase:', e); }
+}
+
 async function resyncAllPhotos() {
   const allPhotos = PhotoDB.getAllPhotos();
   const ids = Object.keys(allPhotos);
@@ -1618,16 +1672,13 @@ async function fbWrite(k, v) {
   try {
     let payload = v;
     if (k === 'catalog' && Array.isArray(v)) {
-      // Strip photos from Firebase — photos are large base64 blobs that make
-      // the catalog slow to load. Photos are served from the static catalog-data.js
-      // file on Vercel CDN. Firebase only syncs lightweight metadata.
       payload = v.map(({ photo, photos, ...meta }) => meta);
     }
-    // Strip binary blobs from empresa before writing to Firebase — they live
-    // only in localStorage to avoid oversize payloads and accidental overwrites.
     if (k === 'empresa' && v && typeof v === 'object') {
       const { logo, mpQr, ...rest } = v;
       payload = rest;
+      // Sync logo and QR to a separate Firebase node so other devices can receive them
+      _fbWriteAssets(logo || null, mpQr || null);
     }
     const url = await fbUrl(`${FB}/${k}.json`);
     const r = await fetch(url, {
@@ -1726,12 +1777,13 @@ async function fbSync() {
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
       let incoming = d[k];
-      // Preserve local binary blobs not stored in Firebase
+      // Preserve local binary blobs (logo/QR live in PhotoDB, not Firebase empresa node)
       if (k === 'empresa' && incoming && typeof incoming === 'object') {
-        const local = DB.get('empresa', {});
         incoming = { ...incoming };
-        if (!incoming.logo && local.logo) incoming.logo = local.logo;
-        if (!incoming.mpQr && local.mpQr) incoming.mpQr = local.mpQr;
+        const localLogo = PhotoDB.getLogo() || DB.get('empresa',{}).logo;
+        const localQr   = PhotoDB.getQR()   || DB.get('empresa',{}).mpQr;
+        if (!incoming.logo && localLogo) incoming.logo = localLogo;
+        if (!incoming.mpQr && localQr)   incoming.mpQr = localQr;
       }
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(incoming)) {
@@ -1771,6 +1823,9 @@ async function fbSync() {
       if (settingsChanged) checkAccessPin();
     }
     setSyncDot(true);
+    // Background: import photos and assets from Firebase for devices that don't have them yet
+    _syncPhotosFromFirebase();
+    _syncAssetsFromFirebase();
   } catch { setSyncDot(false); }
 }
 
@@ -6246,6 +6301,7 @@ function previewEmpLogo(input){
       ctx.drawImage(original,0,0,w,h);
       const dataUrl=canvas.toDataURL('image/jpeg',0.88);
       await PhotoDB.setLogo(dataUrl);
+      _fbWriteAssets(dataUrl, PhotoDB.getQR());
       const img=document.getElementById('emp-logo-preview');
       if(img){img.src=dataUrl;img.style.display='';}
       const ph=document.getElementById('emp-logo-placeholder');
@@ -6285,6 +6341,7 @@ function previewEmpMpQr(input){
       ctx.drawImage(original,ox,oy,s,s,0,0,SIZE,SIZE);
       const dataUrl=canvas.toDataURL('image/png',0.92);
       await PhotoDB.setQR(dataUrl);
+      _fbWriteAssets(PhotoDB.getLogo(), dataUrl);
       const img=document.getElementById('emp-mpqr-preview');
       if(img){img.src=dataUrl;img.style.display='';}
       const ph=document.getElementById('emp-mpqr-placeholder');
