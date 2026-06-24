@@ -9385,31 +9385,54 @@ function openFactura(id) {
         </div>
       </div>
 
-      <!-- Comprador: 1 col en mobile -->
+      <!-- Comprador -->
       <div style="${fCardStyle}">
         ${fSecLbl('Comprador')}
-        <div>
-          <label class="fl">Nombre / Razón social</label>
-          <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
-            <div class="iw"><input type="text" id="f-nombre" placeholder="Nombre del cliente" value="${esc(f?.comprador?.nombre||'')}" autocomplete="off"></div>
-            <button class="btn-g" onclick="openClientSheet('factura')" style="height:42px;padding:0 12px;white-space:nowrap;font-size:13px;border-radius:10px" title="Buscar cliente guardado">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </button>
+
+        <!-- Toggle consumidor final -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--b1);border:1px solid var(--b2);border-radius:10px;padding:12px 14px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ch)">Consumidor Final</div>
+            <div style="font-size:11px;color:var(--di);margin-top:2px">Sin identificación del comprador</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0">
+            <input type="checkbox" id="f-cf" onchange="facturaToggleCF(this.checked)" ${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'checked':''} style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'var(--si)':'var(--b3)'};border-radius:13px;transition:.2s;cursor:pointer" id="f-cf-track"></span>
+            <span style="position:absolute;left:${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'20px':'2px'};top:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none" id="f-cf-thumb"></span>
+          </label>
+        </div>
+
+        <!-- Campos identificación (ocultos si CF) -->
+        <div id="f-comprador-fields" style="${(!f?.comprador?.nombre&&!f?.comprador?.cuitDniCuil)?'display:none':''}display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label class="fl">Nombre / Razón social</label>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+              <div class="iw"><input type="text" id="f-nombre" placeholder="Nombre del cliente" value="${esc(f?.comprador?.nombre||'')}" autocomplete="off"></div>
+              <button class="btn-g" onclick="openClientSheet('factura')" style="height:42px;padding:0 12px;border-radius:10px" title="Buscar cliente guardado">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </button>
+            </div>
+          </div>
+          <div><label class="fl">CUIT / DNI / CUIL</label><div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label class="fl">Dirección</label><div class="iw"><input type="text" id="f-dir" placeholder="Calle 123" value="${esc(f?.comprador?.dir||'')}"></div></div>
+            <div><label class="fl">Ciudad</label><div class="iw"><input type="text" id="f-ciudad" placeholder="Buenos Aires" value="${esc(f?.comprador?.ciudad||'')}"></div></div>
+            <div><label class="fl">Teléfono</label><div class="iw"><input type="tel" id="f-tel" placeholder="(011) 0000-0000" value="${esc(f?.comprador?.tel||'')}"></div></div>
+            <div><label class="fl">Cond. de venta</label>
+              <div class="iw"><select id="f-condventa">${['Contado','30 días','60 días','90 días','Contra entrega'].map(o=>`<option${(f?.comprador?.condVenta||'Contado')===o?' selected':''}>${o}</option>`).join('')}</select></div></div>
           </div>
         </div>
-        <div><label class="fl">CUIT / DNI / CUIL</label><div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div></div>
+
+        <!-- Concepto (siempre visible) -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div><label class="fl">Dirección</label><div class="iw"><input type="text" id="f-dir" placeholder="Calle 123" value="${esc(f?.comprador?.dir||'')}"></div></div>
-          <div><label class="fl">Ciudad</label><div class="iw"><input type="text" id="f-ciudad" placeholder="Buenos Aires" value="${esc(f?.comprador?.ciudad||'')}"></div></div>
-          <div><label class="fl">Localidad</label><div class="iw"><input type="text" id="f-localidad" placeholder="CABA" value="${esc(f?.comprador?.localidad||'')}"></div></div>
-          <div><label class="fl">Código Postal</label><div class="iw"><input type="text" id="f-cp" placeholder="1000" value="${esc(f?.comprador?.cp||'')}" inputmode="numeric"></div></div>
-          <div><label class="fl">Teléfono</label><div class="iw"><input type="tel" id="f-tel" placeholder="(011) 0000-0000" value="${esc(f?.comprador?.tel||'')}"></div></div>
-          <div><label class="fl">Cond. de venta</label>
-            <div class="iw"><select id="f-condventa">${['Contado','30 días','60 días','90 días','Contra entrega'].map(o=>`<option${(f?.comprador?.condVenta||'Contado')===o?' selected':''}>${o}</option>`).join('')}</select></div></div>
-        </div>
-        <div><label class="fl">Método de pago</label>
-          <div class="iw"><select id="f-metpago" onchange="facturaToggleCuotas(this.value)">${['Efectivo','Transferencia','Mercado Pago','Tarjeta débito','Tarjeta crédito','Cuotas'].map(o=>`<option${(f?.comprador?.metodoPago||'Efectivo')===o?' selected':''}>${o}</option>`).join('')}</select></div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="fl">Concepto</label>
+            <div class="iw"><select id="f-concepto">
+              <option value="1" ${(f?.concepto||1)===1?'selected':''}>Productos</option>
+              <option value="2" ${(f?.concepto||1)===2?'selected':''}>Servicios</option>
+              <option value="3" ${(f?.concepto||1)===3?'selected':''}>Prod. y Servicios</option>
+            </select></div></div>
+          <div><label class="fl">Método de pago</label>
+            <div class="iw"><select id="f-metpago" onchange="facturaToggleCuotas(this.value)">${['Efectivo','Transferencia','Mercado Pago','Tarjeta débito','Tarjeta crédito','Cuotas'].map(o=>`<option${(f?.comprador?.metodoPago||'Efectivo')===o?' selected':''}>${o}</option>`).join('')}</select></div></div>
           <div id="f-cuotas-wrap" style="${(f?.comprador?.metodoPago||'')!=='Cuotas'?'display:none':''}">
             <label class="fl">Cuotas</label><div class="iw"><input type="number" id="f-cuotas" value="${f?.cuotas||3}" min="2" max="48"></div></div>
           <div id="f-recargo-wrap" style="${(f?.comprador?.metodoPago||'')!=='Cuotas'?'display:none':''}">
@@ -9490,6 +9513,15 @@ function facturaToggleCuotas(val) {
   const isCuotas = val==='Cuotas';
   document.getElementById('f-cuotas-wrap').style.display = isCuotas?'':'none';
   document.getElementById('f-recargo-wrap').style.display = isCuotas?'':'none';
+}
+
+function facturaToggleCF(isCF) {
+  const fields = document.getElementById('f-comprador-fields');
+  const track  = document.getElementById('f-cf-track');
+  const thumb  = document.getElementById('f-cf-thumb');
+  if (fields) fields.style.display = isCF ? 'none' : 'flex';
+  if (track)  track.style.background = isCF ? 'var(--si)' : 'var(--b3)';
+  if (thumb)  thumb.style.left = isCF ? '20px' : '2px';
 }
 
 function closeFacturaModal(){
@@ -9686,13 +9718,14 @@ async function saveFactura(emitir=false){
     const btn = document.getElementById('f-emit-btn');
     if(btn){ btn.disabled=true; btn.textContent='Solicitando CAE…'; }
     try {
-      const cuitVal = (document.getElementById('f-cuit')?.value||'').replace(/\D/g,'');
+      const isCF = document.getElementById('f-cf')?.checked;
+      const cuitVal = isCF ? '' : (document.getElementById('f-cuit')?.value||'').replace(/\D/g,'');
+      const concepto = parseInt(document.getElementById('f-concepto')?.value)||1;
       const fecha = document.getElementById('f-fecha')?.value||new Date().toISOString().slice(0,10);
       const parts = nro.split('-');
       const pdv = parseInt(parts[0])||1;
-      const cbteNro = parseInt(parts[1])||1;
       const resp = await fetch('/api/arca-cae',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({pdv,cbteNro,fecha:fecha.replace(/-/g,''),cuitComprador:cuitVal||'0',docTipo:cuitVal.length===11?80:96,importe:total})});
+        body:JSON.stringify({pdv,fecha:fecha.replace(/-/g,''),cuitComprador:cuitVal||'0',concepto,importe:total})});
       const data = await resp.json();
       if(data.cae){ cae=data.cae; caeFecha=data.caeFecha; toast('CAE obtenido'); }
       else { toast('ARCA: '+(data.error||'Sin CAE'),false,6000); if(btn){btn.disabled=false;btn.innerHTML=`${ic('zap')} Emitir y solicitar CAE`;} return; }
@@ -9770,17 +9803,17 @@ async function solicitarCAE(){
   if(btn){ btn.disabled=true; btn.textContent='Solicitando…'; }
   try {
     const nro = document.getElementById('f-nro')?.value.trim()||'';
-    const cuit = document.getElementById('f-cuit')?.value.trim()||'';
+    const isCF = document.getElementById('f-cf')?.checked;
+    const cuitClean = isCF ? '' : (document.getElementById('f-cuit')?.value||'').replace(/\D/g,'');
+    const concepto = parseInt(document.getElementById('f-concepto')?.value)||1;
     const fecha = document.getElementById('f-fecha')?.value||new Date().toISOString().slice(0,10);
     const total = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
     const parts = nro.split('-');
     const pdv = parseInt(parts[0])||1;
-    const cbteNro = parseInt(parts[1])||1;
-    const cuitClean = cuit.replace(/\D/g,'');
     const resp = await fetch('/api/arca-cae',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pdv,cbteNro,fecha:fecha.replace(/-/g,''),cuitComprador:cuitClean||'0',docTipo:cuitClean.length===11?80:96,importe:total})
+      body:JSON.stringify({pdv,fecha:fecha.replace(/-/g,''),cuitComprador:cuitClean||'0',concepto,importe:total})
     });
     if(!resp.ok){ const t=await resp.text(); throw new Error(t); }
     const data = await resp.json();

@@ -94,7 +94,7 @@ async function getUltimoComprobante(client, token, sign, cuit, pdv) {
   return result?.FECompUltimoAutorizadoResult?.CbteNro || 0;
 }
 
-async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, importe }) {
+async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, concepto, importe }) {
   const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
 
@@ -108,7 +108,7 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
       FeCabReq: { CantReg: 1, PtoVta: pdv, CbteTipo: 11 },
       FeDetReq: {
         FECAEDetRequest: {
-          Concepto:  1,
+          Concepto:  concepto,
           DocTipo:   docTipo,
           DocNro:    cuitComprador,
           CbteDesde: cbteNro,
@@ -159,7 +159,7 @@ module.exports = async function handler(req, res) {
     try { body=JSON.parse(body); } catch { return res.status(400).json({ error:'JSON inválido' }); }
   }
 
-  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', importe } = body||{};
+  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', concepto=1, importe } = body||{};
   if (!fecha||importe==null)
     return res.status(400).json({ error:'Faltan parámetros: fecha, importe' });
 
@@ -172,7 +172,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
-    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, importe });
+    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, concepto: parseInt(concepto)||1, importe });
     return res.status(200).json(result);
   } catch(e) {
     console.error('ARCA error:', e.message);
