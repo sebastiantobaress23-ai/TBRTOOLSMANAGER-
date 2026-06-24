@@ -85,9 +85,22 @@ async function getTokenSign(certPem, keyPem) {
 }
 
 // Request CAE via node-soap WSFEV1
-async function solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, cuitComprador, importe }) {
+async function getUltimoComprobante(client, token, sign, cuit, pdv) {
+  const [result] = await client.FECompUltimoAutorizadoAsync({
+    Auth: { Token: token, Sign: sign, Cuit: cuit },
+    PtoVta: pdv,
+    CbteTipo: 11
+  });
+  return result?.FECompUltimoAutorizadoResult?.CbteNro || 0;
+}
+
+async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, importe }) {
   const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
+
+  // Always get next number from ARCA to avoid duplicates
+  const ultimo = await getUltimoComprobante(client, token, sign, cuit, pdv);
+  const cbteNro = Number(ultimo) + 1;
 
   const args = {
     Auth: { Token: token, Sign: sign, Cuit: cuit },
@@ -125,7 +138,7 @@ async function solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, c
     throw new Error('ARCA no otorgó CAE: ' + err);
   }
   const caeFecha = caeFchVto ? String(caeFchVto).replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3') : '';
-  return { cae, caeFecha };
+  return { cae, caeFecha, cbteNro };
 }
 
 module.exports = async function handler(req, res) {
@@ -146,13 +159,13 @@ module.exports = async function handler(req, res) {
     try { body=JSON.parse(body); } catch { return res.status(400).json({ error:'JSON inválido' }); }
   }
 
-  const { pdv=parseInt(process.env.ARCA_PDV)||1, cbteNro, fecha, cuitComprador='0', docTipo=96, importe } = body||{};
-  if (!cbteNro||!fecha||importe==null)
-    return res.status(400).json({ error:'Faltan parámetros: cbteNro, fecha, importe' });
+  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', docTipo=96, importe } = body||{};
+  if (!fecha||importe==null)
+    return res.status(400).json({ error:'Faltan parámetros: fecha, importe' });
 
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
-    const result = await solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, cuitComprador, importe });
+    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, importe });
     return res.status(200).json(result);
   } catch(e) {
     console.error('ARCA error:', e.message);
