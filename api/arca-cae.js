@@ -133,7 +133,7 @@ async function getTokenSign(certPem, keyPem) {
   const cms = signTRA(tra, certPem, keyPem);
   const wsaaUrl = isProd() ? WSAA_URL_PROD.replace('?wsdl', '') : WSAA_URL_HOMO.replace('?wsdl', '');
   const body = `<loginCms xmlns="http://wsaa.view.sua.dvadac.desein.afip.gov.ar"><in0>${cms}</in0></loginCms>`;
-  const resp = await soapCall(wsaaUrl, 'loginCms', body);
+  const resp = await soapCall(wsaaUrl, '"http://wsaa.view.sua.dvadac.desein.afip.gov.ar/loginCms"', body);
   const result = extractTag(resp, 'loginCmsReturn');
   if (!result) throw new Error('WSAA no retornó loginCmsReturn. Respuesta: ' + resp.slice(0, 500));
   const token = extractTag(result.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'), 'token');
@@ -177,7 +177,7 @@ async function solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, c
       </FeDetReq>
     </FeCAEReq>
   </FECAESolicitar>`;
-  const resp = await soapCall(wsfev1Url, 'FECAESolicitar', body);
+  const resp = await soapCall(wsfev1Url, '"http://ar.gov.afip.devel.FEV1/FECAESolicitar"', body);
   const cae = extractTag(resp, 'CAE');
   const caeFchVto = extractTag(resp, 'CAEFchVto');
   const errMsg = extractTag(resp, 'Msg');
