@@ -10224,18 +10224,55 @@ function verFacturasCli(nombre) {
 function emitirNotaCredito(facturaId) {
   const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
   if(!orig){ toast('Factura no encontrada',false); return; }
-  confirm2(`¿Emitir Nota de Crédito C por la Factura ${orig.nro}?\nEsto creará un documento que anula o ajusta el importe original.`, ()=>{
+  confirm2(`¿Emitir Nota de Crédito C por la Factura ${orig.nro}?\nEsto solicitará un CAE a ARCA (CbteTipo 13) y anulará el comprobante original.`, async ()=>{
     const conf = getConf();
     const emp = DB.get('empresa',{});
-    const pdv = String(parseInt(conf.facturaPdv)||1).padStart(5,'0');
-    const allDocs = DB.get('facturas',[]);
-    const maxNC = allDocs.filter(f=>f.tipo==='NC').reduce((m,f)=>{
-      const p = (f.nro||'').split('-');
-      if(p[0]===pdv) return Math.max(m, parseInt(p[1])||0);
-      return m;
-    },0);
-    const nroNC = pdv + '-' + String(maxNC+1).padStart(8,'0');
+    const pdvNum = parseInt(conf.facturaPdv)||1;
+    const pdvStr = String(pdvNum).padStart(5,'0');
     const today = new Date().toISOString().slice(0,10);
+    const fechaARCA = today.replace(/-/g,'');
+
+    // Parsear nro original para CbtesAsoc
+    const partsOrig = (orig.nro||'').split('-');
+    const pdvOrig = parseInt(partsOrig[0]) || pdvNum;
+    const nroOrig = parseInt(partsOrig[1]) || 0;
+
+    // Obtener datos del comprador
+    const cuitComp = String(orig.comprador?.cuitDniCuil||'0').replace(/\D/g,'') || '0';
+    const concepto = orig.concepto || 1;
+
+    toast('Solicitando CAE a ARCA…');
+    let cae = '', caeFecha = '', cbteNroNC = 0;
+    try {
+      const resp = await fetch('/api/arca-cae', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pdv: pdvNum,
+          fecha: fechaARCA,
+          cuitComprador: cuitComp,
+          concepto,
+          importe: orig.total || 0,
+          cbteTipo: 13,
+          cbteAsoc: { tipo: 11, pdv: pdvOrig, nro: nroOrig, cuit: conf.facturaCuit || emp.cuit || '' }
+        })
+      });
+      const data = await resp.json();
+      if (data.cae) {
+        cae = data.cae;
+        caeFecha = data.caeFecha;
+        cbteNroNC = data.cbteNro;
+        toast('CAE de NC obtenido');
+      } else {
+        toast('ARCA: ' + (data.error||'Sin CAE para NC'), false, 7000);
+        return;
+      }
+    } catch(e) {
+      toast('Error CAE NC: ' + e.message, false, 7000);
+      return;
+    }
+
+    const nroNC = pdvStr + '-' + String(cbteNroNC).padStart(8,'0');
     const nc = {
       id: uid(),
       nro: nroNC,
@@ -10251,17 +10288,18 @@ function emitirNotaCredito(facturaId) {
       otrosImpuestos: 0,
       total: orig.total||0,
       totalLetras: numToWords(orig.total||0),
-      cae: '', caeFecha: '',
+      cae, caeFecha,
       observaciones: `Nota de Crédito correspondiente a Factura C Nº ${orig.nro}`,
       estado: 'emitida',
       emisor: {...(orig.emisor||{nombre:emp.nombre||'TBR TOOLS',cuit:conf.facturaCuit||emp.cuit||'',condIVA:'Monotributo'})},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    const allDocs = DB.get('facturas',[]);
     allDocs.push(nc);
     DB.set('facturas', allDocs);
     render();
-    toast(`Nota de Crédito ${nroNC} emitida`);
+    toast(`Nota de Crédito ${nroNC} emitida con CAE`);
     setTimeout(()=>facturaPreview(nc.id), 400);
   }, 'Emitir NC', 'cm-ok');
 }

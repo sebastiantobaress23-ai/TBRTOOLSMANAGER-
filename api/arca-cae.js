@@ -85,24 +85,54 @@ async function getTokenSign(certPem, keyPem) {
 }
 
 // Request CAE via node-soap WSFEV1
-async function getUltimoComprobante(client, token, sign, cuit, pdv) {
+async function getUltimoComprobante(client, token, sign, cuit, pdv, cbteTipo = 11) {
   const [result] = await client.FECompUltimoAutorizadoAsync({
     Auth: { Token: token, Sign: sign, Cuit: cuit },
     PtoVta: parseInt(pdv),
-    CbteTipo: 11
+    CbteTipo: cbteTipo
   });
   return result?.FECompUltimoAutorizadoResult?.CbteNro || 0;
 }
 
-async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, concepto, importe }) {
+// cbteAsoc: { tipo, pdv, nro, cuit } — para Notas de Crédito
+async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador, concepto, importe, cbteTipo = 11, cbteAsoc = null }) {
   const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
 
   // Always get next number from ARCA to avoid duplicates
-  const ultimo = await getUltimoComprobante(client, token, sign, cuit, pdv);
+  const ultimo = await getUltimoComprobante(client, token, sign, cuit, pdv, cbteTipo);
   const cbteNro = Number(ultimo) + 1;
 
   const docNroInt = parseInt(cuitComprador) || 0;
+
+  const detReq = {
+    Concepto:   parseInt(concepto) || 1,
+    DocTipo:    parseInt(docTipo),
+    DocNro:     docNroInt,
+    CbteDesde:  cbteNro,
+    CbteHasta:  cbteNro,
+    CbteFch:    String(fecha),
+    ImpTotal:   parseFloat(importe.toFixed(2)),
+    ImpTotConc: 0,
+    ImpNeto:    parseFloat(importe.toFixed(2)),
+    ImpOpEx:    0,
+    ImpIVA:     0,
+    ImpTrib:    0,
+    MonId:      'PES',
+    MonCotiz:   1
+  };
+
+  // NC (CbteTipo=13) requiere referencia al comprobante original
+  if (cbteAsoc) {
+    detReq.CbtesAsoc = {
+      CbteAsoc: [{
+        Tipo:   parseInt(cbteAsoc.tipo) || 11,
+        PtoVta: parseInt(cbteAsoc.pdv)  || parseInt(pdv),
+        Nro:    parseInt(cbteAsoc.nro),
+        Cuit:   String(cbteAsoc.cuit || cuit)
+      }]
+    };
+  }
 
   const args = {
     Auth: { Token: token, Sign: sign, Cuit: String(cuit) },
@@ -110,25 +140,10 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
       FeCabReq: {
         CantReg:  1,
         PtoVta:   parseInt(pdv),
-        CbteTipo: 11
+        CbteTipo: cbteTipo
       },
       FeDetReq: {
-        FECAEDetRequest: [{
-          Concepto:   parseInt(concepto) || 1,
-          DocTipo:    parseInt(docTipo),
-          DocNro:     docNroInt,
-          CbteDesde:  cbteNro,
-          CbteHasta:  cbteNro,
-          CbteFch:    String(fecha),
-          ImpTotal:   parseFloat(importe.toFixed(2)),
-          ImpTotConc: 0,
-          ImpNeto:    parseFloat(importe.toFixed(2)),
-          ImpOpEx:    0,
-          ImpIVA:     0,
-          ImpTrib:    0,
-          MonId:      'PES',
-          MonCotiz:   1
-        }]
+        FECAEDetRequest: [detReq]
       }
     }
   };
@@ -174,7 +189,7 @@ module.exports = async function handler(req, res) {
     try { body=JSON.parse(body); } catch { return res.status(400).json({ error:'JSON inválido' }); }
   }
 
-  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', concepto=1, importe } = body||{};
+  const { pdv=parseInt(process.env.ARCA_PDV)||1, fecha, cuitComprador='0', concepto=1, importe, cbteTipo=11, cbteAsoc=null } = body||{};
   if (!fecha||importe==null)
     return res.status(400).json({ error:'Faltan parámetros: fecha, importe' });
 
@@ -187,7 +202,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const { token, sign } = await getTokenSign(certPem, keyPem);
-    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, concepto: parseInt(concepto)||1, importe });
+    const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, concepto: parseInt(concepto)||1, importe, cbteTipo: parseInt(cbteTipo)||11, cbteAsoc });
     return res.status(200).json(result);
   } catch(e) {
     console.error('ARCA error:', e.message);
