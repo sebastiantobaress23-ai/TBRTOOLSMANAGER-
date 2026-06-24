@@ -70,10 +70,7 @@ async function getTokenSign(certPem, keyPem) {
   const cms = signTRA(tra, certPem, keyPem);
   const wsdl = isProd() ? WSAA_WSDL_PROD : WSAA_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
-  client.setSecurity(new soap.BearerSecurity(''));
-  // Override the underlying agent for SOAP calls
-  const svc = client.getHttpClient();
-  if (svc && svc.options) Object.assign(svc.options, { agent: sslAgent, rejectUnauthorized: false });
+  if (client.httpClient) client.httpClient.options = Object.assign(client.httpClient.options||{}, { agent: sslAgent, rejectUnauthorized: false });
   const [result] = await client.loginCmsAsync({ in0: cms });
   const xml = result.loginCmsReturn;
   if (!xml) throw new Error('WSAA no retornó loginCmsReturn');
@@ -90,8 +87,7 @@ async function getTokenSign(certPem, keyPem) {
 async function solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, cuitComprador, importe }) {
   const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
-  const svc = client.getHttpClient();
-  if (svc && svc.options) Object.assign(svc.options, { agent: sslAgent, rejectUnauthorized: false });
+  if (client.httpClient) client.httpClient.options = Object.assign(client.httpClient.options||{}, { agent: sslAgent, rejectUnauthorized: false });
 
   const args = {
     Auth: { Token: token, Sign: sign, Cuit: cuit },
