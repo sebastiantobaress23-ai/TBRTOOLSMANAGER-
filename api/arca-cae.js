@@ -26,10 +26,21 @@ function isProd() {
 }
 
 // Build TRA (Ticket de Requerimiento de Acceso) XML
+function toARCADate(d) {
+  const pad = n => String(n).padStart(2, '0');
+  const y = d.getUTCFullYear();
+  const mo = pad(d.getUTCMonth() + 1);
+  const day = pad(d.getUTCDate());
+  const h = pad(d.getUTCHours());
+  const mi = pad(d.getUTCMinutes());
+  const s = pad(d.getUTCSeconds());
+  return `${y}-${mo}-${day}T${h}:${mi}:${s}Z`;
+}
+
 function buildTRA(service = 'wsfe') {
   const now = new Date();
-  const from = new Date(now.getTime() - 60000).toISOString().replace(/\.\d+Z$/, '-03:00');
-  const to = new Date(now.getTime() + 36000000).toISOString().replace(/\.\d+Z$/, '-03:00');
+  const from = toARCADate(new Date(now.getTime() - 600000));
+  const to = toARCADate(new Date(now.getTime() + 36000000));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <loginTicketRequest version="1.0">
   <header>
