@@ -147,36 +147,41 @@ module.exports = async function handler(req, res) {
         });
         const rawResult = r?.FECompConsultarResult?.ResultGet;
         const d = Array.isArray(rawResult) ? rawResult[0] : rawResult;
-        const rawStr = JSON.stringify(d).slice(0,250);
-        console.log(`Comprobante ${nro} raw:`, rawStr);
         if (!d) { errores.push(`n${nro}:noD`); continue; }
-        if (!d.CAE) {
-          const caeKeys = Object.keys(d).filter(k => k.toUpperCase().includes('CAE'));
-          const caeInfo = caeKeys.map(k=>`${k}=${JSON.stringify(d[k])}`).join(',');
-          const lastKeys = Object.keys(d).slice(-8).join(',');
-          errores.push(`n${nro}:caefields=[${caeInfo}] last8=${lastKeys}`);
+
+        // FECompConsultar usa AUTORIZACION (no CAE) y FCHVTO (no CAEFchVto)
+        const cae      = d.CAE || d.AUTORIZACION || d.Autorizacion || d.NroCAE || '';
+        const fchVto   = d.CAEFchVto || d.CAEFCHVTO || d.FchVto || d.FCHVTO || '';
+        const resultado = d.Resultado || d.RESULTADO || '';
+        const fechaRaw  = String(d.CbteFch || d.CBTEFCH || '');
+        const impTotal  = parseFloat(d.ImpTotal || d.IMPTOTAL) || 0;
+        const docTipo   = d.DocTipo || d.DOCTIPO;
+        const docNro    = String(d.DocNro || d.DOCNRO || '0');
+
+        console.log(`Comprobante ${nro}: cae=${cae} res=${resultado} fchVto=${fchVto}`);
+
+        if (!cae) {
+          errores.push(`n${nro}:noCAE res=${resultado}`);
           continue;
         }
 
-        const fechaStr = String(d.CbteFch||'');
-        const fecha = fechaStr.length === 8
-          ? `${fechaStr.slice(0,4)}-${fechaStr.slice(4,6)}-${fechaStr.slice(6,8)}`
-          : fechaStr;
-        const caeFchVto = String(d.CAEFchVto||'');
-        const caeFecha = caeFchVto.length === 8
-          ? `${caeFchVto.slice(0,4)}-${caeFchVto.slice(4,6)}-${caeFchVto.slice(6,8)}`
-          : caeFchVto;
+        const fecha = fechaRaw.length === 8
+          ? `${fechaRaw.slice(0,4)}-${fechaRaw.slice(4,6)}-${fechaRaw.slice(6,8)}`
+          : fechaRaw;
+        const caeFecha = fchVto.length === 8
+          ? `${fchVto.slice(0,4)}-${fchVto.slice(4,6)}-${fchVto.slice(6,8)}`
+          : fchVto;
 
         facturas.push({
           cbteNro:    nro,
           nro:        `${pdv}-${String(nro).padStart(8,'0')}`,
           fecha,
-          cae:        String(d.CAE),
+          cae:        String(cae),
           caeFecha,
-          importe:    parseFloat(d.ImpTotal) || 0,
-          docTipo:    d.DocTipo,
-          docNro:     String(d.DocNro||'0'),
-          resultado:  d.Resultado,
+          importe:    impTotal,
+          docTipo,
+          docNro,
+          resultado,
         });
       } catch(e) { errores.push(`nro${nro}:${e.message.slice(0,60)}`); console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
