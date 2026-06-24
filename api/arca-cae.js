@@ -24,6 +24,8 @@ const sslAgent = new https.Agent({
   ciphers: 'DEFAULT:@SECLEVEL=0',
   rejectUnauthorized: false,
 });
+// Override global agent so the soap package uses it for every HTTPS request
+https.globalAgent = sslAgent;
 const wsdlOpts = { agent: sslAgent };
 
 const WSAA_WSDL_PROD = 'https://wsaa.afip.gov.ar/ws/services/LoginCms?wsdl';
@@ -70,7 +72,6 @@ async function getTokenSign(certPem, keyPem) {
   const cms = signTRA(tra, certPem, keyPem);
   const wsdl = isProd() ? WSAA_WSDL_PROD : WSAA_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
-  if (client.httpClient) client.httpClient.options = Object.assign(client.httpClient.options||{}, { agent: sslAgent, rejectUnauthorized: false });
   const [result] = await client.loginCmsAsync({ in0: cms });
   const xml = result.loginCmsReturn;
   if (!xml) throw new Error('WSAA no retornó loginCmsReturn');
@@ -87,7 +88,6 @@ async function getTokenSign(certPem, keyPem) {
 async function solicitarCAE({ token, sign, cuit, pdv, cbteNro, fecha, docTipo, cuitComprador, importe }) {
   const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
   const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
-  if (client.httpClient) client.httpClient.options = Object.assign(client.httpClient.options||{}, { agent: sslAgent, rejectUnauthorized: false });
 
   const args = {
     Auth: { Token: token, Sign: sign, Cuit: cuit },
