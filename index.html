@@ -9538,23 +9538,37 @@ async function buscarPadronARCA() {
   const btn = event?.currentTarget;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
   try {
-    const resp = await fetch(`/api/arca-padron?cuit=${cuit}`);
+    const resp = await fetch(`/api/arca-padron?doc=${cuit}`);
     const data = await resp.json();
     if (!resp.ok || data.error) {
       toast('ARCA: ' + (data.error || 'No encontrado'), false, 5000);
       return;
     }
-    const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-    // Desactivar CF si estaba activo
-    const cfCheck = document.getElementById('f-cf');
-    if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
-    set('f-nombre',   data.nombre);
-    set('f-cuit',     data.cuit);
-    set('f-dir',      data.direccion);
-    set('f-ciudad',   data.provincia);
-    set('f-localidad',data.localidad);
-    set('f-cp',       data.codPostal);
-    toast(`Datos cargados: ${data.nombre}${data.categoriaIVA ? ' · ' + data.categoriaIVA : ''}`);
+    const fillPersona = (p) => {
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      const cfCheck = document.getElementById('f-cf');
+      if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
+      set('f-nombre',   p.nombre);
+      set('f-cuit',     p.cuit);
+      set('f-dir',      p.direccion);
+      set('f-ciudad',   p.provincia);
+      set('f-localidad',p.localidad);
+      set('f-cp',       p.codPostal);
+      toast(`Datos cargados: ${p.nombre}${p.categoriaIVA ? ' · ' + p.categoriaIVA : ''}`);
+    };
+    if (data.multiple) {
+      // Múltiples personas con ese DNI — mostrar sheet para elegir
+      _clientSheetContext = '__padron__';
+      _clientSheetItems = data.personas.map(p => ({ nombre: p.nombre, cuit: p.cuit, _padron: p }));
+      const ol = document.getElementById('client-sheet-ol');
+      ol.classList.add('open');
+      document.body.classList.add('modal-open');
+      const inp = document.getElementById('client-sheet-input');
+      inp.value = '';
+      renderClientSheet('');
+      return;
+    }
+    fillPersona(data);
   } catch (e) {
     toast('Error consultando padrón: ' + e.message, false);
   } finally {
@@ -9620,9 +9634,19 @@ function renderClientSheet(q){
     </div>`).join('');
 }
 function clientSheetSelect(idx){
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  if(_clientSheetContext==='__padron__'){
+    const p = _clientSheetItems[idx]?._padron; if(!p) return;
+    const cfCheck = document.getElementById('f-cf');
+    if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
+    set('f-nombre', p.nombre); set('f-cuit', p.cuit);
+    set('f-dir', p.direccion); set('f-ciudad', p.provincia);
+    set('f-localidad', p.localidad); set('f-cp', p.codPostal);
+    toast(`Datos cargados: ${p.nombre}${p.categoriaIVA?' · '+p.categoriaIVA:''}`);
+    closeClientSheet(); return;
+  }
   const all = DB.get('clientes',[]);
   const c = all[idx]; if(!c) return;
-  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
   if(_clientSheetContext==='factura'){
     set('f-nombre',c.nombre||''); set('f-cuit',c.cuit||''); set('f-tel',c.tel||'');
   } else if(_clientSheetContext==='venta'){
