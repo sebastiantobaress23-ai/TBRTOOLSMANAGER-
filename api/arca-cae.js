@@ -88,7 +88,7 @@ async function getTokenSign(certPem, keyPem) {
 async function getUltimoComprobante(client, token, sign, cuit, pdv) {
   const [result] = await client.FECompUltimoAutorizadoAsync({
     Auth: { Token: token, Sign: sign, Cuit: cuit },
-    PtoVta: pdv,
+    PtoVta: parseInt(pdv),
     CbteTipo: 11
   });
   return result?.FECompUltimoAutorizadoResult?.CbteNro || 0;
@@ -102,26 +102,33 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
   const ultimo = await getUltimoComprobante(client, token, sign, cuit, pdv);
   const cbteNro = Number(ultimo) + 1;
 
+  // All numeric fields must be integers, not strings — soap serializes them differently
+  const docNroInt = parseInt(cuitComprador) || 0;
+
   const args = {
-    Auth: { Token: token, Sign: sign, Cuit: cuit },
+    Auth: { Token: token, Sign: sign, Cuit: String(cuit) },
     FeCAEReq: {
-      FeCabReq: { CantReg: 1, PtoVta: pdv, CbteTipo: 11 },
+      FeCabReq: {
+        CantReg:  1,
+        PtoVta:   parseInt(pdv),
+        CbteTipo: 11
+      },
       FeDetReq: {
         FECAEDetRequest: {
-          Concepto:  concepto,
-          DocTipo:   docTipo,
-          DocNro:    cuitComprador,
-          CbteDesde: cbteNro,
-          CbteHasta: cbteNro,
-          CbteFch:   fecha,
-          ImpTotal:  importe.toFixed(2),
-          ImpTotConc:'0.00',
-          ImpNeto:   importe.toFixed(2),
-          ImpOpEx:   '0.00',
-          ImpIVA:    '0.00',
-          ImpTrib:   '0.00',
-          MonId:     'PES',
-          MonCotiz:  1
+          Concepto:   parseInt(concepto) || 1,
+          DocTipo:    parseInt(docTipo),
+          DocNro:     docNroInt,
+          CbteDesde:  cbteNro,
+          CbteHasta:  cbteNro,
+          CbteFch:    String(fecha),
+          ImpTotal:   parseFloat(importe.toFixed(2)),
+          ImpTotConc: 0,
+          ImpNeto:    parseFloat(importe.toFixed(2)),
+          ImpOpEx:    0,
+          ImpIVA:     0,
+          ImpTrib:    0,
+          MonId:      'PES',
+          MonCotiz:   1
         }
       }
     }
@@ -132,10 +139,15 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
   const cae = det?.CAE;
   const caeFchVto = det?.CAEFchVto;
   if (!cae) {
-    const err = result?.FECAESolicitarResult?.Errors?.Err?.Msg
-      || result?.FECAESolicitarResult?.FeDetResp?.FECAEDetResponse?.Observaciones?.Obs?.Msg
-      || JSON.stringify(result).slice(0,400);
-    throw new Error('ARCA no otorgó CAE: ' + err);
+    // Obs can be a single object or an array
+    const obs = det?.Observaciones?.Obs;
+    const obsMsg = Array.isArray(obs)
+      ? obs.map(o=>`[${o.Code}] ${o.Msg}`).join(' | ')
+      : obs ? `[${obs.Code}] ${obs.Msg}` : '';
+    const errMsg = result?.FECAESolicitarResult?.Errors?.Err?.Msg
+      || obsMsg
+      || JSON.stringify(result).slice(0,500);
+    throw new Error('ARCA no otorgó CAE: ' + errMsg);
   }
   const caeFecha = caeFchVto ? String(caeFchVto).replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3') : '';
   return { cae, caeFecha, cbteNro };
