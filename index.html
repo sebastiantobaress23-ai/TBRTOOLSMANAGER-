@@ -7257,6 +7257,7 @@ function pgPedidos() {
           ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" onclick="editPed('${o.id}')">${ic('edit')} Editar</button>`:''}
           <button class="btn-p btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
           <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
+          <button class="btn-g btn-sm" onclick="pedidoToFactura('${o.id}')">${ic('fileText')} Facturar</button>
           ${(o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-p btn-sm" style="border-color:rgba(226,201,126,.4);color:var(--ud)" onclick="openCobrarModal('${o.id}')">${ic('qrcode')} Cobrar</button>`:''}
           ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-p btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
         </div>
@@ -7935,6 +7936,7 @@ function cliListHTML(list) {
     const cliPeds = peds.filter(o=>(o.cliente||'').trim().toLowerCase()===nameKey).slice().reverse();
     const cliSales = sales.filter(s=>(s.cliente||'').trim().toLowerCase()===nameKey);
     const total = cliSales.reduce((a,s)=>a+saleRevenue(s),0);
+    const bal = clienteBalance(c.nombre);
     return `<div class="hi"${stg(i)}>
     <div class="hi-swipe">
       <div class="hi-swipe-actions">
@@ -7944,7 +7946,11 @@ function cliListHTML(list) {
       <div class="hi-hdr hi-swipe-content" data-lp="cli" data-id="${c.id}" onclick="toggleHi('cli${i}')">
         <div class="hi-hdr-l">
           <div class="cli-avatar">${esc(cliInitials(c.nombre))}</div>
-          <div><div class="hi-n">${highlight(c.nombre,cliSearch)}</div><div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div></div>
+          <div>
+            <div class="hi-n">${highlight(c.nombre,cliSearch)}</div>
+            <div class="hi-d">${c.tel?esc(c.tel)+' · ':''}${c.cuit?'CUIT/DNI '+esc(c.cuit)+' · ':''}${cliPeds.length} pedido${cliPeds.length===1?'':'s'}</div>
+            ${bal.total>0?`<div style="font-size:11px;color:var(--ye);margin-top:2px">${ic('alert')} ${fmtA(bal.total)} pendiente (${bal.count} factura${bal.count>1?'s':''})</div>`:''}
+          </div>
         </div>
         <div class="hi-hdr-r"><div class="hi-v">${total?`<span class="count-val" data-target="${total}">${fmtA(total)}</span>`:fmtA(0)}</div><div class="hi-t">comprado</div></div>
       </div>
@@ -7953,6 +7959,7 @@ function cliListHTML(list) {
       <div class="hi-acts-row" style="margin-top:12px">
         ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--ch)">${waIcon()}WhatsApp</a>`:''}
         <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
+        <button class="btn-g btn-sm" onclick="verFacturasCli('${esc(c.nombre)}')">${ic('fileText')} Facturas</button>
         <button class="btn-d" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
       </div>
       ${cliPeds.length?`<div class="ph-l mt12 mb8">Historial de pedidos</div>
@@ -9174,6 +9181,7 @@ window.onload = async function() {
 ═══════════════════════════════════════════ */
 let _factItems = [];
 let _facturaEdit = null;
+let _factFilter = '';
 
 function numToWords(n) {
   const ones = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
@@ -9215,7 +9223,9 @@ function nextFacturaNro() {
 }
 
 function pgFacturador() {
-  const facturas = DB.get('facturas',[]).slice().sort((a,b)=>a.nro>b.nro?-1:1);
+  const allFacturas = DB.get('facturas',[]);
+  const periodos = [...new Set(allFacturas.map(f=>(f.fecha||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const facturas = (_factFilter ? allFacturas.filter(f=>(f.fecha||'').startsWith(_factFilter)) : allFacturas).slice().sort((a,b)=>a.nro>b.nro?-1:1);
   const pendientes = facturas.filter(f=>f.estado==='borrador'||f.estado==='emitida');
   const pagadas = facturas.filter(f=>f.estado==='pagada');
   const canceladas = facturas.filter(f=>f.estado==='cancelada');
@@ -9257,8 +9267,15 @@ function pgFacturador() {
     ${statCard('Pendiente',fmtA(totPendiente),totPendiente>0?'var(--ye)':'var(--di)')}
     ${statCard('Documentos',facturas.length,'var(--di)')}
   </div>
-  <div class="fe mb20">
+  <div class="fe mb16" style="gap:8px;flex-wrap:wrap">
+    <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:6px;padding:6px 10px;color:inherit;font-size:13px">
+      <option value="">Todos los períodos</option>
+      ${periodos.map(m=>`<option value="${m}"${_factFilter===m?' selected':''}>${m}</option>`).join('')}
+    </select>
+  </div>
+  <div class="fe mb20" style="gap:8px;flex-wrap:wrap">
     <button class="btn-p" onclick="openFactura(null)">${ic('edit')} Nueva Factura C</button>
+    <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')} Libro IVA (CSV)</button>
   </div>
   ${facturas.length===0?`<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`:`
   ${pendientes.length?`<div class="sh mb12" style="font-size:9px">PENDIENTES · ${pendientes.length}</div>${pendientes.map(factRow).join('')}`:''}
@@ -9329,6 +9346,12 @@ function openFactura(id) {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:12px 0;border-top:1px solid var(--b2)">
         <div style="display:flex;gap:16px;font-size:13px"><span style="color:var(--di)">Subtotal</span><span id="f-tot-sub" style="font-weight:600">$0</span></div>
+        <div style="display:flex;gap:16px;font-size:13px;align-items:center">
+          <span style="color:var(--di)">Descuento</span>
+          <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="width:60px;background:transparent;border:1px solid var(--b2);border-radius:4px;padding:2px 6px;color:inherit;font-size:13px;text-align:right">
+          <span style="color:var(--di)">%</span>
+          <span id="f-tot-desc" style="color:var(--re)">—</span>
+        </div>
         <div style="display:flex;gap:16px;font-size:18px;font-weight:800"><span>TOTAL</span><span id="f-tot-total" style="color:var(--ch)">$0</span></div>
       </div>
       <div class="sh" style="font-size:9px;margin-bottom:4px">CAE (ARCA)</div>
@@ -9429,10 +9452,15 @@ function renderFactItems(){
 }
 
 function updateFactTotals(){
-  const total = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const subtotal = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const descPct = parseFloat(document.getElementById('f-desc')?.value)||0;
+  const descMonto = subtotal * descPct / 100;
+  const total = subtotal - descMonto;
   const subEl = document.getElementById('f-tot-sub');
+  const descEl = document.getElementById('f-tot-desc');
   const totEl = document.getElementById('f-tot-total');
-  if(subEl) subEl.textContent = fmtA(total);
+  if(subEl) subEl.textContent = fmtA(subtotal);
+  if(descEl) descEl.textContent = descPct>0 ? `-${fmtA(descMonto)}` : '—';
   if(totEl) totEl.textContent = fmtA(total);
 }
 
@@ -9444,7 +9472,9 @@ function saveFactura(){
   if(!nro){ toast('Ingresá el número de factura.',false); return; }
   if(!nombre){ toast('Ingresá el nombre del comprador.',false); return; }
   if(!_factItems.length){ toast('Agregá al menos un ítem.',false); return; }
-  const total = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const subtotalItems = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const descuentoPct = parseFloat(document.getElementById('f-desc')?.value)||0;
+  const total = subtotalItems * (1 - descuentoPct/100);
   const factura = {
     id: _facturaEdit?.id || uid(),
     nro, tipo:'C',
@@ -9463,8 +9493,9 @@ function saveFactura(){
     },
     cuotas: parseInt(document.getElementById('f-cuotas')?.value)||0,
     recargoPct: parseFloat(document.getElementById('f-recargo')?.value)||0,
+    descuentoPct,
     items: _factItems.map(it=>({...it})),
-    subtotal: total, otrosImpuestos:0, total,
+    subtotal: subtotalItems, otrosImpuestos:0, total,
     totalLetras: numToWords(total),
     cae: document.getElementById('f-cae')?.value.trim()||'',
     caeFecha: document.getElementById('f-caefecha')?.value||'',
@@ -9643,6 +9674,7 @@ function facturaDocBody(f){
       </div>
       <div class="total-box">
         <div><span class="lbl">Importe Subtotal</span> <b>$${((f.subtotal||0)).toLocaleString('es-AR',{minimumFractionDigits:2})}</b></div>
+        ${f.descuentoPct>0?`<div><span class="lbl">Descuento (${f.descuentoPct}%)</span> <span style="color:#c00">-$${((f.subtotal||0)*f.descuentoPct/100).toLocaleString('es-AR',{minimumFractionDigits:2})}</span></div>`:''}
         <div><span class="lbl">Otros impuestos</span> <span class="lbl">—</span></div>
         <div class="gran-total">Importe total $${((f.total||0)).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
       </div>
@@ -9672,6 +9704,117 @@ function closeFacturaPreview(){
   const ol = document.getElementById('factura-preview-ol');
   if(ol) ol.style.display='none';
   unlockBody();
+}
+
+function pedidoToFactura(id) {
+  const o = DB.get('pedidos',[]).find(x=>x.id===id);
+  if(!o){ toast('Pedido no encontrado',false); return; }
+  const conf = getConf();
+  const emp = DB.get('empresa',{});
+  const nro = nextFacturaNro();
+  const today = new Date().toISOString().slice(0,10);
+  const vto30 = new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+  const items = (o.items||[]).map(it=>({
+    sku: it.c||'',
+    descripcion: it.n||'',
+    qty: it.q||1,
+    precioUnit: it.p||0,
+    subtotal: (it.q||1)*(it.p||0)
+  }));
+  const total = items.reduce((s,it)=>s+it.subtotal,0);
+  const cli = DB.get('clientes',[]).find(c=>c.nombre&&o.cliente&&c.nombre.toLowerCase()===o.cliente.toLowerCase());
+  const factura = {
+    id: uid(), nro, tipo:'C',
+    fecha: today, vencimiento: vto30,
+    comprador:{
+      nombre: o.cliente||'',
+      cuitDniCuil: o.cuit||cli?.cuit||'',
+      dir: cli?.dir||'',
+      ciudad: cli?.ciudad||'',
+      localidad: cli?.localidad||'',
+      cp: cli?.cp||'',
+      tel: o.tel||cli?.tel||'',
+      condVenta:'Contado',
+      metodoPago:'Efectivo'
+    },
+    cuotas:0, recargoPct:0, descuentoPct:0,
+    items, subtotal:total, otrosImpuestos:0, total,
+    totalLetras: numToWords(total),
+    cae:'', caeFecha:'',
+    observaciones: conf.facturaObs||'',
+    estado:'borrador',
+    emisor:{
+      nombre: emp.nombre||'TBR TOOLS',
+      cuit: conf.facturaCuit||emp.cuit||'',
+      dir: conf.facturaDir||'',
+      ingBrutos: conf.facturaIngBrutos||'',
+      inicioActividad: conf.facturaInicioActividad||'',
+      condIVA:'Monotributo'
+    },
+    pedidoNro: o.nro,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const facturas = DB.get('facturas',[]);
+  facturas.push(factura);
+  DB.set('facturas', facturas);
+  navigate('facturador');
+  toast(`Factura ${nro} creada desde ${o.nro}`);
+}
+
+function exportLibroIVA() {
+  const periodo = _factFilter || 'todos';
+  const facturas = DB.get('facturas',[]).filter(f=>
+    (f.estado==='emitida'||f.estado==='pagada') &&
+    (!_factFilter || (f.fecha||'').startsWith(_factFilter))
+  );
+  if(!facturas.length){ toast('No hay facturas emitidas/pagadas para exportar',false); return; }
+  const rows = [
+    ['Fecha','Tipo','Nro','Comprador','CUIT/DNI','Neto Gravado','IVA','Importe Total','CAE','Vto CAE','Estado','Pedido Ref.']
+  ];
+  facturas.slice().sort((a,b)=>a.nro>b.nro?1:-1).forEach(f=>{
+    rows.push([
+      f.fecha||'',
+      'FC',
+      f.nro||'',
+      f.comprador?.nombre||'',
+      f.comprador?.cuitDniCuil||'',
+      (f.total||0).toFixed(2),
+      '0.00',
+      (f.total||0).toFixed(2),
+      f.cae||'',
+      f.caeFecha||'',
+      f.estado||'',
+      f.pedidoNro||''
+    ]);
+  });
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url;
+  a.download=`Libro_IVA_TBR_${periodo}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Libro IVA exportado correctamente');
+}
+
+function clienteBalance(nombre) {
+  const key = (nombre||'').trim().toLowerCase();
+  const facturas = DB.get('facturas',[]);
+  const pendientes = facturas.filter(f=>
+    (f.estado==='emitida'||f.estado==='borrador') &&
+    (f.comprador?.nombre||'').trim().toLowerCase()===key
+  );
+  return {
+    total: pendientes.reduce((s,f)=>s+(f.total||0),0),
+    count: pendientes.length
+  };
+}
+
+function verFacturasCli(nombre) {
+  navigate('facturador');
+  setTimeout(()=>toast(`Facturas de ${nombre} — filtrá por nombre en el período`),300);
 }
 
 async function facturaShareWA(id){
