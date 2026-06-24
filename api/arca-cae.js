@@ -124,12 +124,12 @@ async function solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitCompra
 
   // NC (CbteTipo=13) requiere referencia al comprobante original
   if (cbteAsoc) {
+    // Cuit es opcional en CbtesAsoc — solo si el emisor del cbte original es distinto
     detReq.CbtesAsoc = {
       CbteAsoc: [{
         Tipo:   parseInt(cbteAsoc.tipo) || 11,
         PtoVta: parseInt(cbteAsoc.pdv)  || parseInt(pdv),
-        Nro:    parseInt(cbteAsoc.nro),
-        Cuit:   parseInt(cbteAsoc.cuit || cuit)
+        Nro:    parseInt(cbteAsoc.nro)
       }]
     };
   }
