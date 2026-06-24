@@ -9526,9 +9526,14 @@ function facturaToggleCuotas(val) {
 async function buscarPadronARCA() {
   const cuitInput = document.getElementById('f-cuit');
   const cuit = (cuitInput?.value||'').replace(/\D/g,'');
+  if (!cuit) {
+    toast('Ingresá un CUIT para buscar en el padrón de ARCA', false); return;
+  }
+  if (cuit.length < 11) {
+    toast('El padrón de ARCA solo funciona con CUIT (11 dígitos). Para DNI ingresá los datos manualmente.', false, 5000); return;
+  }
   if (cuit.length !== 11) {
-    toast('Ingresá un CUIT de 11 dígitos para buscar en ARCA', false);
-    return;
+    toast('CUIT inválido — debe tener exactamente 11 dígitos', false); return;
   }
   const btn = event?.currentTarget;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Buscando…</span>'; }
