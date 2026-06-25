@@ -9257,6 +9257,7 @@ let _factItems = [];
 let _facturaEdit = null;
 let _factFilter = '';
 let _factTab = 'pendientes';
+let _factOpenSections = new Set(['pendientes']);
 
 function numToWords(n) {
   const ones = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
@@ -9306,8 +9307,6 @@ function pgFacturador() {
   const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
   const notasCredito = facturas.filter(f=>f.tipo==='NC');
   const remitos = facturas.filter(f=>f.tipo==='RM');
-  // IDs de facturas que tienen NC — matcheo por facturaOrigenId Y por facturaOrigen (nro),
-  // porque después de un re-sync los IDs cambian pero el nro permanece estable
   const idsConNC = new Set();
   const nrosConNC = new Set(notasCredito.filter(n=>n.facturaOrigen).map(n=>n.facturaOrigen));
   notasCredito.filter(n=>n.facturaOrigenId).forEach(n=>idsConNC.add(n.facturaOrigenId));
@@ -9316,93 +9315,125 @@ function pgFacturador() {
   const anulSet = new Set(anuladas.map(f=>f.id));
   const pendientes = soloFacturas.filter(f=>(f.estado==='borrador'||f.estado==='emitida') && !anulSet.has(f.id));
   const pagadas = soloFacturas.filter(f=>f.estado==='pagada' && !anulSet.has(f.id));
-  const canceladas = [];
   const totEmitidas = soloFacturas.filter(f=>f.estado!=='cancelada'&&!idsConNC.has(f.id)).reduce((s,f)=>s+(f.total||0),0);
   const totPagadas = pagadas.reduce((s,f)=>s+(f.total||0),0);
   const totPendiente = pendientes.reduce((s,f)=>s+(f.total||0),0);
-  const statCard = (label,val,color='var(--ch)')=>
-    `<div class="ml-tot-item"><div class="ml-tot-lbl">${label}</div><div class="ml-tot-val" style="color:${color}">${val}</div></div>`;
 
-  function factRow(f) {
+  function factRow(f, accentColor) {
     const tieneNC = idsConNC.has(f.id);
     const estadoEfectivo = tieneNC && f.tipo!=='NC' ? 'anulada' : f.estado;
     const ec = {borrador:'var(--di)',emitida:'var(--ye)',pagada:'var(--gr)',cancelada:'var(--re)',anulada:'var(--re)'}[estadoEfectivo]||'var(--di)';
-    const el = {borrador:'Borrador',emitida:'Emitida',pagada:'Pagada',cancelada:'Cancelada',anulada:'ANULADA'}[estadoEfectivo]||estadoEfectivo;
+    const el = {borrador:'BORRADOR',emitida:'EMITIDA',pagada:'PAGADA',cancelada:'CANCELADA',anulada:'ANULADA'}[estadoEfectivo]||estadoEfectivo;
     const tipoLabel = f.tipo==='NC' ? 'Nota de Crédito C' : f.tipo==='RM' ? 'Remito' : 'Factura C';
-    const tipoColor = f.tipo==='NC' ? 'var(--re)' : f.tipo==='RM' ? 'var(--di)' : 'inherit';
-    return `<div class="hi" style="margin-bottom:8px${tieneNC&&f.tipo!=='NC'?';opacity:0.6':''}">
-      <div class="hi-hdr" style="cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
-        <div>
-          <div class="hi-n" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:${tipoColor}${tieneNC&&f.tipo!=='NC'?';text-decoration:line-through':''}">${tipoLabel} Nº ${esc(f.nro||'—')}</div>
-          <div class="hi-d">${fmtD(f.fecha)} · ${esc(f.comprador?.nombre||'Sin nombre')}${tieneNC&&f.tipo!=='NC'?' · NC emitida':''}</div>
+    return `<div style="border-bottom:1px solid var(--b1);transition:background .15s${tieneNC&&f.tipo!=='NC'?';opacity:0.5':''}" onmouseenter="this.style.background='rgba(255,255,255,.02)'" onmouseleave="this.style.background='transparent'">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 18px;cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
+        <div style="width:3px;height:36px;border-radius:2px;background:${accentColor};flex-shrink:0;opacity:0.6"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--ch)${tieneNC&&f.tipo!=='NC'?';text-decoration:line-through':''}">${tipoLabel} <span style="color:var(--di)">Nº</span> ${esc(f.nro||'—')}</div>
+          <div style="font-size:12px;color:var(--di);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtD(f.fecha)} · ${esc(f.comprador?.nombre||'Consumidor Final')}</div>
         </div>
-        <div style="text-align:right">
-          <div class="hi-v" style="color:var(--ch)">${fmtA(f.total||0)}</div>
-          <div style="font-size:11px;font-weight:700;color:${ec};letter-spacing:.5px;text-transform:uppercase">${el}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch)">${fmtA(f.total||0)}</div>
+          <div style="font-size:9px;font-weight:700;color:${ec};letter-spacing:1px">${el}</div>
         </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--b3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-      <div style="display:flex;gap:8px;padding:10px 0 2px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;padding:0 18px 12px 33px;flex-wrap:wrap">
         <button class="btn-g btn-sm" onclick="openFactura('${f.id}')">${ic('edit')} Editar</button>
-        <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')} Ver PDF</button>
-        <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')">${ic('share')} WhatsApp</button>
+        <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')} PDF</button>
+        <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')">${ic('share')} WA</button>
         ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
         ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${ic('zap')} Emitir</button>`:''}
-        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito por esta factura">${ic('fileText')} NC</button>`:''}
-        ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Marcar como anulada manualmente">✕ Anular</button>`:''}
-        ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Emitir Remito de entrega">${ic('package')} Remito</button>`:''}
+        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito">${ic('fileText')} NC</button>`:''}
+        ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕ Anular</button>`:''}
+        ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')} Remito</button>`:''}
         <button class="btn-d btn-sm" onclick="deleteFactura('${f.id}')">${ic('trash')}</button>
       </div>
     </div>`;
   }
+
+  function sectionDrawer(id, label, icon, color, borderColor, bgAccent, items, totalFn) {
+    if(items.length===0) return '';
+    const isOpen = _factOpenSections.has(id);
+    const total = totalFn ? items.reduce((s,f)=>s+(f.total||0),0) : null;
+    const chevron = `<svg style="flex-shrink:0;transition:transform .2s;transform:rotate(${isOpen?'90deg':'0deg'})" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`;
+    return `<div style="border:1px solid ${borderColor};border-radius:12px;overflow:hidden;margin-bottom:10px">
+      <div onclick="if(_factOpenSections.has('${id}'))_factOpenSections.delete('${id}');else _factOpenSections.add('${id}');render()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;background:${bgAccent};user-select:none">
+        <div style="width:28px;height:28px;border-radius:8px;background:${borderColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-size:14px">${icon}</span>
+        </div>
+        <div style="flex:1">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${color}">${label}</div>
+          <div style="font-size:11px;color:var(--di);margin-top:1px">${items.length} comprobante${items.length!==1?'s':''}</div>
+        </div>
+        ${total!==null?`<div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--ch);margin-right:4px">${fmtA(total)}</div>`:''}
+        <div style="color:var(--di)">${chevron}</div>
+      </div>
+      ${isOpen?`<div style="background:var(--bg1)">${items.map(f=>factRow(f,color)).join('')}<div style="height:1px"></div></div>`:''}
+    </div>`;
+  }
+
+  const hasFacturas = facturas.length > 0;
+  if(!_factOpenSections) _factOpenSections = new Set(['pendientes']);
+
   return `<div class="pg">
-  <div class="sh mb4">Facturador</div>
-  <div class="hint mb20">Facturas C · Monotributo · Argentina</div>
-  <div class="ml-totbar mb20">
-    ${statCard('Total emitido',fmtA(totEmitidas))}
-    ${statCard('Cobrado',fmtA(totPagadas),'var(--gr)')}
-    ${statCard('Pendiente',fmtA(totPendiente),totPendiente>0?'var(--ye)':'var(--di)')}
-    ${statCard('Documentos',facturas.length,'var(--di)')}
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+    <div>
+      <div class="sh mb4" style="margin-bottom:2px">Facturador</div>
+      <div class="hint" style="margin:0">Facturas C · Monotributo · Argentina</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--si);font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;outline:none">
+        <option value="">Todos los períodos</option>
+        ${periodos.map(m=>`<option value="${m}"${_factFilter===m?' selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
   </div>
-  <div class="fe mb16" style="gap:8px;flex-wrap:wrap">
-    <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:6px;padding:6px 10px;color:inherit;font-size:13px">
-      <option value="">Todos los períodos</option>
-      ${periodos.map(m=>`<option value="${m}"${_factFilter===m?' selected':''}>${m}</option>`).join('')}
-    </select>
+
+  <!-- KPI Cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:14px 16px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase;margin-bottom:6px">Total emitido</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--ch);line-height:1">${fmtA(totEmitidas)}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),var(--bg1));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:14px 16px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gr);opacity:.7;text-transform:uppercase;margin-bottom:6px">Cobrado</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--gr);line-height:1">${fmtA(totPagadas)}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg1));border:1px solid rgba(251,191,36,${totPendiente>0?'.25':'.08'});border-radius:12px;padding:14px 16px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--ye);opacity:.7;text-transform:uppercase;margin-bottom:6px">Pendiente</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${totPendiente>0?'var(--ye)':'var(--di)'};line-height:1">${fmtA(totPendiente)}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:14px 16px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase;margin-bottom:6px">Documentos</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--di);line-height:1">${facturas.length}</div>
+    </div>
   </div>
-  <div class="fe mb20" style="gap:8px;flex-wrap:wrap">
-    <button class="btn-p" onclick="openFactura(null)">${ic('edit')} Nueva Factura C</button>
+
+  <!-- Action Toolbar -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--bg2);border:1px solid var(--b2);border-radius:12px;margin-bottom:24px">
+    <button class="btn-p" onclick="openFactura(null)" style="flex-shrink:0">${ic('edit')} Nueva Factura C</button>
+    <div style="width:1px;height:24px;background:var(--b2);flex-shrink:0"></div>
     <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')} Libro IVA (CSV)</button>
-    <button class="btn-g" onclick="forzarActualizacion()" style="gap:6px;font-size:10px;opacity:.7" title="Limpia caché y recarga la app con la última versión">↺ Actualizar app</button>
-    <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca" style="gap:6px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Sincronizar ARCA
     </button>
+    <button class="btn-g" onclick="forzarActualizacion()" style="font-size:11px;opacity:.6" title="Limpiar caché y recargar">↺ Actualizar app</button>
   </div>
-  ${(()=>{
-    if(facturas.length===0) return `<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`;
-    const tabs = [
-      {id:'pendientes', label:'Pendientes', count:pendientes.length, color:'var(--ye)'},
-      {id:'pagadas',    label:'Pagadas',    count:pagadas.length,    color:'var(--gr)'},
-      {id:'anuladas',   label:'Anuladas',   count:anuladas.length,   color:'var(--re)'},
-      {id:'nc',         label:'Notas de Crédito', count:notasCredito.length, color:'var(--re)'},
-      {id:'remitos',    label:'Remitos',    count:remitos.length,    color:'var(--di)'},
-    ];
-    if(!_factTab||!tabs.find(t=>t.id===_factTab)) _factTab='pendientes';
-    const tabMap = {pendientes,pagadas,anuladas,nc:notasCredito,remitos};
-    const active = tabMap[_factTab]||[];
-    const tabBar = `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;background:var(--bg2);border:1px solid var(--b2);border-radius:10px;padding:5px">
-      ${tabs.map(t=>{
-        const isActive = _factTab===t.id;
-        return `<button onclick="_factTab='${t.id}';render()" style="flex:1;min-width:80px;padding:8px 10px;border:none;border-radius:7px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;transition:all .15s;background:${isActive?'var(--bg)':'transparent'};color:${isActive?t.color:'var(--di)'};box-shadow:${isActive?'0 1px 6px rgba(0,0,0,.4)':'none'}">
-          ${t.label}${t.count>0?` <span style="background:${isActive?t.color:'var(--b2)'};color:${isActive?'#000':'var(--di)'};border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">${t.count}</span>`:''}
-        </button>`;
-      }).join('')}
-    </div>`;
-    const content = active.length===0
-      ? `<div style="text-align:center;padding:40px 0;color:var(--di);font-size:13px">Sin comprobantes en esta sección</div>`
-      : active.map(factRow).join('');
-    return tabBar+content;
-  })()}
+
+  <!-- Document Sections -->
+  ${!hasFacturas
+    ? `<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`
+    : `<div style="display:flex;flex-direction:column;gap:0">
+    ${sectionDrawer('pendientes','Pendientes','⏳','var(--ye)','rgba(251,191,36,.25)','linear-gradient(90deg,rgba(251,191,36,.06),var(--bg2))',pendientes,true)}
+    ${sectionDrawer('pagadas','Pagadas','✓','var(--gr)','rgba(74,222,128,.2)','linear-gradient(90deg,rgba(74,222,128,.05),var(--bg2))',pagadas,true)}
+    ${sectionDrawer('nc','Notas de Crédito','↩','var(--re)','rgba(248,113,113,.2)','linear-gradient(90deg,rgba(248,113,113,.05),var(--bg2))',notasCredito,true)}
+    ${sectionDrawer('anuladas','Anuladas','✕','var(--re)','rgba(248,113,113,.15)','linear-gradient(90deg,rgba(248,113,113,.03),var(--bg2))',anuladas,false)}
+    ${sectionDrawer('remitos','Remitos','📦','var(--di)','rgba(122,122,122,.2)','linear-gradient(90deg,rgba(122,122,122,.04),var(--bg2))',remitos,true)}
+  </div>`}
   </div>`;
 }
 
