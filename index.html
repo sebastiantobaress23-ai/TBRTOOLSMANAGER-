@@ -1309,6 +1309,110 @@ body{line-height:1.5}
 .mono-limit-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--di);margin-top:4px}
 
 /* ══════════════════════════════════════════════
+   PREMIUM DARK MODE — header, nav, palette, depth
+   ══════════════════════════════════════════════ */
+
+/* 0. Deeper, more unified background palette */
+:root{
+  --bg:#080808;
+  --bg1:#0e0e0e;
+  --bg2:#131313;
+  --bg3:#181818;
+  --bg4:#1e1e1e;
+  --b1:#1c1c1c;
+  --b2:#252525;
+  --b3:#303030;
+}
+
+/* 1. Header — richer depth with noise grain + stronger gold line */
+.hdr{
+  background:linear-gradient(180deg,rgba(14,14,14,1) 0%,rgba(7,7,7,1) 100%)!important;
+  border-bottom:1px solid rgba(226,201,126,.18)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.03),0 8px 48px rgba(0,0,0,.95)!important;
+}
+.hdr::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  opacity:.6;z-index:0;
+}
+.hdr>*{position:relative;z-index:1}
+/* Scrolled state — sharper gold border */
+.hdr.scrolled{
+  border-bottom-color:rgba(226,201,126,.3)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.04),0 12px 40px rgba(0,0,0,.9),0 0 60px rgba(226,201,126,.04)!important;
+}
+/* Logo — stronger glow on hover */
+.hdr-logo-wrap::before{
+  background:radial-gradient(circle,rgba(226,201,126,.15) 0%,rgba(226,201,126,.06) 35%,rgba(226,201,126,0) 70%)!important;
+  filter:blur(20px)!important;
+}
+.hdr img{
+  filter:drop-shadow(0 0 10px rgba(226,201,126,.2)) brightness(1.08)!important;
+}
+@media(hover:hover){
+  .hdr:hover img{filter:drop-shadow(0 0 22px rgba(226,201,126,.45)) brightness(1.15)!important}
+  .hdr:hover .hdr-txt{color:rgba(226,201,126,.75)!important}
+}
+/* App name text — more visible */
+.hdr-txt{color:rgba(226,201,126,.6)!important}
+
+/* 2. Desktop nav — pill indicator for active tab */
+.nav{
+  background:rgba(5,5,5,.98)!important;
+  border-bottom:1px solid rgba(255,255,255,.05)!important;
+  box-shadow:none!important;
+  padding:0 24px!important;
+}
+.tab{
+  color:rgba(255,255,255,.28)!important;
+  border-bottom:none!important;
+  padding:0 16px!important;
+  height:48px!important;
+  display:flex!important;
+  align-items:center!important;
+  border-radius:0!important;
+  position:relative!important;
+  transition:color .18s!important;
+}
+.tab::after{
+  content:'';position:absolute;bottom:0;left:50%;right:50%;height:2px;
+  background:var(--ud);border-radius:2px 2px 0 0;
+  transition:left .22s cubic-bezier(.22,.61,.36,1),right .22s cubic-bezier(.22,.61,.36,1),opacity .18s;
+  opacity:0;
+}
+.tab.on{
+  color:rgba(245,240,228,.95)!important;
+  border-bottom:none!important;
+  text-shadow:0 0 28px rgba(226,201,126,.3)!important;
+}
+.tab.on::after{left:12px;right:12px;opacity:1}
+.tab:hover{color:rgba(255,255,255,.6)!important}
+
+/* 3. Mobile bottom nav — richer, matches header */
+.mob-nav{
+  background:rgba(6,6,6,.99)!important;
+  border-top:1px solid rgba(226,201,126,.14)!important;
+  box-shadow:0 -4px 48px rgba(0,0,0,.95),0 -1px 0 rgba(255,255,255,.03)!important;
+}
+.mob-tab{color:rgba(255,255,255,.2)!important}
+.mob-tab.on{color:rgba(245,240,228,.88)!important}
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 6px rgba(226,201,126,.4))!important}
+
+/* 4. Gold as primary UI accent — buttons, focus rings, active states */
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(226,201,126,.4)!important;
+  box-shadow:0 0 0 3px rgba(226,201,126,.07)!important;
+  outline:none!important;
+}
+/* Default .btn style — subtle gold tint on hover */
+.btn:hover,.btn-s:hover{border-color:rgba(226,201,126,.25)!important;color:rgba(245,240,228,.85)!important}
+
+/* 5. Page background — true near-black */
+body{background:var(--bg)!important}
+#app,body>*{background:transparent}
+
+/* ══════════════════════════════════════════════
    HARMONY PASS — visual unity across all sections
    ══════════════════════════════════════════════ */
 
