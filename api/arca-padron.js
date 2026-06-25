@@ -5,13 +5,11 @@ function httpsGet(url, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const options = {
       rejectUnauthorized: false,
-      timeout: 4000,
+      timeout: 5000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'es-AR,es;q=0.9',
-        'Origin': 'https://www.afip.gob.ar',
-        'Referer': 'https://www.afip.gob.ar/',
         ...extraHeaders,
       },
     };
@@ -19,8 +17,8 @@ function httpsGet(url, extraHeaders = {}) {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
-        catch { resolve({ status: res.statusCode, body: null, raw: data.slice(0, 200) }); }
+        try { resolve({ status: res.statusCode, body: JSON.parse(data), raw: null }); }
+        catch { resolve({ status: res.statusCode, body: null, raw: data.slice(0, 300) }); }
       });
     });
     req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
@@ -49,7 +47,7 @@ function cuitsDesdeDNI(dni) {
 }
 
 function normalizeRest(p) {
-  if (!p) return null;
+  if (!p || typeof p !== 'object') return null;
   const nombre = p.razonSocial
     || (p.apellido && p.nombre ? `${p.apellido}, ${p.nombre}` : null)
     || p.nombre || '';
@@ -64,11 +62,17 @@ function normalizeRest(p) {
     categoriaIVA = p.categoriaIVA;
   } else if (p.impuesto) {
     const imp = Array.isArray(p.impuesto) ? p.impuesto : [p.impuesto];
-    const iva = imp.find(i => [30, 32].includes(i.idImpuesto));
+    const iva = imp.find(i => [30, 32].includes(i?.idImpuesto));
     if (iva) categoriaIVA = iva.descripcionImpuesto || '';
   }
 
-  const dom = p.domicilioFiscal || p.domicilio || {};
+  // El domicilio puede venir como objeto o como array
+  const domArr = Array.isArray(p.domicilio) ? p.domicilio : null;
+  const dom = p.domicilioFiscal
+    || (domArr ? domArr.find(d => d.tipoDomicilio === 'FISCAL') || domArr[0] : null)
+    || (typeof p.domicilio === 'object' && !Array.isArray(p.domicilio) ? p.domicilio : null)
+    || {};
+
   let direccion = dom.direccion || '';
   if (!direccion && dom.calle) {
     direccion = [dom.calle, dom.numero, dom.piso && `piso ${dom.piso}`, dom.depto && `dto ${dom.depto}`]
@@ -88,26 +92,46 @@ function normalizeRest(p) {
 }
 
 async function consultarCUIT(cuit) {
-  // Solo tramitesadistancia — más accesible y responde más rápido
-  const url = `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`;
-  try {
-    console.log(`[padron] GET ${url}`);
-    const { status, body, raw } = await httpsGet(url);
-    console.log(`[padron] ${cuit} → ${status} body=${body ? JSON.stringify(body).slice(0,150) : raw}`);
-    if (status === 200 && body) {
-      const raw2 = body['persona'] || body['data'] || body;
-      if (raw2 && !Array.isArray(raw2)) {
-        const persona = normalizeRest(raw2);
-        if (persona) return { persona, encontrado: true };
-      }
-      // 200 pero sin datos de persona válidos = no inscripto
-      return { persona: null, encontrado: false };
+  const intentos = [
+    // Constancias fiscales — endpoint de verificación pública (QR constancias)
+    {
+      url: `https://constancias.afip.gob.ar/nrConstancia/rest/consulta/${cuit}`,
+      extra: { 'Origin': 'https://constancias.afip.gob.ar', 'Referer': 'https://constancias.afip.gob.ar/' },
+      extract: body => body?.persona || body,
+    },
+    // TaD — portal Trámites a Distancia
+    {
+      url: `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`,
+      extra: { 'Origin': 'https://www.afip.gob.ar', 'Referer': 'https://www.afip.gob.ar/' },
+      extract: body => body?.persona || body?.data || body,
+    },
+    // ARCA — nuevo dominio
+    {
+      url: `https://arca.gob.ar/sr-padron/v2/persona/${cuit}`,
+      extra: { 'Origin': 'https://arca.gob.ar', 'Referer': 'https://arca.gob.ar/' },
+      extract: body => body?.data || body?.persona || body,
+    },
+  ];
+
+  for (const { url, extra, extract } of intentos) {
+    try {
+      console.log(`[padron] GET ${url}`);
+      const { status, body, raw } = await httpsGet(url, extra);
+      console.log(`[padron] ${cuit} ${url.split('/')[2]} → ${status} | ${body ? JSON.stringify(body).slice(0, 120) : raw}`);
+
+      if (status === 404) { console.log(`[padron] 404 en ${url.split('/')[2]}, siguiente`); continue; }
+      if (status !== 200 || !body) continue;
+
+      const raw2 = extract(body);
+      if (!raw2 || Array.isArray(raw2) || typeof raw2 !== 'object') continue;
+
+      const persona = normalizeRest(raw2);
+      if (persona) return { persona, encontrado: true };
+    } catch (e) {
+      console.log(`[padron] error ${url.split('/')[2]}: ${e.message}`);
     }
-    if (status === 404) return { persona: null, encontrado: false };
-  } catch (e) {
-    console.error(`[padron] error ${cuit}: ${e.message}`);
   }
-  return { persona: null, encontrado: null }; // null = error técnico
+  return { persona: null, encontrado: false };
 }
 
 module.exports = async function handler(req, res) {
@@ -125,11 +149,9 @@ module.exports = async function handler(req, res) {
   const esCUIT = doc.length === 11;
 
   if (esCUIT) {
-    const { persona, encontrado } = await consultarCUIT(doc);
+    const { persona } = await consultarCUIT(doc);
     if (persona) return res.status(200).json(persona);
-    if (encontrado === false)
-      return res.status(404).json({ error: `notFound`, msg: `CUIT ${doc} no está inscripto en ARCA.` });
-    return res.status(503).json({ error: `unavailable`, msg: `ARCA no disponible en este momento.` });
+    return res.status(404).json({ error: 'notFound', msg: `CUIT ${doc} no encontrado en ARCA.` });
   }
 
   // DNI → derivar CUITs posibles y consultarlos en paralelo
@@ -138,18 +160,13 @@ module.exports = async function handler(req, res) {
 
   const resultados = await Promise.all(posibles.map(c => consultarCUIT(c)));
   const personas   = resultados.map(r => r?.persona).filter(Boolean);
-  const hayError   = resultados.some(r => r?.encontrado === null);
 
-  if (personas.length > 0) {
-    if (personas.length === 1) return res.status(200).json(personas[0]);
-    return res.status(200).json({ multiple: true, personas });
-  }
-  if (hayError)
-    return res.status(503).json({ error: `unavailable`, msg: `ARCA no disponible en este momento.` });
+  if (personas.length === 1) return res.status(200).json(personas[0]);
+  if (personas.length > 1)  return res.status(200).json({ multiple: true, personas });
 
   return res.status(404).json({
-    error: `notFound`,
-    msg: `DNI ${doc} no tiene CUIT activo en ARCA. La persona debe estar inscripta en AFIP para aparecer.`,
+    error: 'notFound',
+    msg: `DNI ${doc} no tiene CUIT registrado en ARCA.`,
     cuitsTesteados: posibles,
   });
 };
