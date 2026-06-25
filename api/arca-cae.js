@@ -35,6 +35,15 @@ const WSFEV1_WSDL_HOMO = 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL';
 
 function isProd() { return process.env.ARCA_PROD === 'true'; }
 
+let _tsCache = null;
+async function getTokenSignCached(certPem, keyPem) {
+  const now = Date.now();
+  if (_tsCache && _tsCache.expiresAt > now + 60000) return _tsCache;
+  const ts = await getTokenSign(certPem, keyPem);
+  _tsCache = { ...ts, expiresAt: now + 34200000 };
+  return _tsCache;
+}
+
 // Build TRA XML
 function buildTRA(service = 'wsfe') {
   const pad = n => String(n).padStart(2,'0');
@@ -201,7 +210,7 @@ module.exports = async function handler(req, res) {
     : 99;
 
   try {
-    const { token, sign } = await getTokenSign(certPem, keyPem);
+    const { token, sign } = await getTokenSignCached(certPem, keyPem);
     const result = await solicitarCAE({ token, sign, cuit, pdv, fecha, docTipo, cuitComprador: docNro, concepto: parseInt(concepto)||1, importe, cbteTipo: parseInt(cbteTipo)||11, cbteAsoc });
     return res.status(200).json(result);
   } catch(e) {

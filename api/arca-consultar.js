@@ -29,6 +29,16 @@ const WSFEV1_WSDL_HOMO = 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx?WSDL';
 
 function isProd() { return process.env.ARCA_PROD === 'true'; }
 
+// Cache token+sign en memoria para no pedir uno nuevo si el anterior aún es válido
+let _tsCache = null; // { token, sign, expiresAt }
+async function getTokenSignCached(certPem, keyPem) {
+  const now = Date.now();
+  if (_tsCache && _tsCache.expiresAt > now + 60000) return _tsCache;
+  const ts = await getTokenSign(certPem, keyPem);
+  _tsCache = { ...ts, expiresAt: now + 34200000 }; // 9.5 horas
+  return _tsCache;
+}
+
 function buildTRA(service) {
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => {
@@ -95,7 +105,7 @@ module.exports = async function handler(req, res) {
   const desdeParam = parseInt(req.query?.desde) || 1;
 
   try {
-    const { token, sign } = await getTokenSign(certPem, keyPem);
+    const { token, sign } = await getTokenSignCached(certPem, keyPem);
     const wsdl = isProd() ? WSFEV1_WSDL_PROD : WSFEV1_WSDL_HOMO;
     const client = await soap.createClientAsync(wsdl, { wsdl_options: wsdlOpts });
     const auth = { Token: token, Sign: sign, Cuit: cuit };
