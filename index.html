@@ -9746,9 +9746,14 @@ async function buscarPadronARCA(ev) {
       if(encontrados.length>1) { mostrarMultiple(encontrados); return; }
     }
 
-    // 2. Fallback: API de Vercel
-    console.log(`[arca] intentando via Vercel /api/arca-padron?doc=${doc}`);
-    const resp = await fetch(`/api/arca-padron?doc=${doc}`);
+    // 2. Intentar via Edge Function (infraestructura diferente, puede evitar bloqueo de AFIP)
+    console.log(`[arca] intentando via Edge Function /api/arca-edge?doc=${doc}`);
+    let resp = await fetch(`/api/arca-edge?doc=${doc}`).catch(()=>null);
+    // 3. Fallback: serverless
+    if(!resp || !resp.ok) {
+      console.log(`[arca] intentando via serverless /api/arca-padron?doc=${doc}`);
+      resp = await fetch(`/api/arca-padron?doc=${doc}`);
+    }
     const data = await resp.json();
     console.log(`[arca] Vercel resp ${resp.status}:`, JSON.stringify(data).slice(0,200));
 
