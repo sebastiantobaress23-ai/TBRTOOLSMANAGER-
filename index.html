@@ -1505,6 +1505,18 @@ html.light .sc::after{opacity:.6}
   box-shadow:0 6px 28px rgba(0,0,0,.45)!important;
 }
 
+/* 9. Default gold top strip for all neutral cards (.mc, .hi, plain .card, plain .sc) */
+.mc,.hi,.card{position:relative;overflow:hidden}
+.mc::before,.hi::before,.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(226,201,126,.28),rgba(226,201,126,.08) 60%,rgba(226,201,126,0));
+  pointer-events:none;z-index:3;border-radius:inherit;
+}
+/* Plain .sc (no accent class) also gets the gold strip */
+.sc:not([class*="accent-"])::after{
+  background:linear-gradient(90deg,rgba(226,201,126,.22),rgba(226,201,126,.06) 60%,rgba(226,201,126,0))!important;
+}
+
 </style>
 </head>
 <body>
