@@ -9464,9 +9464,15 @@ function pgFacturador() {
 
   <!-- Header -->
   <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-    <div>
-      <div class="sh mb4" style="margin-bottom:2px">Facturador</div>
-      <div class="hint" style="margin:0">Facturas C · Monotributo · Argentina</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div>
+        <div class="sh mb4" style="margin-bottom:2px">Facturador</div>
+        <div class="hint" style="margin:0">Facturas C · Monotributo · Argentina</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-left:4px">
+        <button onclick="exportLibroIVA()" title="Exportar Libro IVA (CSV)" style="background:rgba(255,255,255,.05);border:1px solid var(--b2);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--di);transition:all .15s" onmouseover="this.style.borderColor='var(--si)';this.style.color='var(--si)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--di)'">${ic('fileText',14)}</button>
+        <button onclick="sincronizarARCA()" id="btn-sync-arca" title="Sincronizar con ARCA" style="background:rgba(255,255,255,.05);border:1px solid var(--b2);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--di);transition:all .15s" onmouseover="this.style.borderColor='var(--si)';this.style.color='var(--si)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--di)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+      </div>
     </div>
     <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--si);font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;outline:none;${mob?'width:100%':''}">
       <option value="">Todos los períodos</option>
@@ -9495,13 +9501,8 @@ function pgFacturador() {
   </div>
 
   <!-- Action Toolbar -->
-  <div style="display:grid;grid-template-columns:${mob?'1fr 1fr':'auto auto auto'};gap:8px;margin-bottom:20px">
-    <button class="btn-p" onclick="openFactura(null)" style="${mob?'grid-column:1/-1;justify-content:center;':''}flex-shrink:0">${ic('edit')} Nueva Factura C</button>
-    <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')}${mob?' CSV':' Libro IVA (CSV)'}</button>
-    <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      ${mob?'ARCA':'Sincronizar ARCA'}
-    </button>
+  <div style="margin-bottom:20px">
+    <button class="btn-p" onclick="openFactura(null)" style="width:100%;justify-content:center;">${ic('edit')} Nueva Factura C</button>
   </div>
 
   <!-- Document Sections -->
@@ -10312,7 +10313,7 @@ function pedidoToFactura(id) {
 
 async function sincronizarARCA() {
   const btn = document.getElementById('btn-sync-arca');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Consultando ARCA…</span>'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:ptrSpin .7s linear infinite"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'; }
   try {
     const facturas = DB.get('facturas', []);
     // Clave única por tipo+nro para evitar duplicados cross-tipo (FC#5 ≠ NC#5)
@@ -10416,7 +10417,7 @@ async function sincronizarARCA() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sincronizar ARCA';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
     }
   }
 }
