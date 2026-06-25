@@ -4803,10 +4803,29 @@ function pgVentas(){
 
   <div class="sh mb16">Ranking de rentabilidad por producto</div>
   ${ranking.length ? `<div class="card mb24" style="padding:0;overflow:hidden">
-    ${ranking.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
-      <div><div style="font-weight:600;font-size:14px">${i===0?ic('trophy',14)+' ':''}${esc(r.name)}</div><div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${r.units} unidad${r.units!==1?'es':''} vendida${r.units!==1?'s':''} · margen real ${r.marginPct.toFixed(1)}%</div></div>
-      <div style="text-align:right"><div style="font-weight:700;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div><div style="font-size:11px;color:var(--di)">de ${fmtA(r.revenue)}</div></div>
-    </div>`).join('')}
+    ${ranking.map((r,i)=>{
+      const rankColors=['var(--ye)','rgba(255,255,255,.45)','#cd7f32'];
+      const rankColor = i<3 ? rankColors[i] : 'var(--di)';
+      const barW = Math.min(100, r.marginPct);
+      return `<div style="padding:14px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid ${rankColor};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${rankColor}">${i===0?'🏆':i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span style="font-size:11px;color:var(--di)">${r.units} ud${r.units!==1?'s':''} vendida${r.units!==1?'s':''}</span>
+              <span style="font-size:11px;font-weight:700;color:${r.marginPct>=20?'var(--gr)':r.marginPct>=10?'var(--ye)':'var(--re)'}">${r.marginPct.toFixed(1)}% margen</span>
+            </div>
+            <div style="margin-top:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${r.marginPct>=20?'var(--gr)':r.marginPct>=10?'var(--ye)':'var(--re)'};border-radius:2px;transition:width .4s"></div>
+            </div>
+          </div>
+          <div style="flex-shrink:0;text-align:right">
+            <div style="font-weight:700;font-size:15px;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div>
+            <div style="font-size:10px;color:var(--di);margin-top:2px">de ${fmtA(r.revenue)}</div>
+          </div>
+        </div>
+      </div>`;}).join('')}
   </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
 
   <div class="sh mb16">Historial de ventas</div>
@@ -4816,25 +4835,61 @@ function pgVentas(){
       const multi=items.length>1;
       const titulo = multi ? `${items.length} artículos` : `${esc(items[0].n)}${items[0].q>1?` × ${items[0].q}`:''}`;
       const isML = s.channel !== 'directa';
-      const chBadge = isML ? '<span class="badge badge-y">ML</span>' : '<span class="badge badge-d">Directa</span>';
-      const detalleML = isML
-        ? `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)} · vendido ${fmtA(s.priceARS||items[0]?.p||0)}${s.mlReceived?' · recibido '+fmtA(s.mlReceived):''} · costo ${fmtA(s.costARS||items[0]?.cost||0)}`
-        : `${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)}${!multi?` · venta ${fmtA(items[0].p)} c/u · costo ${fmtA(items[0].cost||0)} c/u`:''}${s.cliente?' · '+esc(s.cliente):''}${s.pedidoNro?' · de '+esc(s.pedidoNro):''}`;
-      return `<div style="padding:12px 16px;border-bottom:1px solid var(--b2)">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-weight:600;font-size:14px">${titulo}${chBadge}</div><div style="font-size:11px;color:var(--di)">${detalleML}</div></div>
-        <div style="display:flex;align-items:center;gap:12px"><div style="text-align:right"><div style="font-weight:700;color:${saleProfit(s)>=0?'var(--gr)':'var(--re)'}">${fmtA(saleProfit(s))}</div><div style="font-size:11px;color:var(--di)">ganancia real</div></div><button class="btn-rm" onclick="delSale('${s.id}')">${ic('close')}</button></div>
-      </div>
-      ${multi?`<div style="overflow-x:auto;margin-top:10px">
-        <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
-        <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
-        </table>
-      </div>`:''}
-      ${!isML?`<div class="hi-acts" style="margin-top:8px">
-        <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
-        ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
-      </div>`:''}
-    </div>`;}).join('')}
+      const profit = saleProfit(s);
+      const profitColor = profit>=0?'var(--gr)':'var(--re)';
+      const chBadge = isML
+        ? `<span style="display:inline-flex;align-items:center;background:#f9e73a1a;border:1px solid #f9e73a55;color:#f9e73a;font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:6px">ML</span>`
+        : `<span style="display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:6px">DIRECTA</span>`;
+      const precio = s.priceARS||items[0]?.p||0;
+      const recibido = s.mlReceived||0;
+      const costo = s.costARS||items[0]?.cost||0;
+      return `<div style="padding:14px 16px;border-bottom:1px solid var(--b2)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13.5px;line-height:1.3">${titulo}${chBadge}</div>
+            <div style="font-size:11px;color:var(--di);margin-top:3px">${s.nro?`<span style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;color:rgba(255,255,255,.35)">${esc(s.nro)}</span> · `:''} ${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</div>
+            ${isML ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">VENDIDO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(precio)}</div>
+              </div>
+              ${recibido?`<div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">RECIBIDO ML</div>
+                <div style="font-size:12px;font-weight:600;color:var(--ye)">${fmtA(recibido)}</div>
+              </div>`:''}
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">COSTO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(costo)}</div>
+              </div>
+            </div>` : (!multi?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">VENTA</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(items[0].p)}</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">COSTO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(items[0].cost||0)}</div>
+              </div>
+            </div>`:'')}
+          </div>
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <div style="text-align:right">
+              <div style="font-size:18px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
+              <div style="font-size:9px;color:var(--di);margin-top:2px;letter-spacing:.5px;text-transform:uppercase">ganancia</div>
+            </div>
+            <button onclick="delSale('${s.id}')" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.3);transition:all .15s" onmouseover="this.style.borderColor='var(--re)';this.style.color='var(--re)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.3)'">${ic('close',12)}</button>
+          </div>
+        </div>
+        ${multi?`<div style="overflow-x:auto;margin-top:10px">
+          <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
+          <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>`:''}
+        ${!isML?`<div class="hi-acts" style="margin-top:8px">
+          <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
+          ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
+        </div>`:''}
+      </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
 }
