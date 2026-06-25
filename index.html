@@ -9305,8 +9305,12 @@ function pgFacturador() {
   const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
   const notasCredito = facturas.filter(f=>f.tipo==='NC');
   const remitos = facturas.filter(f=>f.tipo==='RM');
-  // IDs de facturas que tienen NC emitida
-  const idsConNC = new Set(notasCredito.filter(n=>n.facturaOrigenId).map(n=>n.facturaOrigenId));
+  // IDs de facturas que tienen NC — matcheo por facturaOrigenId Y por facturaOrigen (nro),
+  // porque después de un re-sync los IDs cambian pero el nro permanece estable
+  const idsConNC = new Set();
+  const nrosConNC = new Set(notasCredito.filter(n=>n.facturaOrigen).map(n=>n.facturaOrigen));
+  notasCredito.filter(n=>n.facturaOrigenId).forEach(n=>idsConNC.add(n.facturaOrigenId));
+  soloFacturas.filter(f=>nrosConNC.has(f.nro)).forEach(f=>idsConNC.add(f.id));
   const anuladas = soloFacturas.filter(f=>idsConNC.has(f.id));
   const pendientes = soloFacturas.filter(f=>(f.estado==='borrador'||f.estado==='emitida') && !idsConNC.has(f.id));
   const pagadas = soloFacturas.filter(f=>f.estado==='pagada' && !idsConNC.has(f.id));
@@ -10268,6 +10272,8 @@ async function sincronizarARCA() {
             cae:      f.cae,
             caeFecha: f.caeFecha,
             importadoDeARCA: true,
+            // Para NCs: guardar nro del FC original para poder linkear aunque el ID haya cambiado
+            ...(tipoLocal === 'NC' && f.cbteAsocNro ? { facturaOrigen: f.cbteAsocNro } : {}),
             comprador: {
               nombre: f.docNro === '0' ? 'Consumidor Final'
                 : f.docTipo == 80 ? `CUIT ${f.docNro}`

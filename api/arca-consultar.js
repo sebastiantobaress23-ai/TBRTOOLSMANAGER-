@@ -178,6 +178,13 @@ module.exports = async function handler(req, res) {
           ? `${fchVto.slice(0,4)}-${fchVto.slice(4,6)}-${fchVto.slice(6,8)}`
           : fchVto;
 
+        // Extraer comprobante asociado (para NCs: apunta a la FC original)
+        const cbteAsocRaw = d.CbtesAsoc?.CbteAsoc || d.CBTESASOC?.CBTEASOC;
+        const cbteAsocArr = Array.isArray(cbteAsocRaw) ? cbteAsocRaw : (cbteAsocRaw ? [cbteAsocRaw] : []);
+        const cbteAsocNro = cbteAsocArr.length > 0
+          ? `${String(cbteAsocArr[0].PtoVta||cbteAsocArr[0].PTOVTA||pdv).padStart(5,'0')}-${String(cbteAsocArr[0].Nro||cbteAsocArr[0].NRO||0).padStart(8,'0')}`
+          : null;
+
         facturas.push({
           cbteNro:    nro,
           nro:        `${String(pdv).padStart(5,'0')}-${String(nro).padStart(8,'0')}`,
@@ -188,6 +195,7 @@ module.exports = async function handler(req, res) {
           docTipo,
           docNro,
           resultado,
+          ...(cbteAsocNro ? { cbteAsocNro } : {}),
         });
       } catch(e) { errores.push(`nro${nro}:${e.message.slice(0,60)}`); console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
