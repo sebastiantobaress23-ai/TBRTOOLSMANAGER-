@@ -9305,16 +9305,17 @@ function pgFacturador() {
   const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
   const notasCredito = facturas.filter(f=>f.tipo==='NC');
   const remitos = facturas.filter(f=>f.tipo==='RM');
-  const pendientes = soloFacturas.filter(f=>f.estado==='borrador'||f.estado==='emitida');
-  const pagadas = soloFacturas.filter(f=>f.estado==='pagada');
-  const canceladas = soloFacturas.filter(f=>f.estado==='cancelada');
-  const totEmitidas = soloFacturas.filter(f=>f.estado!=='cancelada').reduce((s,f)=>s+(f.total||0),0);
+  // IDs de facturas que tienen NC emitida
+  const idsConNC = new Set(notasCredito.filter(n=>n.facturaOrigenId).map(n=>n.facturaOrigenId));
+  const anuladas = soloFacturas.filter(f=>idsConNC.has(f.id));
+  const pendientes = soloFacturas.filter(f=>(f.estado==='borrador'||f.estado==='emitida') && !idsConNC.has(f.id));
+  const pagadas = soloFacturas.filter(f=>f.estado==='pagada' && !idsConNC.has(f.id));
+  const canceladas = soloFacturas.filter(f=>f.estado==='cancelada' && !idsConNC.has(f.id));
+  const totEmitidas = soloFacturas.filter(f=>f.estado!=='cancelada'&&!idsConNC.has(f.id)).reduce((s,f)=>s+(f.total||0),0);
   const totPagadas = pagadas.reduce((s,f)=>s+(f.total||0),0);
   const totPendiente = pendientes.reduce((s,f)=>s+(f.total||0),0);
   const statCard = (label,val,color='var(--ch)')=>
     `<div class="ml-tot-item"><div class="ml-tot-lbl">${label}</div><div class="ml-tot-val" style="color:${color}">${val}</div></div>`;
-  // IDs de facturas que tienen NC emitida
-  const idsConNC = new Set(notasCredito.filter(n=>n.facturaOrigenId).map(n=>n.facturaOrigenId));
 
   function factRow(f) {
     const tieneNC = idsConNC.has(f.id);
@@ -9372,6 +9373,7 @@ function pgFacturador() {
   ${facturas.length===0?`<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`:`
   ${pendientes.length?`<div class="sh mb12" style="font-size:9px">PENDIENTES · ${pendientes.length}</div>${pendientes.map(factRow).join('')}`:''}
   ${pagadas.length?`<div class="sh mb12 mt20" style="font-size:9px">PAGADAS · ${pagadas.length}</div>${pagadas.map(factRow).join('')}`:''}
+  ${anuladas.length?`<div class="sh mb12 mt20" style="font-size:9px;color:var(--re)">ANULADAS (con NC) · ${anuladas.length}</div>${anuladas.map(factRow).join('')}`:''}
   ${canceladas.length?`<div class="sh mb12 mt20" style="font-size:9px">CANCELADAS</div>${canceladas.map(factRow).join('')}`:''}
   ${notasCredito.length?`<div class="sh mb12 mt20" style="font-size:9px;color:var(--re)">NOTAS DE CRÉDITO · ${notasCredito.length}</div>${notasCredito.map(factRow).join('')}`:''}
   ${remitos.length?`<div class="sh mb12 mt20" style="font-size:9px">REMITOS · ${remitos.length}</div>${remitos.map(factRow).join('')}`:''}
@@ -9866,7 +9868,7 @@ async function saveFactura(emitir=false){
     totalLetras: numToWords(total),
     cae, caeFecha,
     observaciones: document.getElementById('f-obs')?.value.trim()||'',
-    estado: emitir ? 'emitida' : (_facturaEdit?.estado||'borrador'),
+    estado: emitir ? (['Contado','Contra entrega'].includes(document.getElementById('f-condventa')?.value||'Contado') ? 'pagada' : 'emitida') : (_facturaEdit?.estado||'borrador'),
     emisor:{
       nombre: (emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN').replace(/^TBR TOOLS$/i,'TOBARES ALEXIS SEBASTIAN'),
       razonSocial: emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN',
