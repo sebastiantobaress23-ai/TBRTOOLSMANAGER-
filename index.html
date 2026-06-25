@@ -9635,16 +9635,15 @@ async function buscarPadronARCA(ev) {
       return;
     }
     const fillPersona = (p) => {
-      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
       const cfCheck = document.getElementById('f-cf');
       if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
-      set('f-nombre',   p.nombre);
-      set('f-cuit',     p.cuit);
-      set('f-dir',      p.direccion);
-      set('f-ciudad',   p.provincia);
-      set('f-localidad',p.localidad);
-      set('f-cp',       p.codPostal);
-      toast(`Datos cargados: ${p.nombre}${p.categoriaIVA ? ' · ' + p.categoriaIVA : ''}`);
+      set('f-nombre', p.nombre);
+      set('f-cuit',   p.cuit);
+      set('f-dir',    p.direccion);
+      // Ciudad = localidad (ciudad/pueblo), con provincia como fallback
+      set('f-ciudad', p.localidad || p.provincia);
+      toast(`✓ ${p.nombre}${p.localidad ? ' · ' + p.localidad : ''}${p.categoriaIVA ? ' · ' + p.categoriaIVA : ''}`, true, 5000);
     };
     if (data.multiple) {
       // Múltiples personas con ese DNI — mostrar sheet para elegir
@@ -9730,9 +9729,8 @@ function clientSheetSelect(idx){
     const cfCheck = document.getElementById('f-cf');
     if (cfCheck?.checked) { cfCheck.checked = false; facturaToggleCF(false); }
     set('f-nombre', p.nombre); set('f-cuit', p.cuit);
-    set('f-dir', p.direccion); set('f-ciudad', p.provincia);
-    set('f-localidad', p.localidad); set('f-cp', p.codPostal);
-    toast(`Datos cargados: ${p.nombre}${p.categoriaIVA?' · '+p.categoriaIVA:''}`);
+    set('f-dir', p.direccion); set('f-ciudad', p.localidad || p.provincia);
+    toast(`✓ ${p.nombre}${p.localidad?' · '+p.localidad:''}${p.categoriaIVA?' · '+p.categoriaIVA:''}`, true, 5000);
     closeClientSheet(); return;
   }
   const all = DB.get('clientes',[]);
