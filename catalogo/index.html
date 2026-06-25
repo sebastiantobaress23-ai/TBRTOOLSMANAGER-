@@ -4,431 +4,241 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catálogo · TBR Tools</title>
-<meta name="description" content="Catálogo de productos TBR Tools">
+<meta name="description" content="Catálogo digital de TBR Tools — herramientas eléctricas, máquinas y accesorios. Precios, cuotas sin interés y pedidos directos por WhatsApp.">
+<meta name="theme-color" content="#070707">
+
+<!-- Vista previa al compartir (WhatsApp / Instagram / Facebook / Twitter) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TBR Tools">
+<meta property="og:title" content="TBR Tools · Catálogo Digital">
+<meta property="og:description" content="Herramientas eléctricas, máquinas y accesorios. Precios al día, cuotas sin interés y pedidos directos por WhatsApp.">
+<meta property="og:url" content="https://tbrtoolscatalogo.vercel.app/">
+<meta property="og:image" content="https://tbrtoolscatalogo.vercel.app/assets/tbr-share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="TBR Tools · Catálogo Digital">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TBR Tools · Catálogo Digital">
+<meta name="twitter:description" content="Herramientas eléctricas, máquinas y accesorios. Cuotas sin interés y pedidos por WhatsApp.">
+<meta name="twitter:image" content="https://tbrtoolscatalogo.vercel.app/assets/tbr-share.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#070707;--gd:#e2c97e;--gd-soft:rgba(226,201,126,.45);
-  --ch:#f4f4f2;--si:#bdbdbd;--di:#8a8a8a;
-  --gr:#4ade80;--ye:#fbbf24;--re:#f87171;
-  --ease:cubic-bezier(.16,1,.3,1);
-  --kb-dur:9s;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden}
-body{
-  background:var(--bg);color:var(--ch);
-  font-family:'Barlow',sans-serif;
-  -webkit-font-smoothing:antialiased;
-  position:relative;
-}
-:focus-visible{outline:2px solid var(--gd);outline-offset:3px;border-radius:4px}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
-  clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-/* ── BACKGROUND (cinematic photo / placeholder, crossfade + ken burns) ── */
-.bg-layer{position:fixed;inset:0;z-index:0;opacity:0;transition:opacity 1s var(--ease);
-  background-position:center;background-size:cover;background-repeat:no-repeat;
-  background-color:#141210}
-.bg-layer.on{opacity:1}
-.bg-layer .kb{position:absolute;inset:-2%;background:inherit;background-position:center;
-  background-size:cover;transform:scale(1);animation:kenBurns var(--kb-dur) linear forwards}
-.bg-layer .ph-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 35% 30%,#262422,#0c0b0a 72%)}
-.bg-layer .ph-fallback span{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:min(48vw,460px);
-  color:rgba(226,201,126,.07);letter-spacing:-2px}
-@keyframes kenBurns{from{transform:scale(1)}to{transform:scale(1.09)}}
-
-/* darken + blur toward the bottom so text stays readable on any photo */
-.scrim{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,.18) 45%, transparent 70%)}
-.blur-mask{position:fixed;inset:0;z-index:1;pointer-events:none;
-  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
-  -webkit-mask-image:linear-gradient(to top, #000 0%, transparent 42%);
-  mask-image:linear-gradient(to top, #000 0%, transparent 42%)}
-.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%)}
-
-/* ── LIQUID GLASS ── */
-.liquid-glass{
-  background:rgba(255,255,255,.05);background-blend-mode:luminosity;
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-  border:none;box-shadow:inset 0 1px 1px rgba(255,255,255,.12);
-  position:relative;overflow:hidden;color:var(--ch);
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-  transition:background .2s,transform .2s var(--ease),box-shadow .2s;
-}
-.liquid-glass::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;padding:1.4px;
-  background:linear-gradient(180deg, var(--gd-soft) 0%, rgba(255,255,255,.18) 22%, rgba(255,255,255,0) 42%,
-    rgba(255,255,255,0) 58%, rgba(255,255,255,.18) 78%, var(--gd-soft) 100%);
-  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
-}
-.liquid-glass:hover{background:rgba(255,255,255,.1)}
-.liquid-glass:active{transform:scale(.96)}
-
-/* ── BLUR FADE UP ── */
-@keyframes blurFadeUp{from{opacity:0;filter:blur(16px);transform:translateY(28px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
-.bfu{opacity:0;animation:blurFadeUp .85s var(--ease) forwards}
-@media(prefers-reduced-motion:reduce){
-  .bfu{animation:none;opacity:1;filter:none;transform:none}
-  .bg-layer .kb{animation:none;transform:none}
-  .bg-layer{transition:opacity .25s linear}
-}
-
-/* ── LAYOUT SHELL ── */
-.shell{position:relative;z-index:10;height:100%;display:flex;flex-direction:column}
-
-/* ── NAVBAR ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;
-  padding:max(16px,env(safe-area-inset-top)) clamp(16px,4vw,48px) 0}
-.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.brand img{width:38px;height:38px;border-radius:9px;display:block}
-.brand-t{line-height:1.05}
-.brand-wordmark{display:flex;align-items:baseline;gap:6px}
-.brand-wordmark b{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:18px;letter-spacing:.5px;
-  color:var(--ch)}
-.brand-wordmark i{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-style:normal;
-  font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--ch);opacity:.85}
-.brand-t span{display:block;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:4px;
-  color:var(--gd);font-weight:600;text-transform:uppercase;margin-top:2px}
-.topbar-actions{display:flex;align-items:center;gap:10px}
-.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;cursor:pointer;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;
-  text-transform:uppercase;padding:11px 20px;border:none}
-.circle-btn{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;border:none;flex-shrink:0}
-
-/* ── PROGRESS SEGMENTS ── */
-.segs{display:flex;gap:5px;padding:14px clamp(16px,4vw,48px) 0;max-width:520px}
-.seg{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
-.seg i{display:block;height:100%;width:0;background:var(--gd);transition:width .4s var(--ease)}
-.seg.done i,.seg.now i{width:100%}
-
-/* ── HERO ── */
-.hero{flex:1;display:flex;flex-direction:column;justify-content:flex-end;
-  padding:0 clamp(16px,4vw,48px) max(28px,env(safe-area-inset-bottom));gap:22px}
-.hero-row{display:flex;flex-direction:column-reverse;gap:24px;align-items:flex-end}
-.hero-main{flex:1;min-width:0}
-.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 14px;
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase}
-.chip.code{font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--si)}
-.chip.g{color:var(--gr)}.chip.y{color:var(--ye)}.chip.r{color:var(--re)}
-.title{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;
-  font-size:clamp(2.4rem,8vw,5rem);line-height:1.02;letter-spacing:-1px;text-wrap:balance;
-  max-width:18ch;margin-bottom:14px}
-.price{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:clamp(2rem,6vw,3.2rem);
-  color:var(--gd);letter-spacing:-.5px;margin-bottom:20px}
-.price small{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:3px;text-transform:uppercase;color:var(--di);margin-bottom:2px}
-.cta-row{display:flex;flex-wrap:wrap;gap:12px}
-.gallery-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
-.gthumb{width:56px;height:56px;border-radius:10px;background-size:cover;background-position:center;
-  border:2px solid transparent;cursor:pointer;opacity:.55;flex-shrink:0;padding:0;
-  transition:opacity .25s var(--ease),border-color .25s var(--ease),transform .2s var(--ease)}
-.gthumb:hover{opacity:.85;transform:translateY(-2px)}
-.gthumb.cur{opacity:1;border-color:var(--gd);box-shadow:0 6px 18px -8px rgba(226,201,126,.5)}
-.cta-primary{display:inline-flex;align-items:center;gap:10px;background:var(--gd);color:#1a1206;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;
-  text-transform:uppercase;text-decoration:none;padding:14px 26px;border-radius:999px;border:none;
-  cursor:pointer;transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
-.cta-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(226,201,126,.55)}
-.cta-primary:active{transform:scale(.97)}
-
-/* ── NAV ARROWS / COUNTER ── */
-.hero-nav{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.arrow{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;border:none;color:var(--ch)}
-.counter{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--di);min-width:48px;text-align:center}
-
-@media(min-width:760px){
-  .hero-row{flex-direction:row}
-}
-
-/* ── GRID OVERLAY ("Ver todos") ── */
-.grid-ol{position:fixed;inset:0;z-index:100;background:#070707;display:flex;flex-direction:column;
-  opacity:0;visibility:hidden;transition:opacity .35s var(--ease);overflow:hidden}
-.grid-ol.open{opacity:1;visibility:visible}
-.grid-ol-top{display:flex;align-items:center;gap:14px;padding:max(16px,env(safe-area-inset-top)) clamp(16px,4vw,48px) 12px}
-.grid-ol-search{flex:1;position:relative;max-width:380px}
-.grid-ol-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--di);pointer-events:none}
-.grid-ol-search input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  border-radius:999px;padding:11px 16px 11px 38px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px}
-.grid-ol-search input::placeholder{color:var(--di)}
-.grid-wrap{flex:1;overflow-y:auto;padding:8px clamp(16px,4vw,48px) max(24px,env(safe-area-inset-bottom))}
-.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.tcard{border-radius:14px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.07);
-  background:linear-gradient(160deg,#1c1a18,#0d0c0b);transition:border-color .2s,transform .2s var(--ease)}
-.tcard:hover{border-color:rgba(226,201,126,.4);transform:translateY(-2px)}
-.tcard.cur{border-color:var(--gd)}
-.tcard-ph{aspect-ratio:1;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;
-  background-color:#1f1d1b}
-.tcard-ph span{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:34px;color:rgba(226,201,126,.25)}
-.tcard-b{padding:9px 10px}
-.tcard-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;
-  text-transform:uppercase;line-height:1.25;margin-bottom:4px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.tcard-price{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:14px;color:var(--gd)}
-
-.empty{text-align:center;padding:80px 20px;color:var(--di);font-family:'Barlow Condensed',sans-serif;
-  letter-spacing:2px;text-transform:uppercase;font-size:13px}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=62">
 </head>
-<body>
+<body style="background-color: rgb(7, 7, 7)">
 
-<div class="bg-layer" id="bgA"></div>
-<div class="bg-layer" id="bgB"></div>
-<div class="scrim"></div>
-<div class="blur-mask"></div>
-<div class="vignette"></div>
+<div class="techgrid"></div>
 
-<div class="shell">
-  <header class="topbar">
-    <div class="brand bfu" style="animation-delay:0ms">
-      <img src="../assets/tbr-logo.png" alt="TBR Tools">
-      <div class="brand-t"><div class="brand-wordmark"><b>TBR</b><i>Tools</i></div><span>Catálogo digital</span></div>
+<!-- ══ TOPBAR ══ -->
+<header class="topbar" id="topbar">
+  <div class="brand" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <img class="brand-logo" src="assets/tbr-logo.png" alt="TBR Tools">
+    <div class="brand-txt">
+      <div class="brand-sub" style="font-weight: 600">Catálogo · Ed. 2026</div>
     </div>
-    <div class="topbar-actions">
-      <button class="liquid-glass pill bfu" style="animation-delay:120ms" onclick="openGrid()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        Ver todos
-      </button>
-      <button class="liquid-glass circle-btn bfu" style="animation-delay:180ms" onclick="openWa()" aria-label="Consultar por WhatsApp">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.06a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.1 1 1.02-3.02-.2-.31a8.16 8.16 0 0 1-1.25-4.36c0-4.51 3.67-8.18 8.19-8.18 4.51 0 8.18 3.67 8.18 8.18 0 4.52-3.67 8.19-8.18 8.19zm4.49-6.13c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28z"/></svg>
-      </button>
-    </div>
-  </header>
+  </div>
+  <div class="topbar-actions">
+    <button class="glass icon-btn" onclick="document.getElementById('coleccion').scrollIntoView({behavior:'smooth'})" aria-label="Ir a la colección">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </button>
+    <button class="glass icon-btn wa-tint" onclick="openWa()" aria-label="Consultar por WhatsApp">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg>
+    </button>
+    <button class="glass icon-btn" onclick="openCart()" aria-label="Ver pedido">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
 
-  <nav class="segs" id="segs" aria-hidden="true"></nav>
+<!-- ══ HERO / PORTADA ══ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="bg-layer" id="bgA"></div>
+    <div class="bg-layer" id="bgB"></div>
+  </div>
+  <div class="hero-scrim"></div>
+  <div class="hero-scrim-2"></div>
+  <div class="hero-vig"></div>
+  <div class="hero-ticks"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span></div>
 
-  <main class="hero">
-    <div class="hero-row">
-      <div class="hero-main" id="heroMain"></div>
-      <div class="hero-nav bfu" style="animation-delay:760ms">
-        <button class="liquid-glass arrow" onclick="prevSlide()" aria-label="Producto anterior">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+  <div class="hero-flag"><span class="kicker">Destacado</span></div>
+
+  <div class="hero-inner">
+    <div class="hero-main" id="heroMain"></div>
+  </div>
+
+  <div class="hero-rail">
+    <div class="rail-head">
+      <span class="mono" style="font-weight: 600">Destacados · <span id="railNow">001 / 001</span></span>
+      <div class="rail-nav">
+        <button class="rail-arrow" onclick="prevHero()" aria-label="Destacado anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <div class="counter" id="counter"></div>
-        <button class="liquid-glass arrow" onclick="nextSlide()" aria-label="Producto siguiente">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        <div class="rail-dots" id="railDots"></div>
+        <button class="rail-arrow" onclick="nextHero()" aria-label="Siguiente destacado">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
     </div>
-  </main>
-</div>
-
-<div class="grid-ol" id="gridOl">
-  <div class="grid-ol-top">
-    <label for="gq" class="sr-only">Buscar producto o código</label>
-    <div class="grid-ol-search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" id="gq" placeholder="Buscar producto o código…" oninput="filterGrid()">
-    </div>
-    <button class="liquid-glass circle-btn" onclick="closeGrid()" aria-label="Cerrar">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
   </div>
-  <div class="grid-wrap"><div class="tgrid" id="tgrid"></div></div>
-</div>
 
-<script src="../catalogo-data.js"></script>
-<script>
-/* ════════════════════════════════════════════════════
-   FUENTE DE DATOS
-   1) Catálogo en vivo: se intenta leer directo desde la base de datos
-      de TBR Tools Manager (Firebase), así el catálogo se actualiza
-      solo cuando se edita un producto en la app.
-   2) catalogo-data.js: si la lectura en vivo falla (sin conexión,
-      base vacía, etc.), se usan los datos generados manualmente desde
-      TBR Tools Manager → Catálogo → "Generar catálogo digital".
-   3) Datos de ejemplo: último recurso si no hay ninguna de las dos
-      fuentes anteriores.
-   Formato de producto: { name, code, salePrice, stock, photo, photos }
-   - photo: dataURL/base64 o URL de imagen (opcional)
-   - photos: array de fotos adicionales (opcional)
-   - stock: número (opcional, omitir si no se controla stock)
-═════════════════════════════════════════════════════ */
-const FB_LIVE = 'https://tbr-tools-manager-default-rtdb.firebaseio.com/tbr';
+  <a class="scroll-hint" href="#coleccion" aria-label="Ver colección" style="font-weight: 700">
+    Ver colección
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </a>
+</section>
 
-const SAMPLE_PRODUCTS = [
-  {name:'Amoladora Inalámbrica 20V 1000W Total', code:'TAGLI271532', salePrice:280622, stock:5},
-  {name:'Taladro Percutor Inalámbrico 20V 86Nm Total', code:'TIDLI208687', salePrice:275425, stock:1},
-  {name:'Taladro Atornillador Inalámbrico 20V 50Nm Total', code:'TDLI205062', salePrice:176688, stock:5},
-  {name:'Equipo De Pintar 530W 800ML Total', code:'TT45061', salePrice:75448, stock:4},
-  {name:'Equipo De Pintar 450W 800ML Total', code:'TT3506', salePrice:69290, stock:3},
-];
-
-const STATIC_DATA = (typeof CATALOG_DATA !== 'undefined') ? CATALOG_DATA : null;
-
-let EMPRESA = (STATIC_DATA && STATIC_DATA.empresa) || { nombre: 'TBR Tools', whatsapp: '5492604375765' };
-let PRODUCTS = (STATIC_DATA && STATIC_DATA.products) || SAMPLE_PRODUCTS;
-
-/* Intenta traer el catálogo en vivo desde Firebase. Devuelve null si
-   falla o si no hay productos con precio de venta cargado. */
-async function fetchLiveCatalog(){
-  try{
-    const [catRes, empRes] = await Promise.all([
-      fetch(`${FB_LIVE}/catalog.json`, {cache:'no-store', signal:AbortSignal.timeout(4000)}),
-      fetch(`${FB_LIVE}/empresa.json`, {cache:'no-store', signal:AbortSignal.timeout(4000)})
-    ]);
-    if(!catRes.ok) return null;
-    const catalog = await catRes.json();
-    if(!Array.isArray(catalog)) return null;
-    const products = catalog.filter(c=>c && c.salePrice).map(c=>({
-      name: c.name, code: c.code||'', salePrice: c.salePrice,
-      stock: c.stock!=null ? c.stock : undefined,
-      photo: c.photo||undefined,
-      photos: (c.photos && c.photos.length>1) ? c.photos : undefined
-    }));
-    if(!products.length) return null;
-    const emp = empRes.ok ? await empRes.json() : null;
-    return {
-      empresa: {
-        nombre: (emp && emp.razonSocial) || EMPRESA.nombre,
-        whatsapp: (emp && emp.waNegocio) ? emp.waNegocio.replace(/\D/g,'') : EMPRESA.whatsapp
-      },
-      products
-    };
-  }catch{ return null; }
-}
-
-const fmtA = n => '$ ' + Math.round(n||0).toLocaleString('es-AR');
-const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-let idx = 0;
-let photoIdx = 0;
-let bgToggle = false; // false -> bgA active, true -> bgB active
-
-function stockChip(c){
-  if(c.stock==null) return '';
-  if(c.stock<=0) return '<span class="chip r">Sin stock</span>';
-  if(c.stock<=2) return `<span class="chip y">Stock bajo · ${c.stock}</span>`;
-  return `<span class="chip g">Stock · ${c.stock}</span>`;
-}
-
-function setBackground(c, photo){
-  const showing = bgToggle ? document.getElementById('bgB') : document.getElementById('bgA');
-  const hiding  = bgToggle ? document.getElementById('bgA') : document.getElementById('bgB');
-  const img = photo || c.photo;
-  showing.innerHTML = img
-    ? `<div class="kb" style="background-image:url('${img}')"></div>`
-    : `<div class="ph-fallback"><span>${esc((c.name||'?').slice(0,1).toUpperCase())}</span></div>`;
-  showing.classList.add('on');
-  hiding.classList.remove('on');
-  bgToggle = !bgToggle;
-}
-
-function renderSlide(){
-  const c = PRODUCTS[idx];
-  const photos = (c.photos && c.photos.length) ? c.photos : (c.photo ? [c.photo] : []);
-  photoIdx = 0;
-  setBackground(c, photos[0]);
-
-  document.getElementById('heroMain').innerHTML = `
-    <div class="meta-row bfu" style="animation-delay:280ms">
-      ${c.code?`<span class="chip code">${esc(c.code)}</span>`:''}
-      ${stockChip(c)}
+<!-- ══ COLECCIÓN ══ -->
+<main class="collection" id="coleccion">
+  <div class="section-head">
+    <div>
+      <span class="kicker" style="font-weight: 700">La colección</span>
+      <h2 class="section-title">Todo el<br>catálogo</h2>
     </div>
-    <h1 class="title bfu" style="animation-delay:380ms">${esc(c.name)}</h1>
-    <div class="price bfu" style="animation-delay:480ms"><small>Precio</small>${fmtA(c.salePrice)}</div>
-    <div class="cta-row bfu" style="animation-delay:580ms">
-      <button class="cta-primary" onclick="consultarProducto(${idx})">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.06a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.1 1 1.02-3.02-.2-.31a8.16 8.16 0 0 1-1.25-4.36c0-4.51 3.67-8.18 8.19-8.18 4.51 0 8.18 3.67 8.18 8.18 0 4.52-3.67 8.19-8.18 8.19zm4.49-6.13c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28z"/></svg>
-        Consultar por WhatsApp
+    <span class="section-count" id="secCount" style="font-weight: 500">—</span>
+  </div>
+
+  <div class="filterbar">
+    <div class="cats" id="cats"></div>
+    <div class="tools">
+      <button class="cat stock-toggle" id="stockToggle" onclick="toggleStock()" style="color: rgb(95, 208, 138); border-color: rgb(95, 208, 138); background-color: rgba(95, 208, 138, 0.12)">
+        <span class="st-dot"></span> En stock
+      </button>
+      <div class="search-box" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" inputmode="search" placeholder="Buscar producto o código" oninput="onSearch(this.value)" aria-label="Buscar" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <div id="searchAC" class="search-autocomplete" hidden></div>
+      </div>
+      <div class="sort-sel">
+        <select onchange="setSort(this.value)" aria-label="Ordenar">
+          <option value="rel">Relevancia</option>
+          <option value="priceAsc">Precio ↑</option>
+          <option value="priceDesc">Precio ↓</option>
+          <option value="name">Nombre A-Z</option>
+        </select>
+      </div>
+      <button class="glass icon-btn" id="shareViewBtn" onclick="shareView()" aria-label="Compartir vista" title="Compartir vista con filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
     </div>
-    ${photos.length>1?`<div class="gallery-row bfu" style="animation-delay:660ms" role="group" aria-label="Más fotos del producto">
-      ${photos.map((p,i)=>`<button class="gthumb ${i===0?'cur':''}" style="background-image:url('${p}')" onclick="selectPhoto(${i})" aria-label="Ver foto ${i+1}"></button>`).join('')}
-    </div>`:''}
-  `;
+  </div>
 
-  document.getElementById('counter').textContent = `${idx+1} / ${PRODUCTS.length}`;
-  document.getElementById('segs').innerHTML = PRODUCTS.map((_,i)=>
-    `<div class="seg ${i<idx?'done':''} ${i===idx?'now':''}" onclick="goTo(${i})" style="cursor:pointer"><i></i></div>`
-  ).join('');
-}
+  <div class="grid" id="grid"></div>
+  <div id="historySec" class="history-section"></div>
+</main>
 
-function selectPhoto(i){
-  const c = PRODUCTS[idx];
-  const photos = (c.photos && c.photos.length) ? c.photos : (c.photo ? [c.photo] : []);
-  if(!photos[i] || i===photoIdx) return;
-  photoIdx = i;
-  setBackground(c, photos[i]);
-  document.querySelectorAll('.gthumb').forEach((el,j)=>el.classList.toggle('cur', j===i));
-}
-
-function nextSlide(){ idx = (idx+1) % PRODUCTS.length; renderSlide(); }
-function prevSlide(){ idx = (idx-1+PRODUCTS.length) % PRODUCTS.length; renderSlide(); }
-function goTo(i){ if(i===idx) return; idx=i; renderSlide(); }
-
-function consultarProducto(i){
-  const c = PRODUCTS[i];
-  if(!c) return;
-  const msg = encodeURIComponent(`Hola! Te consulto por "${c.name}"${c.code?` (${c.code})`:''} — vi que está a ${fmtA(c.salePrice)} en el catálogo.`);
-  window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${msg}`, '_blank', 'noopener');
-}
-function openWa(){
-  const msg = encodeURIComponent(`Hola! Te escribo por el catálogo de ${EMPRESA.nombre} 🙂`);
-  window.open(`https://wa.me/${EMPRESA.whatsapp}?text=${msg}`, '_blank', 'noopener');
-}
-
-/* ── grid overlay ── */
-function tcardHTML(c, i){
-  const ph = c.photo
-    ? `<div class="tcard-ph" style="background-image:url('${c.photo}')"></div>`
-    : `<div class="tcard-ph"><span>${esc((c.name||'?').slice(0,1).toUpperCase())}</span></div>`;
-  return `<div class="tcard ${i===idx?'cur':''}" data-name="${esc(c.name).toLowerCase()}" data-code="${esc(c.code||'').toLowerCase()}" onclick="goTo(${i});closeGrid()">
-    ${ph}
-    <div class="tcard-b">
-      <div class="tcard-name">${esc(c.name)}</div>
-      <div class="tcard-price">${fmtA(c.salePrice)}</div>
+<!-- ══ SHOWROOM / MARCA ══ -->
+<section class="showroom" id="showroom">
+  <div class="showroom-img"></div>
+  <div class="showroom-scrim"></div>
+  <div class="showroom-inner">
+    <div class="wm-logo wm-showroom" role="img" aria-label="TBR Tools"></div>
+    <h2 class="showroom-title">Equipamiento para profesionales<br>que no improvisan</h2>
+    <p class="showroom-sub" style="font-weight: 500">Selección premium de herramientas, con atención directa y asesoramiento real. Armá tu pedido y coordinamos al instante por WhatsApp.</p>
+    <div class="showroom-cta">
+      <button class="btn btn-gold" onclick="document.getElementById('coleccion').scrollIntoView({behavior:'smooth'})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Ver colección
+      </button>
+      <button class="btn glass btn-glass" onclick="openWa()">
+        <span class="wa-ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg></span>
+        Escribinos
+      </button>
     </div>
-  </div>`;
-}
-function renderGrid(){
-  const grid = document.getElementById('tgrid');
-  grid.innerHTML = PRODUCTS.length ? PRODUCTS.map(tcardHTML).join('') : '<div class="empty">Catálogo vacío</div>';
-}
-function openGrid(){ renderGrid(); document.getElementById('gridOl').classList.add('open'); document.getElementById('gq').value=''; }
-function closeGrid(){ document.getElementById('gridOl').classList.remove('open'); }
-function filterGrid(){
-  const q = document.getElementById('gq').value.trim().toLowerCase();
-  document.querySelectorAll('.tcard').forEach(c=>{
-    const match = !q || c.dataset.name.includes(q) || c.dataset.code.includes(q);
-    c.style.display = match ? '' : 'none';
-  });
-}
+  </div>
+</section>
 
-/* ── keyboard + swipe ── */
-document.addEventListener('keydown', e=>{
-  if(document.getElementById('gridOl').classList.contains('open')){
-    if(e.key==='Escape') closeGrid();
-    return;
-  }
-  if(e.key==='ArrowRight') nextSlide();
-  else if(e.key==='ArrowLeft') prevSlide();
-});
-let touchX=null;
-document.addEventListener('touchstart', e=>{touchX=e.touches[0].clientX;}, {passive:true});
-document.addEventListener('touchend', e=>{
-  if(touchX==null || document.getElementById('gridOl').classList.contains('open')) return;
-  const dx=e.changedTouches[0].clientX-touchX;
-  if(dx<-50) nextSlide();
-  else if(dx>50) prevSlide();
-  touchX=null;
-}, {passive:true});
+<!-- ══ FRANJA DE CONFIANZA ══ -->
+<section class="trust">
+  <div class="trust-in">
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <div><b>Tarjetas y cuotas</b><span style="font-weight: 500">Débito, crédito y transferencia</span></div>
+    </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <div><b>Envío o retiro</b><span style="font-weight: 500">Coordinamos por WhatsApp</span></div>
+    </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <div><b>Garantía oficial</b><span style="font-weight: 500">Productos con garantía de fábrica</span></div>
+    </div>
+  </div>
+</section>
 
-(async () => {
-  const live = await fetchLiveCatalog();
-  if(live){ EMPRESA = live.empresa; PRODUCTS = live.products; idx = Math.min(idx, PRODUCTS.length-1); }
-  renderSlide();
-})();
-</script>
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="footer-in">
+    <div class="footer-brand">
+      <div class="brand">
+        <img class="brand-logo" src="assets/tbr-logo.png" alt="TBR Tools" style="width: 52px; height: 52px">
+        <div class="brand-txt"><div class="brand-sub" style="font-weight: 600">Ferretería · Herramientas</div></div>
+      </div>
+      <p style="margin: 1px 0px 0px; font-weight: 500">Selección de herramientas, máquinas y accesorios para profesionales y aficionados. Consultá precios y disponibilidad por WhatsApp y armá tu pedido — nuestro equipo te asesora y responde a la brevedad.</p>
+    </div>
+    <div class="footer-cta">
+      <span class="footer-mono" style="font-weight: 600">Atención directa</span>
+      <button class="btn btn-gold" onclick="openWa()">
+        <span class="wa-ic wa-ic-onlight"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.94.56 3.76 1.53 5.31L2 22l4.93-1.6a9.86 9.86 0 0 0 5.11 1.4c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm4.49 11.93c-.25-.12-1.45-.71-1.67-.79-.22-.08-.39-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.54.06-1.45-.72-2.4-1.29-3.36-2.92-.25-.43.25-.4.72-1.33.08-.16.04-.3-.04-.43-.08-.12-.55-1.32-.75-1.81-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.41.06-.63.31-.22.25-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.68 2.57 4.07 3.5 2 .79 2.4.63 2.84.59.44-.04 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z"/></svg></span>
+        Escribir por WhatsApp
+      </button>
+    </div>
+  </div>
+  <div class="footer-legal" style="font-weight: 600">TBR Tools · Catálogo digital · Precios sujetos a modificación sin previo aviso</div>
+</footer>
+
+<!-- ══ DETALLE INMERSIVO ══ -->
+<div class="detail" id="detail">
+  <div class="detail-bg" id="detailBg"></div>
+  <button class="glass detail-back" onclick="closeDetail()" aria-label="Volver">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Volver
+  </button>
+  <button class="glass icon-btn detail-close" onclick="closeDetail()" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="detail-grid" id="detailGrid"></div>
+  <section class="related" id="related"></section>
+</div>
+
+<!-- ══ CARRITO ══ -->
+<div class="scrim-ov" id="cartScrim" onclick="closeCart()"></div>
+<aside class="cart" id="cart" aria-label="Tu pedido">
+  <div class="cart-head">
+    <h3>Tu pedido <span id="cartFootCount">0 ítems</span></h3>
+    <button class="glass icon-btn" onclick="closeCart()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cart-body" id="cartBody"></div>
+  <div class="cart-foot" id="cartFoot"></div>
+</aside>
+
+<!-- ══ BARRA DE PEDIDO FIJA (mobile) ══ -->
+<button class="order-bar" id="orderBar" onclick="openCart()" aria-label="Ver pedido">
+  <span class="ob-left">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+    <span class="ob-meta"><b id="orderBarCount">0 ítems</b><i id="orderBarTotal">$ 0</i></span>
+  </span>
+  <span class="ob-cta">Ver pedido
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </span>
+</button>
+
+<div class="grain"></div>
+
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="catalogo-data.js"></script>
+<script src="app.js?v=39"></script>
 </body>
 </html>
+
+<style id="__om-edit-overrides">
+</style>
