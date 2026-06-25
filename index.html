@@ -9301,6 +9301,7 @@ function nextFacturaNro(tipo) {
 }
 
 function pgFacturador() {
+  const mob = window.innerWidth < 640;
   const allFacturas = DB.get('facturas',[]);
   const periodos = [...new Set(allFacturas.map(f=>(f.fecha||'').slice(0,7)).filter(Boolean))].sort().reverse();
   const facturas = (_factFilter ? allFacturas.filter(f=>(f.fecha||'').startsWith(_factFilter)) : allFacturas).slice().sort((a,b)=>a.nro>b.nro?-1:1);
@@ -9325,28 +9326,30 @@ function pgFacturador() {
     const ec = {borrador:'var(--di)',emitida:'var(--ye)',pagada:'var(--gr)',cancelada:'var(--re)',anulada:'var(--re)'}[estadoEfectivo]||'var(--di)';
     const el = {borrador:'BORRADOR',emitida:'EMITIDA',pagada:'PAGADA',cancelada:'CANCELADA',anulada:'ANULADA'}[estadoEfectivo]||estadoEfectivo;
     const tipoLabel = f.tipo==='NC' ? 'Nota de Crédito C' : f.tipo==='RM' ? 'Remito' : 'Factura C';
-    return `<div style="border-bottom:1px solid var(--b1);transition:background .15s${tieneNC&&f.tipo!=='NC'?';opacity:0.5':''}" onmouseenter="this.style.background='rgba(255,255,255,.02)'" onmouseleave="this.style.background='transparent'">
-      <div style="display:flex;align-items:center;gap:12px;padding:13px 18px;cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
+    const waBtn = `<button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')" title="Compartir por WhatsApp" style="display:flex;align-items:center;justify-content:center;gap:5px;padding:0 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg></button>`;
+    const emitirSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>`;
+    return `<div style="border-bottom:1px solid var(--b1);transition:background .15s${tieneNC&&f.tipo!=='NC'?';opacity:0.5':''}">
+      <div style="display:flex;align-items:center;gap:10px;padding:${mob?'12px 14px':'13px 18px'};cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
         <div style="width:3px;height:36px;border-radius:2px;background:${accentColor};flex-shrink:0;opacity:0.6"></div>
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--ch)${tieneNC&&f.tipo!=='NC'?';text-decoration:line-through':''}">${tipoLabel} <span style="color:var(--di)">Nº</span> ${esc(f.nro||'—')}</div>
-          <div style="font-size:12px;color:var(--di);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtD(f.fecha)} · ${esc(f.comprador?.nombre||'Consumidor Final')}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:${mob?'13px':'15px'};font-weight:700;letter-spacing:.5px;color:var(--ch)${tieneNC&&f.tipo!=='NC'?';text-decoration:line-through':''}">${tipoLabel} <span style="color:var(--di)">Nº</span> ${esc(f.nro||'—')}</div>
+          <div style="font-size:11px;color:var(--di);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtD(f.fecha)} · ${esc(f.comprador?.nombre||'Consumidor Final')}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch)">${fmtA(f.total||0)}</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'15px':'17px'};font-weight:700;color:var(--ch)">${fmtA(f.total||0)}</div>
           <div style="font-size:9px;font-weight:700;color:${ec};letter-spacing:1px">${el}</div>
         </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--b3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--b3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-      <div style="display:flex;gap:6px;padding:0 18px 12px 33px;flex-wrap:wrap">
-        <button class="btn-g btn-sm" onclick="openFactura('${f.id}')">${ic('edit')} Editar</button>
-        <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')} PDF</button>
-        <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')" title="Compartir por WhatsApp" style="display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg></button>
-        ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
-        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir</button>`:''}
-        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito">${ic('fileText')} NC</button>`:''}
-        ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕ Anular</button>`:''}
-        ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')} Remito</button>`:''}
+      <div style="display:flex;gap:6px;padding:0 ${mob?'10px':'18px'} 12px ${mob?'17px':'33px'};flex-wrap:wrap">
+        <button class="btn-g btn-sm" onclick="openFactura('${f.id}')">${ic('edit')}${mob?'':' Editar'}</button>
+        <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')}${mob?'':' PDF'}</button>
+        ${waBtn}
+        ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓${mob?'':' Pagada'}</button>`:''}
+        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${emitirSvg}${mob?'':' Emitir'}</button>`:''}
+        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Nota de Crédito">${ic('fileText')} NC</button>`:''}
+        ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕</button>`:''}
+        ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')}${mob?'':' Remito'}</button>`:''}
         <button class="btn-d btn-sm" onclick="deleteFactura('${f.id}')">${ic('trash')}</button>
       </div>
     </div>`;
@@ -9358,16 +9361,16 @@ function pgFacturador() {
     const total = totalFn ? items.reduce((s,f)=>s+(f.total||0),0) : null;
     const chevron = `<svg style="flex-shrink:0;transition:transform .2s;transform:rotate(${isOpen?'90deg':'0deg'})" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`;
     return `<div style="border:1px solid ${borderColor};border-radius:12px;overflow:hidden;margin-bottom:10px">
-      <div onclick="if(_factOpenSections.has('${id}'))_factOpenSections.delete('${id}');else _factOpenSections.add('${id}');render()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;background:${bgAccent};user-select:none">
-        <div style="width:28px;height:28px;border-radius:8px;background:${borderColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <span style="font-size:14px">${icon}</span>
+      <div onclick="if(_factOpenSections.has('${id}'))_factOpenSections.delete('${id}');else _factOpenSections.add('${id}');render()" style="display:flex;align-items:center;gap:10px;padding:${mob?'12px 14px':'14px 18px'};cursor:pointer;background:${bgAccent};user-select:none">
+        <div style="width:${mob?'24px':'28px'};height:${mob?'24px':'28px'};border-radius:8px;background:${borderColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-size:${mob?'12px':'14px'}">${icon}</span>
         </div>
-        <div style="flex:1">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:${color}">${label}</div>
-          <div style="font-size:11px;color:var(--di);margin-top:1px">${items.length} comprobante${items.length!==1?'s':''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:${mob?'12px':'13px'};font-weight:800;letter-spacing:${mob?'1px':'2px'};text-transform:uppercase;color:${color}">${label}</div>
+          <div style="font-size:10px;color:var(--di);margin-top:1px">${items.length} comprobante${items.length!==1?'s':''}</div>
         </div>
-        ${total!==null?`<div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--ch);margin-right:4px">${fmtA(total)}</div>`:''}
-        <div style="color:var(--di)">${chevron}</div>
+        ${total!==null?`<div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'15px':'18px'};font-weight:700;color:var(--ch);flex-shrink:0">${fmtA(total)}</div>`:''}
+        <div style="color:var(--di);flex-shrink:0">${chevron}</div>
       </div>
       ${isOpen?`<div style="background:var(--bg1)">${items.map(f=>factRow(f,color)).join('')}<div style="height:1px"></div></div>`:''}
     </div>`;
@@ -9379,49 +9382,46 @@ function pgFacturador() {
   return `<div class="pg">
 
   <!-- Header -->
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
     <div>
       <div class="sh mb4" style="margin-bottom:2px">Facturador</div>
       <div class="hint" style="margin:0">Facturas C · Monotributo · Argentina</div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--si);font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;outline:none">
-        <option value="">Todos los períodos</option>
-        ${periodos.map(m=>`<option value="${m}"${_factFilter===m?' selected':''}>${m}</option>`).join('')}
-      </select>
-    </div>
+    <select onchange="_factFilter=this.value;render()" style="background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--si);font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;outline:none;${mob?'width:100%':''}">
+      <option value="">Todos los períodos</option>
+      ${periodos.map(m=>`<option value="${m}"${_factFilter===m?' selected':''}>${m}</option>`).join('')}
+    </select>
   </div>
 
-  <!-- KPI Cards -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:14px 16px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase;margin-bottom:6px">Total emitido</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--ch);line-height:1">${fmtA(totEmitidas)}</div>
+  <!-- KPI Cards: 2x2 en mobile, 4 en desktop -->
+  <div style="display:grid;grid-template-columns:${mob?'repeat(2,1fr)':'repeat(4,1fr)'};gap:${mob?'8px':'10px'};margin-bottom:16px">
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Total emitido</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--ch);line-height:1">${fmtA(totEmitidas)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),var(--bg1));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:14px 16px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gr);opacity:.7;text-transform:uppercase;margin-bottom:6px">Cobrado</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--gr);line-height:1">${fmtA(totPagadas)}</div>
+    <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),var(--bg1));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--gr);opacity:.7;text-transform:uppercase;margin-bottom:4px">Cobrado</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--gr);line-height:1">${fmtA(totPagadas)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg1));border:1px solid rgba(251,191,36,${totPendiente>0?'.25':'.08'});border-radius:12px;padding:14px 16px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--ye);opacity:.7;text-transform:uppercase;margin-bottom:6px">Pendiente</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${totPendiente>0?'var(--ye)':'var(--di)'};line-height:1">${fmtA(totPendiente)}</div>
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg1));border:1px solid rgba(251,191,36,${totPendiente>0?'.25':'.08'});border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ye);opacity:.7;text-transform:uppercase;margin-bottom:4px">Pendiente</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:${totPendiente>0?'var(--ye)':'var(--di)'};line-height:1">${fmtA(totPendiente)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:14px 16px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase;margin-bottom:6px">Documentos</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--di);line-height:1">${facturas.length}</div>
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Documentos</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--di);line-height:1">${facturas.length}</div>
     </div>
   </div>
 
   <!-- Action Toolbar -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--bg2);border:1px solid var(--b2);border-radius:12px;margin-bottom:24px">
-    <button class="btn-p" onclick="openFactura(null)" style="flex-shrink:0">${ic('edit')} Nueva Factura C</button>
-    <div style="width:1px;height:24px;background:var(--b2);flex-shrink:0"></div>
-    <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')} Libro IVA (CSV)</button>
+  <div style="display:grid;grid-template-columns:${mob?'1fr 1fr':'auto auto auto auto'};gap:8px;margin-bottom:20px">
+    <button class="btn-p" onclick="openFactura(null)" style="${mob?'grid-column:1/-1;justify-content:center;':''}flex-shrink:0">${ic('edit')} Nueva Factura C</button>
+    <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')}${mob?' CSV':' Libro IVA (CSV)'}</button>
     <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Sincronizar ARCA
+      ${mob?'ARCA':'Sincronizar ARCA'}
     </button>
-    <button class="btn-g" onclick="forzarActualizacion()" style="font-size:11px;opacity:.6" title="Limpiar caché y recargar">↺ Actualizar app</button>
+    <button class="btn-g" onclick="forzarActualizacion()" style="font-size:11px;opacity:.6" title="Limpiar caché y recargar">↺${mob?'':' Actualizar app'}</button>
   </div>
 
   <!-- Document Sections -->
