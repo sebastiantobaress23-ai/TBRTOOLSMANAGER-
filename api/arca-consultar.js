@@ -1,6 +1,6 @@
 /**
  * Vercel serverless function: consulta comprobantes emitidos en ARCA
- * GET /api/arca-consultar?desde=1&hasta=25
+ * GET /api/arca-consultar?desde=1&tipo=11
  *
  * Devuelve todos los comprobantes tipo 11 (Factura C) del punto de venta
  * configurado, en el rango de números indicado.
