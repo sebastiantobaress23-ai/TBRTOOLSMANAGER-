@@ -9343,7 +9343,7 @@ function pgFacturador() {
         <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')} PDF</button>
         <button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')" title="Compartir por WhatsApp" style="display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg></button>
         ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓ Pagada</button>`:''}
-        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${ic('zap')} Emitir</button>`:''}
+        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir</button>`:''}
         ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Emitir Nota de Crédito">${ic('fileText')} NC</button>`:''}
         ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕ Anular</button>`:''}
         ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')} Remito</button>`:''}
@@ -9596,7 +9596,7 @@ function openFactura(id) {
     <!-- Footer sticky bottom -->
     <div style="position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--b2);padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-radius:0 0 14px 14px">
       ${isNew ? `
-        <button class="btn-p" onclick="saveFactura(true)" id="f-emit-btn" style="height:46px;font-size:14px;letter-spacing:1px">${ic('zap')} Emitir y solicitar CAE</button>
+        <button class="btn-p" onclick="saveFactura(true)" id="f-emit-btn" style="height:46px;font-size:14px;letter-spacing:1px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir y solicitar CAE</button>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <button class="btn-g" onclick="saveFactura(false)" style="height:40px;font-size:12px">${ic('save')} Borrador</button>
           <button class="btn-g" onclick="closeFacturaModal()" style="height:40px;font-size:12px">Cancelar</button>
@@ -9893,10 +9893,10 @@ async function saveFactura(emitir=false){
         body:JSON.stringify({pdv,fecha:fecha.replace(/-/g,''),cuitComprador:cuitVal||'0',concepto,importe:total})});
       const data = await resp.json();
       if(data.cae){ cae=data.cae; caeFecha=data.caeFecha; toast('CAE obtenido'); }
-      else { toast('ARCA: '+(data.error||'Sin CAE'),false,6000); if(btn){btn.disabled=false;btn.innerHTML=`${ic('zap')} Emitir y solicitar CAE`;} return; }
+      else { toast('ARCA: '+(data.error||'Sin CAE'),false,6000); if(btn){btn.disabled=false;btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir y solicitar CAE`;} return; }
     } catch(e){
       toast('Error CAE: '+e.message,false,6000);
-      if(btn){btn.disabled=false;btn.innerHTML=`${ic('zap')} Emitir y solicitar CAE`;}
+      if(btn){btn.disabled=false;btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir y solicitar CAE`;}
       return;
     }
   }
@@ -10001,7 +10001,7 @@ async function solicitarCAE(){
   } catch(e){
     toast('Error al solicitar CAE: '+e.message,false,6000);
   } finally {
-    if(btn){ btn.disabled=false; btn.innerHTML=`${ic('zap')} Solicitar CAE`; }
+    if(btn){ btn.disabled=false; btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Solicitar CAE`; }
   }
 }
 
