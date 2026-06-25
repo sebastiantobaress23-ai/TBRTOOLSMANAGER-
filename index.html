@@ -525,9 +525,9 @@ html.light body::before{
 /* NAV */
 .nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5);position:sticky;top:76px;z-index:99}
 .nav::-webkit-scrollbar{display:none}
-.tab{padding:16px 20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.22);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
-.tab:hover{color:rgba(255,255,255,.6)}
-.tab.on{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.35);text-shadow:0 0 20px rgba(255,255,255,.2)}
+.tab{padding:16px 20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.3);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
+.tab:hover{color:rgba(255,255,255,.65)}
+.tab.on{color:rgba(245,240,228,.92);border-bottom-color:var(--ud);text-shadow:0 0 20px rgba(226,201,126,.25)}
 
 /* CONTENT */
 #app{flex:1;position:relative;z-index:1;animation:pgFadeIn .28s ease}
@@ -1201,6 +1201,70 @@ html.text-large .fl, html.text-large .meta { font-size: 15px !important; }
 html.density-compact .card { padding: 12px !important; }
 html.density-compact [style*="padding:14px"] { padding: 10px !important; }
 html.density-comfortable .card { padding: 20px !important; }
+
+/* ══════════════════════════════════════════
+   PULIDO GENERAL — coherencia y legibilidad
+══════════════════════════════════════════ */
+
+/* Botón primario: acento dorado claro para diferenciarse del ghost button */
+.btn-p{background:linear-gradient(135deg,rgba(44,34,12,1),rgba(30,22,6,1))!important;border:1px solid rgba(226,201,126,.28)!important;color:rgba(226,201,126,.92)!important;box-shadow:0 2px 12px rgba(226,201,126,.07),inset 0 1px 0 rgba(255,255,255,.04)!important}
+.btn-p:hover{background:linear-gradient(135deg,rgba(56,44,14,1),rgba(38,28,8,1))!important;border-color:rgba(226,201,126,.48)!important;color:rgba(226,201,126,1)!important;box-shadow:0 4px 22px rgba(226,201,126,.16),inset 0 1px 0 rgba(255,255,255,.06)!important;transform:translateY(-1px)}
+html.light .btn-p{background:linear-gradient(135deg,#78350f,#92400e)!important;border-color:#92400e!important;color:#fff!important;box-shadow:0 2px 12px rgba(120,53,15,.22)!important}
+html.light .btn-p:hover{background:linear-gradient(135deg,#92400e,#b45309)!important;box-shadow:0 4px 20px rgba(120,53,15,.32)!important}
+
+/* Hint text: mínima legibilidad */
+.hint{color:var(--di)!important}
+html.light .hint{color:rgba(0,0,0,.38)!important}
+
+/* Form field labels: un paso más claros */
+.fl{color:var(--si)!important}
+html.light .fl{color:rgba(0,0,0,.45)!important}
+
+/* Stat card sub-labels: ligeramente más visibles */
+.sc-l{color:rgba(255,255,255,.32)!important}
+.sc-s{color:rgba(255,255,255,.3)!important}
+html.light .sc-l,html.light .sc-s{color:rgba(0,0,0,.3)!important}
+
+/* TCE strip labels */
+.tx-l{color:rgba(255,255,255,.32)!important}
+.tx-s{color:rgba(255,255,255,.28)!important}
+html.light .tx-l,html.light .tx-s{color:rgba(0,0,0,.32)!important}
+
+/* Tabla headers: ligeramente más visibles */
+thead th{color:rgba(255,255,255,.3)!important}
+html.light thead th{color:rgba(0,0,0,.35)!important}
+
+/* Mob tab: posición relativa necesaria para el indicador */
+.mob-tab{position:relative}
+/* Indicador activo: línea dorada superior */
+.mob-tab.on::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--ud);border-radius:0 0 3px 3px;opacity:.85}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)}
+html.light ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12)}
+html.light ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.2)}
+
+/* Selección de texto */
+::selection{background:rgba(226,201,126,.2);color:var(--ch)}
+html.light ::selection{background:rgba(120,53,15,.2);color:#1c1c1c}
+
+/* Cards en hover más pronunciado */
+.card:hover{box-shadow:0 6px 32px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.05)!important}
+
+/* Botón ghost: micro-mejora de contraste */
+.btn-g{color:rgba(255,255,255,.7)!important}
+.btn-g:hover{color:rgba(255,255,255,.92)!important}
+html.light .btn-g{color:rgba(0,0,0,.52)!important}
+html.light .btn-g:hover{color:rgba(0,0,0,.75)!important}
+
+/* Íconos de nav tab: glow al activarse */
+.mob-tab.on .mob-icon{filter:drop-shadow(0 0 5px rgba(226,201,126,.35))!important}
+
+/* Altura de línea en body para mayor legibilidad */
+body{line-height:1.5}
 
 </style>
 </head>
