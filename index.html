@@ -10260,7 +10260,18 @@ async function sincronizarARCA() {
         let nuevosEstaRonda = 0;
         for (const f of nuevos) {
           const clave = tipoLocal + ':' + (f.nro||'');
-          if (clavesLocales.has(clave)) continue;
+          // Si ya existe pero es una NC sin facturaOrigen, actualizarla con el cbteAsocNro
+          if (clavesLocales.has(clave)) {
+            if (tipoLocal === 'NC' && f.cbteAsocNro) {
+              const lista = DB.get('facturas', []);
+              const idx = lista.findIndex(x => x.nro === f.nro && x.tipo === 'NC');
+              if (idx >= 0 && !lista[idx].facturaOrigen) {
+                lista[idx].facturaOrigen = f.cbteAsocNro;
+                DB.set('facturas', lista);
+              }
+            }
+            continue;
+          }
           clavesLocales.add(clave);
           const nueva = {
             id:       `arca-${cbteT}-${f.cbteNro}`,
