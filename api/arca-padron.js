@@ -14,6 +14,30 @@ function httpsGet(url) {
   });
 }
 
+// Calcula el dígito verificador de un CUIT dado el prefijo y el DNI
+function calcVerif(prefix, dni) {
+  const base = String(prefix) + String(dni).padStart(8, '0');
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = base.split('').reduce((acc, d, i) => acc + parseInt(d) * pesos[i], 0);
+  const resto = suma % 11;
+  if (resto === 0) return 0;
+  if (resto === 1) return null; // CUIT inválido para este prefijo
+  return 11 - resto;
+}
+
+// Genera todos los CUITs posibles a partir de un DNI
+function cuitsDesdeDNI(dni) {
+  const prefijos = [20, 23, 24, 27]; // masculino, especial, especial, femenino
+  const cuits = [];
+  for (const p of prefijos) {
+    const v = calcVerif(p, dni);
+    if (v !== null) {
+      cuits.push(`${p}${String(dni).padStart(8, '0')}${v}`);
+    }
+  }
+  return cuits;
+}
+
 function normalizeRest(p) {
   if (!p) return null;
   const nombre = p.razonSocial
@@ -33,7 +57,6 @@ function normalizeRest(p) {
     if (iva) categoriaIVA = iva.descripcionImpuesto || '';
   }
   const dom = p.domicilioFiscal || p.domicilio || {};
-  // Armar dirección con calle + número si están separados
   let direccion = dom.direccion || '';
   if (!direccion && dom.calle) {
     direccion = dom.calle + (dom.numero ? ' ' + dom.numero : '');
@@ -43,15 +66,36 @@ function normalizeRest(p) {
   const localidad = dom.descripcionLocalidad || dom.localidad || '';
   const provincia = dom.descripcionProvincia || dom.provincia || '';
   return {
-    cuit:         String(p.idPersona || ''),
-    nombre:       nombre.trim(),
+    cuit:        String(p.idPersona || ''),
+    nombre:      nombre.trim(),
     categoriaIVA,
-    estadoClave:  p.estadoClave || '',
-    direccion:    direccion.trim(),
+    estadoClave: p.estadoClave || '',
+    direccion:   direccion.trim(),
     localidad,
     provincia,
-    codPostal:    String(dom.codPostal || dom.codigoPostal || ''),
+    codPostal:   String(dom.codPostal || dom.codigoPostal || ''),
   };
+}
+
+async function consultarCUIT(cuit) {
+  const urls = [
+    `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`,
+    `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`,
+    `https://soa.afip.gov.ar/sr-padron/v1/persona/${cuit}`,
+  ];
+  for (const url of urls) {
+    try {
+      const { status, body } = await httpsGet(url);
+      if (status !== 200) continue;
+      const raw = body?.persona || body?.data;
+      if (!raw || Array.isArray(raw)) continue;
+      const persona = normalizeRest(raw);
+      if (persona?.nombre) return persona;
+    } catch (e) {
+      console.error('Error consultando', url, ':', e.message);
+    }
+  }
+  return null;
 }
 
 module.exports = async function handler(req, res) {
@@ -71,54 +115,27 @@ module.exports = async function handler(req, res) {
   if (!esCUIT && !esDNI)
     return res.status(400).json({ error: 'Documento inválido. CUIT: 11 dígitos, DNI: 7-8 dígitos' });
 
-  const endpoints = esCUIT ? [
-    // Endpoint público de ARCA via tramitesadistancia (más confiable)
-    `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${doc}`,
-    // Fallbacks REST oficiales
-    `https://soa.afip.gov.ar/sr-padron/v2/persona/${doc}`,
-    `https://soa.afip.gov.ar/sr-padron/v1/persona/${doc}`,
-  ] : [
-    // Para DNI: endpoint de búsqueda por documento
-    `https://soa.afip.gov.ar/sr-padron/v2/personas?documento=${doc}&tipodocumento=96`,
-  ];
-
-  for (const url of endpoints) {
-    try {
-      console.log('Consultando ARCA:', url);
-      const { status, body } = await httpsGet(url);
-      console.log('ARCA status:', status, 'keys:', Object.keys(body || {}));
-
-      if (status !== 200) continue;
-
-      // tramitesadistancia devuelve { persona: {...} }
-      // soa.afip.gov.ar devuelve { data: {...} } o { data: [{...}] }
-      const raw = body?.persona || body?.data;
-      if (!raw) continue;
-
-      // Múltiples resultados (búsqueda por DNI)
-      if (Array.isArray(raw)) {
-        if (raw.length === 0) continue;
-        if (raw.length === 1) {
-          const persona = normalizeRest(raw[0]);
-          if (persona?.nombre) return res.status(200).json(persona);
-        } else {
-          const personas = raw.map(normalizeRest).filter(p => p?.nombre);
-          if (personas.length === 0) continue;
-          return res.status(200).json({ multiple: true, personas });
-        }
-        continue;
-      }
-
-      // Resultado único
-      const persona = normalizeRest(raw);
-      if (persona?.nombre) return res.status(200).json(persona);
-
-    } catch (e) {
-      console.error('Error consultando', url, ':', e.message);
-    }
+  if (esCUIT) {
+    const persona = await consultarCUIT(doc);
+    if (persona) return res.status(200).json(persona);
+    return res.status(404).json({ error: `CUIT ${doc} no encontrado en ARCA.` });
   }
 
-  return res.status(404).json({
-    error: `No se encontraron datos para ${esCUIT ? 'CUIT' : 'DNI'} ${doc} en ARCA. Verificá que esté inscripto.`
-  });
+  // Para DNI: derivar todos los CUITs posibles y probarlos en paralelo
+  const cuits = cuitsDesdeDNI(doc);
+  console.log(`DNI ${doc} → CUITs a probar:`, cuits);
+
+  const resultados = await Promise.all(cuits.map(c => consultarCUIT(c)));
+  const encontrados = resultados.filter(Boolean);
+
+  if (encontrados.length === 0) {
+    return res.status(404).json({
+      error: `DNI ${doc} no encontrado en ARCA. Si la persona no está inscripta en AFIP, ingresá los datos manualmente.`
+    });
+  }
+  if (encontrados.length === 1) {
+    return res.status(200).json(encontrados[0]);
+  }
+  // Múltiples CUITs activos para el mismo DNI (raro pero posible)
+  return res.status(200).json({ multiple: true, personas: encontrados });
 };
