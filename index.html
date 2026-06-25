@@ -1308,6 +1308,99 @@ body{line-height:1.5}
 .mono-pct-lbl{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;line-height:1}
 .mono-limit-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--di);margin-top:4px}
 
+/* ══════════════════════════════════════════════
+   HARMONY PASS — visual unity across all sections
+   ══════════════════════════════════════════════ */
+
+/* 1. Unified card base — consistent dark gradient + border */
+.card,.sc,.mc{
+  background:linear-gradient(160deg,rgba(20,20,20,1),rgba(13,13,13,1))!important;
+  border:1px solid rgba(255,255,255,.06)!important;
+}
+.hi{
+  background:linear-gradient(160deg,rgba(20,20,20,1),rgba(13,13,13,1))!important;
+  border:1px solid rgba(255,255,255,.06)!important;
+}
+
+/* 2. Accent stat cards — top glow strip instead of side stripe */
+.sc.accent-g,.sc.accent-y,.sc.accent-u,.sc.accent-d{
+  border-left:1px solid rgba(255,255,255,.06)!important;
+  border-top:none!important;
+  position:relative;overflow:hidden;
+}
+.sc.accent-g::after,.sc.accent-y::after,.sc.accent-u::after,.sc.accent-d::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;pointer-events:none;border-radius:var(--r2) var(--r2) 0 0;
+}
+.sc.accent-g::after{background:linear-gradient(90deg,rgba(74,222,128,.6),rgba(74,222,128,0))}
+.sc.accent-y::after{background:linear-gradient(90deg,rgba(251,191,36,.6),rgba(251,191,36,0))}
+.sc.accent-u::after{background:linear-gradient(90deg,rgba(45,212,191,.6),rgba(45,212,191,0))}
+.sc.accent-d::after{background:linear-gradient(90deg,rgba(226,201,126,.6),rgba(226,201,126,0))}
+
+/* Keep shimmer line (::before) — don't conflict with ::after */
+.sc::before{z-index:1}
+.sc::after{z-index:2}
+
+/* 3. sc-hero — replace side stripe with top accent */
+.sc-hero{
+  border-left:1px solid rgba(255,255,255,.06)!important;
+  border-top:none!important;
+  position:relative;overflow:hidden;
+}
+.sc-hero::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(74,222,128,.7),rgba(74,222,128,0));
+  pointer-events:none;z-index:2;
+}
+
+/* 4. .info — single canonical teal info box */
+.info{
+  background:rgba(45,212,191,.05)!important;
+  border:1px solid rgba(45,212,191,.15)!important;
+  border-radius:var(--r)!important;
+  padding:10px 14px!important;
+  font-size:13px!important;
+  color:rgba(45,212,191,.8)!important;
+  line-height:1.6;
+}
+
+/* 5. .alert-y — single canonical yellow alert (after any earlier duplicate) */
+.alert-y{
+  background:rgba(251,191,36,.05)!important;
+  border:1px solid rgba(251,191,36,.18)!important;
+  border-left:1px solid rgba(251,191,36,.18)!important;
+  border-radius:var(--r)!important;
+  padding:11px 16px!important;
+  font-size:13px!important;
+  color:rgba(251,191,36,.9)!important;
+  line-height:1.6;
+}
+
+/* 6. btn-p — unified gold primary button */
+.btn-p{
+  background:rgba(226,201,126,.12)!important;
+  border:1px solid rgba(226,201,126,.35)!important;
+  color:var(--ud)!important;
+}
+.btn-p:hover{
+  background:rgba(226,201,126,.18)!important;
+  border-color:rgba(226,201,126,.5)!important;
+}
+
+/* 7. Light mode stat cards — fix .html.light typo, re-apply correctly */
+html.light .card,
+html.light .sc,
+html.light .mc{
+  background:linear-gradient(160deg,#ffffff,#f7f7f7)!important;
+  border-color:rgba(0,0,0,.07)!important;
+}
+html.light .sc::after{opacity:.6}
+
+/* 8. Hover states — unified subtle lift, no side-stripes */
+.sc:hover,.card:hover,.mc:hover{
+  border-color:rgba(255,255,255,.1)!important;
+  box-shadow:0 6px 28px rgba(0,0,0,.45)!important;
+}
+
 </style>
 </head>
 <body>
