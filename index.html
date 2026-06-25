@@ -1278,6 +1278,20 @@ body{line-height:1.5}
 .nav-sort-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .nav-sort-ghost{border:2px dashed rgba(226,201,126,.35)!important;background:rgba(226,201,126,.04)!important;opacity:.6}
 
+/* ── GASTOS OPERATIVOS ── */
+.gasto-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;transition:background .15s}
+.gasto-row:hover{background:rgba(255,255,255,.04)}
+.gasto-cat-badge{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;padding:3px 7px;border-radius:20px;flex-shrink:0}
+.gasto-amount{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--re);margin-left:auto;flex-shrink:0}
+.gasto-desc{font-size:13px;color:var(--ch);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gasto-date{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--di);letter-spacing:.5px;flex-shrink:0}
+
+/* ── MONOTRIBUTO PROGRESS ── */
+.mono-bar-wrap{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin:12px 0 6px}
+.mono-bar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.mono-pct-lbl{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;line-height:1}
+.mono-limit-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--di);margin-top:4px}
+
 </style>
 </head>
 <body>
@@ -1860,7 +1874,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos'];
 
 // Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
 // auth anónima fallida): trae solo los nodos de lectura pública (catalog,
@@ -1931,13 +1945,14 @@ async function fbSync() {
       // Solo re-renderizar si algún dato relevante para la página actual cambió.
       // Evita que syncs de otras secciones reseteen el scroll y el estado visual.
       const PAGE_KEYS = {
-        dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa'],
+        dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa','gastos','facturas'],
         compra:       ['catalog','configs','settings'],
         historial:    ['purchases','configs'],
         ventas:       ['sales','catalog','settings'],
         pedidos:      ['pedidos','settings','empresa'],
         catalogo:     ['catalog','settings'],
-        stats:        ['purchases','sales','pedidos','catalog'],
+        stats:        ['purchases','sales','pedidos','catalog','gastos'],
+        gastos:       ['gastos','settings'],
         publicar:     ['mlpubs','catalog','settings'],
         competencia:  ['catalog'],
         config:       ['settings','empresa','configs'],
@@ -2182,6 +2197,7 @@ const ALL_MODULES = [
   {id:'orden',       label:'OC',        tabLabel:'Orden de Compra',  svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>'},
   {id:'cotizaciones',label:'Cotiz.',    tabLabel:'Cotiz. Proveed.',  svg:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},
   {id:'facturador',  label:'Facturar',  tabLabel:'Facturador',       svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},
+  {id:'gastos',      label:'Gastos',    tabLabel:'Gastos Op.',       svg:'<svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'},
   {id:'config',      label:'Config',    tabLabel:'Config',           svg:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'}
 ];
 
@@ -3161,7 +3177,7 @@ function render() {
   Object.values(CH).forEach(c=>{try{c.destroy()}catch{}});
   CH = {};
   const app = document.getElementById('app');
-  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,pedidos:pgPedidos,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,clientes:pgClientes,viaje:pgViaje,facturador:pgFacturador};
+  const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,pedidos:pgPedidos,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,clientes:pgClientes,viaje:pgViaje,facturador:pgFacturador,gastos:pgGastos};
   if (fns[PAGE]) {
     app.innerHTML = fns[PAGE]();
     if (_pageTransition) {
@@ -3539,6 +3555,36 @@ function pgDash() {
     </div>`;
   }
 
+  // Monotributo billing limit card
+  const monoLimit = parseFloat(settings.monotributoLimit)||0;
+  let monoCard = '';
+  if (monoLimit > 0) {
+    const curYear = now.getFullYear();
+    const facturas = DB.get('facturas',[]).filter(f=>f.tipo!=='NC'&&f.tipo!=='RM'&&!f.anulada&&(f.fecha||'').startsWith(String(curYear)));
+    const salesAll = DB.get('sales',[]).filter(s=>{const d=new Date(s.date);return d.getFullYear()===curYear;});
+    const billedFacturas = facturas.reduce((s,f)=>s+(f.total||0),0);
+    const billedSales = salesAll.reduce((a,s)=>a+saleRevenue(s),0);
+    const billed = billedFacturas + billedSales;
+    const monoRatio = Math.min(billed/monoLimit,1);
+    const monoPct = Math.round(monoRatio*100);
+    const monoColor = monoPct>=90?'#f87171':monoPct>=70?'#fbbf24':'#4ade80';
+    const monoAlert = monoPct>=90?'⚠ Límite casi alcanzado':monoPct>=70?'Cerca del límite — revisá tu categoría':'Dentro del límite';
+    monoCard = `<div class="card mb20" style="padding:18px 20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div style="flex:1">
+          <div class="sc-l" style="margin-bottom:2px">Facturación anual · Monotributo ${curYear}</div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <div class="mono-pct-lbl" style="color:${monoColor}">${monoPct}%</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--si)">${fmtA(billed)} <span style="color:var(--di);font-size:13px">/ ${fmtA(monoLimit)}</span></div>
+          </div>
+          <div class="mono-bar-wrap"><div class="mono-bar" id="mono-bar-fill" style="width:0%;background:${monoColor}" data-target="${(monoRatio*100).toFixed(1)}"></div></div>
+          <div class="mono-limit-lbl">${monoAlert} · Quedan ${fmtA(Math.max(monoLimit-billed,0))}</div>
+        </div>
+        <button class="btn-g btn-sm" onclick="navigate('config')" style="flex-shrink:0;margin-top:2px">Editar límite</button>
+      </div>
+    </div>`;
+  }
+
   // Resumen de ventas del mes en curso, para que el dashboard no muestre solo el lado de compras
   const sales = DB.get('sales',[]);
   const now2 = new Date();
@@ -3580,6 +3626,7 @@ function pgDash() {
     <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
   </div>
   ${goalCard}
+  ${monoCard}
   <div class="sh mb16">Compras</div>
   <div class="g3 mb20">
     <div class="sc accent-y">
@@ -3762,6 +3809,13 @@ function pulseKpis(){
 after.dashboard = ()=>{
   setTimeout(pulseKpis,30);
   const ps = DB.get('purchases',[]);
+  // Monotributo bar animation
+  const monoFill = document.getElementById('mono-bar-fill');
+  if (monoFill) {
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      monoFill.style.width = monoFill.dataset.target + '%';
+    }));
+  }
   // Anillo de progreso "Meta del mes": animar el llenado
   const goalRing = document.querySelector('.goal-ring-fill');
   if (goalRing) {
@@ -5759,6 +5813,82 @@ function salesRecords(sales) {
 }
 
 /* ═══════════════════════════════════════════
+   GASTOS OPERATIVOS
+═══════════════════════════════════════════ */
+const GASTO_CATS = [
+  {id:'embalaje',  label:'Embalaje',    color:'#818cf8'},
+  {id:'envio',     label:'Envíos',      color:'#38bdf8'},
+  {id:'servicio',  label:'Servicios',   color:'#fbbf24'},
+  {id:'impuesto',  label:'Impuestos',   color:'#f87171'},
+  {id:'sueldo',    label:'Sueldos',     color:'#a78bfa'},
+  {id:'otro',      label:'Otro',        color:'#e2c97e'},
+];
+function _gastoCat(id){ return GASTO_CATS.find(c=>c.id===id)||{label:'Otro',color:'#e2c97e'}; }
+
+function pgGastos() {
+  const gastos = DB.get('gastos',[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const thisMes = gastos.filter(g=>g.date.startsWith(ym));
+  const totMes = thisMes.reduce((s,g)=>s+g.amount,0);
+  const totAll = gastos.reduce((s,g)=>s+g.amount,0);
+  const byCat = {};
+  gastos.forEach(g=>{ byCat[g.cat]=(byCat[g.cat]||0)+g.amount; });
+  return `<div class="pg">
+  <div class="dash-hdr mb24">
+    <div class="sh" style="margin:0">Gastos operativos</div>
+  </div>
+  <div class="g3 mb24">
+    <div class="sc accent-d"><div class="sc-l">Gasto del mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totMes)}</div><div class="sc-s">${thisMes.length} registro${thisMes.length!==1?'s':''}</div></div>
+    <div class="sc"><div class="sc-l">Total histórico</div><div class="sc-v" style="color:var(--re)">${fmtA(totAll)}</div><div class="sc-s">${gastos.length} registros</div></div>
+    <div class="sc accent-d"><div class="sc-l">Mayor categoría</div><div class="sc-v" style="font-size:15px">${Object.keys(byCat).length?_gastoCat(Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]?.[0]).label:'—'}</div><div class="sc-s">${Object.keys(byCat).length?fmtA(Object.values(byCat).sort((a,b)=>b-a)[0]):'sin datos'}</div></div>
+  </div>
+  <div class="card mb24">
+    <div style="font-size:13px;color:var(--ch);margin-bottom:14px;font-weight:600">Registrar gasto</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:120px"><label class="fl">Fecha</label><div class="iw"><input type="date" id="g-date" value="${now.toISOString().slice(0,10)}"></div></div>
+      <div style="flex:2;min-width:180px"><label class="fl">Descripción</label><div class="iw"><input type="text" id="g-desc" placeholder="Ej: Cajas medianas x50"></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Categoría</label><div class="iw"><select id="g-cat">${GASTO_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select></div></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Monto (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="g-amount" min="0" step="100" placeholder="0"></div></div>
+      <button class="btn-p" style="height:42px;padding:0 20px" onclick="saveGasto()">Agregar</button>
+    </div>
+  </div>
+  ${gastos.length ? `<div class="sh mb12">Historial</div><div style="display:flex;flex-direction:column;gap:6px">
+    ${gastos.map(g=>{
+      const cat=_gastoCat(g.cat);
+      return `<div class="gasto-row">
+        <span class="gasto-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}28">${cat.label}</span>
+        <span class="gasto-desc">${esc(g.desc||'Sin descripción')}</span>
+        <span class="gasto-date">${fmtD(g.date)}</span>
+        <span class="gasto-amount">${fmtA(g.amount)}</span>
+        <button class="btn-rm" onclick="delGasto('${g.id}')" style="flex-shrink:0">${ic('close')}</button>
+      </div>`;
+    }).join('')}
+  </div>` : emptyState(EMPTY_ICONS.purchases,'Sin gastos registrados','Registrá tus gastos operativos\npara ver su impacto en la rentabilidad real.')}
+</div>`;
+}
+
+function saveGasto() {
+  const date = document.getElementById('g-date')?.value;
+  const desc = document.getElementById('g-desc')?.value?.trim();
+  const cat  = document.getElementById('g-cat')?.value;
+  const amount = parseFloat(document.getElementById('g-amount')?.value);
+  if (!date || !amount || amount <= 0) { toast('Completá fecha y monto.', false); return; }
+  const gastos = DB.get('gastos', []);
+  gastos.push({ id: uid(), date, cat: cat||'otro', desc: desc||'', amount });
+  DB.set('gastos', gastos);
+  playSound('save');
+  toast('Gasto registrado');
+  render();
+}
+
+function delGasto(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  DB.set('gastos', DB.get('gastos',[]).filter(g=>g.id!==id));
+  render();
+}
+
+/* ═══════════════════════════════════════════
    ESTADÍSTICAS
 ═══════════════════════════════════════════ */
 function pgStats() {
@@ -5779,6 +5909,20 @@ function pgStats() {
     byChannel[ch].rev+=saleRevenue(s);
     byChannel[ch].profit+=saleProfit(s);
   });
+  const gastos=DB.get('gastos',[]);
+  const nowSt=new Date();
+  const gastosYear=gastos.filter(g=>(g.date||'').startsWith(String(nowSt.getFullYear())));
+  const gastosMes=gastosYear.filter(g=>g.date.startsWith(`${nowSt.getFullYear()}-${String(nowSt.getMonth()+1).padStart(2,'0')}`));
+  const totGastosYear=gastosYear.reduce((s,g)=>s+g.amount,0);
+  const totGastosMes=gastosMes.reduce((s,g)=>s+g.amount,0);
+  const realNetYear=salesProfitTot-totGastosYear;
+  const gastosSection=gastos.length?`<div class="sh mb16">Gastos operativos</div>
+  <div class="g3 mb24">
+    <div class="sc accent-d"><div class="sc-l">Gastos este mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosMes)}</div><div class="sc-s">${gastosMes.length} registro${gastosMes.length!==1?'s':''}</div></div>
+    <div class="sc accent-d"><div class="sc-l">Gastos este año</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosYear)}</div><div class="sc-s">${gastosYear.length} registros</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia neta anual</div><div class="sc-v y">${fmtA(realNetYear)}</div><div class="sc-s">ventas − gastos op.</div></div>
+  </div>
+  <div class="card chart-card mb24"><div class="sh mb16">Gastos por categoría</div><div id="ch-gastos" style="width:100%;min-height:60px"></div></div>`:'';
   return `<div class="pg">
   <div class="dash-hdr mb24">
     <div class="sh" style="margin:0">Estadísticas</div>
@@ -5801,6 +5945,7 @@ function pgStats() {
     <div class="card chart-card"><div class="sh mb16">ARS invertido</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
   </div>
   <div class="card chart-card mb24"><div class="sh mb16">Productos más comprados</div><div id="ch-prods" style="width:100%;min-height:60px"></div></div>`}
+  ${gastosSection}
   <div class="sh mb16">Ventas</div>
   ${!sales.length?emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá ventas para ver\nsu rentabilidad real aquí.'):`
   <div class="g4 mb24">
@@ -5846,6 +5991,19 @@ after.stats=()=>{
       const cTop=document.getElementById('ch-top-profit');
       const ranking=salesProductRanking(sales).slice(0,8);
       if(cTop&&ranking.length) TBRChart.hbar(cTop,{labels:ranking.map(r=>r.name||'?'),data:ranking.map(r=>r.profit),valueFmt:fmtA});
+    }
+    const cGastos=document.getElementById('ch-gastos');
+    if(cGastos){
+      const gastosSt=DB.get('gastos',[]);
+      const byCat={};
+      gastosSt.forEach(g=>{byCat[g.cat]=(byCat[g.cat]||0)+g.amount;});
+      const catEntries=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+      if(catEntries.length){
+        const cols=GASTO_CATS.reduce((m,c)=>{m[c.id]=c.color;return m;},{});
+        TBRChart.hbar(cGastos,{labels:catEntries.map(([id])=>_gastoCat(id).label),data:catEntries.map(([,v])=>v),valueFmt:fmtA,colors:catEntries.map(([id])=>cols[id]||'#e2c97e')});
+      } else {
+        cGastos.innerHTML='<div style="padding:8px 2px;font-size:12px;color:var(--di);font-family:\'Barlow Condensed\',sans-serif;letter-spacing:1px">Sin gastos registrados</div>';
+      }
     }
   },50);
 };
@@ -6431,6 +6589,28 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Monotributo</div>
+  <div class="card mb24">
+    <div class="hint mb16" style="color:var(--si)">Configurá el límite anual de facturación de tu categoría de monotributo para ver tu progreso en el Dashboard y recibir alertas antes de exceder el tope.</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:180px">
+        <label class="fl">Categoría</label>
+        <div class="iw" style="max-width:200px">
+          <select id="mono-cat" onchange="(function(v){const limits={A:2109508.68,B:3147002.06,C:4382023.88,D:6152375.25,E:7266213.61,F:9069706.71,G:11073823.36,H:14186234.15,I:18117697.07,J:23023218.57,K:27875553.98};document.getElementById('mono-limit').value=limits[v]||'';})(this.value)">
+            <option value="">Ingresar manualmente</option>
+            ${['A','B','C','D','E','F','G','H','I','J','K'].map(c=>`<option value="${c}" ${s.monotributoCat===c?'selected':''}>${'Cat. '+c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <label class="fl">Límite anual de facturación</label>
+        <div class="iw" style="max-width:260px"><span class="ipre">ARS</span><input type="number" id="mono-limit" value="${s.monotributoLimit||''}" step="1000" placeholder="Ej: 2109508"></div>
+        <div class="hint">Incluye ventas registradas y facturas C emitidas en el año en curso.</div>
+      </div>
+      <button class="btn-p" onclick="saveMonotributo()" style="height:42px;padding:0 20px">Guardar</button>
+    </div>
+  </div>
+
   <div class="sh mb16">Alertas</div>
   <div class="card mb24">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -6520,7 +6700,7 @@ function pgConfig() {
         <div class="hint mb8">Sección que se abre al entrar a la app.</div>
         <div class="iw" style="max-width:260px">
           <select id="pref-home" onchange="savePrefs('homePage',this.value)">
-            ${[['dashboard','Inicio (Dashboard)'],['compra','Nueva Compra'],['historial','Historial'],['ventas','Ventas'],['pedidos','Pedidos'],['catalogo','Catálogo'],['stats','Estadísticas'],['publicar','Publicar ML'],['competencia','Competencia'],['proveedores','Proveedores'],['clientes','Clientes'],['viaje','Viaje de compras'],['orden','Orden de Compra'],['cotizaciones','Cotizaciones'],['facturador','Facturador'],['config','Configuración']].map(([v,l])=>`<option value="${v}" ${(s.homePage||'dashboard')===v?'selected':''}>${l}</option>`).join('')}
+            ${[['dashboard','Inicio (Dashboard)'],['compra','Nueva Compra'],['historial','Historial'],['ventas','Ventas'],['pedidos','Pedidos'],['catalogo','Catálogo'],['stats','Estadísticas'],['publicar','Publicar ML'],['competencia','Competencia'],['proveedores','Proveedores'],['clientes','Clientes'],['viaje','Viaje de compras'],['orden','Orden de Compra'],['cotizaciones','Cotizaciones'],['facturador','Facturador'],['gastos','Gastos operativos'],['config','Configuración']].map(([v,l])=>`<option value="${v}" ${(s.homePage||'dashboard')===v?'selected':''}>${l}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -6604,6 +6784,7 @@ const HELP_SECTIONS = [
   {t:'Proveedores', d:'Acá gestionás los datos de tus proveedores (nombre, teléfono, configuración de cambio/comisiones). Esta info se usa en Nueva Compra, Órdenes de Compra y Cotizaciones para no tener que cargarla cada vez.'},
   {t:'Clientes', d:'Tu base de clientes: nombre, teléfono (WhatsApp) y CUIT/DNI, junto con un resumen de cuántos pedidos hizo cada uno y cuánto te compró en total. Al elegir un cliente ya cargado en Pedidos se completan solos sus datos, y desde acá podés escribirle por WhatsApp directo.'},
   {t:'Viaje de compras', d:'Pensado para cuando viajás a comprar mercadería: te ayuda a planificar y llevar el control de gastos, productos a buscar y todo lo relacionado al viaje en un solo lugar.'},
+  {t:'Gastos operativos', d:'Registrá los costos del negocio que no son mercadería: embalaje, envíos propios, servicios, impuestos, sueldos. Estos gastos se descuentan de la ganancia de ventas en las Estadísticas para darte una rentabilidad real más precisa.'},
   {t:'Configuración', d:'El centro de ajustes de la app: datos de Mercado Libre (comisión y envío por defecto), datos de tu empresa para los PDFs, los mensajes de WhatsApp para Órdenes de Compra y Cotizaciones, alertas de margen mínimo, backup/sincronización y más. Revisala primero para que el resto de la app funcione con tus datos reales.'},
   {t:'Botón de Acción rápida (⚡)', d:'El botón flotante que ves en cualquier sección de la app. Te deja registrar una venta, repetir la última venta, o ir directo a Nueva compra, Órdenes de compra o Cotizaciones, sin tener que navegar — pensado para ahorrarte tiempo en las tareas que hacés todos los días.'},
   {t:'Búsqueda global (🔍 / Ctrl+K)', d:'El buscador que aparece arriba a la derecha te permite encontrar rápidamente productos, compras, proveedores y más, y saltar directo a esa sección sin tener que recorrer todo el menú.'},
@@ -6828,6 +7009,7 @@ function saveFacturadorConfig(){
 }
 function saveAlert(){const m=parseFloat(document.getElementById('alert-m').value)||15;const s=DB.get('settings',{});s.marginAlert=m;DB.set('settings',s);toast('Alerta guardada');}
 function saveGoal(){const v=parseFloat(document.getElementById('goal-m').value);const s=DB.get('settings',{});s.monthlyGoal=v>0?v:0;DB.set('settings',s);toast('Meta guardada');render();}
+function saveMonotributo(){const limit=parseFloat(document.getElementById('mono-limit').value)||0;const cat=document.getElementById('mono-cat').value;const s=DB.get('settings',{});s.monotributoLimit=limit;s.monotributoCat=cat||'';DB.set('settings',s);toast('Límite monotributo guardado');render();}
 function addUser(){
   const u=(document.getElementById('new-user').value||'').trim();
   const w=(document.getElementById('new-pass').value||'').trim();
