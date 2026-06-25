@@ -57,11 +57,11 @@ html.light tbody tr:hover{background:rgba(0,0,0,.04)!important}
 html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 
 /* ── SORT CONTROLS ── */
-.sort-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.sort-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)}
-.sort-btn{background:transparent;border:1px solid var(--b2);color:var(--di);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
-.sort-btn:hover{border-color:var(--si);color:var(--si)}
-.sort-btn.on{border-color:var(--ud);color:var(--ud);background:rgba(226,201,126,.08)}
+.sort-bar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.sort-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--mu);margin-right:3px}
+.sort-btn{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.38);border-radius:20px;padding:5px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:all .18s}
+.sort-btn:hover{border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.7)}
+.sort-btn.on{border-color:rgba(226,201,126,.5);color:rgba(226,201,126,.95);background:rgba(226,201,126,.1)}
 
 /* ── BREAK-EVEN SECTION ── */
 .be-card{background:linear-gradient(135deg,rgba(129,140,248,.06),rgba(45,212,191,.04));border:1px solid rgba(129,140,248,.2);border-radius:var(--r2);padding:16px 20px;margin-top:16px}
@@ -301,7 +301,7 @@ body.compact .g4{gap:8px!important}
 /* Sparklines brighter */
 .sparkline{opacity:.85}
 /* Sort buttons */
-.sort-btn.on{background:rgba(226,201,126,.1)!important;border-color:rgba(226,201,126,.4)!important}
+.sort-btn.on{background:rgba(226,201,126,.1)!important;border-color:rgba(226,201,126,.5)!important;color:rgba(226,201,126,.95)!important}
 /* Better mob tab active */
 .mob-tab.on{color:rgba(245,240,228,.85);background:rgba(226,201,126,.04)}
 /* Better badge */
@@ -369,7 +369,9 @@ html.light .iw input:focus,html.light .iw select:focus{border-color:rgba(146,64,
 html.light .iw:focus-within{box-shadow:0 0 0 3px rgba(146,64,14,.07)}
 html.light .notes-ta:focus{border-color:rgba(146,64,14,.35)!important;box-shadow:0 0 0 3px rgba(146,64,14,.05)!important}
 html.light .ml-card-field input:focus{border-color:rgba(146,64,14,.4)!important;box-shadow:0 0 0 3px rgba(146,64,14,.06)!important}
-html.light .sort-btn.on{background:rgba(146,64,14,.08)!important;border-color:rgba(146,64,14,.35)!important}
+html.light .sort-btn{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1);color:rgba(0,0,0,.38)}
+html.light .sort-btn:hover{border-color:rgba(0,0,0,.25);color:rgba(0,0,0,.65)}
+html.light .sort-btn.on{background:rgba(146,64,14,.1)!important;border-color:rgba(146,64,14,.4)!important;color:rgba(146,64,14,.95)!important}
 html.light .pr input:focus{border-color:rgba(146,64,14,.45);box-shadow:0 0 0 3px rgba(146,64,14,.06);background:#fff}
 html.light .savebar input:focus{border-color:rgba(146,64,14,.35);box-shadow:0 0 0 3px rgba(146,64,14,.06)}
 html.light .cmp-margin-inp:focus{background:rgba(146,64,14,.06);box-shadow:0 0 0 2px rgba(146,64,14,.18)}
@@ -3711,19 +3713,37 @@ const TBRChart = {
       }).join('');
       el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${yG}${bars}</svg>`;
     } else {
-      const bh=(IH/data.length)*0.7, off=(IH/data.length)*0.15;
-      const bars=data.map((v,i)=>{
-        const by=(p.t+i*(IH/data.length)+off).toFixed(1);
-        const bw=((v/max)*IW).toFixed(1);
-        const col=pal[i%pal.length];
-        const short=labels[i].length>16?labels[i].slice(0,15)+'…':labels[i];
-        const vLbl=valueFmt?valueFmt(v):v;
-        const delay=(i*.05).toFixed(2);
-        return `<rect class="tbr-bar-h" style="animation-delay:${delay}s" x="${p.l}" y="${by}" width="${bw}" height="${bh.toFixed(1)}" fill="${col}" rx="3" opacity="0.8"/>
-                <text class="tbr-bar-label" style="animation-delay:${delay}s" x="${(p.l+parseFloat(bw)+6).toFixed(1)}" y="${(parseFloat(by)+bh/2).toFixed(1)}" dominant-baseline="middle" fill="${s.tick}" font-size="10" font-family="Barlow Condensed,sans-serif">${short} (${vLbl})</text>`;
-      }).join('');
-      el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+      // HTML-based horizontal bar — more legible and responsive
+      this.hbar(el, {labels, data, valueFmt, colors: Array.isArray(colors)?colors:null});
     }
+  },
+  hbar(el, {labels, data, valueFmt, colors}) {
+    const max = Math.max(...data.map(Math.abs)) || 1;
+    const pal = ['#2dd4bf','#818cf8','#fbbf24','#4ade80','#f87171','#e2c97e','#a78bfa','#38bdf8'];
+    const isLight = document.documentElement.classList.contains('light');
+    const rows = data.map((v, i) => {
+      if (v === 0) return '';
+      const pct = Math.max(v / max * 100, 2).toFixed(1);
+      const col = colors ? colors[i % colors.length] : pal[i % pal.length];
+      const short = labels[i].length > 26 ? labels[i].slice(0,25)+'…' : labels[i];
+      const vLbl = valueFmt ? valueFmt(v) : v;
+      return `<div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:${isLight?'rgba(0,0,0,.4)':'rgba(255,255,255,.38)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${short}</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:${col};white-space:nowrap;letter-spacing:-.3px">${vLbl}</span>
+        </div>
+        <div style="height:5px;background:${isLight?'rgba(0,0,0,.07)':'rgba(255,255,255,.07)'};border-radius:3px;overflow:hidden">
+          <div class="tbr-bar-h" style="height:100%;width:0%;background:${col};border-radius:3px;transition:width .9s cubic-bezier(.16,1,.3,1)" data-target-w="${pct}"></div>
+        </div>
+      </div>`;
+    }).filter(Boolean).join('');
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;padding:4px 2px">${rows}</div>`;
+    // Animate bars after paint
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.querySelectorAll('[data-target-w]').forEach(b=>{
+        b.style.width = b.dataset.targetW + '%';
+      });
+    }));
   }
 };
 let _kpiPrev = {};
@@ -4617,7 +4637,11 @@ function histCard(p, idx, badges=[], i=0) {
         <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
         <div class="hi-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div>
       </div>
-      <div><div class="hi-v">${fmtA(p.r?.ars||0)}</div><div class="hi-t" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">Gan. proyectada · ${fmtA(purchaseGain(p))}</div></div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="hi-v">${fmtA(p.r?.ars||0)}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--mu);margin-top:5px">Gan. proy.</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ye);letter-spacing:-.2px">${fmtA(purchaseGain(p))}</div>
+      </div>
     </div>
     <div class="hi-body" id="${idx}">
       ${p.notes?`<div class="hi-note">${esc(p.notes)}</div>`:''}
@@ -5773,22 +5797,22 @@ function pgStats() {
   ${statsRecords(ps)}
   ${ps.length<2?emptyState(EMPTY_ICONS.stats,'Sin datos suficientes','Necesitás al menos 2 compras\npara ver las estadísticas.'):`
   <div class="g2 mb20">
-    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">TCE POR COMPRA</div><div id="ch-tce2" style="width:100%;min-height:200px"></div></div>
-    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">ARS INVERTIDO</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">TCE por compra</div><div id="ch-tce2" style="width:100%;min-height:200px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">ARS invertido</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
   </div>
-  <div class="card chart-card mb24"><div class="sh mb12" style="font-size:9px">PRODUCTOS MÁS COMPRADOS</div><div id="ch-prods" style="width:100%;min-height:100px"></div></div>`}
+  <div class="card chart-card mb24"><div class="sh mb16">Productos más comprados</div><div id="ch-prods" style="width:100%;min-height:60px"></div></div>`}
   <div class="sh mb16">Ventas</div>
   ${!sales.length?emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá ventas para ver\nsu rentabilidad real aquí.'):`
   <div class="g4 mb24">
-    <div class="sc"><div class="sc-l">Ventas totales</div><div class="sc-v g">${fmtA(salesRev)}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''}</div></div>
-    <div class="sc"><div class="sc-l">Ganancia real</div><div class="sc-v y">${fmtA(salesProfitTot)}</div><div class="sc-s">neta de comisiones y envíos</div></div>
+    <div class="sc accent-g"><div class="sc-l">Ventas totales</div><div class="sc-v g">${fmtA(salesRev)}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${fmtA(salesProfitTot)}</div><div class="sc-s">neta de comisiones y envíos</div></div>
     <div class="sc"><div class="sc-l">Unidades vendidas</div><div class="sc-v">${salesUnits}</div><div class="sc-s">en ${sales.length} venta${sales.length!==1?'s':''}</div></div>
-    <div class="sc"><div class="sc-l">Margen promedio</div><div class="sc-v u">${salesMarginPct.toFixed(1)}%</div><div class="sc-s">ganancia / facturado</div></div>
+    <div class="sc accent-u"><div class="sc-l">Margen promedio</div><div class="sc-v u">${salesMarginPct.toFixed(1)}%</div><div class="sc-s">ganancia / facturado</div></div>
   </div>
   ${salesRecords(sales)}
   <div class="g2 mb20">
-    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">VENTAS POR CANAL</div><div id="ch-channel" style="width:100%;min-height:140px"></div></div>
-    <div class="card chart-card"><div class="sh mb12" style="font-size:9px">PRODUCTOS MÁS RENTABLES</div><div id="ch-top-profit" style="width:100%;min-height:140px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">Ventas por canal</div><div id="ch-channel" style="width:100%;min-height:60px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">Productos más rentables</div><div id="ch-top-profit" style="width:100%;min-height:60px"></div></div>
   </div>`}
 </div>`;
 }
@@ -5805,22 +5829,23 @@ after.stats=()=>{
       if(c2) TBRChart.bar(c2,{labels,data:ps.map(p=>p.r?.ars||0),colors:'#4ade80',height:200});
       const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
       const sorted=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,8);
-      if(c3&&sorted.length) TBRChart.bar(c3,{labels:sorted.map(x=>x[0]),data:sorted.map(x=>x[1]),horizontal:true,height:Math.max(100,sorted.length*36+20)});
+      if(c3&&sorted.length) TBRChart.hbar(c3,{labels:sorted.map(x=>x[0]),data:sorted.map(x=>x[1])});
     }
     if(sales.length){
       const cChannel=document.getElementById('ch-channel');
       if(cChannel){
-        const byChannel={ml:{rev:0,profit:0},directa:{rev:0,profit:0}};
-        sales.forEach(s=>{
-          const ch=s.channel==='directa'?'directa':'ml';
-          byChannel[ch].rev+=saleRevenue(s);
-          byChannel[ch].profit+=saleProfit(s);
-        });
-        TBRChart.bar(cChannel,{labels:['Mercado Libre','Venta directa'],data:[byChannel.ml.rev,byChannel.directa.rev],horizontal:true,height:140,valueFmt:fmtA});
+        const byChannel={ml:{rev:0},directa:{rev:0}};
+        sales.forEach(s=>{const ch=s.channel==='directa'?'directa':'ml';byChannel[ch].rev+=saleRevenue(s);});
+        // Only show channels with revenue > 0
+        const chLabels=[],chData=[];
+        if(byChannel.ml.rev>0){chLabels.push('Mercado Libre');chData.push(byChannel.ml.rev);}
+        if(byChannel.directa.rev>0){chLabels.push('Venta directa');chData.push(byChannel.directa.rev);}
+        if(chData.length) TBRChart.hbar(cChannel,{labels:chLabels,data:chData,valueFmt:fmtA});
+        else cChannel.innerHTML='<div style="padding:8px 2px;font-size:12px;color:var(--di);font-family:\'Barlow Condensed\',sans-serif;letter-spacing:1px">Sin datos de canal aún</div>';
       }
       const cTop=document.getElementById('ch-top-profit');
       const ranking=salesProductRanking(sales).slice(0,8);
-      if(cTop&&ranking.length) TBRChart.bar(cTop,{labels:ranking.map(r=>r.name||'?'),data:ranking.map(r=>r.profit),horizontal:true,height:Math.max(140,ranking.length*36+20),valueFmt:fmtA});
+      if(cTop&&ranking.length) TBRChart.hbar(cTop,{labels:ranking.map(r=>r.name||'?'),data:ranking.map(r=>r.profit),valueFmt:fmtA});
     }
   },50);
 };
