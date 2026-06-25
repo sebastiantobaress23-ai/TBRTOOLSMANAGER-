@@ -10317,6 +10317,12 @@ async function sincronizarARCA() {
     await importarTipo(11, desdeFC, 'C');   // Facturas C
     await importarTipo(13, desdeNC, 'NC');  // Notas de Crédito C
 
+    // Debug: siempre loguear estado de NCs después del sync
+    const ncsPost = DB.get('facturas',[]).filter(f=>f.tipo==='NC');
+    console.log('[SYNC] NCs en DB:', ncsPost.map(n=>({nro:n.nro,facturaOrigen:n.facturaOrigen||'SIN_ORIGEN',facturaOrigenId:n.facturaOrigenId||'SIN_ID'})));
+    const fcsPdv = DB.get('facturas',[]).filter(f=>f.tipo!=='NC'&&f.tipo!=='RM').map(f=>({id:f.id,nro:f.nro}));
+    console.log('[SYNC] FCs en DB:', fcsPdv);
+
     if (importados === 0) {
       toast('Todo sincronizado — no hay comprobantes nuevos en ARCA', true, 6000);
     } else {
