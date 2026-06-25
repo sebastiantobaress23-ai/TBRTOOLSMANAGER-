@@ -9681,25 +9681,18 @@ function _normalizeAfip(body) {
 
 // Intenta consultar un CUIT directo desde el navegador
 async function _fetchCUITDirecto(cuit) {
-  const urls = [
-    // constancias: endpoint de verificación pública de QR fiscal — puede tener CORS abierto
-    { url: `https://constancias.afip.gob.ar/nrConstancia/rest/consulta/${cuit}`, extract: b => b?.persona || b },
-    // tramitesadistancia: portal TaD de AFIP
-    { url: `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`, extract: b => b?.persona || b?.data || b },
-    // soa v2/v1
-    { url: `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`, extract: b => b?.data || b?.persona || b },
-  ];
-  for(const { url, extract } of urls) {
-    try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000), mode: 'cors' });
-      if(!r.ok) { console.log(`[arca] ${r.status} ${url}`); continue; }
-      const body = await r.json();
-      console.log(`[arca] OK ${url}`, JSON.stringify(body).slice(0,150));
-      const raw = extract(body);
-      const p = raw && !Array.isArray(raw) ? _normalizeAfip({ persona: raw }) || _normalizeAfip(raw) : null;
-      if(p) return p;
-    } catch(e) { console.log(`[arca] error ${url}: ${e.message}`); }
-  }
+  // soa.afip.gov.ar responde desde el navegador (confirmado por CORS error = servidor activo)
+  // Los otros dominios no resuelven DNS desde browser, los omitimos
+  const url = `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), mode: 'cors' });
+    if(!r.ok) { console.log(`[arca] ${r.status} ${url}`); return null; }
+    const body = await r.json();
+    console.log(`[arca] OK ${url}`, JSON.stringify(body).slice(0,150));
+    const raw = body?.data || body?.persona || body;
+    if(!raw || Array.isArray(raw)) return null;
+    return _normalizeAfip({ persona: raw }) || _normalizeAfip(raw) || null;
+  } catch(e) { console.log(`[arca] error ${url}: ${e.message}`); }
   return null;
 }
 

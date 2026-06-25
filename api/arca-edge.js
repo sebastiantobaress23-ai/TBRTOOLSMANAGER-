@@ -58,7 +58,7 @@ async function fetchCUIT(cuit) {
       extract: b => b?.persona || b?.data || b,
     },
     {
-      url: `https://arca.gob.ar/sr-padron/v2/persona/${cuit}`,
+      url: `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`,
       extract: b => b?.data || b?.persona || b,
     },
   ];

@@ -105,10 +105,10 @@ async function consultarCUIT(cuit) {
       extra: { 'Origin': 'https://www.afip.gob.ar', 'Referer': 'https://www.afip.gob.ar/' },
       extract: body => body?.persona || body?.data || body,
     },
-    // ARCA — nuevo dominio
+    // SOA AFIP — API pública que responde desde el navegador (confirma que está activa)
     {
-      url: `https://arca.gob.ar/sr-padron/v2/persona/${cuit}`,
-      extra: { 'Origin': 'https://arca.gob.ar', 'Referer': 'https://arca.gob.ar/' },
+      url: `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`,
+      extra: { 'Origin': 'https://www.afip.gob.ar', 'Referer': 'https://www.afip.gob.ar/' },
       extract: body => body?.data || body?.persona || body,
     },
   ];
