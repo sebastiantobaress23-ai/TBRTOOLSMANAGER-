@@ -2582,7 +2582,12 @@ function qaShowSale(){
     </div>
     <div style="display:flex;gap:10px">
       <div style="flex:1"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="qa-qty" value="1" min="1" step="1" placeholder="Cant."></div></div>
-      <div style="flex:1.4"><label class="fl">Precio de venta (c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="qa-price" min="0" step="100" placeholder="0"></div></div>
+      <div style="flex:1.4"><label class="fl">Precio al comprador (c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="qa-price" min="0" step="100" placeholder="0"></div></div>
+    </div>
+    <div id="qa-ml-received-wrap">
+      <label class="fl">Lo que recibí de ML (ARS) <span style="color:var(--re)">*</span></label>
+      <div class="iw"><span class="ipre">$</span><input type="number" id="qa-ml-received" min="0" step="100" placeholder="Monto acreditado por ML"></div>
+      <div class="hint" style="margin-top:6px;font-size:11px">Monto real acreditado por ML, ya deducida comisión, envío y bonos.</div>
     </div>
     <div>
       <label class="fl" style="opacity:.6">Costo real c/u (sugerido automático)</label>
@@ -2599,6 +2604,8 @@ function setQaChannel(ch){
   if(!input) return;
   input.value=ch;
   document.querySelectorAll('#qa-channel-tg .ch-tg-btn').forEach(b=>b.classList.toggle('active', b.dataset.ch===ch));
+  const mlWrap=document.getElementById('qa-ml-received-wrap');
+  if(mlWrap) mlWrap.style.display = ch==='ml' ? '' : 'none';
   qaSuggestPrice();
 }
 function qaFillCost(){
@@ -2632,14 +2639,19 @@ function qaSubmitSale(){
   const price=parseFloat(document.getElementById('qa-price').value)||0;
   const cost=parseFloat(document.getElementById('qa-cost').value)||0;
   const channel=document.getElementById('qa-channel')?.value==='directa'?'directa':'ml';
+  const mlReceived=channel==='ml' ? parseFloat(document.getElementById('qa-ml-received')?.value)||0 : 0;
   if(price<=0){ toast('Ingresá el precio de venta.',false); return; }
-  qaRegisterSale({name,code,qty,priceARS:price,costARS:cost,channel});
+  if(channel==='ml' && !mlReceived){ toast('Ingresá lo que recibiste de ML.',false); return; }
+  qaRegisterSale({name,code,qty,priceARS:price,mlReceived,costARS:cost,channel});
 }
 function qaRegisterSale(data){
   const s=DB.get('settings',{});
   const channel=data.channel==='directa'?'directa':'ml';
   const sale={id:uid(),date:new Date().toISOString(),name:data.name,code:data.code||'',qty:data.qty||1,priceARS:data.priceARS,costARS:data.costARS||0,channel};
-  if(channel==='ml'){ sale.mlCom=s.mlCom??16; sale.mlEnv=s.mlEnv??7500; }
+  if(channel==='ml'){
+    sale.mlCom=s.mlCom??16; sale.mlEnv=s.mlEnv??7500;
+    if(data.mlReceived) sale.mlReceived=data.mlReceived;
+  }
   const sales=DB.get('sales',[]);
   sales.push(sale);
   DB.set('sales',sales);
