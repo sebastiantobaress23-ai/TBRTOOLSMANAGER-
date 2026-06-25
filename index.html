@@ -2118,6 +2118,14 @@ const ALL_QA_ACTIONS = [
   {id:'sim',         label:'Simulador de ganancias', svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l4-8z"/><line x1="9" y1="11" x2="15" y2="11"/></svg>', handler:'qaFanSim()'}
 ];
 
+function _saveNavOrderFromDOM() {
+  const el = document.getElementById('pref-nav-order');
+  if (!el) return;
+  const order = [...el.querySelectorAll('[data-nav-id]')].map(x => x.dataset.navId);
+  savePrefs('navOrder', [...order, 'config']);
+  renderNav();
+}
+
 function renderNav() {
   const nav = document.getElementById('mob-nav');
   if (!nav) return;
@@ -2903,6 +2911,7 @@ function navigate(p) {
   const fromIdx = PAGE_ORDER.indexOf(PAGE), toIdx = PAGE_ORDER.indexOf(p);
   _navDir = (fromIdx>=0 && toIdx>=0 && toIdx!==fromIdx) ? (toIdx>fromIdx?'r':'l') : null;
   PAGE = p;
+  window._currentPage = p;
   document.querySelectorAll('.tab,.mob-tab').forEach(t=>{
     const active = t.dataset.p===p;
     t.classList.toggle('on',active);
@@ -6385,6 +6394,77 @@ function pgConfig() {
     <button class="btn-g" onclick="forzarActualizacion()" style="height:42px;gap:8px">↺ Actualizar app</button>
   </div>
 
+  <div class="sh mb16">Personalización</div>
+  <div class="card mb24">
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Página de inicio</div>
+        <div class="hint mb8">Sección que se abre al entrar a la app.</div>
+        <div class="iw" style="max-width:260px">
+          <select id="pref-home" onchange="savePrefs('homePage',this.value)">
+            ${[['dashboard','Inicio (Dashboard)'],['compra','Nueva Compra'],['historial','Historial'],['ventas','Ventas'],['pedidos','Pedidos'],['catalogo','Catálogo'],['stats','Estadísticas'],['publicar','Publicar ML'],['competencia','Competencia'],['proveedores','Proveedores'],['clientes','Clientes'],['viaje','Viaje de compras'],['orden','Orden de Compra'],['cotizaciones','Cotizaciones'],['facturador','Facturador'],['config','Configuración']].map(([v,l])=>`<option value="${v}" ${(s.homePage||'dashboard')===v?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Tamaño de texto</div>
+        <div class="hint mb8">Ajusta el tamaño de las etiquetas y textos secundarios.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${['compact','normal','large'].map((v,_,a)=>{const labels={compact:'Compacto',normal:'Normal',large:'Grande'};return`<button class="btn-g btn-sm${(s.textSize||'normal')===v?' btn-p':''}" id="pref-text-${v}" onclick="savePrefs('textSize','${v}');applyTextSize('${v}');['compact','normal','large'].forEach(x=>document.getElementById('pref-text-'+x).classList.toggle('btn-p',x==='${v}'))">${labels[v]}</button>`;}).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Densidad de listas</div>
+        <div class="hint mb8">Controla el espacio en las tarjetas y elementos.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${['compact','normal','comfortable'].map(v=>{const labels={compact:'Compacta',normal:'Normal',comfortable:'Cómoda'};return`<button class="btn-g btn-sm${(s.density||'normal')===v?' btn-p':''}" id="pref-den-${v}" onclick="savePrefs('density','${v}');applyDensity('${v}');['compact','normal','comfortable'].forEach(x=>document.getElementById('pref-den-'+x).classList.toggle('btn-p',x==='${v}'))">${labels[v]}</button>`;}).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Formato de números</div>
+        <div class="hint mb8">AR: punto miles, coma decimal ($ 1.234,56) &nbsp;|&nbsp; Estándar: coma miles, punto decimal ($ 1,234.56)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-g btn-sm${(s.numFormat||'ar')==='ar'?' btn-p':''}" id="pref-num-ar" onclick="savePrefs('numFormat','ar');applyNumFormat('ar');document.getElementById('pref-num-ar').classList.add('btn-p');document.getElementById('pref-num-std').classList.remove('btn-p')">AR</button>
+          <button class="btn-g btn-sm${(s.numFormat||'ar')==='standard'?' btn-p':''}" id="pref-num-std" onclick="savePrefs('numFormat','standard');applyNumFormat('standard');document.getElementById('pref-num-std').classList.add('btn-p');document.getElementById('pref-num-ar').classList.remove('btn-p')">Estándar</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Acciones rápidas del FAB</div>
+        <div class="hint mb8">Elegí qué acciones aparecen en el botón flotante.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${ALL_QA_ACTIONS.map(a=>{const enabled=(s.qaEnabled||ALL_QA_ACTIONS.map(x=>x.id)).includes(a.id);return`<label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" ${enabled?'checked':''} onchange="(function(el){const s2=DB.get('settings',{});const cur=s2.qaEnabled||ALL_QA_ACTIONS.map(x=>x.id);const next=el.checked?[...new Set([...cur,'${a.id}'])]:cur.filter(x=>x!=='${a.id}');s2.qaEnabled=next;DB.set('settings',s2);renderFan();})(this)"><span style="font-size:13px">${a.label}</span></label>`;}).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Orden del menú móvil</div>
+        <div class="hint mb8">Reordenás con las flechas. Config siempre va al final.</div>
+        <div id="pref-nav-order" style="display:flex;flex-direction:column;gap:4px">
+          ${(()=>{
+            const order=(s.navOrder||ALL_MODULES.map(m=>m.id)).filter(id=>id!=='config'&&ALL_MODULES.find(m=>m.id===id));
+            const missing=ALL_MODULES.filter(m=>m.id!=='config'&&!order.includes(m.id)).map(m=>m.id);
+            const finalOrder=[...order,...missing];
+            return finalOrder.map((id,i)=>{
+              const m=ALL_MODULES.find(x=>x.id===id);
+              if(!m)return'';
+              return`<div data-nav-id="${id}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)">
+                <span style="flex:1;font-size:13px">${m.label}</span>
+                <button class="btn-g btn-sm" style="padding:2px 8px;min-width:28px" onclick="(function(){const el=document.getElementById('pref-nav-order');const items=[...el.querySelectorAll('[data-nav-id]')];const idx=items.findIndex(x=>x.dataset.navId==='${id}');if(idx<=0)return;[items[idx-1],items[idx]].reverse().forEach((x,j)=>{if(j===0)el.insertBefore(items[idx],items[idx-1]);});_saveNavOrderFromDOM();})()" title="Subir">↑</button>
+                <button class="btn-g btn-sm" style="padding:2px 8px;min-width:28px" onclick="(function(){const el=document.getElementById('pref-nav-order');const items=[...el.querySelectorAll('[data-nav-id]')];const idx=items.findIndex(x=>x.dataset.navId==='${id}');if(idx>=items.length-1)return;el.insertBefore(items[idx+1],items[idx]);_saveNavOrderFromDOM();})()" title="Bajar">↓</button>
+              </div>`;
+            }).join('');
+          })()}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="sh mb16">Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">${ic('trash')} Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
@@ -9380,6 +9460,13 @@ window.onload = async function() {
   initTheme();
   initCompact();
   updateOfflineBanner();
+  // Aplicar preferencias de personalización
+  const _initSettings = DB.get('settings', {});
+  applyTextSize(_initSettings.textSize || 'normal');
+  applyDensity(_initSettings.density || 'normal');
+  applyNumFormat(_initSettings.numFormat || 'ar');
+  renderNav();
+  renderFan();
   // Force mobile nav visibility on small screens (iOS Safari fix)
   // !important no funciona en inline styles via JS, usar setProperty
   if (window.innerWidth <= 768 || screen.width <= 768) {
@@ -9404,7 +9491,8 @@ window.onload = async function() {
   } else {
     let lastPage = null;
     try { lastPage = sessionStorage.getItem('tbr_lastpage'); sessionStorage.removeItem('tbr_lastpage'); } catch {}
-    navigate(lastPage && validPages.includes(lastPage) ? lastPage : 'dashboard');
+    const homePage = (_initSettings.homePage && validPages.includes(_initSettings.homePage)) ? _initSettings.homePage : 'dashboard';
+    navigate(lastPage && validPages.includes(lastPage) ? lastPage : homePage);
   }
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
