@@ -9681,18 +9681,21 @@ function _normalizeAfip(body) {
 
 // Intenta consultar un CUIT directo desde el navegador
 async function _fetchCUITDirecto(cuit) {
-  // soa.afip.gov.ar responde desde el navegador (confirmado por CORS error = servidor activo)
-  // Los otros dominios no resuelven DNS desde browser, los omitimos
-  const url = `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`;
+  // soa.afip.gov.ar responde desde el browser (CORS confirm = server is live)
+  // Usamos allorigins.win como proxy CORS para leer la respuesta
+  const soaUrl = `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(soaUrl)}`;
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000), mode: 'cors' });
-    if(!r.ok) { console.log(`[arca] ${r.status} ${url}`); return null; }
-    const body = await r.json();
-    console.log(`[arca] OK ${url}`, JSON.stringify(body).slice(0,150));
+    console.log(`[arca] GET (proxy) ${soaUrl}`);
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+    if(!r.ok) { console.log(`[arca] proxy ${r.status}`); return null; }
+    const text = await r.text();
+    console.log(`[arca] proxy resp:`, text.slice(0,200));
+    let body; try { body = JSON.parse(text); } catch { return null; }
     const raw = body?.data || body?.persona || body;
     if(!raw || Array.isArray(raw)) return null;
     return _normalizeAfip({ persona: raw }) || _normalizeAfip(raw) || null;
-  } catch(e) { console.log(`[arca] error ${url}: ${e.message}`); }
+  } catch(e) { console.log(`[arca] proxy error: ${e.message}`); }
   return null;
 }
 
