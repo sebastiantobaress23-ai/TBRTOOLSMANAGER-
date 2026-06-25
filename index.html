@@ -9667,20 +9667,22 @@ function _normalizeAfip(body) {
   };
 }
 
-// Intenta consultar un CUIT directo desde el navegador (evita bloqueo de IPs de Vercel)
+// Intenta consultar un CUIT directo desde el navegador
 async function _fetchCUITDirecto(cuit) {
   const urls = [
     `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`,
     `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`,
+    `https://soa.afip.gov.ar/sr-padron/v1/persona/${cuit}`,
   ];
   for(const url of urls) {
     try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-      if(!r.ok) continue;
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000), mode: 'cors' });
+      if(!r.ok) { console.log(`[arca] ${r.status} ${url}`); continue; }
       const body = await r.json();
+      console.log(`[arca] OK ${url}`, JSON.stringify(body).slice(0,150));
       const p = _normalizeAfip(body);
       if(p) return p;
-    } catch(e) { /* CORS o timeout, probar siguiente */ }
+    } catch(e) { console.log(`[arca] error ${url}: ${e.message}`); }
   }
   return null;
 }
@@ -9700,7 +9702,7 @@ async function buscarPadronARCA(ev) {
     const cfCheck=document.getElementById('f-cf');
     if(cfCheck?.checked){ cfCheck.checked=false; facturaToggleCF(false); }
     set('f-nombre', p.nombre);
-    set('f-cuit',   p.cuit);
+    set('f-cuit',   p.cuit || doc);
     set('f-dir',    p.direccion);
     set('f-ciudad', p.localidad || p.provincia);
     toast(`✓ ${p.nombre}${p.localidad?' · '+p.localidad:''}`, true, 5000);
@@ -9717,31 +9719,42 @@ async function buscarPadronARCA(ev) {
 
   try {
     const esCUIT = doc.length === 11;
+    console.log(`[arca] buscando doc=${doc} esCUIT=${esCUIT}`);
 
-    // 1. Intentar directo desde el navegador (sin pasar por Vercel)
+    // 1. Intentar directo desde el navegador
     if(esCUIT) {
       const p = await _fetchCUITDirecto(doc);
       if(p) { fillPersona(p); return; }
     } else {
-      // DNI: derivar CUITs y probar todos en paralelo desde el browser
       const posibles = _cuitsDesdeDNI(doc);
+      console.log(`[arca] DNI ${doc} → CUITs: ${posibles.join(', ')}`);
       const resultados = await Promise.all(posibles.map(c => _fetchCUITDirecto(c)));
       const encontrados = resultados.filter(Boolean);
       if(encontrados.length===1) { fillPersona(encontrados[0]); return; }
       if(encontrados.length>1) { mostrarMultiple(encontrados); return; }
     }
 
-    // 2. Fallback: pasar por la API de Vercel
+    // 2. Fallback: API de Vercel
+    console.log(`[arca] intentando via Vercel /api/arca-padron?doc=${doc}`);
     const resp = await fetch(`/api/arca-padron?doc=${doc}`);
     const data = await resp.json();
-    if(!resp.ok || data.error) {
-      toast('No se encontraron datos en ARCA para ese documento. Ingresá los datos manualmente.', false, 7000);
-      return;
-    }
+    console.log(`[arca] Vercel resp ${resp.status}:`, JSON.stringify(data).slice(0,200));
+
     if(data.multiple) { mostrarMultiple(data.personas); return; }
-    fillPersona(data);
+    if(resp.ok && !data.error && data.nombre) { fillPersona(data); return; }
+
+    // Distinguir: no encontrado vs error técnico
+    if(data.error === 'notFound' || resp.status === 404) {
+      const hint = esCUIT
+        ? `CUIT ${doc} no está inscripto en ARCA.`
+        : `DNI ${doc} no tiene CUIT activo en ARCA.`;
+      toast(hint + ' Ingresá los datos manualmente.', false, 8000);
+    } else {
+      toast('ARCA no responde en este momento. Intentá más tarde o ingresá los datos manualmente.', false, 8000);
+    }
 
   } catch(e) {
+    console.error('[arca] excepción:', e);
     toast('Error consultando ARCA: ' + e.message, false);
   } finally {
     if(btn) { btn.disabled=false; btn.innerHTML=btnOrig; }

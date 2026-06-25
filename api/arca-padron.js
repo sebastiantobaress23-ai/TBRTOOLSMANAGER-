@@ -5,7 +5,7 @@ function httpsGet(url, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const options = {
       rejectUnauthorized: false,
-      timeout: 8000,
+      timeout: 4000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
@@ -88,30 +88,26 @@ function normalizeRest(p) {
 }
 
 async function consultarCUIT(cuit) {
-  const intentos = [
-    // tramitesadistancia — más accesible públicamente
-    { url: `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`, key: 'persona' },
-    // REST v2 oficial
-    { url: `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`, key: 'data' },
-    // REST v1 oficial
-    { url: `https://soa.afip.gov.ar/sr-padron/v1/persona/${cuit}`, key: 'data' },
-  ];
-
-  for (const { url, key } of intentos) {
-    try {
-      console.log(`[padron] GET ${url}`);
-      const { status, body, raw } = await httpsGet(url);
-      console.log(`[padron] ${status} body=${body ? JSON.stringify(body).slice(0,120) : raw}`);
-      if (status !== 200 || !body) continue;
-      const raw2 = body[key] || body;
-      if (!raw2 || Array.isArray(raw2)) continue;
-      const persona = normalizeRest(raw2);
-      if (persona) return persona;
-    } catch (e) {
-      console.error(`[padron] error ${url}: ${e.message}`);
+  // Solo tramitesadistancia — más accesible y responde más rápido
+  const url = `https://afip.tramitesadistancia.gob.ar/generic-person/person-endpoint-general/persona/${cuit}`;
+  try {
+    console.log(`[padron] GET ${url}`);
+    const { status, body, raw } = await httpsGet(url);
+    console.log(`[padron] ${cuit} → ${status} body=${body ? JSON.stringify(body).slice(0,150) : raw}`);
+    if (status === 200 && body) {
+      const raw2 = body['persona'] || body['data'] || body;
+      if (raw2 && !Array.isArray(raw2)) {
+        const persona = normalizeRest(raw2);
+        if (persona) return { persona, encontrado: true };
+      }
+      // 200 pero sin datos de persona válidos = no inscripto
+      return { persona: null, encontrado: false };
     }
+    if (status === 404) return { persona: null, encontrado: false };
+  } catch (e) {
+    console.error(`[padron] error ${cuit}: ${e.message}`);
   }
-  return null;
+  return { persona: null, encontrado: null }; // null = error técnico
 }
 
 module.exports = async function handler(req, res) {
@@ -129,9 +125,11 @@ module.exports = async function handler(req, res) {
   const esCUIT = doc.length === 11;
 
   if (esCUIT) {
-    const persona = await consultarCUIT(doc);
+    const { persona, encontrado } = await consultarCUIT(doc);
     if (persona) return res.status(200).json(persona);
-    return res.status(404).json({ error: `CUIT ${doc} no encontrado en ARCA. Verificá que esté inscripto.` });
+    if (encontrado === false)
+      return res.status(404).json({ error: `notFound`, msg: `CUIT ${doc} no está inscripto en ARCA.` });
+    return res.status(503).json({ error: `unavailable`, msg: `ARCA no disponible en este momento.` });
   }
 
   // DNI → derivar CUITs posibles y consultarlos en paralelo
@@ -139,13 +137,19 @@ module.exports = async function handler(req, res) {
   console.log(`[padron] DNI ${doc} → CUITs posibles: ${posibles.join(', ')}`);
 
   const resultados = await Promise.all(posibles.map(c => consultarCUIT(c)));
-  const encontrados = resultados.filter(Boolean);
+  const personas   = resultados.map(r => r?.persona).filter(Boolean);
+  const hayError   = resultados.some(r => r?.encontrado === null);
 
-  if (encontrados.length === 0) {
-    return res.status(404).json({
-      error: `DNI ${doc} no encontrado en ARCA. Si la persona no está inscripta en AFIP, ingresá los datos manualmente.`
-    });
+  if (personas.length > 0) {
+    if (personas.length === 1) return res.status(200).json(personas[0]);
+    return res.status(200).json({ multiple: true, personas });
   }
-  if (encontrados.length === 1) return res.status(200).json(encontrados[0]);
-  return res.status(200).json({ multiple: true, personas: encontrados });
+  if (hayError)
+    return res.status(503).json({ error: `unavailable`, msg: `ARCA no disponible en este momento.` });
+
+  return res.status(404).json({
+    error: `notFound`,
+    msg: `DNI ${doc} no tiene CUIT activo en ARCA. La persona debe estar inscripta en AFIP para aparecer.`,
+    cuitsTesteados: posibles,
+  });
 };
