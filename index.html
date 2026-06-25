@@ -10241,40 +10241,57 @@ async function sincronizarARCA() {
     let importados = 0;
 
     const importarTipo = async (cbteT, desde, tipoLocal) => {
-      const resp = await fetch(`/api/arca-consultar?desde=${desde}&tipo=${cbteT}&t=${Date.now()}`, { cache: 'no-store' });
-      const data = await resp.json();
-      if (!resp.ok || data.error) { toast(`Error sync tipo ${cbteT}: ` + (data.error||''), false, 5000); return; }
-      for (const f of (data.facturas || [])) {
-        const clave = tipoLocal + ':' + (f.nro||'');
-        if (clavesLocales.has(clave)) continue;
-        clavesLocales.add(clave);
-        const nueva = {
-          id:       `arca-${cbteT}-${f.cbteNro}`,
-          nro:      f.nro,
-          fecha:    f.fecha,
-          vencimiento: ahora,
-          estado:   'emitida',
-          tipo:     tipoLocal,
-          cae:      f.cae,
-          caeFecha: f.caeFecha,
-          importadoDeARCA: true,
-          comprador: {
-            nombre: f.docNro === '0' ? 'Consumidor Final'
-              : f.docTipo == 80 ? `CUIT ${f.docNro}`
-              : f.docTipo == 96 ? `DNI ${f.docNro}`
-              : f.docNro,
-            cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
-          },
-          items: [],
-          total: f.importe,
-          subtotal: f.importe,
-          descuentoPct: 0,
-          totalLetras: numToWords(f.importe||0),
-        };
-        const lista = DB.get('facturas', []);
-        lista.unshift(nueva);
-        DB.set('facturas', lista);
-        importados++;
+      let desdeActual = desde;
+      let totalImportado = 0;
+      let rondas = 0;
+      const MAX_RONDAS = 10; // hasta 30 comprobantes (3 por ronda × 10)
+      while (rondas < MAX_RONDAS) {
+        rondas++;
+        const resp = await fetch(`/api/arca-consultar?desde=${desdeActual}&tipo=${cbteT}&t=${Date.now()}`, { cache: 'no-store' });
+        const data = await resp.json();
+        if (!resp.ok || data.error) { toast(`Error sync tipo ${cbteT}: ` + (data.error||''), false, 5000); break; }
+        const nuevos = data.facturas || [];
+        let nuevosEstaRonda = 0;
+        for (const f of nuevos) {
+          const clave = tipoLocal + ':' + (f.nro||'');
+          if (clavesLocales.has(clave)) continue;
+          clavesLocales.add(clave);
+          const nueva = {
+            id:       `arca-${cbteT}-${f.cbteNro}`,
+            nro:      f.nro,
+            fecha:    f.fecha,
+            vencimiento: ahora,
+            estado:   'emitida',
+            tipo:     tipoLocal,
+            cae:      f.cae,
+            caeFecha: f.caeFecha,
+            importadoDeARCA: true,
+            comprador: {
+              nombre: f.docNro === '0' ? 'Consumidor Final'
+                : f.docTipo == 80 ? `CUIT ${f.docNro}`
+                : f.docTipo == 96 ? `DNI ${f.docNro}`
+                : f.docNro,
+              cuitDniCuil: f.docNro === '0' ? '' : f.docNro,
+            },
+            items: [],
+            total: f.importe,
+            subtotal: f.importe,
+            descuentoPct: 0,
+            totalLetras: numToWords(f.importe||0),
+          };
+          const lista = DB.get('facturas', []);
+          lista.unshift(nueva);
+          DB.set('facturas', lista);
+          importados++;
+          nuevosEstaRonda++;
+        }
+        // Si trajo menos de lo que puede, llegamos al fin
+        const ultimoEnARCA = data.ultimo || 0;
+        const ultimoImportado = nuevos.length > 0 ? Math.max(...nuevos.map(f=>f.cbteNro||0)) : 0;
+        if (ultimoImportado >= ultimoEnARCA || nuevos.length === 0) break;
+        // Siguiente ronda desde el siguiente al último importado
+        desdeActual = ultimoImportado + 1;
+        if (nuevosEstaRonda === 0) break; // todos ya existían localmente
       }
     };
 
