@@ -57,9 +57,10 @@ html.light tbody tr:hover{background:rgba(0,0,0,.04)!important}
 html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 
 /* ── SORT CONTROLS ── */
-.sort-bar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.sort-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--mu);margin-right:3px}
-.sort-btn{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.38);border-radius:20px;padding:5px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:all .18s}
+.sort-bar{display:flex;gap:6px;align-items:center;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.sort-bar::-webkit-scrollbar{display:none}
+.sort-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--mu);margin-right:2px;flex-shrink:0}
+.sort-btn{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.38);border-radius:20px;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:all .18s;flex-shrink:0;white-space:nowrap}
 .sort-btn:hover{border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.7)}
 .sort-btn.on{border-color:rgba(226,201,126,.5);color:rgba(226,201,126,.95);background:rgba(226,201,126,.1)}
 
@@ -331,7 +332,11 @@ html.light .tab.on{color:var(--ch);border-bottom-color:#666}
 html.light .card,.html.light .sc{background:radial-gradient(circle at 88% -8%,rgba(146,64,14,.04),transparent 50%),linear-gradient(145deg,#fff,#fafafa)!important;border-color:var(--b1)!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important}
 html.light .sc{background:linear-gradient(145deg,#fff,#f5f5f5)!important;border-color:var(--b1)!important}
 html.light .mc{background:linear-gradient(135deg,#fff,#fafafa)!important;border-color:var(--b1)!important}
-html.light .hi{background:linear-gradient(145deg,#fff,#fafafa)!important;border-color:var(--b1)!important}
+html.light .hi{background:linear-gradient(160deg,#fff,#f9f9f9)!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 2px 12px rgba(0,0,0,.06)!important}
+html.light .hi-v{color:#16a34a}
+html.light .hi-gain{color:#92400e}
+html.light .hi-d{color:rgba(0,0,0,.35)}
+html.light .hi-gain-lbl{color:rgba(0,0,0,.3)}
 html.light .pr input,html.light .iw input,html.light .iw select,html.light .mgw input,html.light .enw input{background:#fff!important;border-color:var(--b2)!important;color:var(--ch)!important}
 html.light .pr input::placeholder{color:#bbb!important}
 html.light .btn-p{background:#f0f0f0;border-color:var(--b2);color:#222}
@@ -400,7 +405,11 @@ html.light .btn-p:hover{color:#1c1404!important}
 .hi-note{font-size:12px;color:var(--di);font-style:italic;margin:8px 0 0;padding:8px 12px;border-left:2px solid var(--b3)}
 
 /* ── SEARCH ── */
-.hist-search{width:100%;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:0 14px;height:40px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:16px}
+.hist-search{width:100%;background:rgba(18,18,18,1);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:0 16px 0 40px;height:44px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;box-sizing:border-box}
+.hist-search:focus{border-color:rgba(226,201,126,.35);box-shadow:0 0 0 3px rgba(226,201,126,.06)}
+.hist-search-wrap{position:relative;margin-bottom:16px}
+.hist-search-wrap::before{content:'';position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.25)' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
+.hist-search-wrap .hist-search{margin-bottom:0}
 .hist-search:focus{border-color:var(--ud)}
 
 /* ── PRICE TREND ── */
@@ -796,17 +805,24 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .info{background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:12px 16px;font-size:13px;color:var(--di);line-height:1.7}
 
 /* HISTORIAL */
-.hi{background:linear-gradient(145deg,var(--bg2),#131313);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.3)}
-.hi-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s}
-.hi-hdr-l{display:flex;align-items:center;gap:14px;min-width:0}
+.hi{background:linear-gradient(160deg,rgba(22,22,22,1),rgba(14,14,14,1));border:1px solid rgba(255,255,255,.07);border-radius:14px;margin-bottom:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.04) inset;transition:box-shadow .2s,border-color .2s}
+.hi:hover{border-color:rgba(255,255,255,.11);box-shadow:0 6px 28px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.04) inset}
+.hi-hdr{padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;cursor:pointer;transition:background .15s}
+.hi-hdr:active{background:rgba(255,255,255,.02)}
+.hi-hdr-l{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
 .cli-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0;color:var(--ud);background:linear-gradient(145deg,rgba(226,201,126,.18),rgba(226,201,126,.04));border:1px solid rgba(226,201,126,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-.hi-n{font-weight:700;font-size:15px;margin-bottom:4px;color:rgba(255,255,255,.9)}
+.hi-n{font-weight:700;font-size:16px;color:rgba(255,255,255,.92);line-height:1.2;margin:0}
+.hi-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
 .badge-cat{display:inline-flex;align-items:center;gap:4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ud);background:rgba(226,201,126,.12);border:1px solid rgba(226,201,126,.25);border-radius:4px;padding:2px 6px;vertical-align:middle;margin-left:4px}
 .badge-cat .icon{width:11px;height:11px}
-.hi-d{font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
-.hi-v{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--gr);text-align:right}
-.hi-t{font-size:11px;color:var(--di);text-align:right;margin-top:2px}
-.hi-body{display:none;padding:0 20px 16px;border-top:1px solid var(--b2)}
+.hi-d{font-size:11px;color:rgba(255,255,255,.3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.8px;display:flex;align-items:center;gap:6px}
+.hi-d-sep{opacity:.3}
+.hi-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.hi-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1;text-align:right}
+.hi-gain{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ye);text-align:right;line-height:1}
+.hi-gain-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.25);text-align:right;margin-top:4px}
+.hi-margin-chip{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(251,191,36,.75);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.18);border-radius:20px;padding:2px 7px;margin-top:3px;align-self:flex-end}
+.hi-body{display:none;padding:0 18px 16px;border-top:1px solid rgba(255,255,255,.05)}
 .hi-body.open{display:block}
 
 /* ── SWIPE ACTIONS (mobile) ── */
@@ -816,8 +832,8 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-swipe-action.danger{background:var(--re)}
 .hi-swipe-action.accent{background:var(--ud);color:#1c1404}
 .hi-swipe-action span{user-select:none;-webkit-user-select:none}
-.hi-swipe-content{position:relative;background:#131313;transition:transform .25s cubic-bezier(.22,.61,.36,1);will-change:transform;touch-action:pan-y}
-.hi-swipe-content.swiped .hi-hdr-r{opacity:0;transition:opacity .15s}
+.hi-swipe-content{position:relative;background:transparent;transition:transform .25s cubic-bezier(.22,.61,.36,1);will-change:transform;touch-action:pan-y}
+.hi-swipe-content.swiped .hi-hdr-r,.hi-swipe-content.swiped .hi-r{opacity:0;transition:opacity .15s}
 @media(min-width:769px){
   .hi-swipe-actions{display:none}
   .hi-swipe-content{transform:none!important}
@@ -4685,16 +4701,29 @@ function delTemplate(id){confirm2('¿Borrar esta plantilla?',()=>{DB.set('templa
 ═══════════════════════════════════════════ */
 
 function histCard(p, idx, badges=[], i=0) {
+  const invest = p.r?.ars||0;
+  const gain   = purchaseGain(p);
+  const tce    = p.r?.TCE||0;
+  const prods  = p.products?.length||0;
+  const marginPct = invest>0 ? Math.round(gain/invest*100) : 0;
   return `<div class="hi"${stg(i)}>
     <div class="hi-hdr" onclick="toggleHi('${idx}')">
-      <div>
-        <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>
-        <div class="hi-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div>
+      <div class="hi-hdr-l">
+        <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}</div>
+        ${badges.length?`<div class="hi-badges">${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>`:''}
+        <div class="hi-d">
+          <span>${fmtD(p.date)}</span>
+          <span class="hi-d-sep">·</span>
+          <span>${prods} prod.</span>
+          <span class="hi-d-sep">·</span>
+          <span>TCE ${fmtA(tce)}</span>
+        </div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div class="hi-v">${fmtA(p.r?.ars||0)}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--mu);margin-top:5px">Gan. proy.</div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ye);letter-spacing:-.2px">${fmtA(purchaseGain(p))}</div>
+      <div class="hi-r">
+        <div class="hi-v">${fmtA(invest)}</div>
+        <div class="hi-gain-lbl">gan. proy.</div>
+        <div class="hi-gain">${fmtA(gain)}</div>
+        ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
       </div>
     </div>
     <div class="hi-body" id="${idx}">
@@ -4739,7 +4768,9 @@ function pgHist() {
     <div class="sh" style="margin:0">Historial · ${rawAll.length} compra${rawAll.length!==1?'s':''}</div>
     <button class="btn-g btn-sm" onclick="exportAllXLSX()">⬇ Excel</button>
   </div>
-  <input class="hist-search" placeholder="🔍 Buscar por nombre…" value="${esc(histSearch)}" oninput="setHistSearch(this.value)">
+  <div class="hist-search-wrap">
+    <input class="hist-search" placeholder="Buscar por nombre…" value="${esc(histSearch)}" oninput="setHistSearch(this.value)">
+  </div>
   <div class="sort-bar">
     <span class="sort-lbl">Ordenar:</span>
     <button class="sort-btn${histSort==='date'?' on':''}" onclick="sortHist('date')">Fecha</button>
