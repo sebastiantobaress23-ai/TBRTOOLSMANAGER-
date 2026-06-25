@@ -9371,6 +9371,7 @@ function pgFacturador() {
   <div class="fe mb20" style="gap:8px;flex-wrap:wrap">
     <button class="btn-p" onclick="openFactura(null)">${ic('edit')} Nueva Factura C</button>
     <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')} Libro IVA (CSV)</button>
+    <button class="btn-g" onclick="forzarActualizacion()" style="gap:6px;font-size:10px;opacity:.7" title="Limpia caché y recarga la app con la última versión">↺ Actualizar app</button>
     <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca" style="gap:6px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Sincronizar ARCA
@@ -10828,6 +10829,18 @@ function remitoDocBody(f) {
     </div>
   </div>
   </body></html>`;
+}
+
+async function forzarActualizacion(){
+  try {
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k=>caches.delete(k)));
+  } catch(e){}
+  location.reload(true);
 }
 
 async function facturaShareWA(id){
