@@ -1266,6 +1266,16 @@ html.light .btn-g:hover{color:rgba(0,0,0,.75)!important}
 /* Altura de línea en body para mayor legibilidad */
 body{line-height:1.5}
 
+/* ── NAV SORT (drag-and-drop) ── */
+.nav-sort-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07);touch-action:none;user-select:none;cursor:default;transition:background .15s,border-color .15s,box-shadow .15s}
+.nav-sort-item.dragging{opacity:.35;background:rgba(255,255,255,.02)!important}
+.nav-sort-item.drag-over{border-color:rgba(226,201,126,.4)!important;background:rgba(226,201,126,.06)!important}
+.nav-sort-handle{display:flex;align-items:center;justify-content:center;width:24px;height:24px;color:var(--di);cursor:grab;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.nav-sort-handle:active{cursor:grabbing}
+.nav-sort-icon{width:18px;height:18px;flex-shrink:0;color:var(--si)}
+.nav-sort-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nav-sort-ghost{border:2px dashed rgba(226,201,126,.35)!important;background:rgba(226,201,126,.04)!important;opacity:.6}
+
 </style>
 </head>
 <body>
@@ -1378,7 +1388,7 @@ body{line-height:1.5}
   </div></div>
 </div>
 
-<nav class="nav">
+<nav class="nav" id="desk-nav">
   <div class="nav-indicator no-anim" id="nav-indicator"></div>
   <div class="tab on" data-p="dashboard"   onclick="navigate('dashboard')">Dashboard</div>
   <div class="tab"     data-p="compra"      onclick="navigate('compra')">Nueva Compra</div>
@@ -2155,22 +2165,22 @@ function applyDensity(density) {
 }
 
 const ALL_MODULES = [
-  {id:'dashboard',   label:'Inicio',    svg:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>'},
-  {id:'compra',      label:'Compra',    svg:'<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'},
-  {id:'historial',   label:'Historial', svg:'<svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>'},
-  {id:'ventas',      label:'Ventas',    svg:'<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
-  {id:'pedidos',     label:'Pedidos',   svg:'<svg viewBox="0 0 24 24"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg>'},
-  {id:'catalogo',    label:'Catálogo',  svg:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'},
-  {id:'stats',       label:'Stats',     svg:'<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg>'},
-  {id:'publicar',    label:'ML',        svg:'<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'},
-  {id:'competencia', label:'Compet.',   svg:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'},
-  {id:'proveedores', label:'Proveed.',  svg:'<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'},
-  {id:'clientes',    label:'Clientes',  svg:'<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'},
-  {id:'viaje',       label:'Viaje',     svg:'<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'},
-  {id:'orden',       label:'OC',        svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>'},
-  {id:'cotizaciones',label:'Cotiz.',    svg:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},
-  {id:'facturador',  label:'Facturar',  svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},
-  {id:'config',      label:'Config',    svg:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'}
+  {id:'dashboard',   label:'Inicio',    tabLabel:'Dashboard',        svg:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>'},
+  {id:'compra',      label:'Compra',    tabLabel:'Nueva Compra',     svg:'<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'},
+  {id:'historial',   label:'Historial', tabLabel:'Historial',        svg:'<svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>'},
+  {id:'ventas',      label:'Ventas',    tabLabel:'Ventas',           svg:'<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
+  {id:'pedidos',     label:'Pedidos',   tabLabel:'Pedidos',          svg:'<svg viewBox="0 0 24 24"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg>'},
+  {id:'catalogo',    label:'Catálogo',  tabLabel:'Catálogo',         svg:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'},
+  {id:'stats',       label:'Stats',     tabLabel:'Estadísticas',     svg:'<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg>'},
+  {id:'publicar',    label:'ML',        tabLabel:'Publicar ML',      svg:'<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'},
+  {id:'competencia', label:'Compet.',   tabLabel:'Competencia',      svg:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'},
+  {id:'proveedores', label:'Proveed.',  tabLabel:'Proveedores',      svg:'<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'},
+  {id:'clientes',    label:'Clientes',  tabLabel:'Clientes',         svg:'<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'},
+  {id:'viaje',       label:'Viaje',     tabLabel:'Viaje de compras', svg:'<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'},
+  {id:'orden',       label:'OC',        tabLabel:'Orden de Compra',  svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>'},
+  {id:'cotizaciones',label:'Cotiz.',    tabLabel:'Cotiz. Proveed.',  svg:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},
+  {id:'facturador',  label:'Facturar',  tabLabel:'Facturador',       svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},
+  {id:'config',      label:'Config',    tabLabel:'Config',           svg:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'}
 ];
 
 const ALL_QA_ACTIONS = [
@@ -2191,22 +2201,40 @@ function _saveNavOrderFromDOM() {
 }
 
 function renderNav() {
-  const nav = document.getElementById('mob-nav');
-  if (!nav) return;
   const s = DB.get('settings', {});
   const order = s.navOrder || ALL_MODULES.map(m => m.id);
-  // Ensure config is always last; filter to valid ids; add any missing ones (except config)
   const withoutConfig = order.filter(id => id !== 'config' && ALL_MODULES.find(m => m.id === id));
   const missing = ALL_MODULES.filter(m => m.id !== 'config' && !withoutConfig.includes(m.id)).map(m => m.id);
   const finalOrder = [...withoutConfig, ...missing, 'config'];
-  nav.innerHTML = finalOrder.map(id => {
-    const m = ALL_MODULES.find(x => x.id === id);
-    if (!m) return '';
-    return `<button class="mob-tab" data-p="${m.id}" onclick="navigate('${m.id}')"><span class="mob-icon">${m.svg}</span>${m.label}</button>`;
-  }).join('');
-  // Re-apply current active state
   const currentPage = window._currentPage || 'dashboard';
-  nav.querySelectorAll('.mob-tab').forEach(t => t.classList.toggle('on', t.dataset.p === currentPage));
+
+  // Mobile nav
+  const mobNav = document.getElementById('mob-nav');
+  if (mobNav) {
+    mobNav.innerHTML = finalOrder.map(id => {
+      const m = ALL_MODULES.find(x => x.id === id);
+      if (!m) return '';
+      return `<button class="mob-tab${currentPage===id?' on':''}" data-p="${m.id}" onclick="navigate('${m.id}')"><span class="mob-icon">${m.svg}</span>${m.label}</button>`;
+    }).join('');
+  }
+
+  // Desktop nav: rebuild preserving the indicator element
+  const deskNav = document.getElementById('desk-nav');
+  if (deskNav) {
+    const indicator = deskNav.querySelector('.nav-indicator');
+    deskNav.innerHTML = '';
+    if (indicator) deskNav.appendChild(indicator);
+    finalOrder.forEach(id => {
+      const m = ALL_MODULES.find(x => x.id === id);
+      if (!m) return;
+      const el = document.createElement('div');
+      el.className = 'tab' + (currentPage === id ? ' on' : '');
+      el.dataset.p = m.id;
+      el.textContent = m.tabLabel;
+      el.onclick = () => navigate(m.id);
+      deskNav.appendChild(el);
+    });
+  }
 }
 
 function renderFan() {
@@ -6506,20 +6534,21 @@ function pgConfig() {
       </div>
 
       <div>
-        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Orden del menú móvil</div>
-        <div class="hint mb8">Reordenás con las flechas. Config siempre va al final.</div>
+        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Orden del menú</div>
+        <div class="hint mb8">Mantenés presionado y arrastrás para reordenar. Config siempre va al final.</div>
         <div id="pref-nav-order" style="display:flex;flex-direction:column;gap:4px">
           ${(()=>{
             const order=(s.navOrder||ALL_MODULES.map(m=>m.id)).filter(id=>id!=='config'&&ALL_MODULES.find(m=>m.id===id));
             const missing=ALL_MODULES.filter(m=>m.id!=='config'&&!order.includes(m.id)).map(m=>m.id);
             const finalOrder=[...order,...missing];
-            return finalOrder.map((id,i)=>{
+            return finalOrder.map(id=>{
               const m=ALL_MODULES.find(x=>x.id===id);
               if(!m)return'';
-              return`<div data-nav-id="${id}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)">
-                <span style="flex:1;font-size:13px">${m.label}</span>
-                <button class="btn-g btn-sm" style="padding:2px 8px;min-width:28px" onclick="(function(){const el=document.getElementById('pref-nav-order');const items=[...el.querySelectorAll('[data-nav-id]')];const idx=items.findIndex(x=>x.dataset.navId==='${id}');if(idx<=0)return;[items[idx-1],items[idx]].reverse().forEach((x,j)=>{if(j===0)el.insertBefore(items[idx],items[idx-1]);});_saveNavOrderFromDOM();})()" title="Subir">↑</button>
-                <button class="btn-g btn-sm" style="padding:2px 8px;min-width:28px" onclick="(function(){const el=document.getElementById('pref-nav-order');const items=[...el.querySelectorAll('[data-nav-id]')];const idx=items.findIndex(x=>x.dataset.navId==='${id}');if(idx>=items.length-1)return;el.insertBefore(items[idx+1],items[idx]);_saveNavOrderFromDOM();})()" title="Bajar">↓</button>
+              return`<div class="nav-sort-item" data-nav-id="${id}">
+                <span class="nav-sort-handle" title="Arrastrá para reordenar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span>
+                <span class="nav-sort-icon">${m.svg}</span>
+                <span style="flex:1;font-size:13px;color:var(--ch)">${m.label}</span>
+                <span style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px">${m.tabLabel}</span>
               </div>`;
             }).join('');
           })()}
@@ -9365,7 +9394,87 @@ after.orden = ()=>{};
 after.cotizaciones = ()=>{};
 after.pedidos = ()=>{ syncCatalogOrders(); };
 after.clientes = ()=>{ animateCountUps(); };
-after.config = ()=>{ renderPMRows(); };
+function _initNavDrag() {
+  const container = document.getElementById('pref-nav-order');
+  if (!container) return;
+
+  // Clean up previous listeners
+  if (container._navDragCleanup) container._navDragCleanup();
+
+  let dragging = null, ghost = null, pointerOffsetY = 0;
+
+  function getItems() { return [...container.querySelectorAll('.nav-sort-item')]; }
+
+  function onPointerDown(e) {
+    const item = e.currentTarget.closest('.nav-sort-item');
+    if (!item) return;
+    e.preventDefault();
+
+    dragging = item;
+    pointerOffsetY = e.clientY - item.getBoundingClientRect().top;
+
+    // Insert placeholder ghost in place of dragging item
+    ghost = document.createElement('div');
+    ghost.className = 'nav-sort-item nav-sort-ghost';
+    ghost.style.height = item.offsetHeight + 'px';
+    ghost.style.pointerEvents = 'none';
+    container.insertBefore(ghost, item);
+    item.classList.add('dragging');
+
+    const rect = item.getBoundingClientRect();
+    item.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:9999;margin:0;box-shadow:0 8px 32px rgba(0,0,0,.7);border-color:rgba(226,201,126,.4);background:rgba(44,34,12,1)`;
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const y = e.clientY - pointerOffsetY;
+    dragging.style.top = y + 'px';
+
+    // Find insertion point
+    const midY = e.clientY;
+    const items = getItems().filter(i => i !== dragging && !i.classList.contains('nav-sort-ghost'));
+    let inserted = false;
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (midY < mid) {
+        container.insertBefore(ghost, item);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) container.appendChild(ghost);
+  }
+
+  function onPointerUp() {
+    if (!dragging) return;
+    dragging.style.cssText = '';
+    dragging.classList.remove('dragging');
+    if (ghost && ghost.parentNode) {
+      container.insertBefore(dragging, ghost);
+      ghost.remove();
+    }
+    ghost = null;
+    dragging = null;
+    _saveNavOrderFromDOM();
+  }
+
+  // Bind to handles
+  const handles = container.querySelectorAll('.nav-sort-handle');
+  handles.forEach(h => h.addEventListener('pointerdown', onPointerDown));
+
+  const moveHandler = onPointerMove.bind(null);
+  const upHandler   = onPointerUp.bind(null);
+  document.addEventListener('pointermove', moveHandler, {passive: false});
+  document.addEventListener('pointerup',   upHandler);
+
+  container._navDragCleanup = () => {
+    document.removeEventListener('pointermove', moveHandler);
+    document.removeEventListener('pointerup',   upHandler);
+  };
+}
+
+after.config = ()=>{ renderPMRows(); _initNavDrag(); };
 
 /* ═══════════════════════════════════════════
    INIT
