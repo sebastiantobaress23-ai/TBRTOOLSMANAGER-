@@ -9256,6 +9256,7 @@ window.onload = async function() {
 let _factItems = [];
 let _facturaEdit = null;
 let _factFilter = '';
+let _factTab = 'pendientes';
 
 function numToWords(n) {
   const ones = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
@@ -9377,14 +9378,31 @@ function pgFacturador() {
       Sincronizar ARCA
     </button>
   </div>
-  ${facturas.length===0?`<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`:`
-  ${pendientes.length?`<div class="sh mb12" style="font-size:9px">PENDIENTES · ${pendientes.length}</div>${pendientes.map(factRow).join('')}`:''}
-  ${pagadas.length?`<div class="sh mb12 mt20" style="font-size:9px">PAGADAS · ${pagadas.length}</div>${pagadas.map(factRow).join('')}`:''}
-  ${anuladas.length?`<div class="sh mb12 mt20" style="font-size:9px;color:var(--re)">ANULADAS (con NC) · ${anuladas.length}</div>${anuladas.map(factRow).join('')}`:''}
-  ${canceladas.length?`<div class="sh mb12 mt20" style="font-size:9px">CANCELADAS</div>${canceladas.map(factRow).join('')}`:''}
-  ${notasCredito.length?`<div class="sh mb12 mt20" style="font-size:9px;color:var(--re)">NOTAS DE CRÉDITO · ${notasCredito.length}</div>${notasCredito.map(factRow).join('')}`:''}
-  ${remitos.length?`<div class="sh mb12 mt20" style="font-size:9px">REMITOS · ${remitos.length}</div>${remitos.map(factRow).join('')}`:''}
-  `}
+  ${(()=>{
+    if(facturas.length===0) return `<div class="empty-state"><svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div class="empty-title">Sin facturas todavía</div><div class="empty-sub">Creá tu primera Factura C</div></div>`;
+    const tabs = [
+      {id:'pendientes', label:'Pendientes', count:pendientes.length, color:'var(--ye)'},
+      {id:'pagadas',    label:'Pagadas',    count:pagadas.length,    color:'var(--gr)'},
+      {id:'anuladas',   label:'Anuladas',   count:anuladas.length,   color:'var(--re)'},
+      {id:'nc',         label:'Notas de Crédito', count:notasCredito.length, color:'var(--re)'},
+      {id:'remitos',    label:'Remitos',    count:remitos.length,    color:'var(--di)'},
+    ];
+    if(!_factTab||!tabs.find(t=>t.id===_factTab)) _factTab='pendientes';
+    const tabMap = {pendientes,pagadas,anuladas,nc:notasCredito,remitos};
+    const active = tabMap[_factTab]||[];
+    const tabBar = `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;background:var(--bg2);border:1px solid var(--b2);border-radius:10px;padding:5px">
+      ${tabs.map(t=>{
+        const isActive = _factTab===t.id;
+        return `<button onclick="_factTab='${t.id}';render()" style="flex:1;min-width:80px;padding:8px 10px;border:none;border-radius:7px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;transition:all .15s;background:${isActive?'var(--bg)':'transparent'};color:${isActive?t.color:'var(--di)'};box-shadow:${isActive?'0 1px 6px rgba(0,0,0,.4)':'none'}">
+          ${t.label}${t.count>0?` <span style="background:${isActive?t.color:'var(--b2)'};color:${isActive?'#000':'var(--di)'};border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">${t.count}</span>`:''}
+        </button>`;
+      }).join('')}
+    </div>`;
+    const content = active.length===0
+      ? `<div style="text-align:center;padding:40px 0;color:var(--di);font-size:13px">Sin comprobantes en esta sección</div>`
+      : active.map(factRow).join('');
+    return tabBar+content;
+  })()}
   </div>`;
 }
 
