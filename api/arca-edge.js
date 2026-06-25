@@ -65,6 +65,7 @@ async function fetchCUIT(cuit) {
 
   for (const { url, extract } of endpoints) {
     try {
+      console.log(`[edge] GET ${url}`);
       const r = await fetch(url, {
         signal: AbortSignal.timeout(6000),
         headers: {
@@ -74,13 +75,15 @@ async function fetchCUIT(cuit) {
           'Referer': 'https://www.afip.gob.ar/',
         },
       });
+      const text = await r.text();
+      console.log(`[edge] ${r.status} ${url.split('/')[2]} | ${text.slice(0,200)}`);
       if (!r.ok) continue;
-      const body = await r.json();
+      let body; try { body = JSON.parse(text); } catch { continue; }
       const raw = extract(body);
       if (!raw || Array.isArray(raw)) continue;
       const persona = normalizePersona(raw);
       if (persona) return persona;
-    } catch (_) { /* timeout o CORS, probar siguiente */ }
+    } catch (e) { console.log(`[edge] error: ${e.message}`); }
   }
   return null;
 }
