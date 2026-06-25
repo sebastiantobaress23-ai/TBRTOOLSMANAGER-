@@ -10322,6 +10322,7 @@ async function sincronizarARCA() {
     } else {
       toast(`${importados} comprobante${importados>1?'s':''} importado${importados>1?'s':''} de ARCA`);
       render();
+      console.log('[SYNC] nrosConNC después del sync:', [...new Set(DB.get('facturas',[]).filter(f=>f.tipo==='NC'&&f.facturaOrigen).map(f=>f.facturaOrigen))]);
     }
   } catch (e) {
     toast('Error: ' + e.message, false, 5000);

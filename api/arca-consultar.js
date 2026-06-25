@@ -179,11 +179,19 @@ module.exports = async function handler(req, res) {
           : fchVto;
 
         // Extraer comprobante asociado (para NCs: apunta a la FC original)
-        const cbteAsocRaw = d.CbtesAsoc?.CbteAsoc || d.CBTESASOC?.CBTEASOC;
+        // Log completo para debug de claves disponibles
+        if (cbteTipo === 13) console.log(`NC ${nro} keys:`, JSON.stringify(Object.keys(d)), 'CbtesAsoc:', JSON.stringify(d.CbtesAsoc||d.CBTESASOC||d.cbtesasoc||'NO_KEY'));
+        const cbteAsocRaw = d.CbtesAsoc?.CbteAsoc
+          || d.CBTESASOC?.CBTEASOC
+          || d.cbtesasoc?.cbteasoc
+          || d.CbtesAsoc?.Cbte
+          || d.CbteAsoc;
         const cbteAsocArr = Array.isArray(cbteAsocRaw) ? cbteAsocRaw : (cbteAsocRaw ? [cbteAsocRaw] : []);
-        const cbteAsocNro = cbteAsocArr.length > 0
-          ? `${String(cbteAsocArr[0].PtoVta||cbteAsocArr[0].PTOVTA||pdv).padStart(5,'0')}-${String(cbteAsocArr[0].Nro||cbteAsocArr[0].NRO||0).padStart(8,'0')}`
+        const cbteAsoc0 = cbteAsocArr[0];
+        const cbteAsocNro = cbteAsoc0
+          ? `${String(cbteAsoc0.PtoVta||cbteAsoc0.PTOVTA||cbteAsoc0.ptoVta||pdv).padStart(5,'0')}-${String(cbteAsoc0.Nro||cbteAsoc0.NRO||cbteAsoc0.nro||0).padStart(8,'0')}`
           : null;
+        if (cbteTipo === 13) console.log(`NC ${nro} cbteAsocNro=${cbteAsocNro}`);
 
         facturas.push({
           cbteNro:    nro,
@@ -200,7 +208,7 @@ module.exports = async function handler(req, res) {
       } catch(e) { errores.push(`nro${nro}:${e.message.slice(0,60)}`); console.log(`Comprobante ${nro} error: ${e.message}`); }
     }
 
-    const dbg = { ultimoARCA, desdeParam, inicio, fin, encontrados: facturas.length, errores };
+    const dbg = { ultimoARCA, desdeParam, inicio, fin, encontrados: facturas.length, errores, cbteAsocNros: facturas.filter(f=>f.cbteAsocNro).map(f=>({nro:f.nro,asoc:f.cbteAsocNro})) };
     console.log(`Resultado:`, JSON.stringify(dbg));
     return res.status(200).json({ facturas, ultimo: ultimoARCA || fin, _debug: dbg });
   } catch (e) {
