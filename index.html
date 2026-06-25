@@ -1191,6 +1191,17 @@ select{cursor:pointer}
   .card:hover,.sc:hover,.mc:hover,.qa-fab:hover{transform:none!important}
 }
 
+/* === PERSONALIZACIÓN: Tamaño de texto === */
+html.text-compact .hint, html.text-compact .sc-s, html.text-compact .biz-cond { font-size: 10px !important; }
+html.text-compact .fl, html.text-compact .meta { font-size: 12px !important; }
+html.text-large .hint, html.text-large .sc-s { font-size: 14px !important; }
+html.text-large .fl, html.text-large .meta { font-size: 15px !important; }
+
+/* === PERSONALIZACIÓN: Densidad === */
+html.density-compact .card { padding: 12px !important; }
+html.density-compact [style*="padding:14px"] { padding: 10px !important; }
+html.density-comfortable .card { padding: 20px !important; }
+
 </style>
 </head>
 <body>
@@ -2049,8 +2060,105 @@ function parseARS(v){
   const norm = s.replace(/\./g,'').replace(',','.');
   return parseFloat(norm)||0;
 }
-const fmtA = n=> '$ '+Math.round(+n||0).toLocaleString('es-AR');
+let _numLocale = (()=>{ try { const s=DB.get('settings',{})||{}; return s.numFormat==='standard'?'en-US':'es-AR'; } catch(e){ return 'es-AR'; } })();
+function applyNumFormat(fmt) {
+  _numLocale = (fmt==='standard') ? 'en-US' : 'es-AR';
+}
+const fmtA = n=> '$ '+Math.round(+n||0).toLocaleString(_numLocale);
 const fmtAk = n=> { const v=+n||0; return v>=1000 ? '$'+(v/1000).toFixed(1).replace('.0','')+'k' : fmtA(v); };
+
+/* ═══════════════════════════════════════════
+   PERSONALIZACIÓN
+═══════════════════════════════════════════ */
+function savePrefs(key, val) {
+  const s = DB.get('settings', {});
+  s[key] = val;
+  DB.set('settings', s);
+}
+
+function applyTextSize(size) {
+  const h = document.documentElement;
+  h.classList.remove('text-compact','text-large');
+  if (size === 'compact') h.classList.add('text-compact');
+  else if (size === 'large') h.classList.add('text-large');
+}
+
+function applyDensity(density) {
+  const h = document.documentElement;
+  h.classList.remove('density-compact','density-comfortable');
+  if (density === 'compact') h.classList.add('density-compact');
+  else if (density === 'comfortable') h.classList.add('density-comfortable');
+}
+
+const ALL_MODULES = [
+  {id:'dashboard',   label:'Inicio',    svg:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>'},
+  {id:'compra',      label:'Compra',    svg:'<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'},
+  {id:'historial',   label:'Historial', svg:'<svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>'},
+  {id:'ventas',      label:'Ventas',    svg:'<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'},
+  {id:'pedidos',     label:'Pedidos',   svg:'<svg viewBox="0 0 24 24"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg>'},
+  {id:'catalogo',    label:'Catálogo',  svg:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'},
+  {id:'stats',       label:'Stats',     svg:'<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg>'},
+  {id:'publicar',    label:'ML',        svg:'<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'},
+  {id:'competencia', label:'Compet.',   svg:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'},
+  {id:'proveedores', label:'Proveed.',  svg:'<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'},
+  {id:'clientes',    label:'Clientes',  svg:'<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'},
+  {id:'viaje',       label:'Viaje',     svg:'<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'},
+  {id:'orden',       label:'OC',        svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>'},
+  {id:'cotizaciones',label:'Cotiz.',    svg:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'},
+  {id:'facturador',  label:'Facturar',  svg:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},
+  {id:'config',      label:'Config',    svg:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'}
+];
+
+const ALL_QA_ACTIONS = [
+  {id:'sale',        label:'Registrar venta',       svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',       handler:'qaFanSale()'},
+  {id:'compra',      label:'Nueva compra',           svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>', handler:"qaFanGo('compra')"},
+  {id:'orden',       label:'Orden de compra',        svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>', handler:"qaFanGo('orden')"},
+  {id:'cotizaciones',label:'Cotiz. Proveedores',     svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',   handler:"qaFanGo('cotizaciones')"},
+  {id:'pedidos',     label:'Pedidos',                svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V6a4 4 0 0 0-8 0v1H6a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/><path d="M9 11v2"/><path d="M15 11v2"/></svg>', handler:"qaFanGo('pedidos')"},
+  {id:'sim',         label:'Simulador de ganancias', svg:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 8a2 2 0 0 1-2 3H7a2 2 0 0 1-2-3l4-8z"/><line x1="9" y1="11" x2="15" y2="11"/></svg>', handler:'qaFanSim()'}
+];
+
+function renderNav() {
+  const nav = document.getElementById('mob-nav');
+  if (!nav) return;
+  const s = DB.get('settings', {});
+  const order = s.navOrder || ALL_MODULES.map(m => m.id);
+  // Ensure config is always last; filter to valid ids; add any missing ones (except config)
+  const withoutConfig = order.filter(id => id !== 'config' && ALL_MODULES.find(m => m.id === id));
+  const missing = ALL_MODULES.filter(m => m.id !== 'config' && !withoutConfig.includes(m.id)).map(m => m.id);
+  const finalOrder = [...withoutConfig, ...missing, 'config'];
+  nav.innerHTML = finalOrder.map(id => {
+    const m = ALL_MODULES.find(x => x.id === id);
+    if (!m) return '';
+    return `<button class="mob-tab" data-p="${m.id}" onclick="navigate('${m.id}')"><span class="mob-icon">${m.svg}</span>${m.label}</button>`;
+  }).join('');
+  // Re-apply current active state
+  const currentPage = window._currentPage || 'dashboard';
+  nav.querySelectorAll('.mob-tab').forEach(t => t.classList.toggle('on', t.dataset.p === currentPage));
+}
+
+function renderFan() {
+  const fan = document.getElementById('qa-fan');
+  if (!fan) return;
+  const s = DB.get('settings', {});
+  const enabled = s.qaEnabled || ALL_QA_ACTIONS.map(a => a.id);
+  // Keep 'repeat' button as it is (special dynamic button)
+  const repeatBtn = fan.querySelector('#qa-mini-repeat');
+  fan.innerHTML = '';
+  // Re-add repeat btn first (it stays at top, hidden by default)
+  if (repeatBtn) fan.appendChild(repeatBtn);
+  ALL_QA_ACTIONS.forEach(action => {
+    if (!enabled.includes(action.id)) return;
+    const btn = document.createElement('button');
+    btn.className = 'qa-mini';
+    btn.dataset.qa = action.id;
+    btn.setAttribute('onclick', action.handler);
+    btn.innerHTML = `<span class="qa-mini-lbl">${action.label}</span><span class="qa-mini-ic">${action.svg}</span>`;
+    fan.appendChild(btn);
+  });
+  // Reset drag init so it re-binds
+  fan._dragInit = false;
+}
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
