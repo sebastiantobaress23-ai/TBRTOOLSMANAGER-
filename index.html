@@ -6204,6 +6204,12 @@ function pgConfig() {
     <div id="help-list">${helpItems()}</div>
   </div>
 
+  <div class="sh mb16">Actualización</div>
+  <div class="card mb24">
+    <div class="hint mb16">Limpia el caché del navegador y recarga la última versión de la app. Usalo si algo no se ve bien o si hay una actualización disponible.</div>
+    <button class="btn-g" onclick="forzarActualizacion()" style="height:42px;gap:8px">↺ Actualizar app</button>
+  </div>
+
   <div class="sh mb16">Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">${ic('trash')} Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
@@ -9422,14 +9428,13 @@ function pgFacturador() {
   </div>
 
   <!-- Action Toolbar -->
-  <div style="display:grid;grid-template-columns:${mob?'1fr 1fr':'auto auto auto auto'};gap:8px;margin-bottom:20px">
+  <div style="display:grid;grid-template-columns:${mob?'1fr 1fr':'auto auto auto'};gap:8px;margin-bottom:20px">
     <button class="btn-p" onclick="openFactura(null)" style="${mob?'grid-column:1/-1;justify-content:center;':''}flex-shrink:0">${ic('edit')} Nueva Factura C</button>
     <button class="btn-g" onclick="exportLibroIVA()">${ic('fileText')}${mob?' CSV':' Libro IVA (CSV)'}</button>
     <button class="btn-g" onclick="sincronizarARCA()" id="btn-sync-arca">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       ${mob?'ARCA':'Sincronizar ARCA'}
     </button>
-    <button class="btn-g" onclick="forzarActualizacion()" style="font-size:11px;opacity:.6" title="Limpiar caché y recargar">↺${mob?'':' Actualizar app'}</button>
   </div>
 
   <!-- Document Sections -->
