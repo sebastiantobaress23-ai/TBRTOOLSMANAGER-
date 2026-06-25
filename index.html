@@ -9587,13 +9587,7 @@ function openFactura(id) {
             </div>
           </div>
           <div><label class="fl">CUIT / DNI / CUIL</label>
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
-              <div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div>
-              <button class="btn-g" onclick="buscarPadronARCA(event)" style="height:42px;padding:0 12px;border-radius:10px;flex-shrink:0;white-space:nowrap;font-size:12px;gap:6px;display:flex;align-items:center" title="Buscar datos en ARCA">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                ARCA
-              </button>
-            </div>
+            <div class="iw"><input type="text" id="f-cuit" placeholder="20000000000" value="${esc(f?.comprador?.cuitDniCuil||'')}" inputmode="numeric"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div><label class="fl">Dirección</label><div class="iw"><input type="text" id="f-dir" placeholder="Calle 123" value="${esc(f?.comprador?.dir||'')}"></div></div>
@@ -9696,146 +9690,8 @@ function facturaToggleCuotas(val) {
   document.getElementById('f-recargo-wrap').style.display = isCuotas?'':'none';
 }
 
-// Calcula dígito verificador CUIT (igual que en el servidor)
-function _cuitVerif(prefix, dni) {
-  const base = String(prefix) + String(dni).padStart(8,'0');
-  const pesos = [5,4,3,2,7,6,5,4,3,2];
-  const suma = base.split('').reduce((s,d,i)=>s+parseInt(d)*pesos[i],0);
-  const r = suma % 11;
-  if(r===0) return 0;
-  if(r===1) return null;
-  return 11-r;
-}
-function _cuitsDesdeDNI(dni) {
-  return [20,23,24,27].map(p=>{
-    const v=_cuitVerif(p,dni);
-    return v!==null ? `${p}${String(dni).padStart(8,'0')}${v}` : null;
-  }).filter(Boolean);
-}
 
-// Normaliza respuesta de AFIP (tramitesadistancia o soa.afip.gov.ar)
-function _normalizeAfip(body) {
-  const raw = body?.persona || body?.data;
-  if(!raw || Array.isArray(raw)) return null;
-  const p = raw;
-  const nombre = p.razonSocial
-    || (p.apellido&&p.nombre ? `${p.apellido}, ${p.nombre}` : null)
-    || p.nombre || '';
-  if(!nombre.trim()) return null;
-  const dom = p.domicilioFiscal || p.domicilio || {};
-  let dir = dom.direccion || '';
-  if(!dir && dom.calle) dir = [dom.calle, dom.numero, dom.piso&&`piso ${dom.piso}`].filter(Boolean).join(' ');
-  return {
-    cuit: String(p.idPersona||''),
-    nombre: nombre.trim(),
-    direccion: dir.trim(),
-    localidad: dom.descripcionLocalidad || dom.localidad || '',
-    provincia: dom.descripcionProvincia || dom.provincia || '',
-  };
-}
 
-// Intenta consultar un CUIT directo desde el navegador
-async function _fetchCUITDirecto(cuit) {
-  const soaUrl = `https://soa.afip.gov.ar/sr-padron/v2/persona/${cuit}`;
-  const proxies = [
-    `https://corsproxy.io/?${encodeURIComponent(soaUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(soaUrl)}`,
-  ];
-  for(const proxyUrl of proxies) {
-    try {
-      console.log(`[arca] GET (proxy) ${proxyUrl.split('?')[0]}`);
-      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) { console.log(`[arca] proxy ${r.status}`); continue; }
-      const text = await r.text();
-      console.log(`[arca] proxy resp:`, text.slice(0,200));
-      let body; try { body = JSON.parse(text); } catch { continue; }
-      const raw = body?.data || body?.persona || body;
-      if(!raw || Array.isArray(raw) || typeof raw !== 'object') continue;
-      const p = _normalizeAfip({ persona: raw }) || _normalizeAfip(raw);
-      if(p) return p;
-    } catch(e) { console.log(`[arca] proxy error ${proxyUrl.split('?')[0]}: ${e.message}`); }
-  }
-  return null;
-}
-
-async function buscarPadronARCA(ev) {
-  const cuitInput = document.getElementById('f-cuit');
-  const doc = (cuitInput?.value||'').replace(/\D/g,'');
-  if(!doc) { toast('Ingresá un CUIT o DNI para buscar en ARCA', false); return; }
-  if(doc.length < 7 || doc.length > 11) { toast('CUIT: 11 dígitos · DNI: 7-8 dígitos', false, 4000); return; }
-
-  const btn = ev?.target?.closest('button') || ev?.currentTarget || ev?.target;
-  const btnOrig = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> ARCA';
-  if(btn) { btn.disabled=true; btn.innerHTML='<span style="opacity:.6">Buscando…</span>'; }
-
-  const fillPersona = (p) => {
-    const set=(id,v)=>{ const el=document.getElementById(id); if(el&&v!=null) el.value=v; };
-    const cfCheck=document.getElementById('f-cf');
-    if(cfCheck?.checked){ cfCheck.checked=false; facturaToggleCF(false); }
-    set('f-nombre', p.nombre);
-    set('f-cuit',   p.cuit || doc);
-    set('f-dir',    p.direccion);
-    set('f-ciudad', p.localidad || p.provincia);
-    toast(`✓ ${p.nombre}${p.localidad?' · '+p.localidad:''}`, true, 5000);
-  };
-
-  const mostrarMultiple = (personas) => {
-    _clientSheetContext='__padron__';
-    _clientSheetItems=personas.map(p=>({nombre:p.nombre,cuit:p.cuit,_padron:p}));
-    const ol=document.getElementById('client-sheet-ol');
-    ol.classList.add('open'); document.body.classList.add('modal-open');
-    const inp=document.getElementById('client-sheet-input'); inp.value='';
-    renderClientSheet('');
-  };
-
-  try {
-    const esCUIT = doc.length === 11;
-    console.log(`[arca] buscando doc=${doc} esCUIT=${esCUIT}`);
-
-    // 1. Intentar directo desde el navegador
-    if(esCUIT) {
-      const p = await _fetchCUITDirecto(doc);
-      if(p) { fillPersona(p); return; }
-    } else {
-      const posibles = _cuitsDesdeDNI(doc);
-      console.log(`[arca] DNI ${doc} → CUITs: ${posibles.join(', ')}`);
-      const resultados = await Promise.all(posibles.map(c => _fetchCUITDirecto(c)));
-      const encontrados = resultados.filter(Boolean);
-      if(encontrados.length===1) { fillPersona(encontrados[0]); return; }
-      if(encontrados.length>1) { mostrarMultiple(encontrados); return; }
-    }
-
-    // 2. Intentar via Edge Function (infraestructura diferente, puede evitar bloqueo de AFIP)
-    console.log(`[arca] intentando via Edge Function /api/arca-edge?doc=${doc}`);
-    let resp = await fetch(`/api/arca-edge?doc=${doc}`).catch(()=>null);
-    // 3. Fallback: serverless
-    if(!resp || !resp.ok) {
-      console.log(`[arca] intentando via serverless /api/arca-padron?doc=${doc}`);
-      resp = await fetch(`/api/arca-padron?doc=${doc}`);
-    }
-    const data = await resp.json();
-    console.log(`[arca] Vercel resp ${resp.status}:`, JSON.stringify(data).slice(0,200));
-
-    if(data.multiple) { mostrarMultiple(data.personas); return; }
-    if(resp.ok && !data.error && data.nombre) { fillPersona(data); return; }
-
-    // Distinguir: no encontrado vs error técnico
-    if(data.error === 'notFound' || resp.status === 404) {
-      const hint = esCUIT
-        ? `CUIT ${doc} no está inscripto en ARCA.`
-        : `DNI ${doc} no tiene CUIT activo en ARCA.`;
-      toast(hint + ' Ingresá los datos manualmente.', false, 8000);
-    } else {
-      toast('ARCA no responde en este momento. Intentá más tarde o ingresá los datos manualmente.', false, 8000);
-    }
-
-  } catch(e) {
-    console.error('[arca] excepción:', e);
-    toast('Error consultando ARCA: ' + e.message, false);
-  } finally {
-    if(btn) { btn.disabled=false; btn.innerHTML=btnOrig; }
-  }
-}
 
 function facturaToggleCF(isCF) {
   const fields = document.getElementById('f-comprador-fields');
