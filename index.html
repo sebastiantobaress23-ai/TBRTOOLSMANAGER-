@@ -2856,6 +2856,7 @@ function getConf() {
     mlEnv: s.mlEnv !== undefined ? s.mlEnv : (base.mlEnv !== undefined ? base.mlEnv : 7500),
     facturaCuit: s.facturaCuit||'',
     facturaDir: s.facturaDir||'',
+    facturaLocalidad: s.facturaLocalidad||'',
     facturaIngBrutos: s.facturaIngBrutos||'',
     facturaInicioActividad: s.facturaInicioActividad||'',
     facturaPdv: s.facturaPdv||1,
@@ -6875,7 +6876,8 @@ function pgConfig() {
     <div class="cfg-g2">
       <div><label class="fl">CUIT del emisor</label><div class="iw"><input type="text" id="cfg-fcuit" placeholder="${esc(DB.get('empresa',{}).cuit||'20000000000')}" value="${esc(getConf().facturaCuit||'')}"></div></div>
       <div><label class="fl">Punto de venta</label><div class="iw"><input type="number" id="cfg-fpdv" min="1" value="${esc(getConf().facturaPdv||'1')}"></div></div>
-      <div><label class="fl">Dirección fiscal</label><div class="iw"><input type="text" id="cfg-fdir" placeholder="Calle 123, Ciudad" value="${esc(getConf().facturaDir||'')}"></div></div>
+      <div><label class="fl">Dirección fiscal</label><div class="iw"><input type="text" id="cfg-fdir" placeholder="Calle 123, Dpto 3" value="${esc(getConf().facturaDir||'')}"></div></div>
+      <div><label class="fl">Ciudad / CP / Provincia</label><div class="iw"><input type="text" id="cfg-floc" placeholder="San Rafael, CP: 5600, Mendoza" value="${esc(getConf().facturaLocalidad||'')}"></div></div>
       <div><label class="fl">Ing. Brutos</label><div class="iw"><input type="text" id="cfg-fingb" placeholder="CM-20000000000" value="${esc(getConf().facturaIngBrutos||'')}"></div></div>
       <div><label class="fl">Inicio de actividad</label><div class="iw"><input type="text" id="cfg-fini" placeholder="01/01/2020" value="${esc(getConf().facturaInicioActividad||'')}"></div></div>
     </div>
@@ -7329,6 +7331,7 @@ function saveFacturadorConfig(){
   const s=DB.get('settings',{});
   s.facturaCuit=(document.getElementById('cfg-fcuit')?.value||'').trim();
   s.facturaDir=(document.getElementById('cfg-fdir')?.value||'').trim();
+  s.facturaLocalidad=(document.getElementById('cfg-floc')?.value||'').trim();
   s.facturaIngBrutos=(document.getElementById('cfg-fingb')?.value||'').trim();
   s.facturaInicioActividad=(document.getElementById('cfg-fini')?.value||'').trim();
   s.facturaPdv=parseInt(document.getElementById('cfg-fpdv')?.value)||1;
@@ -10947,6 +10950,7 @@ function facturaDocBody(f){
   const empRazonSocial = _n(emp.razonSocial)||_n(emp.nombre)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
   const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
   const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
+  const empLocalidad = conf.facturaLocalidad||dbEmp.localidad||'';
   const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
   const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||dbEmp.inicioActividad||'';
   const logo = PhotoDB.getLogo();
@@ -11016,7 +11020,7 @@ function facturaDocBody(f){
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">TBR TOOLS</div>
         <div class="biz-cond">Monotributo</div>
-        ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
+        ${empDir?`<div class="biz-addr">${esc(empDir)}${empLocalidad?`<br>${esc(empLocalidad)}`:''}</div>`:''}
       </div>
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
@@ -11482,6 +11486,7 @@ function ncDocBody(f){
   const empRazonSocial = _n(emp.razonSocial)||_n(emp.nombre)||_n(dbEmp.razonSocial)||_n(dbEmp.nombre)||'TOBARES ALEXIS SEBASTIAN';
   const empCuit = emp.cuit||conf.facturaCuit||dbEmp.cuit||'';
   const empDir = emp.dir||conf.facturaDir||dbEmp.dir||'';
+  const empLocalidad = conf.facturaLocalidad||dbEmp.localidad||'';
   const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
   const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||dbEmp.inicioActividad||'';
   const logo = PhotoDB.getLogo();
@@ -11551,7 +11556,7 @@ function ncDocBody(f){
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">TBR TOOLS</div>
         <div class="biz-cond">Monotributo</div>
-        ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
+        ${empDir?`<div class="biz-addr">${esc(empDir)}${empLocalidad?`<br>${esc(empLocalidad)}`:''}</div>`:''}
       </div>
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
