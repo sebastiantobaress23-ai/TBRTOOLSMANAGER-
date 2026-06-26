@@ -33,10 +33,10 @@ html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;fon
 
 /* ── BADGES ── */
 .badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
-.badge-g{background:rgba(74,222,128,.15);color:var(--gr);border:1px solid rgba(74,222,128,.3)}
+.badge-g{background:rgba(74,222,128,.12);color:var(--gr);border:1px solid rgba(74,222,128,.25)}
 .badge-y{background:rgba(251,191,36,.15);color:var(--ye);border:1px solid rgba(251,191,36,.3)}
 .badge-d{background:rgba(196,149,42,.15);color:var(--ud);border:1px solid rgba(201,162,82,.3)}
-.badge-r{background:rgba(248,113,113,.15);color:var(--re);border:1px solid rgba(248,113,113,.3)}
+.badge-r{background:rgba(248,113,113,.12);color:var(--re);border:1px solid rgba(248,113,113,.25)}
 .badge-u{background:rgba(45,212,191,.15);color:var(--us);border:1px solid rgba(45,212,191,.3)}
 .badge-ic{display:inline-flex;align-items:center;gap:4px}
 /* Chip de stock: además de mostrar el estado, es un botón que abre el ajuste manual */
@@ -93,7 +93,7 @@ html.light tbody tr:nth-child(even){background:rgba(0,0,0,.02)}
 
 /* ── TOAST ── */
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.92)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
-#toast{position:fixed;bottom:28px;left:50%;background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:12px 20px 12px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;align-items:center;gap:10px;overflow:hidden;animation:toastIn .35s cubic-bezier(.22,.61,.36,1) both}
+#toast{position:fixed;bottom:28px;left:50%;background:rgba(17,17,17,.92);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 20px 12px 12px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.08) inset;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;gap:10px;overflow:hidden;animation:toastIn .35s cubic-bezier(.22,.61,.36,1) both}
 #toast.out{animation:toastIn .25s ease reverse both}
 #toast .toast-undo{background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:5px 12px;font:inherit;letter-spacing:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
 #toast .toast-undo:active{background:rgba(255,255,255,.12)}
@@ -313,7 +313,8 @@ body.compact .g4{gap:8px!important}
 .empty-icon{opacity:.15;filter:drop-shadow(0 0 10px rgba(255,255,255,.05))}
 /* Iw inputs */
 .iw input,.iw select{transition:all .18s}
-.iw input:focus,.iw select:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(201,162,82,.07)!important}
+.iw input:focus,.iw select:focus{border-color:rgba(201,162,42,.4)!important;box-shadow:0 0 0 3px rgba(201,162,42,.07)!important;transition:border-color .15s,box-shadow .15s}
+.iw input::placeholder{color:var(--di)}
 
 /* ── LIGHT MODE ── */
 html.light{
@@ -540,7 +541,7 @@ html.light body::before{
 }
 
 /* NAV */
-.nav{background:rgba(8,8,8,.99);border-bottom:1px solid rgba(255,255,255,.04);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5);position:sticky;top:76px;z-index:99}
+.nav{background:rgba(14,14,14,.92);border-bottom:1px solid rgba(255,255,255,.06);border-top:1px solid rgba(255,255,255,.06);padding:0 28px;display:flex;overflow-x:auto;scrollbar-width:none;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5);position:sticky;top:76px;z-index:99;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .nav::-webkit-scrollbar{display:none}
 .tab{padding:16px 20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.3);cursor:pointer;border-bottom:2px solid transparent;transition:all .22s;white-space:nowrap;user-select:none;position:relative}
 .tab:hover{color:rgba(255,255,255,.65)}
@@ -607,7 +608,7 @@ html.light body::before{
 .sh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent)}
 
 /* CARD */
-.card{background:radial-gradient(circle at 88% -8%,rgba(201,162,82,.035),transparent 50%),linear-gradient(145deg,rgba(20,20,20,1),rgba(11,11,11,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:22px;box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+.card{background:radial-gradient(circle at 88% -8%,rgba(201,162,82,.035),transparent 50%),linear-gradient(145deg,rgba(20,20,20,1),rgba(11,11,11,1));border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.35),0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
 
 /* GRIDS */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -643,7 +644,8 @@ html.light .record-card{background:linear-gradient(145deg,#fffaf0,#fff)!importan
 html.light .record-val{color:#92400e}
 
 /* STAT CARDS */
-.sc{background:linear-gradient(145deg,rgba(20,20,20,1),rgba(12,12,12,1));border:1px solid rgba(255,255,255,.05);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden}
+.sc{background:linear-gradient(145deg,rgba(20,20,20,1),rgba(12,12,12,1));border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.4),0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.sc:not([class*="accent-"]):hover{border-color:rgba(196,149,42,.25);box-shadow:0 2px 12px rgba(0,0,0,.5),0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
 .sc-l{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px}
 .sc-v{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.5px;line-height:1}
 .sc-v.g{color:var(--gr)}.sc-v.y{color:var(--ye)}.sc-v.u{color:var(--us)}.sc-v.d{color:var(--ud)}
@@ -914,8 +916,8 @@ html.light .cat-r.cat-dragging{background:rgba(146,64,14,.07)}
 
 /* MODAL */
 .mol{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10005;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
-.mbox{background:#111;border:1px solid var(--b3);border-radius:var(--r2);width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both}
-.mhdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--b2);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--si);position:sticky;top:0;background:#111;z-index:1}
+.mbox{background:#111;border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:modalBoxIn .22s cubic-bezier(.22,.61,.36,1) both;box-shadow:0 24px 64px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.06) inset}
+.mhdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--si);position:sticky;top:0;background:#111;z-index:1}
 .mbody{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
 [data-lp]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
@@ -8837,7 +8839,7 @@ function pgClientes() {
   <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
     <div style="flex:1;min-width:200px">
       <div class="sh" style="margin-bottom:4px">Clientes</div>
-      <div style="font-size:13px;color:var(--di)">Datos de contacto e historial de pedidos por cliente.</div>
+      <div style="font-size:12px;color:var(--di)">Datos de contacto e historial de pedidos por cliente.</div>
     </div>
     <button class="btn-p" onclick="openCli()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
   </div>
