@@ -23,6 +23,7 @@
   --ch:#e8e8e8; --si:#b0b0b0; --di:#7a7a7a; --mu:#666;
   --gr:#4ade80; --re:#f87171; --ye:#fbbf24;
   --us:#2dd4bf; --ud:#EDD9B4; --in:#818cf8;
+  --ml:#f9e73a; --wa:#25D366;
   --r:8px; --r2:12px; --r3:16px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -38,6 +39,8 @@ html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;fon
 .badge-d{background:rgba(237,217,180,.15);color:var(--ud);border:1px solid rgba(237,217,180,.3)}
 .badge-r{background:rgba(248,113,113,.12);color:var(--re);border:1px solid rgba(248,113,113,.25)}
 .badge-u{background:rgba(45,212,191,.15);color:var(--us);border:1px solid rgba(45,212,191,.3)}
+.badge-ml{background:rgba(249,231,58,.1);color:var(--ml);border:1px solid rgba(249,231,58,.3);letter-spacing:.5px}
+.badge-dim{background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.12);letter-spacing:.5px}
 .badge-ic{display:inline-flex;align-items:center;gap:4px}
 /* Chip de stock: además de mostrar el estado, es un botón que abre el ajuste manual */
 .stock-chip{margin:4px 0 0;cursor:pointer;font-family:'Barlow Condensed',sans-serif;transition:filter .15s,transform .15s}
@@ -313,7 +316,7 @@ body.compact .g4{gap:8px!important}
 .empty-icon{opacity:.15;filter:drop-shadow(0 0 10px rgba(255,255,255,.05))}
 /* Iw inputs */
 .iw input,.iw select{transition:all .18s}
-.iw input:focus,.iw select:focus{border-color:rgba(201,162,42,.4)!important;box-shadow:0 0 0 3px rgba(201,162,42,.07)!important;transition:border-color .15s,box-shadow .15s}
+.iw input:focus,.iw select:focus{border-color:rgba(237,217,180,.4)!important;box-shadow:0 0 0 3px rgba(237,217,180,.07)!important;transition:border-color .15s,box-shadow .15s}
 .iw input::placeholder{color:var(--di)}
 
 /* ── LIGHT MODE ── */
@@ -838,7 +841,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:stretch;border-left:1px solid rgba(255,255,255,.06)}
 .hi-swipe-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:76px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;-webkit-tap-highlight-color:transparent}
 .hi-swipe-action.danger{background:rgba(15,15,15,0.97);color:var(--re)}
-.hi-swipe-action.accent{background:rgba(15,15,15,0.97);color:#25D366}
+.hi-swipe-action.accent{background:rgba(15,15,15,0.97);color:var(--wa)}
 .hi-swipe-action span{user-select:none;-webkit-user-select:none}
 .hi-swipe-content{position:relative;z-index:1;width:100%;background:linear-gradient(160deg,rgba(20,20,20,1),rgba(13,13,13,1));transition:transform .25s cubic-bezier(.22,.61,.36,1);will-change:transform;touch-action:pan-y}
 .hi-swipe-content.swiped .hi-hdr-r,.hi-swipe-content.swiped .hi-r{opacity:0;transition:opacity .15s}
@@ -5459,8 +5462,8 @@ function pgVentas(){
       const profit = saleProfit(s);
       const profitColor = profit>=0?'var(--gr)':'var(--re)';
       const chBadge = isML
-        ? `<span style="display:inline-flex;align-items:center;background:#f9e73a1a;border:1px solid #f9e73a55;color:#f9e73a;font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:6px">ML</span>`
-        : `<span style="display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:6px">DIRECTA</span>`;
+        ? `<span class="badge badge-ml">ML</span>`
+        : `<span class="badge badge-dim">DIRECTA</span>`;
       const precio = s.priceARS||items[0]?.p||0;
       const recibido = s.mlReceived||0;
       const costo = s.costARS||items[0]?.cost||0;
@@ -5508,7 +5511,7 @@ function pgVentas(){
         </div>`:''}
         ${!isML?`<div class="hi-acts" style="margin-top:8px">
           <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
-          ${s.tel?`<button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
+          ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
         </div>`:''}
       </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
@@ -7876,7 +7879,7 @@ function pgCotizaciones() {
         <button class="btn-g btn-sm" onclick="markCotQuoted('${o.id}')">${o.status==='cotizada'?ic('check')+' Pendiente':ic('check')+' Cotizada'}</button>
         ${o.status==='cotizada'?`<button class="btn-p btn-sm" onclick="cotToOrden('${esc(o.nro)}')">${ic('fileText')} Crear orden de compra</button>`:''}
         <button class="btn-p btn-sm" onclick="reprintCot('${o.id}')">${ic('printer')} Reimprimir</button>
-        <button class="btn-g btn-sm" style="color:var(--ch)" onclick="shareCotWA('${o.id}')">${waIcon()}WhatsApp</button>
+        <button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareCotWA('${o.id}')">${waIcon()}WhatsApp</button>
         <button class="btn-d" onclick="delCot('${o.id}')">${ic('trash')} Borrar</button>
       </div>
     </div>
@@ -8215,7 +8218,7 @@ function pgPedidos() {
         <div class="hi-acts-row">
           ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" onclick="editPed('${o.id}')">${ic('edit')} Editar</button>`:''}
           <button class="btn-p btn-sm" onclick="reprintPed('${o.id}')">${ic('printer')} Reimprimir</button>
-          <button class="btn-g btn-sm" style="color:var(--ch)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
+          <button class="btn-g btn-sm" style="color:var(--wa)" onclick="sharePedWA('${o.id}')">${waIcon()}WhatsApp</button>
           <button class="btn-g btn-sm" onclick="pedidoToFactura('${o.id}')">${ic('fileText')} Facturar</button>
           ${(o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-p btn-sm" style="border-color:rgba(237,217,180,.4);color:var(--ud)" onclick="openCobrarModal('${o.id}')">${ic('qrcode')} Cobrar</button>`:''}
           ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-p btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
@@ -8918,7 +8921,7 @@ function cliListHTML(list) {
     </div>
     <div class="hi-body" id="cli${i}">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-        ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--ch)">${waIcon()}WhatsApp</a>`:''}
+        ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--wa)">${waIcon()}WhatsApp</a>`:''}
         <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
         <button class="btn-g btn-sm" onclick="verFacturasCli('${esc(c.nombre)}')">${ic('fileText')} Facturas</button>
         <div style="flex:1"></div>
@@ -9586,7 +9589,7 @@ function pgOrden() {
       </div>
       <div class="hi-acts">
         ${!o.recibida?`<button class="btn-p" onclick="loadOCToCompra('${o.id}')">${ic('package')} Recibida → Cargar en Compra</button>`:''}
-        <button class="btn-p" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--ch)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
+        <button class="btn-p" onclick="reprintOC('${o.id}')">${ic('printer')} Reimprimir</button><button class="btn-g" style="color:var(--wa)" onclick="shareOCWA('${o.id}')">${waIcon()}WhatsApp</button><button class="btn-d" onclick="delOC('${o.id}')">${ic('trash')} Borrar</button></div>
     </div>
   </div>`).join('')}
   </div>`:''}
@@ -10337,7 +10340,7 @@ function pgFacturador() {
     const ec = {borrador:'var(--di)',emitida:'var(--ye)',pagada:'var(--gr)',cancelada:'var(--re)',anulada:'var(--re)'}[estadoEfectivo]||'var(--di)';
     const el = {borrador:'BORRADOR',emitida:'EMITIDA',pagada:'PAGADA',cancelada:'CANCELADA',anulada:'ANULADA'}[estadoEfectivo]||estadoEfectivo;
     const tipoLabel = f.tipo==='NC' ? 'Nota de Crédito C' : f.tipo==='RM' ? 'Remito' : 'Factura C';
-    const waBtn = `<button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')" title="Compartir por WhatsApp" style="display:flex;align-items:center;justify-content:center;gap:5px;padding:0 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--si)"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg></button>`;
+    const waBtn = `<button class="btn-g btn-sm" onclick="facturaShareWA('${f.id}')" title="Compartir por WhatsApp" style="display:flex;align-items:center;justify-content:center;gap:5px;padding:0 10px;color:var(--wa)"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--wa)"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg></button>`;
     const emitirSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>`;
     return `<div style="border-bottom:1px solid var(--b1);transition:background .15s${tieneNC&&f.tipo!=='NC'?';opacity:0.5':''}">
       <div style="display:flex;align-items:center;gap:10px;padding:${mob?'12px 14px':'13px 18px'};cursor:pointer" onclick="${f.tipo==='NC'?`facturaPreview('${f.id}')`:`openFactura('${f.id}')`}">
@@ -11165,7 +11168,7 @@ function facturaPreview(id){
   bar.innerHTML = `
     <span style="font-size:13px;font-weight:700;color:var(--ch);letter-spacing:.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tipoLabel} Nº ${f.nro||''}</span>
     <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
-      <button onclick="facturaShareWA('${id}')" style="height:34px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#b0b0b0;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#b0b0b0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>WhatsApp</button>
+      <button onclick="facturaShareWA('${id}')" style="height:34px;padding:0 14px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:8px;color:var(--wa);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="var(--wa)"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>WhatsApp</button>
       <button onclick="document.getElementById('fp-frame').contentWindow.print()" style="height:34px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--si);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px">Imprimir</button>
       <button onclick="closeFacturaPreview()" style="width:34px;height:34px;background:var(--b3);border:1px solid #444;border-radius:50%;color:var(--ch);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;">×</button>
     </div>`;
