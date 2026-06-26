@@ -466,7 +466,7 @@ html.light body::before{
 .hdr-logo-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hdr-logo-wrap::before{content:'';position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(201,162,82,.1) 0%,rgba(201,162,82,.04) 35%,rgba(201,162,82,0) 70%);filter:blur(26px);opacity:.65;transition:opacity .3s,transform .3s;z-index:-1}
 .hdr-logo-wrap:hover::before{opacity:1;transform:scale(1.12)}
-.hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s}
+.hdr img{height:52px;mix-blend-mode:screen;filter:drop-shadow(0 0 14px rgba(255,255,255,.25)) brightness(1.05);isolation:isolate;transition:filter .3s;border-radius:50%;overflow:hidden}
 .hdr-sep{width:1px;height:36px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}
 .hdr-txt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:6px;text-transform:uppercase;color:rgba(201,162,82,.5);transition:color .3s,letter-spacing .3s}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:14px}
