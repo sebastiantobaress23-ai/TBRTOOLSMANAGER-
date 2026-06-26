@@ -35,7 +35,7 @@ html,body{background:#0c0c0c;color:var(--ch);font-family:'Barlow',sans-serif;fon
 .badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:middle}
 .badge-g{background:rgba(74,222,128,.15);color:var(--gr);border:1px solid rgba(74,222,128,.3)}
 .badge-y{background:rgba(251,191,36,.15);color:var(--ye);border:1px solid rgba(251,191,36,.3)}
-.badge-d{background:rgba(201,162,82,.15);color:var(--ud);border:1px solid rgba(201,162,82,.3)}
+.badge-d{background:rgba(196,149,42,.15);color:var(--ud);border:1px solid rgba(201,162,82,.3)}
 .badge-r{background:rgba(248,113,113,.15);color:var(--re);border:1px solid rgba(248,113,113,.3)}
 .badge-u{background:rgba(45,212,191,.15);color:var(--us);border:1px solid rgba(45,212,191,.3)}
 .badge-ic{display:inline-flex;align-items:center;gap:4px}
@@ -294,7 +294,7 @@ body.compact .g4{gap:8px!important}
 .totbar{border-radius:var(--r2);overflow:hidden;border:1px solid rgba(255,255,255,.04)}
 /* savebar notes textarea */
 .notes-ta{background:rgba(20,20,20,1)!important;border-color:rgba(255,255,255,.07)!important}
-.notes-ta:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(201,162,82,.06)!important}
+.notes-ta:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(196,149,42,.06)!important}
 /* ML cards inputs */
 .ml-card-field input:focus{border-color:rgba(201,162,82,.45)!important;box-shadow:0 0 0 3px rgba(201,162,82,.07)!important}
 /* Better cat rows */
@@ -399,11 +399,11 @@ html.light .btn-add-row:hover{border-color:rgba(146,64,14,.4)!important;color:rg
 
 /* ── NOTES ── */
 .notes-ta{width:100%;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:12px 14px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:13px;resize:vertical;min-height:60px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:8px;line-height:1.6;box-sizing:border-box}
-.notes-ta:focus{border-color:rgba(201,162,82,.4);box-shadow:0 0 0 3px rgba(201,162,82,.06)}
+.notes-ta:focus{border-color:rgba(201,162,82,.4);box-shadow:0 0 0 3px rgba(196,149,42,.06)}
 .notes-ta::placeholder{color:var(--mu)}
 /* Unified textarea style across all sections */
 textarea{background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 14px;color:var(--ch);font-size:13px;font-family:'Barlow',sans-serif;line-height:1.6;outline:none;resize:vertical;transition:border-color .2s,box-shadow .2s;box-sizing:border-box}
-textarea:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(201,162,82,.06)!important}
+textarea:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(196,149,42,.06)!important}
 textarea::placeholder{color:var(--mu)}
 /* Custom resize handle — subtle gold corner */
 textarea{resize:vertical}
@@ -412,7 +412,7 @@ textarea{resize:vertical}
 
 /* ── SEARCH ── */
 .hist-search{width:100%;background:rgba(18,18,18,1);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:0 16px 0 40px;height:44px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;box-sizing:border-box}
-.hist-search:focus{border-color:rgba(201,162,82,.35);box-shadow:0 0 0 3px rgba(201,162,82,.06)}
+.hist-search:focus{border-color:rgba(201,162,82,.35);box-shadow:0 0 0 3px rgba(196,149,42,.06)}
 .hist-search-wrap{position:relative;margin-bottom:16px}
 .hist-search-wrap::before{content:'';position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.25)' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
 .hist-search-wrap .hist-search{margin-bottom:0}
@@ -450,7 +450,7 @@ html.light body::before{
   background:
     radial-gradient(circle at 12% -8%, rgba(201,162,82,.10), transparent 38%),
     radial-gradient(circle at 92% 18%, rgba(8,145,178,.06), transparent 36%),
-    radial-gradient(circle at 50% 105%, rgba(201,162,82,.06), transparent 42%);
+    radial-gradient(circle at 50% 105%, rgba(196,149,42,.06), transparent 42%);
 }
 @keyframes ambientDrift{
   from{transform:translate3d(0,0,0) scale(1)}
@@ -506,7 +506,7 @@ html.light body::before{
 .qa-body{position:relative;z-index:1;padding:18px;display:flex;flex-direction:column;gap:12px}
 .qa-actions{display:flex;flex-direction:column;gap:8px}
 .qa-act{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:.15s;text-align:left}
-.qa-act:hover{background:rgba(201,162,82,.06);border-color:rgba(201,162,82,.22)}
+.qa-act:hover{background:rgba(196,149,42,.06);border-color:rgba(201,162,82,.22)}
 .qa-act-ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(201,162,82,.08);border:1px solid rgba(201,162,82,.18);color:#C9A252;flex-shrink:0}
 .qa-act-t{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ch)}
 .qa-act-s{font-size:11px;color:var(--di);margin-top:1px}
@@ -636,7 +636,7 @@ html.light .sc-hero{background:radial-gradient(circle at 88% -8%,rgba(146,64,14,
 @media (max-width:560px){.goal-card{flex-direction:column;text-align:center;gap:14px}}
 
 /* RÉCORDS: tarjetas con acento dorado */
-.record-card{background:linear-gradient(145deg,rgba(201,162,82,.06),rgba(20,20,20,1) 65%);border:1px solid rgba(201,162,82,.15);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
+.record-card{background:linear-gradient(145deg,rgba(196,149,42,.06),rgba(20,20,20,1) 65%);border:1px solid rgba(196,149,42,.15);border-radius:var(--r2);padding:18px 20px;box-shadow:0 4px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
 .record-icon{font-size:20px;margin-bottom:6px}
 .record-val{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--ud);letter-spacing:-.3px;line-height:1.2;margin-bottom:4px;word-break:break-word}
 html.light .record-card{background:linear-gradient(145deg,#fffaf0,#fff)!important;border-color:rgba(180,83,9,.2)!important}
@@ -1293,7 +1293,7 @@ body{line-height:1.5}
 /* ── NAV SORT (drag-and-drop) ── */
 .nav-sort-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07);touch-action:none;user-select:none;cursor:default;transition:background .15s,border-color .15s,box-shadow .15s}
 .nav-sort-item.dragging{opacity:.35;background:rgba(255,255,255,.02)!important}
-.nav-sort-item.drag-over{border-color:rgba(201,162,82,.4)!important;background:rgba(201,162,82,.06)!important}
+.nav-sort-item.drag-over{border-color:rgba(201,162,82,.4)!important;background:rgba(196,149,42,.06)!important}
 .nav-sort-handle{display:flex;align-items:center;justify-content:center;width:24px;height:24px;color:var(--di);cursor:grab;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .nav-sort-handle:active{cursor:grabbing}
 .nav-sort-icon{width:18px;height:18px;flex-shrink:0;color:var(--si)}
@@ -1436,7 +1436,7 @@ html.light .fl{color:rgba(0,0,0,.38)!important}
 }
 /* Logo — stronger glow on hover */
 .hdr-logo-wrap::before{
-  background:radial-gradient(circle,rgba(201,162,82,.15) 0%,rgba(201,162,82,.06) 35%,rgba(201,162,82,0) 70%)!important;
+  background:radial-gradient(circle,rgba(196,149,42,.15) 0%,rgba(196,149,42,.06) 35%,rgba(201,162,82,0) 70%)!important;
   filter:blur(20px)!important;
 }
 .hdr img{
@@ -1606,7 +1606,7 @@ html.light .sc::after{opacity:.6}
 }
 /* Plain .sc (no accent class) also gets the gold strip */
 .sc:not([class*="accent-"])::after{
-  background:linear-gradient(90deg,rgba(201,162,82,.22),rgba(201,162,82,.06) 60%,rgba(201,162,82,0))!important;
+  background:linear-gradient(90deg,rgba(201,162,82,.22),rgba(196,149,42,.06) 60%,rgba(201,162,82,0))!important;
 }
 
 </style>
@@ -4190,7 +4190,7 @@ function pgCompra() {
   <div class="sh mb16">Nueva compra</div>
   ${confs.length>0?`<div class="fb mb16"><div class="sh" style="margin:0;flex:1">Configuración activa</div><div class="iw" style="width:240px;margin-left:16px"><select id="conf-sel" onchange="switchConf(this.value)">${confs.map(c=>`<option value="${c.id}" ${c.id===s.activeConfig?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div></div>`:'<div class="info mb16">Sin proveedores. <span class="link" onclick="navigate(\'config\')">Crear una →</span></div>'}
   <div class="card mb16" style="padding:12px 18px">
-    <div style="display:flex;gap:0;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;flex-wrap:wrap;align-items:center">
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Modo</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:${modeColor}">${modeTxt}</span></div>
       <div style="width:1px;height:32px;background:var(--b2);align-self:center"></div>
       <div style="padding:6px 14px;display:flex;flex-direction:column"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--di)">${conf.mode==='pesos'?'TC':'Precio base'}</span><span style="font-family:\'Rajdhani\',sans-serif;font-size:15px;font-weight:700;color:var(--ch)">${conf.mode==='ars'?'—':fmtA(conf.precio)}</span></div>
@@ -5496,7 +5496,7 @@ function pgVentas(){
               <div style="font-size:18px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
               <div style="font-size:9px;color:var(--di);margin-top:2px;letter-spacing:.5px;text-transform:uppercase">ganancia</div>
             </div>
-            <button onclick="delSale('${s.id}')" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.3);transition:all .15s" onmouseover="this.style.borderColor='var(--re)';this.style.color='var(--re)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.3)'">${ic('close',12)}</button>
+            <button class="btn-d" onclick="delSale('${s.id}')">${ic('close',12)}</button>
           </div>
         </div>
         ${multi?`<div style="overflow-x:auto;margin-top:10px">
@@ -6192,7 +6192,7 @@ function pgGastos() {
         <span class="gasto-desc">${esc(g.desc||'Sin descripción')}</span>
         <span class="gasto-date">${fmtD(g.date)}</span>
         <span class="gasto-amount">${fmtA(g.amount)}</span>
-        <button class="btn-rm" onclick="delGasto('${g.id}')" style="flex-shrink:0">${ic('close')}</button>
+        <button class="btn-d btn-sm" onclick="delGasto('${g.id}')" style="flex-shrink:0">${ic('close')}</button>
       </div>`;
     }).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin gastos registrados','Registrá tus gastos operativos\npara ver su impacto en la rentabilidad real.')}
@@ -6445,7 +6445,7 @@ function pgML() {
     <div class="hint" style="flex:1">Guardá este precio para usarlo en Competencia y comparar con la competencia.</div>
     <button class="btn-p" onclick="mlqSave()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar precio</button>
   </div>
-` : ``}
+` : ''}
   </div>
 
   <!-- Precios guardados -->
@@ -6506,7 +6506,7 @@ function mlqCalc() {
     </div>
   </div>
 `
-  : ``;
+  : '';
 }
 
 function mlqMode(m) {
@@ -6600,7 +6600,7 @@ function pgComp() {
       <button class="btn-g btn-sm" data-q="${esc([p.n,p.c].filter(Boolean).join(' '))}" onclick="fetchCompPrice(${i},this.dataset.q)">${ic('search')} Traer mejor precio de ML automáticamente</button>
     </div>
     <div id="cmp-auto-${i}" class="hint mt12"></div>
-    <a style="display:inline-flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ch);text-decoration:none;margin-top:10px;padding:6px 12px;border:1px solid rgba(201,162,82,.28);border-radius:7px;background:rgba(201,162,82,.06);transition:background .15s,border-color .15s" onmouseover="this.style.background='rgba(201,162,82,.12)';this.style.borderColor='rgba(201,162,82,.5)'" onmouseout="this.style.background='rgba(201,162,82,.06)';this.style.borderColor='rgba(201,162,82,.28)'" href="https://listado.mercadolibre.com.ar/${encodeURIComponent([p.n,p.c].filter(Boolean).join(' '))}" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.5 2 6 4 5 6.5c-.6 1.5-.5 2.8 0 3.7-1.8.6-3 2.1-3 4.3 0 3 2.7 5 6 5h.3c.7 1.6 2.4 2.5 3.7 2.5s3-.9 3.7-2.5h.3c3.3 0 6-2 6-5 0-2.2-1.2-3.7-3-4.3.5-.9.6-2.2 0-3.7C18 4 15.5 2 12 2zm0 2c2.4 0 4.2 1.4 4.9 3.2.4 1 .2 1.7-.1 2.1-.5.6-1.4.7-2.3.7H9.5c-.9 0-1.8-.1-2.3-.7-.3-.4-.5-1.1-.1-2.1C7.8 5.4 9.6 4 12 4z"/></svg>Buscar en Mercado Libre</a>
+    <a style="display:inline-flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ch);text-decoration:none;margin-top:10px;padding:6px 12px;border:1px solid rgba(201,162,82,.28);border-radius:7px;background:rgba(196,149,42,.06);transition:background .15s,border-color .15s" onmouseover="this.style.background='rgba(201,162,82,.12)';this.style.borderColor='rgba(201,162,82,.5)'" onmouseout="this.style.background='rgba(196,149,42,.06)';this.style.borderColor='rgba(201,162,82,.28)'" href="https://listado.mercadolibre.com.ar/${encodeURIComponent([p.n,p.c].filter(Boolean).join(' '))}" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.5 2 6 4 5 6.5c-.6 1.5-.5 2.8 0 3.7-1.8.6-3 2.1-3 4.3 0 3 2.7 5 6 5h.3c.7 1.6 2.4 2.5 3.7 2.5s3-.9 3.7-2.5h.3c3.3 0 6-2 6-5 0-2.2-1.2-3.7-3-4.3.5-.9.6-2.2 0-3.7C18 4 15.5 2 12 2zm0 2c2.4 0 4.2 1.4 4.9 3.2.4 1 .2 1.7-.1 2.1-.5.6-1.4.7-2.3.7H9.5c-.9 0-1.8-.1-2.3-.7-.3-.4-.5-1.1-.1-2.1C7.8 5.4 9.6 4 12 4z"/></svg>Buscar en Mercado Libre</a>
   </div>`;}).join('')}
 </div>`;
 }
@@ -6733,7 +6733,7 @@ function pgProveedores() {
         <div>
           <label class="fl">Bonificaciones preset</label>
           <div id="boni-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-          <button class="btn-g btn-sm" onclick="addBoni()" style="width:100%">+ Agregar bonificación</button>
+          <button class="btn-p btn-sm" onclick="addBoni()" style="width:100%">+ Agregar bonificación</button>
           <div class="hint">Aparecen como chips al cargar productos en una compra.</div>
         </div>
         <input type="hidden" id="cm-id">
@@ -6808,7 +6808,7 @@ function pgConfig() {
     <div class="hint mb16">Recargos por forma de pago aplicados automáticamente en Pedidos.</div>
     <div id="pm-list"></div>
     <div class="fb" style="gap:8px;margin-top:4px">
-      <button class="btn-g btn-sm" onclick="addPM()">+ Agregar forma de pago</button>
+      <button class="btn-p btn-sm" onclick="addPM()">+ Agregar forma de pago</button>
       <button class="btn-p btn-sm" onclick="savePM()">Guardar</button>
     </div>
   </div>
@@ -6964,7 +6964,7 @@ function pgConfig() {
     ${(s.users||[]).length ? `<div class="mt16" style="display:flex;flex-direction:column;gap:8px">
       ${(s.users||[]).map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px">
         <div style="font-size:13px;color:var(--ch)">${ic('user')} ${esc(u.user)}</div>
-        <button class="btn-rm" onclick="delUser('${u.id}')">${ic('close')}</button>
+        <button class="btn-d btn-sm" onclick="delUser('${u.id}')">${ic('close')}</button>
       </div>`).join('')}
     </div>` : ''}
     <div class="hint mt12">${(s.users||[]).length?`${ic('lock')} El acceso está protegido — ${s.users.length===1?'hay 1 usuario configurado':'hay '+s.users.length+' usuarios configurados'}.`:`${ic('alert')} Sin usuarios configurados, cualquiera con el link puede entrar y modificar los datos.`}</div>
@@ -8202,7 +8202,7 @@ function pgPedidos() {
           ${(()=>{const sale=sales.find(x=>x.pedidoNro===o.nro);return sale?`<button class="btn-p btn-sm" onclick="reprintSale('${sale.id}')">${ic('receipt')} Comprobante de venta</button>`:'';})()}
         </div>
         <div class="hi-acts-row hi-acts-danger">
-          ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-g btn-sm" style="color:var(--re)" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar pedido</button>`:''}
+          ${(o.status==='cotizacion'||o.status==='confirmado'||o.status==='preparacion')?`<button class="btn-d btn-sm" onclick="cancelPed('${o.id}')">${ic('close')} Cancelar pedido</button>`:''}
           <button class="btn-d" onclick="delPed('${o.id}')">${ic('trash')} Borrar</button>
         </div>
       </div>
@@ -8898,7 +8898,7 @@ function cliListHTML(list) {
       </div>
     </div>
     <div class="hi-body" id="cli${i}">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 0 14px;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)">
         ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--ch)">${waIcon()}WhatsApp</a>`:''}
         <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
         <button class="btn-g btn-sm" onclick="verFacturasCli('${esc(c.nombre)}')">${ic('fileText')} Facturas</button>
@@ -9595,12 +9595,14 @@ function onOrdCotRefChange(nro){
   if (!nro) return;
   const cot = DB.get('cotizaciones',[]).find(c=>c.nro===nro);
   if (!cot || !(cot.items||[]).length) return;
-  const loadIt = ORDER.length===0 || confirm('¿Cargar los artículos de la cotización '+nro+' en esta orden? Esto reemplazará los artículos actuales.');
-  if (!loadIt) return;
-  ORDER = cot.items.map(it=>({id:uid(), n:it.n||it.name||'', c:it.c||it.code||'', q:it.q||it.qty||1, p:it.precio||0}));
-  const list=document.getElementById('ord-list');
-  if (list) list.innerHTML = ORDER.length ? ORDER.map(ordRow).join('') : '';
-  refreshOrdTotals();
+  const doLoad = () => {
+    ORDER = cot.items.map(it=>({id:uid(), n:it.n||it.name||'', c:it.c||it.code||'', q:it.q||it.qty||1, p:it.precio||0}));
+    const list=document.getElementById('ord-list');
+    if (list) list.innerHTML = ORDER.length ? ORDER.map(ordRow).join('') : '';
+    refreshOrdTotals();
+  };
+  if (ORDER.length===0) { doLoad(); return; }
+  confirm2('¿Cargar los artículos de la cotización '+nro+' en esta orden? Esto reemplazará los artículos actuales.', doLoad);
 }
 function addOrdRow(n='',c='',q=1,p='') {
   const id=uid();ORDER.push({id,n,c,q:+q||1,p:+p||0});
@@ -10567,7 +10569,7 @@ function openFactura(id) {
             </div>
           </div>
           <!-- total -->
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:rgba(201,162,82,.06);border-top:1px solid rgba(201,162,82,.15)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:rgba(196,149,42,.06);border-top:1px solid rgba(196,149,42,.15)">
             <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--ud)">Total</span>
             <span id="f-tot-total" style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;letter-spacing:-0.5px;color:var(--ch)">$0</span>
           </div>
@@ -11073,24 +11075,24 @@ function facturaDocBody(f){
       <th class="tr" style="width:18%">IMPORTE SUBTOTAL</th>
     </tr></thead><tbody>
     ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
-      <td style="color:#888">${esc(it.sku||'—')}</td>
+      <td style="color:var(--di)">${esc(it.sku||'—')}</td>
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
       <td class="tr">${fmtA(it.precioUnit||0)}</td>
       <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
-    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:16px;font-style:italic">Sin ítems detallados</td></tr>`}
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--si);padding:16px;font-style:italic">Sin ítems detallados</td></tr>`}
     </tbody></table>
     </div>
     <div class="footer">
       <div class="footer-left">
         ${afipQrData?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrData)}" width="90" height="90" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
         <br>
-        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:#aaa;font-style:italic">CAE pendiente</div>'}
+        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:var(--si);font-style:italic">CAE pendiente</div>'}
       </div>
       <div class="footer-right">
         <div class="tot-row"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
         ${f.descuentoPct>0
-          ?`<div class="tot-row"><span>Descuento ${f.descuentoPct}%</span><span class="tot-val" style="color:#a00">-$ ${fmtA(descuento)}</span></div>`
+          ?`<div class="tot-row"><span>Descuento ${f.descuentoPct}%</span><span class="tot-val" style="color:var(--re)">-$ ${fmtA(descuento)}</span></div>`
           :`<div class="tot-row"><span>Importe Otros Impuestos</span><span class="tot-val">—</span></div>`}
         <div class="tot-row big"><span>Importe Total</span><span class="tot-val">$ ${fmtA(total)}</span></div>
         <div class="letras"><b>Importe en Letras:</b> ${esc(f.totalLetras||numToWords(f.total||0))}</div>
@@ -11119,11 +11121,11 @@ function facturaPreview(id){
   var bar = document.createElement('div');
   bar.style.cssText = 'flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0e0d0b;border-bottom:1px solid rgba(255,255,255,.12);gap:10px;';
   bar.innerHTML = `
-    <span style="font-size:13px;font-weight:700;color:#f0ece0;letter-spacing:.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tipoLabel} Nº ${f.nro||''}</span>
+    <span style="font-size:13px;font-weight:700;color:var(--ch);letter-spacing:.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tipoLabel} Nº ${f.nro||''}</span>
     <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
       <button onclick="facturaShareWA('${id}')" style="height:34px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#b0b0b0;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#b0b0b0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.533 5.849L.057 23.535a.75.75 0 0 0 .908.908l5.733-1.469A11.953 11.953 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.964-1.362l-.356-.212-3.683.944.974-3.595-.232-.37A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>WhatsApp</button>
-      <button onclick="document.getElementById('fp-frame').contentWindow.print()" style="height:34px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#b0b0b0;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px">Imprimir</button>
-      <button onclick="closeFacturaPreview()" style="width:34px;height:34px;background:#333;border:1px solid #444;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;">×</button>
+      <button onclick="document.getElementById('fp-frame').contentWindow.print()" style="height:34px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--si);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px">Imprimir</button>
+      <button onclick="closeFacturaPreview()" style="width:34px;height:34px;background:var(--b3);border:1px solid #444;border-radius:50%;color:var(--ch);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;">×</button>
     </div>`;
   ov.appendChild(bar);
 
@@ -11612,19 +11614,19 @@ function ncDocBody(f){
       <th class="tr" style="width:18%">IMPORTE SUBTOTAL</th>
     </tr></thead><tbody>
     ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
-      <td style="color:#888">${esc(it.sku||'—')}</td>
+      <td style="color:var(--di)">${esc(it.sku||'—')}</td>
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
       <td class="tr">${fmtA(it.precioUnit||0)}</td>
       <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
-    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:#bbb;padding:16px;font-style:italic">Crédito total por la factura original</td></tr>`}
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--si);padding:16px;font-style:italic">Crédito total por la factura original</td></tr>`}
     </tbody></table>
     </div>
     <div class="footer">
       <div class="footer-left">
         ${afipQrDataNC?`<img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent('https://www.afip.gov.ar/fe/qr/?p='+afipQrDataNC)}" width="90" height="90" style="display:block;margin-bottom:6px" alt="QR AFIP">`:''}
         <br>
-        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:#aaa;font-style:italic">CAE pendiente</div>'}
+        ${f.cae?`<div class="cae-num">CAE: ${esc(f.cae)}</div><div class="cae-vto">Vencimiento CAE: ${fmtF(f.caeFecha)}</div>`:'<div style="color:var(--si);font-style:italic">CAE pendiente</div>'}
       </div>
       <div class="footer-right">
         <div class="tot-row"><span>Importe Subtotal</span><span class="tot-val">$ ${fmtA(subtotal)}</span></div>
