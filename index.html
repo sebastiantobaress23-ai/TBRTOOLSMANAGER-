@@ -11479,24 +11479,25 @@ function ncDocBody(f){
     body{font-family:'Courier New',Courier,monospace;font-size:9.5px;color:#111;background:#fff}
     .page{width:595px;margin:0 auto;background:#fff;min-height:842px;display:flex;flex-direction:column}
     .items-section{flex:1;display:flex;flex-direction:column}
-    .hdr{display:grid;grid-template-columns:220px 70px 1fr;border-bottom:1px solid #ccc}
-    .hdr-left{padding:12px 12px 10px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-    .biz-logo{height:32px;max-width:90px;object-fit:contain;display:block;margin-bottom:6px}
-    .biz-name{font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;letter-spacing:3px;text-transform:uppercase;line-height:1.2;color:#111}
-    .biz-cond{font-size:8px;color:#888;margin:3px 0 2px;font-style:italic}
-    .biz-addr{font-size:8px;color:#999;line-height:1.4;text-align:center}
-    .tipo-col{border-left:1px solid #ccc;border-right:1px solid #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;text-align:center}
-    .tipo-original{font-size:7.5px;color:#777;font-style:italic;margin-bottom:4px}
-    .tipo-box{border:2px solid #333;display:flex;align-items:center;justify-content:center;width:46px;height:54px}
-    .tipo-letra{font-family:Georgia,'Times New Roman',Times,serif;font-size:46px;font-weight:700;line-height:1;color:#111;font-style:normal;display:flex;align-items:center;justify-content:center}
-    .tipo-num{font-size:7.5px;color:#888;margin-top:4px}
-    .hdr-right{padding:10px 12px 8px}
-    .doc-title{font-size:10px;font-weight:700;color:#111;margin-bottom:2px}
-    .meta{font-size:9px;line-height:1.6;color:#111}
-    .meta b{font-weight:700}
-    .gold-line{height:2px;background:${GOLD}}
-    .ref-bar{background:#f0f0f0;border-bottom:1px solid #ccc;padding:4px 12px;font-size:9px;color:#333;font-weight:700}
-    .buyer-hdr{background:#f0f0f0;border-bottom:1px solid #ccc;padding:4px 12px;font-size:9px;display:flex;justify-content:space-between}
+    /* ── HEADER OPCIÓN B ── */
+    .hdr{display:grid;grid-template-columns:1fr 90px 1fr;border-bottom:2px solid ${GOLD};min-height:100px}
+    .hdr-left{padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+    .biz-logo{width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;margin-bottom:8px;border:1.5px solid #ddd}
+    .biz-name{font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;letter-spacing:5px;text-transform:uppercase;color:#111;line-height:1}
+    .biz-cond{font-size:8px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+    .biz-addr{font-size:8px;color:#aaa;margin-top:2px;line-height:1.5}
+    .tipo-col{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;text-align:center;border-left:1px solid #e8e8e8;border-right:1px solid #e8e8e8}
+    .tipo-original{font-size:7px;color:#aaa;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+    .tipo-box{border:1.5px solid #222;display:flex;align-items:center;justify-content:center;width:52px;height:60px}
+    .tipo-letra{font-family:Arial,Helvetica,sans-serif;font-size:52px;font-weight:900;line-height:1;color:#111;letter-spacing:-2px}
+    .tipo-num{font-size:7px;color:#aaa;margin-top:8px;letter-spacing:1px}
+    .hdr-right{padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+    .doc-title{font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:900;color:#111;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:5px}
+    .meta{font-size:8.5px;line-height:1.8;color:#333;font-family:Arial,Helvetica,sans-serif}
+    .meta b{font-weight:700;color:#111}
+    .gold-line{height:2px;background:${GOLD};display:none}
+    .ref-bar{background:#f7f4ee;border-bottom:1px solid #e8e3d8;padding:5px 14px;font-size:8.5px;color:#333;font-weight:700;font-family:Arial,Helvetica,sans-serif;letter-spacing:.3px}
+    .buyer-hdr{background:#f7f4ee;border-bottom:1px solid #e8e3d8;border-top:1px solid #e8e3d8;padding:5px 14px;font-size:8.5px;display:flex;justify-content:space-between;font-family:Arial,Helvetica,sans-serif;font-weight:700;color:#333;letter-spacing:.3px}
     .buyer{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ccc;font-size:9px;line-height:1.6}
     .buyer-left{padding:6px 12px;border-right:1px solid #ccc}
     .buyer-right{padding:6px 12px}
@@ -11528,21 +11529,21 @@ function ncDocBody(f){
     <div class="hdr">
       <div class="hdr-left">
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
-        <div class="biz-name">TBR TOOLS</div>
-        <div class="biz-cond">Monotributo</div>
+        <div class="biz-name">${esc(empNombre)}</div>
+        <div class="biz-cond">Monotributo · IVA Exento</div>
         ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
       </div>
       <div class="tipo-col">
         <div class="tipo-original">Original</div>
         <div class="tipo-box"><span class="tipo-letra">C</span></div>
-        <div class="tipo-num">013</div>
+        <div class="tipo-num">Cód. 013</div>
       </div>
       <div class="hdr-right">
-        <div class="doc-title">NOTA DE CRÉDITO C: ${pdvNum}-${nroStr}</div>
+        <div class="doc-title">Nota de Crédito ${pdvNum}-${nroStr}</div>
         <div class="meta">
           <b>Fecha de Emisión:</b> ${fmtF(f.fecha)}<br>
           <b>CUIT:</b> ${esc(empCuit)}<br>
-          ${empIngBrutos?`<b>Ing. Brutos C.M:</b> ${esc(empIngBrutos.replace(/-+$/,''))}<br>`:''}
+          ${empIngBrutos?`<b>Ing. Brutos:</b> ${esc(empIngBrutos.replace(/-+$/,''))}<br>`:''}
           ${empInicioActividad?`<b>Inicio de Actividad:</b> ${esc(empInicioActividad)}<br>`:''}
           <b>Razón Social:</b> ${esc(empRazonSocial)}
         </div>
@@ -11550,7 +11551,7 @@ function ncDocBody(f){
     </div>
     <div class="gold-line"></div>
     <div class="ref-bar">Corresponde a: Factura C Nº ${esc(f.facturaOrigen||'—')}</div>
-    <div class="buyer-hdr"><span>Nombre: ${esc(f.comprador?.nombre||'Consumidor Final')}</span><span>IVA: Monotributo</span></div>
+    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
