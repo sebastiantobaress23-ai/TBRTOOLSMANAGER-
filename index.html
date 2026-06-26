@@ -1316,6 +1316,66 @@ body{line-height:1.5}
 .mono-limit-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--di);margin-top:4px}
 
 /* ══════════════════════════════════════════════
+   ULTRA PREMIUM POLISH
+   ══════════════════════════════════════════════ */
+
+/* 1. Custom scrollbar — thin gold line */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(201,162,82,.25);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(201,162,82,.5)}
+*{scrollbar-width:thin;scrollbar-color:rgba(201,162,82,.2) transparent}
+
+/* 2. Shimmer on primary button */
+.btn-p,.btn-go{position:relative;overflow:hidden}
+.btn-p::before,.btn-go::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  transform:skewX(-15deg);transition:none;pointer-events:none;
+}
+.btn-p:hover::before,.btn-go:hover::before{
+  left:150%;transition:left .55s cubic-bezier(.22,.61,.36,1);
+}
+
+/* 3. Section headers — gold dot instead of line */
+.sh{position:relative;padding-left:14px}
+.sh::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;
+  background:var(--ud);
+  box-shadow:0 0 8px rgba(201,162,82,.6);
+}
+.sh::after{display:none}
+
+/* 4. Page transition — slide up + fade */
+@keyframes pgEnter{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.pg{animation:pgEnter .28s cubic-bezier(.22,.61,.36,1) both}
+@media(prefers-reduced-motion:reduce){.pg{animation:none}}
+
+/* 5. Mobile nav — gold pulsing dot under active tab */
+.mob-tab{position:relative}
+.mob-tab.on::before{
+  content:'';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;
+  background:var(--ud);
+  box-shadow:0 0 6px rgba(201,162,82,.7);
+  animation:navDot 2s ease-in-out infinite;
+}
+@keyframes navDot{
+  0%,100%{opacity:1;box-shadow:0 0 6px rgba(201,162,82,.7)}
+  50%{opacity:.6;box-shadow:0 0 12px rgba(201,162,82,.4)}
+}
+@media(prefers-reduced-motion:reduce){.mob-tab.on::before{animation:none}}
+
+/* 6. Lock screen entrance animation */
+@keyframes lockIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+#lock-ov>div{animation:lockIn .45s cubic-bezier(.22,.61,.36,1) both}
+@media(prefers-reduced-motion:reduce){#lock-ov>div{animation:none}}
+
+/* ══════════════════════════════════════════════
    PREMIUM DARK MODE — header, nav, palette, depth
    ══════════════════════════════════════════════ */
 
