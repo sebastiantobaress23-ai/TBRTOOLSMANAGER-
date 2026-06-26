@@ -834,7 +834,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 
 /* ── SWIPE ACTIONS (mobile) ── */
 .hi-swipe{position:relative;overflow:hidden}
-.hi-swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:stretch}
+.hi-swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:stretch;z-index:1}
 .hi-swipe-action{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:76px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;-webkit-tap-highlight-color:transparent}
 .hi-swipe-action.danger{background:var(--re)}
 .hi-swipe-action.accent{background:var(--ud);color:#1c1404}
@@ -1072,7 +1072,7 @@ footer{border-top:1px solid var(--b1);padding:13px 32px;display:flex;justify-con
   .savebar{flex-direction:column}
   .savebar input,.savebar button{width:100%}
   .cat-t,.cat-r{grid-template-columns:1fr 92px;gap:6px}
-  .cat-t.reorder-on{display:none}
+  .cat-t{display:none}
   .cat-r.reorder-on{grid-template-columns:24px 1fr 92px}
   .cat-t .c-code,.cat-r .c-code,.cat-t .ph-l:nth-child(4),.cat-t>div:nth-child(5),.cat-r:not(.reorder-on)>div:nth-child(4),.cat-r:not(.reorder-on) > div:nth-child(5){display:none}
   .cat-r.reorder-on .c-code,.cat-r.reorder-on>div:nth-child(5){display:none}
