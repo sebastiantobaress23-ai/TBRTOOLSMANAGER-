@@ -831,7 +831,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
 .hi-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1;text-align:right}
 .hi-gain{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ye);text-align:right;line-height:1}
-.hi-gain-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.25);text-align:right;margin-top:4px}
+.hi-gain-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.6px;color:rgba(255,255,255,.22);text-align:right}
 .hi-margin-chip{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(251,191,36,.75);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.18);border-radius:20px;padding:2px 7px;margin-top:3px;align-self:flex-end}
 .hi-body{display:none;padding:0 18px 16px;border-top:1px solid rgba(255,255,255,.05)}
 .hi-body.open{display:block}
@@ -2829,26 +2829,23 @@ function supplierRanking() {
 function pgProveedoresRanking() {
   const rk = supplierRanking();
   if (!rk.length) return '';
-  const medals=[ic('medal',16,'color:#ffd700'),ic('medal',16,'color:#c0c0c0'),ic('medal',16,'color:#cd7f32')];
+  const rankAccent=['rgba(255,215,0,.15)','rgba(192,192,192,.09)','rgba(205,127,50,.12)'];
+  const rankBorder=['rgba(255,215,0,.25)','rgba(192,192,192,.16)','rgba(205,127,50,.2)'];
+  const rankNum=['#ffd700','#b0b0b0','#b87333'];
   return `<div class="mb20">
-    <div class="sh mb16">Ranking de proveedores</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-    ${rk.map((r,i)=>`<div class="card" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">${medals[i]||'#'+(i+1)}</span>
-        <div>
-          <div style="font-weight:700">${esc(r.name)}</div>
-          <div style="font-size:11px;color:var(--di)">${r.count} compra${r.count!==1?'s':''} · última: ${fmtD(r.lastDate)}</div>
+    <div class="sh mb12">Ranking</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+    ${rk.map((r,i)=>`<div class="card" style="padding:16px;${i<3?`border-color:${rankBorder[i]};background:linear-gradient(135deg,${rankAccent[i]},rgba(18,18,18,1) 70%);`:''}">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${rankNum[i]||'var(--mu)'};line-height:1;flex-shrink:0;min-width:22px;padding-top:2px">${i+1}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:15px;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">${esc(r.name)}</div>
+          <div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;white-space:nowrap">${r.count} compra${r.count!==1?'s':''} · ${fmtD(r.lastDate)}</div>
         </div>
-      </div>
-      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di);margin-bottom:1px">Comprado</div>
-          <div style="font-weight:700;color:var(--us);font-size:15px">${fmtA(r.totalARS)}</div>
-        </div>
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di);margin-bottom:1px">Gan. proyectada</div>
-          <div style="font-weight:700;font-size:13px;color:${r.gain>=0?'var(--gr)':'var(--re)'}">${fmtA(r.gain)}</div>
+        <div style="flex-shrink:0;text-align:right">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--us);line-height:1">${fmtA(r.totalARS)}</div>
+          <div style="font-size:10px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.4px;margin:3px 0">${r.gain>=0?'ganancia':'pérdida'}</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:${r.gain>=0?'var(--gr)':'var(--re)'};line-height:1">${fmtA(r.gain)}</div>
         </div>
       </div>
     </div>`).join('')}
@@ -5033,9 +5030,11 @@ function histCard(p, idx, badges=[], i=0) {
       </div>
       <div class="hi-r">
         <div class="hi-v">${fmtA(invest)}</div>
-        <div class="hi-gain-lbl">gan. proy.</div>
-        <div class="hi-gain">${fmtA(gain)}</div>
-        ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:5px">
+          <div class="hi-gain">${fmtA(gain)}</div>
+          ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
+        </div>
+        <div class="hi-gain-lbl" style="margin-top:2px">gan. proyectada</div>
       </div>
     </div>
     <div class="hi-body" id="${idx}">
@@ -6700,11 +6699,9 @@ function pgProveedores() {
   const s=DB.get('settings',{});
   return `<div class="pg">
   ${pgProveedoresRanking()}
-  <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
-    <div style="flex:1;min-width:200px">
-      <div class="sh" style="margin-bottom:4px">Proveedores</div>
-    </div>
-    <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo proveedor</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px">
+    <div class="sh" style="margin:0">Proveedores</div>
+    <button class="btn-p" onclick="openConf()" style="height:36px;white-space:nowrap;flex-shrink:0;font-size:13px">+ Nuevo</button>
   </div>
 
   ${confs.length===0
@@ -6716,27 +6713,28 @@ function pgProveedores() {
        </div>`
     : confs.map(c=>{
         const mc={usdt:'var(--us)',pesos:'var(--in)',ars:'var(--ye)'}[c.mode||'usdt'];
-        const mt={usdt:'USDT',pesos:'PESOS+USD',ars:'PESOS ARS'}[c.mode||'usdt'];
+        const mt={usdt:'USDT',pesos:'PESOS+USD',ars:'ARS'}[c.mode||'usdt'];
         const isActive = c.id===s.activeConfig;
-        return `<div class="mc" style="cursor:default;${isActive?'border-color:rgba(237,217,180,.35);background:linear-gradient(135deg,rgba(20,20,20,1),rgba(22,18,8,1));':''}" >
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <div class="mc-n">${esc(c.name)}</div>
-          ${isActive?`<span class="badge badge-d">ACTIVO</span>`:''}
+        const stats=[];
+        if(c.mode!=='ars') stats.push(`TC ${fmtA(c.precio)}`);
+        if(c.comInt) stats.push(`Com. ${c.comInt}%`);
+        if(c.flete) stats.push(`Flete ${fmtA(c.flete)}`);
+        if(c.bonifications?.length) stats.push(`${c.bonifications.length} bonif.`);
+        return `<div class="mc" style="cursor:default;align-items:flex-start;${isActive?'border-color:rgba(237,217,180,.28);background:linear-gradient(135deg,rgba(24,20,10,1),rgba(15,15,15,1));':''}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${stats.length||c.phone?'8':'0'}px">
+          <div class="mc-n" style="margin:0">${esc(c.name)}</div>
+          <span style="font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${mc};background:${mc}1a;border:1px solid ${mc}33;border-radius:4px;padding:2px 6px;flex-shrink:0">${mt}</span>
         </div>
-        <div class="mc-d">
-          <span style="color:${mc}">${mt}</span>
-          ${c.mode!=='ars'?` · TC: ${fmtA(c.precio)}`:''}
-          ${c.comInt?' · Com.int: '+c.comInt+'%':''}
-          ${c.flete?' · Flete: '+fmtA(c.flete):''}
-          ${c.bonifications?.length?' · '+c.bonifications.length+' bonif.':''}
-          ${c.phone?' · WhatsApp: '+esc(c.phone):''}
-        </div>
+        ${stats.length?`<div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px">${stats.join(' · ')}</div>`:''}
+        ${c.phone?`<div style="margin-top:4px;font-size:11px;color:var(--mu);font-family:'Barlow Condensed',sans-serif">WA ${esc(c.phone)}</div>`:''}
       </div>
-      <div class="fg" style="flex-shrink:0">
-        ${!isActive?`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`:''}
-        <button class="btn-g btn-sm" onclick="openConf('${c.id}')">${ic('edit')}</button>
-        <button class="btn-d" onclick="delConf('${c.id}')">${ic('close')}</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;margin-left:12px">
+        ${isActive?`<span class="badge badge-d">ACTIVO</span>`:`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`}
+        <div class="fg">
+          <button class="btn-g btn-sm" onclick="openConf('${c.id}')">${ic('edit')}</button>
+          <button class="btn-d" onclick="delConf('${c.id}')">${ic('close')}</button>
+        </div>
       </div>
     </div>`;
       }).join('')}
