@@ -829,7 +829,7 @@ tbody td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .hi-d{font-size:11px;color:rgba(255,255,255,.3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.8px;display:flex;align-items:center;gap:6px}
 .hi-d-sep{opacity:.3}
 .hi-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
-.hi-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1;text-align:right}
+.hi-v{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--ch);line-height:1;text-align:right}
 .hi-gain{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ye);text-align:right;line-height:1}
 .hi-gain-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.6px;color:rgba(255,255,255,.22);text-align:right}
 .hi-margin-chip{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(251,191,36,.75);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.18);border-radius:20px;padding:2px 7px;margin-top:3px;align-self:flex-end}
@@ -5015,12 +5015,13 @@ function histCard(p, idx, badges=[], i=0) {
   const tce    = p.r?.TCE||0;
   const prods  = p.products?.length||0;
   const marginPct = invest>0 ? Math.round(gain/invest*100) : 0;
+  const hiLbl = (t)=>`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.25);text-align:right;margin-bottom:2px">${t}</div>`;
   return `<div class="hi"${stg(i)}>
     <div class="hi-hdr" onclick="toggleHi('${idx}')">
       <div class="hi-hdr-l">
         <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}</div>
         ${badges.length?`<div class="hi-badges">${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>`:''}
-        <div class="hi-d">
+        <div class="hi-d" style="margin-top:4px">
           <span>${fmtD(p.date)}</span>
           <span class="hi-d-sep">·</span>
           <span>${prods} prod.</span>
@@ -5029,10 +5030,10 @@ function histCard(p, idx, badges=[], i=0) {
         </div>
       </div>
       <div class="hi-r">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.2);text-align:right;margin-bottom:2px">invertido</div>
+        ${hiLbl('Invertido')}
         <div class="hi-v">${fmtA(invest)}</div>
-        <div style="margin-top:8px">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.2);text-align:right;margin-bottom:2px">gan. proy.</div>
+        <div style="margin-top:10px">
+          ${hiLbl('Ganancia')}
           <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
             <div class="hi-gain">${fmtA(gain)}</div>
             ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
