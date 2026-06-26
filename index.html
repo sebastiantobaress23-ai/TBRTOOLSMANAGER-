@@ -2345,7 +2345,7 @@ async function syncCatalogOrders() {
       const recargoPct = parseFloat(_fsVal(f.recargoPct))||0;
       const cuotasCant = parseInt(_fsVal(f.cuotasCant))||0;
       const record = {id:uid(), nro, date:_fsVal(f.date)||new Date().toISOString(), cliente:_fsVal(f.cliente)||'Cliente catálogo', tel:_fsVal(f.tel)||'', cuit:_fsVal(f.cuit)||'', items, status:'cotizacion', origen:'catalogo-digital', formaPago, recargoPct, cuotasCant};
-      if (formaPago==='cuotas' && recargoPct>0) record.pago = {name:`${cuotasCant}x sin interés`, pct:recargoPct};
+      if (formaPago==='cuotas' && recargoPct>0) record.pago = {nombre:`${cuotasCant}x sin interés`, pct:recargoPct};
       peds.push(record);
       saveCliente(record.cliente, record.tel, record.cuit);
       imported++;
@@ -2597,7 +2597,7 @@ function renderFan() {
 }
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
-const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+const fmtD = d=> d ? new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
 const cliInitials = n=> (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const stg  = i=> ` style="animation-delay:${Math.min(i*0.04,0.4).toFixed(2)}s"`;
@@ -9365,16 +9365,16 @@ function reportDocBody(period, since, now, ps, sales, emp){
   const desde = since.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
 
   const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
-  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totVentas = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+  const unidades = sales.reduce((a,s)=>a+saleUnits(s),0);
 
   const map={};
   sales.forEach(s=>{
     const key=(s.code||s.name||'').toLowerCase();
     if(!map[key]) map[key]={name:s.name,profit:0,units:0};
     map[key].profit += saleProfit(s);
-    map[key].units += (s.qty||1);
+    map[key].units += saleUnits(s);
   });
   const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
 
@@ -9425,16 +9425,16 @@ async function generateReport(period){
   const emp = DB.get('empresa',{});
 
   const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
-  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totVentas = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+  const unidades = sales.reduce((a,s)=>a+saleUnits(s),0);
 
   const map={};
   sales.forEach(s=>{
     const key=(s.code||s.name||'').toLowerCase();
     if(!map[key]) map[key]={name:s.name,profit:0,units:0};
     map[key].profit += saleProfit(s);
-    map[key].units += (s.qty||1);
+    map[key].units += saleUnits(s);
   });
   const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
 
@@ -10283,7 +10283,7 @@ function nextFacturaNro(tipo) {
   const conf = getConf();
   const pdvInt = parseInt(conf.facturaPdv)||1;
   const pdv = String(pdvInt).padStart(5,'0');
-  const facturas = DB.get('facturas',[]).filter(f=>(tipo||'C')==='NC' ? f.tipo==='NC' : f.tipo!=='NC');
+  const facturas = DB.get('facturas',[]).filter(f=>(tipo||'C')==='NC' ? f.tipo==='NC' : (f.tipo!=='NC'&&f.tipo!=='RM'));
   const max = facturas.reduce((m,f)=>{
     if(!f.nro) return m;
     const p = f.nro.split('-');
@@ -10635,7 +10635,7 @@ function closeFacturaModal(){
 }
 
 function facturaAutoFillCliente(nombre){
-  const c = DB.get('clientes',[]).find(x=>x.nombre.toLowerCase()===nombre.toLowerCase());
+  const c = DB.get('clientes',[]).find(x=>(x.nombre||'').toLowerCase()===nombre.toLowerCase());
   if(!c) return;
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
   set('f-cuit',c.cuit||''); set('f-tel',c.tel||'');
@@ -11366,7 +11366,7 @@ function exportLibroIVA() {
   facturas.slice().sort((a,b)=>a.nro>b.nro?1:-1).forEach(f=>{
     rows.push([
       f.fecha||'',
-      'FC',
+      f.tipo==='NC'?'NC':'FC',
       f.nro||'',
       f.comprador?.nombre||'',
       f.comprador?.cuitDniCuil||'',
