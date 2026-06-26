@@ -5606,7 +5606,7 @@ function pgViaje(){
   <div class="sh mb16">Agregar producto a la lista</div>
   <div class="card mb24">
     <div class="fg-w">
-      <div style="flex:2;min-width:180px"><label class="fl">Producto</label><div class="iw"><input type="text" id="trip-item-name" placeholder="Ej: Auriculares bluetooth"></div></div>
+      <div style="flex:2;min-width:180px"><label class="fl">Producto</label><div style="display:flex;gap:6px"><div class="iw" style="flex:1"><input type="text" id="trip-item-name" placeholder="Ej: Auriculares bluetooth" autocomplete="off"></div><button class="btn-g" onclick="openCatalogSheet(function(p){document.getElementById('trip-item-name').value=p.name;if(p.lastPrice||p.defaultPrice){document.getElementById('trip-item-price').value=p.lastPrice||p.defaultPrice}})" title="Buscar en catálogo" style="height:42px;width:42px;padding:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r)">${ic('search')}</button></div></div>
       <div style="flex:1;min-width:90px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="trip-item-qty" value="1" min="1" step="1"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl">Precio estimado (USD, c/u)</label><div class="iw"><span class="ipre">USD</span><input type="number" id="trip-item-price" min="0" step="0.5" placeholder="0"></div></div>
     </div>
@@ -8938,7 +8938,7 @@ function cliListHTML(list) {
             <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
             <div class="hi-v">${fmtA(t)}</div>
           </div>`;
-        }).join('')}`:`<div style="padding:20px 0;text-align:center;color:var(--di);font-size:13px">Sin pedidos registrados</div>`}
+        }).join('')}`:`<div class="empty">Sin pedidos registrados</div>`}
     </div>
   </div>`;
   }).join('');
