@@ -11036,7 +11036,7 @@ function facturaDocBody(f){
       </div>
     </div>
     <div class="gold-line"></div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${(()=>{const n=(f.comprador?.nombre||'').trim();return esc((n&&n!=='Consumidor Final'&&!/^DNI\s*\d+$/i.test(n)&&!/^\d+$/.test(n))?n:'Consumidor Final');})()}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
@@ -11571,7 +11571,7 @@ function ncDocBody(f){
     </div>
     <div class="gold-line"></div>
     <div class="ref-bar">Corresponde a: Factura C Nº ${esc(f.facturaOrigen||'—')}</div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${(()=>{const n=(f.comprador?.nombre||'').trim();return esc((n&&n!=='Consumidor Final'&&!/^DNI\s*\d+$/i.test(n)&&!/^\d+$/.test(n))?n:'Consumidor Final');})()}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
