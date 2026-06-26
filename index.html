@@ -6380,9 +6380,6 @@ function pgML() {
                    :                        pr*(1-MLQ.com/100);
   const hasResult = MLQ.cu > 0;
 
-  const cat = DB.get('catalog',[]);
-  const catOpts = cat.filter(x=>x.name).map(x=>`<option value="${esc(x.name)}" data-cost="${x.lastPrice||x.defaultPrice||0}">`).join('');
-
   return `<div class="pg">
   <div class="sh mb4">Calculadora de precio ML</div>
 
@@ -6390,8 +6387,11 @@ function pgML() {
     <div class="fg-w mb16">
       <div style="flex:1;min-width:200px">
         <label class="fl">Producto (opcional)</label>
-        <div class="iw"><input type="text" id="mlq-prod" placeholder="Buscá en tu catálogo…" list="mlq-cat-list" autocomplete="off" value="${esc(MLQ.prodName)}" oninput="mlqFillFromCatalog(this.value)"></div>
-        <datalist id="mlq-cat-list">${catOpts}</datalist>
+        <button class="btn-g" onclick="openCatalogSheet(function(p){mlqSelectFromCatalog(p)})" style="height:44px;width:100%;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;border-radius:10px;justify-content:flex-start;text-align:left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="${MLQ.prodName?'color:var(--ch)':'opacity:.45;font-family:\'Barlow\',sans-serif'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${MLQ.prodName?esc(MLQ.prodName):'Buscar en catálogo…'}</span>
+          ${MLQ.prodName?`<span onclick="event.stopPropagation();mlqClearProd()" style="margin-left:auto;flex-shrink:0;opacity:.5;line-height:1;font-size:18px;padding:0 2px">&times;</span>`:''}
+        </button>
       </div>
       <div style="min-width:180px">
         <label class="fl">Costo ARS</label>
@@ -6533,6 +6533,23 @@ function mlqSave() {
 }
 function mlqDelSaved(id) {
   DB.set('mlprecios', DB.get('mlprecios',[]).filter(s=>s.id!==id));
+  render();
+}
+
+function mlqSelectFromCatalog(prod) {
+  MLQ.prodName = prod.name || '';
+  const cu = Math.round((prod.lastPrice || prod.defaultPrice || 0) * lastTCE());
+  if (cu) {
+    MLQ.cu = cu;
+    const inp = document.getElementById('mlq-cu');
+    if (inp) inp.value = cu;
+  }
+  render();
+  mlqCalc();
+}
+
+function mlqClearProd() {
+  MLQ.prodName = '';
   render();
 }
 
@@ -10714,7 +10731,9 @@ function scanForFactura(){
 
 let _catalogSheetItems = [];
 
-function openCatalogSheet(){
+let _catalogSheetCb = null;
+function openCatalogSheet(cb){
+  _catalogSheetCb = cb || null;
   _catalogSheetItems = DB.get('catalog',[]);
   const ol = document.getElementById('catalog-sheet-ol');
   ol.classList.add('open');
@@ -10754,6 +10773,12 @@ function renderCatalogSheet(q){
 function catalogSheetSelect(idx){
   const prod = _catalogSheetItems[idx];
   if(!prod) return;
+  if(_catalogSheetCb){
+    _catalogSheetCb(prod);
+    _catalogSheetCb = null;
+    closeCatalogSheet();
+    return;
+  }
   _factItems.push({sku:prod.code||'',descripcion:prod.name,qty:1,precioUnit:prod.salePrice||0,subtotal:prod.salePrice||0});
   renderFactItems();
   closeCatalogSheet();
