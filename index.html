@@ -10452,22 +10452,26 @@ function openFactura(id) {
           <button class="btn-g btn-sm" onclick="facturaAddManualItem()">+ Ítem manual</button>
         </div>
         <!-- Totales -->
-        <div style="border-top:1px solid var(--b2);padding-top:14px;margin-top:2px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)">Subtotal</span>
-            <span id="f-tot-sub" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">$0</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)">Descuento</span>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="width:48px;background:var(--b2);border:1px solid var(--b3);border-radius:5px;padding:4px 6px;color:inherit;font-size:13px;font-family:'DM Mono',monospace;text-align:right;outline:none">
-              <span style="color:var(--di);font-size:12px">%</span>
-              <span id="f-tot-desc" style="color:var(--re);font-family:'DM Mono',monospace;font-size:13px;min-width:60px;text-align:right">—</span>
+        <div style="margin-top:4px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06)">
+          <!-- subtotal + descuento -->
+          <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.02)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)">Subtotal</span>
+              <span id="f-tot-sub" style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:600;color:var(--si)">$0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--di)">Descuento</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="width:52px;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 8px;color:var(--ch);font-size:13px;font-family:'DM Mono',monospace;text-align:right;outline:none">
+                <span style="color:var(--di);font-size:12px;font-family:'Barlow Condensed',sans-serif">%</span>
+                <span id="f-tot-desc" style="color:var(--re);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;min-width:64px;text-align:right">—</span>
+              </div>
             </div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--b2);padding-top:12px">
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px">TOTAL</span>
-            <span id="f-tot-total" style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;letter-spacing:1px">$0</span>
+          <!-- total -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:rgba(201,162,82,.06);border-top:1px solid rgba(201,162,82,.15)">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:var(--ud)">Total</span>
+            <span id="f-tot-total" style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:800;letter-spacing:-0.5px;color:var(--ch)">$0</span>
           </div>
         </div>
       </div>
