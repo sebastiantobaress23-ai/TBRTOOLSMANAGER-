@@ -1376,6 +1376,16 @@ body{line-height:1.5}
 @media(prefers-reduced-motion:reduce){#lock-ov>div{animation:none}}
 
 /* ══════════════════════════════════════════════
+   ACTIVE BUTTON STATES — subtle luminosity, no color accent */
+.ch-tg-btn.active{background:rgba(255,255,255,.11)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.95)!important}
+.sort-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
+.compact-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
+.ml-src-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
+.ml-mode-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
+.btn-g.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
+html.light .ch-tg-btn.active,html.light .sort-btn.on,html.light .compact-btn.on,html.light .ml-src-btn.on,html.light .ml-mode-btn.on,html.light .btn-g.on{background:rgba(0,0,0,.09)!important;border-color:rgba(0,0,0,.2)!important;color:rgba(0,0,0,.85)!important}
+
+/* ══════════════════════════════════════════════
    PREMIUM DARK MODE — header, nav, palette, depth
    ══════════════════════════════════════════════ */
 
@@ -5547,7 +5557,6 @@ function pgViaje(){
 
   return `<div class="pg">
   <div class="fb mb16"><div class="sh" style="margin:0;flex:1">Viaje de compras</div>${t.items.length?`<button class="btn-d btn-sm" onclick="clearTrip()">${ic('trash')} Vaciar lista</button>`:''}</div>
-  <div class="info mb20" style="font-size:12px">Armá tu lista de compra antes de viajar: cargá presupuesto, productos estimados y tipo de cambio. Funciona 100% offline — todo se guarda en el dispositivo.</div>
 
   <div class="card mb20">
     <div class="fg-w">
@@ -6361,7 +6370,6 @@ function pgML() {
 
   return `<div class="pg">
   <div class="sh mb4">Calculadora de precio ML</div>
-  <div class="hint mb20">¿A cuánto tenés que publicar para ganar lo que querés?</div>
 
   <div class="card mb20">
     <div class="fg-w mb16">
@@ -6393,12 +6401,10 @@ function pgML() {
       ${mode!=='full'?`<div style="min-width:140px">
         <label class="fl">${mode==='flex'?'Bonif. Flex $':'Costo envío $'}</label>
         <div class="iw"><span class="ipre">$</span><input type="number" id="mlq-env" value="${MLQ.env}" min="0" step="100" oninput="mlqCalc()"></div>
-        <div class="hint">${mode==='flex'?'Lo que ML te abona por entregar vos.':'Costo del envío que pagás vos.'}</div>
       </div>`:'<div style="font-size:13px;color:var(--di);align-self:center">Con Full, ML cobra tarifa fija<br>al vendedor (sin costo de envío extra).</div>'}
       <div style="min-width:140px">
         <label class="fl">Margen deseado %</label>
         <div class="iw"><input type="number" id="mlq-margin" value="${MLQ.margin}" min="0" max="999" step="1" oninput="mlqCalc()"></div>
-        <div class="hint">% de ganancia sobre el costo.</div>
       </div>
     </div>
   </div>
@@ -6426,7 +6432,7 @@ function pgML() {
     <div class="hint" style="flex:1">Guardá este precio para usarlo en Competencia y comparar con la competencia.</div>
     <button class="btn-p" onclick="mlqSave()" style="height:42px;white-space:nowrap;flex-shrink:0">${ic('save')} Guardar precio</button>
   </div>
-  <div class="hint mt8">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>` : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`}
+` : ``}
   </div>
 
   <!-- Precios guardados -->
@@ -6486,8 +6492,8 @@ function mlqCalc() {
       <div class="sc-s">ya descontado comisión y envío</div>
     </div>
   </div>
-  <div class="hint">Cuando registres la venta en ML, usá <strong>${fmtA(mlReceived)}</strong> como "Lo que recibí de ML".</div>`
-  : `<div class="hint">Ingresá el costo del producto para ver el precio sugerido.</div>`;
+``
+  : ``;
 }
 
 function mlqMode(m) {
@@ -6656,7 +6662,6 @@ function pgProveedores() {
   <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
     <div style="flex:1;min-width:200px">
       <div class="sh" style="margin-bottom:4px">Proveedores</div>
-      <div style="font-size:13px;color:var(--di)">Configurá tus proveedores: tipo de cambio, flete y bonificaciones.</div>
     </div>
     <button class="btn-p" onclick="openConf()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo proveedor</button>
   </div>
@@ -8107,7 +8112,6 @@ function pgPedidos() {
       <span id="ped-total-val" style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ud);letter-spacing:-.3px">${fmtA(pedTotal)}</span>
     </div>
     <div id="ped-total-rec" class="hint" style="width:100%;text-align:right"></div>
-    <div class="hint mt12">El campo "Precio (ARS)" es lo que le vas a cobrar al cliente, no tu costo. Al agregar desde el catálogo se usa el "Precio de venta" definido en cada producto (Catálogo → editar producto); si no lo cargaste, se sugiere costo + margen de Configuración → Ventas directas. Debajo de cada precio te mostramos el costo de referencia para que ajustes a gusto.</div>
   </div>
 
   <div class="cot-actbar mb16">
