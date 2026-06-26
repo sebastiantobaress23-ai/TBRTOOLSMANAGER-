@@ -6215,9 +6215,7 @@ function saveGasto() {
 }
 
 function delGasto(id) {
-  if (!confirm('¿Eliminar este gasto?')) return;
-  DB.set('gastos', DB.get('gastos',[]).filter(g=>g.id!==id));
-  render();
+  confirm2('¿Eliminar este gasto?',()=>{DB.set('gastos',DB.get('gastos',[]).filter(g=>g.id!==id));render();});
 }
 
 /* ═══════════════════════════════════════════
