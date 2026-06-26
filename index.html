@@ -5043,8 +5043,8 @@ function histCard(p, idx, badges=[], i=0) {
     </div>
     <div class="hi-body" id="${idx}">
       ${p.notes?`<div class="hi-note">${esc(p.notes)}</div>`:''}
-      <div style="overflow-x:auto;margin-top:4px">
-        <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Lista USD</th><th class="tr">Costo ARS</th></tr></thead>
+      <div style="overflow-x:auto;margin-top:12px">
+        <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th></tr></thead>
         <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
       </div>
       <div class="hi-acts">
