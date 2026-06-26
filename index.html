@@ -2829,24 +2829,24 @@ function supplierRanking() {
 function pgProveedoresRanking() {
   const rk = supplierRanking();
   if (!rk.length) return '';
-  const rankAccent=['rgba(255,215,0,.15)','rgba(192,192,192,.09)','rgba(205,127,50,.12)'];
-  const rankBorder=['rgba(255,215,0,.25)','rgba(192,192,192,.16)','rgba(205,127,50,.2)'];
-  const rankNum=['#ffd700','#b0b0b0','#b87333'];
-  return `<div class="mb20">
-    <div class="sh mb12">Ranking</div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-    ${rk.map((r,i)=>`<div class="card" style="padding:16px;${i<3?`border-color:${rankBorder[i]};background:linear-gradient(135deg,${rankAccent[i]},rgba(18,18,18,1) 70%);`:''}">
-      <div style="display:flex;align-items:flex-start;gap:12px">
-        <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${rankNum[i]||'var(--mu)'};line-height:1;flex-shrink:0;min-width:22px;padding-top:2px">${i+1}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:15px;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">${esc(r.name)}</div>
-          <div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;white-space:nowrap">${r.count} compra${r.count!==1?'s':''} · ${fmtD(r.lastDate)}</div>
-        </div>
-        <div style="flex-shrink:0;text-align:right">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--us);line-height:1">${fmtA(r.totalARS)}</div>
-          <div style="font-size:10px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.4px;margin:3px 0">${r.gain>=0?'ganancia':'pérdida'}</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:${r.gain>=0?'var(--gr)':'var(--re)'};line-height:1">${fmtA(r.gain)}</div>
-        </div>
+  const rColor=['#c9a227','#8a8a8a','#8a5c2e'];
+  const rBg=['rgba(201,162,39,.08)','rgba(138,138,138,.05)','rgba(138,92,46,.07)'];
+  const rBorder=['rgba(201,162,39,.2)','rgba(138,138,138,.14)','rgba(138,92,46,.18)'];
+  return `<div class="mb24">
+    <div class="sh mb10">Ranking</div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+    ${rk.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:0;background:${i<3?rBg[i]:'rgba(22,22,22,1)'};border:1px solid ${i<3?rBorder[i]:'rgba(255,255,255,.05)'};border-radius:12px;overflow:hidden">
+      <div style="width:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:stretch;border-right:1px solid ${i<3?rBorder[i]:'rgba(255,255,255,.05)'}">
+        <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:${rColor[i]||'var(--mu)'}">${i+1}</span>
+      </div>
+      <div style="flex:1;min-width:0;padding:12px 14px">
+        <div style="font-size:14px;font-weight:700;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</div>
+        <div style="font-size:11px;color:var(--di);margin-top:2px;font-family:'Barlow Condensed',sans-serif">${r.count} compra${r.count!==1?'s':''} · ${fmtD(r.lastDate)}</div>
+      </div>
+      <div style="padding:12px 16px;text-align:right;flex-shrink:0;border-left:1px solid ${i<3?rBorder[i]:'rgba(255,255,255,.05)'}">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--us);line-height:1">${fmtA(r.totalARS)}</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:${r.gain>=0?'var(--gr)':'var(--re)'};margin-top:2px;line-height:1">${r.gain>=0?'+':''}${fmtA(r.gain)}</div>
       </div>
     </div>`).join('')}
     </div>
@@ -5029,12 +5029,15 @@ function histCard(p, idx, badges=[], i=0) {
         </div>
       </div>
       <div class="hi-r">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.2);text-align:right;margin-bottom:2px">invertido</div>
         <div class="hi-v">${fmtA(invest)}</div>
-        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:5px">
-          <div class="hi-gain">${fmtA(gain)}</div>
-          ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
+        <div style="margin-top:8px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.2);text-align:right;margin-bottom:2px">gan. proy.</div>
+          <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
+            <div class="hi-gain">${fmtA(gain)}</div>
+            ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
+          </div>
         </div>
-        <div class="hi-gain-lbl" style="margin-top:2px">gan. proyectada</div>
       </div>
     </div>
     <div class="hi-body" id="${idx}">
@@ -6712,30 +6715,38 @@ function pgProveedores() {
         <button class="btn-p" onclick="openConf()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear proveedor</button>
        </div>`
     : confs.map(c=>{
-        const mc={usdt:'var(--us)',pesos:'var(--in)',ars:'var(--ye)'}[c.mode||'usdt'];
-        const mt={usdt:'USDT',pesos:'PESOS+USD',ars:'ARS'}[c.mode||'usdt'];
+        const mColor={usdt:'var(--us)',pesos:'var(--in)',ars:'var(--ye)'}[c.mode||'usdt'];
+        const mLabel={usdt:'USDT',pesos:'PESOS+USD',ars:'ARS'}[c.mode||'usdt'];
         const isActive = c.id===s.activeConfig;
-        const stats=[];
-        if(c.mode!=='ars') stats.push(`TC ${fmtA(c.precio)}`);
-        if(c.comInt) stats.push(`Com. ${c.comInt}%`);
-        if(c.flete) stats.push(`Flete ${fmtA(c.flete)}`);
-        if(c.bonifications?.length) stats.push(`${c.bonifications.length} bonif.`);
-        return `<div class="mc" style="cursor:default;align-items:flex-start;${isActive?'border-color:rgba(237,217,180,.28);background:linear-gradient(135deg,rgba(24,20,10,1),rgba(15,15,15,1));':''}">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${stats.length||c.phone?'8':'0'}px">
-          <div class="mc-n" style="margin:0">${esc(c.name)}</div>
-          <span style="font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${mc};background:${mc}1a;border:1px solid ${mc}33;border-radius:4px;padding:2px 6px;flex-shrink:0">${mt}</span>
+        const statCols=[];
+        if(c.mode!=='ars'&&c.precio) statCols.push({lbl:'Tipo de cambio',val:fmtA(c.precio)});
+        if(c.comInt) statCols.push({lbl:'Comisión',val:c.comInt+'%'});
+        if(c.flete) statCols.push({lbl:'Flete',val:fmtA(c.flete)});
+        if(c.bonifications?.length) statCols.push({lbl:'Bonificaciones',val:c.bonifications.length+' preset'+(c.bonifications.length!==1?'s':'')});
+        const borderColor = isActive ? 'rgba(237,217,180,.28)' : 'rgba(255,255,255,.06)';
+        const bgStyle = isActive ? 'background:linear-gradient(160deg,rgba(26,22,12,1),rgba(16,16,16,1));' : 'background:rgba(20,20,20,1);';
+        return `<div style="${bgStyle}border:1px solid ${borderColor};border-radius:14px;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px 16px 14px;gap:12px">
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:700;color:var(--ch);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</div>
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+            ${isActive?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--gr)"><span style="width:6px;height:6px;border-radius:50%;background:var(--gr);display:inline-block"></span>ACTIVO</span>`:''}
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${mColor};background:${mColor}15;border:1px solid ${mColor}30;border-radius:4px;padding:2px 7px">${mLabel}</span>
+            ${c.phone?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--mu)">WA ${esc(c.phone)}</span>`:''}
+          </div>
         </div>
-        ${stats.length?`<div style="font-size:11px;color:var(--di);font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px">${stats.join(' · ')}</div>`:''}
-        ${c.phone?`<div style="margin-top:4px;font-size:11px;color:var(--mu);font-family:'Barlow Condensed',sans-serif">WA ${esc(c.phone)}</div>`:''}
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;margin-left:12px">
-        ${isActive?`<span class="badge badge-d">ACTIVO</span>`:`<button class="btn-g btn-sm" onclick="setActiveConf('${c.id}')">Activar</button>`}
-        <div class="fg">
-          <button class="btn-g btn-sm" onclick="openConf('${c.id}')">${ic('edit')}</button>
-          <button class="btn-d" onclick="delConf('${c.id}')">${ic('close')}</button>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn-g btn-sm" onclick="openConf('${c.id}')" style="width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center">${ic('edit',14)}</button>
+          <button class="btn-d" onclick="delConf('${c.id}')" style="width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center">${ic('close',14)}</button>
         </div>
       </div>
+      ${statCols.length?`<div style="display:grid;grid-template-columns:repeat(${Math.min(statCols.length,3)},1fr);border-top:1px solid ${borderColor}">
+        ${statCols.slice(0,3).map((s,si)=>`<div style="padding:10px 14px;${si<Math.min(statCols.length,3)-1?`border-right:1px solid ${borderColor}`:''}">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--di);margin-bottom:3px">${s.lbl}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--si)">${s.val}</div>
+        </div>`).join('')}
+      </div>`:''}
+      ${!isActive?`<button class="btn-g" onclick="setActiveConf('${c.id}')" style="width:100%;border-radius:0;border-top:1px solid rgba(255,255,255,.06);height:38px;font-size:12px;letter-spacing:.3px">Usar como proveedor activo</button>`:''}
     </div>`;
       }).join('')}
 
