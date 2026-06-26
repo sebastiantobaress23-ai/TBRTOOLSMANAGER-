@@ -10994,8 +10994,8 @@ function facturaDocBody(f){
     <div class="hdr">
       <div class="hdr-left">
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo"><div style="font-family:Arial,Helvetica,sans-serif;font-size:7px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#777;text-align:center;margin-top:-4px;margin-bottom:6px">TBR TOOLS</div>`:''}
-        <div class="biz-name">${esc(empNombre)}</div>
-        <div class="biz-cond">Monotributo · IVA Exento</div>
+        <div class="biz-name">TBR TOOLS</div>
+        <div class="biz-cond">Monotributo</div>
         ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
       </div>
       <div class="tipo-col">
@@ -11016,7 +11016,7 @@ function facturaDocBody(f){
       </div>
     </div>
     <div class="gold-line"></div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:(f.comprador?.cuitDniCuil?`DNI ${f.comprador.cuitDniCuil}`:'Consumidor Final'))}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
@@ -11529,8 +11529,8 @@ function ncDocBody(f){
     <div class="hdr">
       <div class="hdr-left">
         ${logo?`<img class="biz-logo" src="${logo}" alt="Logo"><div style="font-family:Arial,Helvetica,sans-serif;font-size:7px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#777;text-align:center;margin-top:-4px;margin-bottom:6px">TBR TOOLS</div>`:''}
-        <div class="biz-name">${esc(empNombre)}</div>
-        <div class="biz-cond">Monotributo · IVA Exento</div>
+        <div class="biz-name">TBR TOOLS</div>
+        <div class="biz-cond">Monotributo</div>
         ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
       </div>
       <div class="tipo-col">
@@ -11551,7 +11551,7 @@ function ncDocBody(f){
     </div>
     <div class="gold-line"></div>
     <div class="ref-bar">Corresponde a: Factura C Nº ${esc(f.facturaOrigen||'—')}</div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:(f.comprador?.cuitDniCuil?`DNI ${f.comprador.cuitDniCuil}`:'Consumidor Final'))}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
