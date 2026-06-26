@@ -5632,9 +5632,9 @@ function pgCat() {
       <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0" oninput="updateCeCostHint()"></div></div>
       <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
       <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
-      <div class="hint">Si cargás un stock, se descuenta automáticamente al registrar una venta y se suma al guardar una compra. Dejalo vacío si no querés llevar control de stock.</div>
+      <div class="hint">Se descuenta al vender y suma al comprar. Vacío = sin control de stock.</div>
       <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div class="fg-w"><div class="iw" style="flex:1;min-width:125px"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 108px;min-width:108px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px;flex:0 0 auto;padding:0 8px" title="Sugerir según costo + margen">Sugerir</button></div></div>
-      <div class="hint">Es lo que le cobrás al cliente en Pedidos. El campo "%" es el margen sobre tu costo actual (${ic('arrowsH',11)} <span id="ce-cost-hint">${fmtA(0)}</span>): cambialo para recalcular el precio, o editá el precio y se recalcula el margen. "Sugerir" usa el margen de Configuración → Ventas directas si no cargaste uno propio acá.</div>
+      <div class="hint">Precio al cliente en Pedidos. "%" es el margen sobre el costo — editá uno y el otro se recalcula.</div>
       <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical;min-height:70px;box-sizing:border-box"></textarea></div>
       <div class="hint">Se muestra en la ficha del producto dentro del catálogo digital, debajo del nombre.</div>
       <div class="mt12" style="border-top:1px solid var(--b2);padding-top:12px">
@@ -6699,7 +6699,7 @@ function pgConfig() {
 
   <div class="sh mb16">Mercado Libre</div>
   <div class="card mb24">
-    <div class="hint mb16" style="color:var(--si)">Estos valores se usan como default en Publicar ML y en todas las calculadoras. Son independientes del proveedor.</div>
+    <div class="hint mb16">Valores por defecto usados en todas las calculadoras.</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:140px">
         <label class="fl">Comisión ML</label>
@@ -6711,12 +6711,11 @@ function pgConfig() {
       </div>
       <button class="btn-p" onclick="saveMLSettings()" style="height:42px;padding:0 20px">Guardar</button>
     </div>
-    <div class="hint mt12" style="color:var(--si)">El precio sugerido para Mercado Libre de cada producto usa el precio que tengas configurado para él en "Publicar ML" (costo + margen deseado + envío). Si un producto no tiene una publicación guardada ahí, se usa un margen por defecto del 30% sobre el costo.</div>
   </div>
 
   <div class="sh mb16">Ventas directas (Pedidos)</div>
   <div class="card mb24">
-    <div class="hint mb16" style="color:var(--si)">Margen que usa el botón "Sugerir" al definir el "Precio de venta" de un producto en el Catálogo (costo + este margen). A diferencia de Mercado Libre, una venta directa no paga comisión ni envío de ML, así que el cálculo es simplemente costo + margen. También se usa como respaldo en Pedidos para productos sin precio de venta cargado en el Catálogo.</div>
+    <div class="hint mb16">Margen usado por el botón "Sugerir" en el Catálogo y en Pedidos.</div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:140px">
         <label class="fl">Margen deseado</label>
@@ -6728,7 +6727,7 @@ function pgConfig() {
 
   <div class="sh mb16">Formas de pago y recargos</div>
   <div class="card mb24">
-    <div class="hint mb16">Definí recargos por forma de pago (ej. cuotas con tarjeta). Al crear un pedido vas a poder elegir la forma de pago y el total se recalcula automáticamente con el recargo.</div>
+    <div class="hint mb16">Recargos por forma de pago aplicados automáticamente en Pedidos.</div>
     <div id="pm-list"></div>
     <div class="fb" style="gap:8px;margin-top:4px">
       <button class="btn-g btn-sm" onclick="addPM()">+ Agregar forma de pago</button>
@@ -6745,7 +6744,7 @@ function pgConfig() {
       </div>
       <div style="flex:1;min-width:160px">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Logo de la empresa</div>
-        <div class="hint mb8">Aparece en los PDFs de presupuestos, órdenes, cotizaciones y comprobantes. Recomendado: imagen cuadrada, máx. 5MB.</div>
+        <div class="hint mb8">Aparece en todos los PDFs. Imagen cuadrada recomendada, máx. 5MB.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-g btn-sm" onclick="document.getElementById('emp-logo-inp').click()">${ic('camera')} Subir logo</button>
           <input type="file" id="emp-logo-inp" accept="image/*" style="display:none" onchange="previewEmpLogo(this)">
@@ -6765,7 +6764,7 @@ function pgConfig() {
       <div><label class="fl">Cantidad de cuotas sin interés</label><div class="iw"><input type="number" id="emp-cuotas-cant" placeholder="Ej: 3" value="${esc(emp.cuotasCant||'')}"></div></div>
       <div><label class="fl">Recargo cuotas sin interés (%)</label><div class="iw"><input type="number" id="emp-cuotas-recargo" placeholder="Ej: 10" value="${esc(emp.cuotasRecargoPct||'')}"></div></div>
     </div>
-    <div class="hint mt16" style="border-top:1px solid var(--b1);padding-top:14px">Datos de pago — aparecen en los presupuestos y comprobantes de venta para que tus clientes sepan cómo pagarte. Dejalos vacíos si no querés mostrarlos.</div>
+    <div class="hint mt16" style="border-top:1px solid var(--b1);padding-top:14px">Datos de pago para presupuestos y comprobantes.</div>
     <div class="cfg-g2 mt12">
       <div><label class="fl">CBU</label><div class="iw"><input type="text" id="emp-cbu" value="${esc(emp.cbu||'')}"></div></div>
       <div><label class="fl">Alias</label><div class="iw"><input type="text" id="emp-alias" value="${esc(emp.alias||'')}"></div></div>
@@ -6778,7 +6777,7 @@ function pgConfig() {
       </div>
       <div style="flex:1;min-width:160px">
         <div style="font-size:13px;color:var(--ch);margin-bottom:4px">QR de cobro de Mercado Pago</div>
-        <div class="hint mb8">Subí una foto de tu QR de cobro (Mercado Pago app → Cobros → Cobrar con QR). Se usa en el botón "Cobrar" de Pedidos y en los PDFs. Máx. 800KB.</div>
+        <div class="hint mb8">QR de cobro de MP. Se usa en Pedidos y en los PDFs. Máx. 800KB.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-g btn-sm" onclick="document.getElementById('emp-mpqr-inp').click()">${ic('camera')} Subir QR</button>
           <input type="file" id="emp-mpqr-inp" accept="image/*" style="display:none" onchange="previewEmpMpQr(this)">
@@ -6791,7 +6790,7 @@ function pgConfig() {
 
   <div class="sh mb16">Facturador (Datos del emisor)</div>
   <div class="card mb24">
-    <div class="hint mb16" style="color:var(--si)">Estos datos aparecen en el encabezado de cada Factura C. Si usás el mismo CUIT del perfil empresa podés dejarlo vacío.</div>
+    <div class="hint mb16">Datos del emisor que aparecen en el encabezado de cada Factura C.</div>
     <div class="cfg-g2">
       <div><label class="fl">CUIT del emisor</label><div class="iw"><input type="text" id="cfg-fcuit" placeholder="${esc(DB.get('empresa',{}).cuit||'20000000000')}" value="${esc(getConf().facturaCuit||'')}"></div></div>
       <div><label class="fl">Punto de venta</label><div class="iw"><input type="number" id="cfg-fpdv" min="1" value="${esc(getConf().facturaPdv||'1')}"></div></div>
@@ -6808,7 +6807,7 @@ function pgConfig() {
 
   <div class="sh mb16">Mensajes de WhatsApp</div>
   <div class="card mb24">
-    <div class="info mb16" style="font-size:12px">Escribí el mensaje que querés que se envíe (junto con el PDF adjunto) al compartir una Orden de Compra o Cotización por WhatsApp.</div>
+    <div class="hint mb16">Mensaje que acompaña el PDF al compartir por WhatsApp.</div>
     <div class="mb16">
       <label class="fl">Plantilla — Orden de Compra</label>
       <textarea id="wa-tpl-oc" rows="5" placeholder="Escribí acá el mensaje para Órdenes de Compra…" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.waTplOC||'')}</textarea>
@@ -6827,7 +6826,7 @@ function pgConfig() {
     </div>
     <div class="mb16" style="border-top:1px solid var(--b1);padding-top:14px">
       <label class="fl">Condiciones del presupuesto (Pedidos)</label>
-      <div class="hint mb8">Texto que se agrega al pie de los PDFs de presupuesto a clientes: validez de la oferta, forma de pago, garantía, etc.</div>
+      <div class="hint mb8">Aparece al pie de los PDFs de presupuesto.</div>
       <textarea id="presup-cond" rows="3" placeholder="Ej: Presupuesto válido por 7 días. Precios sujetos a confirmación de stock. Garantía de 30 días sobre defectos de fábrica." style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(s.presupuestoCond||'')}</textarea>
     </div>
     <div class="fe" style="gap:10px">
@@ -6838,7 +6837,7 @@ function pgConfig() {
 
   <div class="sh mb16">Monotributo</div>
   <div class="card mb24">
-    <div class="hint mb20" style="color:var(--si)">Configurá el límite anual de facturación de tu categoría de monotributo para ver tu progreso en el Dashboard y recibir alertas antes de exceder el tope.</div>
+    <div class="hint mb20">Progreso de facturación anual visible en el Dashboard.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;align-items:end">
       <div>
         <label class="fl">Categoría</label>
@@ -6877,7 +6876,7 @@ function pgConfig() {
   </div>
 
   <div class="card mb24">
-    <div class="info mb16" style="font-size:12px">Definí usuarios con su usuario y contraseña para que solo quienes los conozcan puedan abrir y modificar la app desde este link. Podés agregar más de uno (por ejemplo, para vos y un empleado).</div>
+    <div class="hint mb16">Usuarios con acceso a la app. Podés agregar más de uno.</div>
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="flex:1;min-width:160px"><label class="fl">Usuario</label><div class="iw"><input type="text" id="new-user" placeholder="Nombre de usuario" autocomplete="off"></div></div>
       <div style="flex:1;min-width:160px"><label class="fl">Contraseña</label><div class="iw"><input type="password" id="new-pass" placeholder="Contraseña" autocomplete="new-password"></div></div>
