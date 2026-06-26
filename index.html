@@ -2198,14 +2198,13 @@ window.addEventListener('offline', () => setSyncDot(false));
 // guardan con DB.set para que viajen entre dispositivos)
 const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos'];
 
-// Fallback cuando /tbr.json completo falla (p.ej. PERMISSION_DENIED por
-// auth anónima fallida): trae solo los nodos de lectura pública (catalog,
-// empresa), sin token, para que el catálogo siga sincronizando.
+// Fallback cuando /tbr.json completo falla: trae nodo a nodo usando auth.
 async function _fbFallbackPublic() {
   const out = {};
-  for (const k of ['catalog','empresa']) {
+  for (const k of FB_SYNC_KEYS) {
     try {
-      const r = await fetch(FB+'/'+k+'.json?t='+Date.now(), {cache:'no-store', signal:AbortSignal.timeout(5000)});
+      const url = await fbUrl(`${FB}/${k}.json`, 't='+Date.now());
+      const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
       if (r.ok) {
         const v = await r.json();
         if (v!=null) out[k] = v;
