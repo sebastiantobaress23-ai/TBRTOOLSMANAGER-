@@ -966,10 +966,13 @@ html.light .asheet-action{color:#222}
 #catalog-sheet-input{flex:1;background:var(--b1);border:1px solid var(--b2);border-radius:10px;color:var(--ch);font-size:15px;font-family:'Barlow',sans-serif;padding:10px 14px;outline:none}
 #catalog-sheet-input:focus{border-color:var(--si)}
 #catalog-sheet-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:0 8px 16px}
-.cs-item{display:flex;align-items:center;justify-content:space-between;padding:13px 10px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:12px}
+.cs-item{display:flex;align-items:center;justify-content:space-between;padding:14px 10px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.cs-item:last-child{border-bottom:none}
 .cs-item:active{background:var(--b1)}
-.cs-item-name{font-size:14px;font-family:'Barlow',sans-serif;color:var(--ch);flex:1}
-.cs-item-price{font-size:13px;font-family:'DM Mono',monospace;color:var(--si);white-space:nowrap}
+.cs-item-info{flex:1;min-width:0}
+.cs-item-name{font-size:14px;font-family:'Barlow',sans-serif;color:var(--ch);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-item-meta{font-size:11px;color:var(--di);margin-top:2px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px}
+.cs-item-price{font-size:13px;font-family:'DM Mono',monospace;color:var(--ud);white-space:nowrap;flex-shrink:0}
 .cs-empty{text-align:center;padding:40px 20px;color:var(--di);font-size:13px;font-family:'Barlow',sans-serif}
 /* CONFIRM MODAL */
 .cm-ol{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10006;display:flex;align-items:center;justify-content:center;padding:20px;animation:modalBackdropIn .18s ease both}
@@ -1778,8 +1781,12 @@ html.light .sc::after{opacity:.6}
 </div>
 <div id="catalog-sheet-ol" onclick="if(event.target===this)closeCatalogSheet()">
   <div id="catalog-sheet-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--di)">Catálogo</span>
+      <button class="btn-rm" onclick="closeCatalogSheet()" style="margin:0">&#x2715;</button>
+    </div>
     <div id="catalog-sheet-search">
-      <input id="catalog-sheet-input" type="text" placeholder="Buscar producto…" oninput="filterCatalogSheet(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+      <input id="catalog-sheet-input" type="text" placeholder="Buscar por nombre o código…" oninput="filterCatalogSheet(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
     <div id="catalog-sheet-list"></div>
   </div>
@@ -10780,10 +10787,13 @@ function renderCatalogSheet(q){
     list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+q+'"':'El catálogo está vacío'}</div>`;
     return;
   }
-  list.innerHTML = items.map((p,i)=>`
+  list.innerHTML = items.map((p)=>`
     <div class="cs-item" onclick="catalogSheetSelect(${_catalogSheetItems.indexOf(p)})">
-      <span class="cs-item-name">${esc(p.name||'')}</span>
-      <span class="cs-item-price">${fmtA(p.salePrice||0)}</span>
+      <div class="cs-item-info">
+        <span class="cs-item-name">${esc(p.name||'')}</span>
+        <span class="cs-item-meta">${p.code?esc(p.code)+' · ':''} ${p.lastPrice||p.defaultPrice?fmtU(p.lastPrice||p.defaultPrice||0):'sin precio USD'}</span>
+      </div>
+      ${p.salePrice?`<span class="cs-item-price">${fmtA(p.salePrice)}</span>`:''}
     </div>`).join('');
 }
 
