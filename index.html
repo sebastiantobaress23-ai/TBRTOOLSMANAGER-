@@ -6831,23 +6831,25 @@ function pgConfig() {
 
   <div class="sh mb16">Monotributo</div>
   <div class="card mb24">
-    <div class="hint mb16" style="color:var(--si)">Configurá el límite anual de facturación de tu categoría de monotributo para ver tu progreso en el Dashboard y recibir alertas antes de exceder el tope.</div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
-      <div style="flex:1;min-width:180px">
+    <div class="hint mb20" style="color:var(--si)">Configurá el límite anual de facturación de tu categoría de monotributo para ver tu progreso en el Dashboard y recibir alertas antes de exceder el tope.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;align-items:end">
+      <div>
         <label class="fl">Categoría</label>
-        <div class="iw" style="max-width:200px">
+        <div class="iw">
           <select id="mono-cat" onchange="(function(v){const limits={A:2109508.68,B:3147002.06,C:4382023.88,D:6152375.25,E:7266213.61,F:9069706.71,G:11073823.36,H:14186234.15,I:18117697.07,J:23023218.57,K:27875553.98};document.getElementById('mono-limit').value=limits[v]||'';})(this.value)">
             <option value="">Ingresar manualmente</option>
             ${['A','B','C','D','E','F','G','H','I','J','K'].map(c=>`<option value="${c}" ${s.monotributoCat===c?'selected':''}>${'Cat. '+c}</option>`).join('')}
           </select>
         </div>
       </div>
-      <div style="flex:1;min-width:200px">
+      <div>
         <label class="fl">Límite anual de facturación</label>
-        <div class="iw" style="max-width:260px"><span class="ipre">ARS</span><input type="number" id="mono-limit" value="${s.monotributoLimit||''}" step="1000" placeholder="Ej: 2109508"></div>
-        <div class="hint">Incluye ventas registradas y facturas C emitidas en el año en curso.</div>
+        <div class="iw"><span class="ipre">ARS</span><input type="number" id="mono-limit" value="${s.monotributoLimit||''}" step="1000" placeholder="Ej: 2109508"></div>
       </div>
-      <button class="btn-p" onclick="saveMonotributo()" style="height:42px;padding:0 20px">Guardar</button>
+      <div style="color:var(--di);font-size:12px;grid-column:1/-1;margin-top:-6px">Incluye ventas registradas y facturas C emitidas en el año en curso.</div>
+      <div style="grid-column:1/-1;display:flex;justify-content:flex-end">
+        <button class="btn-p" onclick="saveMonotributo()" style="height:42px;padding:0 24px">Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -8800,13 +8802,14 @@ function cliListHTML(list) {
       </div>
     </div>
     <div class="hi-body" id="cli${i}">
-      <div class="hi-acts-row" style="margin-top:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 0 14px;border-bottom:1px solid rgba(255,255,255,.05)">
         ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--ch)">${waIcon()}WhatsApp</a>`:''}
         <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
         <button class="btn-g btn-sm" onclick="verFacturasCli('${esc(c.nombre)}')">${ic('fileText')} Facturas</button>
-        <button class="btn-d" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
+        <div style="flex:1"></div>
+        <button class="btn-d btn-sm" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
       </div>
-      ${cliPeds.length?`<div class="ph-l mt12 mb8">Historial de pedidos</div>
+      ${cliPeds.length?`<div class="ph-l mt14 mb8">Historial de pedidos</div>
         ${cliPeds.map(o=>{
           const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
           return `<div class="mc" style="cursor:pointer" onclick="navigateToPed('${o.id}')">
@@ -8817,7 +8820,7 @@ function cliListHTML(list) {
             <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
             <div class="hi-v">${fmtA(t)}</div>
           </div>`;
-        }).join('')}`:'<div class="empty mt12">Sin pedidos registrados.</div>'}
+        }).join('')}`:`<div style="padding:20px 0;text-align:center;color:var(--di);font-size:13px">Sin pedidos registrados</div>`}
     </div>
   </div>`;
   }).join('');
