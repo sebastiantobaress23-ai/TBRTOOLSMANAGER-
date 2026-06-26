@@ -4206,7 +4206,7 @@ function pgCompra() {
   <div class="card items-card">
     <div class="fb mb16 prod-tools">
       <span class="sh-inline">Productos</span>
-      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModal()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">${ic('folder')} Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">${ic('save')} Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">${ic('camera')} Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">${ic('camera')} Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
+      <div class="fg prod-tools-fg">${cat.length>0?`<button class="btn-g btn-sm" onclick="openCatModalSheet()">Del catálogo</button>`:''}${DB.get('templates',[]).length>0?`<button class="btn-g btn-sm" onclick="openTplModal()">${ic('folder')} Plantillas</button>`:''}${PP.length>0?`<button class="btn-g btn-sm" onclick="saveAsTemplate()">${ic('save')} Guardar plantilla</button>`:''}<button class="btn-g btn-sm" onclick="scanForCompra()">${ic('camera')} Escanear código</button><button class="btn-g btn-sm" onclick="document.getElementById('ocr-file-inp').click()">${ic('camera')} Cargar desde foto</button><input type="file" id="ocr-file-inp" accept="image/*" capture="environment" style="display:none" onchange="handleOcrPhoto(this)"><button class="btn-p btn-sm" onclick="addProd()">+ Agregar</button></div>
     </div>
     <div class="ph">
       <div class="ph-l">Nombre</div>
@@ -7843,7 +7843,7 @@ function pgCotizaciones() {
     <div class="fb mb16">
       <span class="sh-inline">Artículos a cotizar</span>
       <div class="fg">
-        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openCotCatModal()">Del catálogo</button>`:''}
+        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openCotCatSheet()">Del catálogo</button>`:''}
       </div>
     </div>
     <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 34px;gap:8px;padding:0 6px 8px">
@@ -8136,7 +8136,7 @@ function pgPedidos() {
     <div class="fb mb16">
       <span class="sh-inline">Artículos</span>
       <div class="fg">
-        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatModal()">Del catálogo</button>`:''}
+        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatSheet()">Del catálogo</button>`:''}
         <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
       </div>
     </div>
@@ -9549,7 +9549,7 @@ function pgOrden() {
     <div class="fb mb16">
       <span class="sh-inline">Artículos</span>
       <div class="fg">
-        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openOrdCatModal()">Del catálogo</button>`:''}
+        ${cat.length>0?`<button class="btn-g btn-sm" onclick="openOrdCatSheet()">Del catálogo</button>`:''}
       </div>
     </div>
     <div class="ord-hdr" style="display:grid;grid-template-columns:2fr 100px 56px 1fr 34px;gap:8px;padding:0 6px 8px">
@@ -10732,6 +10732,21 @@ function scanForFactura(){
 let _catalogSheetItems = [];
 
 let _catalogSheetCb = null;
+
+// Wrappers para cada sección que antes tenían modales propios sin búsqueda
+function openCatModalSheet(){
+  openCatalogSheet(function(p){ addProd(p.name,p.code||'',1,p.lastPrice||p.defaultPrice||0,0,0); });
+}
+function openCotCatSheet(){
+  openCatalogSheet(function(p){ addCotRow(p.name,p.code||'',1); });
+}
+function openPedCatSheet(){
+  openCatalogSheet(function(p){ addPedRow(p.name,p.code||'',1,(p.salePrice||suggestDirectPrice(p.code,p.name))||''); });
+}
+function openOrdCatSheet(){
+  openCatalogSheet(function(p){ addOrdRow(p.name,p.code||'',1,p.lastPrice||p.defaultPrice||0); });
+}
+
 function openCatalogSheet(cb){
   _catalogSheetCb = cb || null;
   _catalogSheetItems = DB.get('catalog',[]);
