@@ -399,9 +399,16 @@ html.light .btn-p:hover{color:#1c1404!important}
 .draft-banner strong{color:var(--ch)}
 
 /* ── NOTES ── */
-.notes-ta{width:100%;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:10px 12px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:13px;resize:vertical;min-height:60px;outline:none;transition:border-color .15s;margin-bottom:8px}
-.notes-ta:focus{border-color:var(--si)}
+.notes-ta{width:100%;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:12px 14px;color:var(--ch);font-family:'Barlow',sans-serif;font-size:13px;resize:vertical;min-height:60px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:8px;line-height:1.6;box-sizing:border-box}
+.notes-ta:focus{border-color:rgba(201,162,82,.4);box-shadow:0 0 0 3px rgba(201,162,82,.06)}
 .notes-ta::placeholder{color:var(--mu)}
+/* Unified textarea style across all sections */
+textarea{background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 14px;color:var(--ch);font-size:13px;font-family:'Barlow',sans-serif;line-height:1.6;outline:none;resize:vertical;transition:border-color .2s,box-shadow .2s;box-sizing:border-box}
+textarea:focus{border-color:rgba(201,162,82,.4)!important;box-shadow:0 0 0 3px rgba(201,162,82,.06)!important}
+textarea::placeholder{color:var(--mu)}
+/* Custom resize handle — subtle gold corner */
+textarea{resize:vertical}
+::-webkit-resizer{background:transparent;border:none}
 .hi-note{font-size:12px;color:var(--di);font-style:italic;margin:8px 0 0;padding:8px 12px;border-left:2px solid var(--b3)}
 
 /* ── SEARCH ── */
