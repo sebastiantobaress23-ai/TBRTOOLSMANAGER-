@@ -10967,7 +10967,7 @@ function facturaDocBody(f){
     .items-section{flex:1;display:flex;flex-direction:column}
     /* ── HEADER OPCIÓN B ── */
     .hdr{display:grid;grid-template-columns:1fr 90px 1fr;border-bottom:2px solid ${GOLD};min-height:100px}
-    .hdr-left{padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+    .hdr-left{padding:16px 16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
     .biz-logo{width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;margin-bottom:8px;border:1.5px solid #ddd}
     .biz-name{font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;letter-spacing:5px;text-transform:uppercase;color:#111;line-height:1}
     .biz-cond{font-size:8px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-top:3px}
@@ -11013,7 +11013,7 @@ function facturaDocBody(f){
   </style></head><body><div class="page">
     <div class="hdr">
       <div class="hdr-left">
-        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo"><div style="font-family:Arial,Helvetica,sans-serif;font-size:7px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#777;text-align:center;margin-top:-4px;margin-bottom:6px">TBR TOOLS</div>`:''}
+        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">TBR TOOLS</div>
         <div class="biz-cond">Monotributo</div>
         ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
@@ -11036,7 +11036,7 @@ function facturaDocBody(f){
       </div>
     </div>
     <div class="gold-line"></div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:(f.comprador?.cuitDniCuil?`DNI ${f.comprador.cuitDniCuil}`:'Consumidor Final'))}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
@@ -11501,7 +11501,7 @@ function ncDocBody(f){
     .items-section{flex:1;display:flex;flex-direction:column}
     /* ── HEADER OPCIÓN B ── */
     .hdr{display:grid;grid-template-columns:1fr 90px 1fr;border-bottom:2px solid ${GOLD};min-height:100px}
-    .hdr-left{padding:16px 16px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+    .hdr-left{padding:16px 16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
     .biz-logo{width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;margin-bottom:8px;border:1.5px solid #ddd}
     .biz-name{font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;letter-spacing:5px;text-transform:uppercase;color:#111;line-height:1}
     .biz-cond{font-size:8px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-top:3px}
@@ -11548,7 +11548,7 @@ function ncDocBody(f){
   </style></head><body><div class="page">
     <div class="hdr">
       <div class="hdr-left">
-        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo"><div style="font-family:Arial,Helvetica,sans-serif;font-size:7px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#777;text-align:center;margin-top:-4px;margin-bottom:6px">TBR TOOLS</div>`:''}
+        ${logo?`<img class="biz-logo" src="${logo}" alt="Logo">`:''}
         <div class="biz-name">TBR TOOLS</div>
         <div class="biz-cond">Monotributo</div>
         ${empDir?`<div class="biz-addr">${esc(empDir)}</div>`:''}
@@ -11571,7 +11571,7 @@ function ncDocBody(f){
     </div>
     <div class="gold-line"></div>
     <div class="ref-bar">Corresponde a: Factura C Nº ${esc(f.facturaOrigen||'—')}</div>
-    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:(f.comprador?.cuitDniCuil?`DNI ${f.comprador.cuitDniCuil}`:'Consumidor Final'))}</span><span>Condición IVA: Consumidor Final</span></div>
+    <div class="buyer-hdr"><span>${esc(f.comprador?.nombre&&f.comprador.nombre!=='Consumidor Final'?f.comprador.nombre:'Consumidor Final')}</span><span>Condición IVA: Consumidor Final</span></div>
     <div class="buyer">
       <div class="buyer-left">
         <b>CUIT/DNI/CUIL:</b> ${esc(f.comprador?.cuitDniCuil||'—')}<br>
