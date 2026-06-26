@@ -2345,7 +2345,7 @@ async function syncCatalogOrders() {
       const recargoPct = parseFloat(_fsVal(f.recargoPct))||0;
       const cuotasCant = parseInt(_fsVal(f.cuotasCant))||0;
       const record = {id:uid(), nro, date:_fsVal(f.date)||new Date().toISOString(), cliente:_fsVal(f.cliente)||'Cliente catálogo', tel:_fsVal(f.tel)||'', cuit:_fsVal(f.cuit)||'', items, status:'cotizacion', origen:'catalogo-digital', formaPago, recargoPct, cuotasCant};
-      if (formaPago==='cuotas' && recargoPct>0) record.pago = {name:`${cuotasCant}x sin interés`, pct:recargoPct};
+      if (formaPago==='cuotas' && recargoPct>0) record.pago = {nombre:`${cuotasCant}x sin interés`, pct:recargoPct};
       peds.push(record);
       saveCliente(record.cliente, record.tel, record.cuit);
       imported++;
@@ -2597,7 +2597,7 @@ function renderFan() {
 }
 const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
-const fmtD = d=> new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'});
+const fmtD = d=> d ? new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
 const cliInitials = n=> (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
 const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const stg  = i=> ` style="animation-delay:${Math.min(i*0.04,0.4).toFixed(2)}s"`;
@@ -3830,6 +3830,7 @@ function toast(msg, ok=true, ms=2500, undo=null) {
    DASHBOARD
 ═══════════════════════════════════════════ */
 function pgDash() {
+  const now = new Date();
   const ps  = DB.get('purchases',[]);
   const cat = DB.get('catalog',[]);
   const tot = ps.reduce((s,p)=>s+(p.r?.ars||0),0);
@@ -3848,7 +3849,6 @@ function pgDash() {
   const goal = parseFloat(settings.monthlyGoal)||0;
   let goalCard = '';
   if (goal > 0) {
-    const now = new Date();
     const curMonth = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
                         .reduce((a,p)=>a+(p.r?.ars||0),0);
     const pct = Math.round((curMonth/goal)*100);
@@ -3906,8 +3906,7 @@ function pgDash() {
 
   // Resumen de ventas del mes en curso, para que el dashboard no muestre solo el lado de compras
   const sales = DB.get('sales',[]);
-  const now2 = new Date();
-  const salesMonth = sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now2.getFullYear()&&d.getMonth()===now2.getMonth();});
+  const salesMonth = sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   const ventasMes = salesMonth.reduce((a,s)=>a+saleRevenue(s),0);
   const gananciaVentasMes = salesMonth.reduce((a,s)=>a+saleProfit(s),0);
   const unidadesMes = salesMonth.reduce((a,s)=>a+saleUnits(s),0);
@@ -6216,9 +6215,7 @@ function saveGasto() {
 }
 
 function delGasto(id) {
-  if (!confirm('¿Eliminar este gasto?')) return;
-  DB.set('gastos', DB.get('gastos',[]).filter(g=>g.id!==id));
-  render();
+  confirm2('¿Eliminar este gasto?',()=>{DB.set('gastos',DB.get('gastos',[]).filter(g=>g.id!==id));render();});
 }
 
 /* ═══════════════════════════════════════════
@@ -7599,6 +7596,7 @@ function printOrden(id) {
   toast(`${nro} guardada en Órdenes de compra`);
 
   const w = window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -7712,13 +7710,20 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
    EXPORTS
 ═══════════════════════════════════════════ */
 function exportBackup(){
-  const data={version:'2.0',date:new Date().toISOString(),purchases:DB.get('purchases',[]),catalog:DB.get('catalog',[]),configs:DB.get('configs',[]),settings:DB.get('settings',{}),empresa:DB.get('empresa',{})};
+  const data={version:'3.0',date:new Date().toISOString()};
+  for(const k of FB_SYNC_KEYS){const def=k==='settings'||k==='empresa'||k==='bio'?{}:[];data[k]=DB.get(k,def);}
   const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='TBR-backup-'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.json';a.click();URL.revokeObjectURL(u);
 }
 function importBackup(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.purchases&&!d.catalog&&!d.configs)throw new Error('Inválido');if(d.purchases)DB.set('purchases',d.purchases);if(d.catalog)DB.set('catalog',d.catalog);if(d.configs)DB.set('configs',d.configs);if(d.settings)DB.set('settings',d.settings);if(d.empresa)DB.set('empresa',d.empresa);render();toast('Backup importado');}catch{toast('Archivo inválido',false);}};r.readAsText(f);};inp.click();
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{
+    const d=JSON.parse(ev.target.result);
+    const hasData=FB_SYNC_KEYS.some(k=>d[k]!==undefined);
+    if(!hasData)throw new Error('Inválido');
+    for(const k of FB_SYNC_KEYS){if(d[k]!==undefined)DB.set(k,d[k]);}
+    render();toast('Backup importado correctamente');
+  }catch{toast('Archivo de backup inválido',false);}};r.readAsText(f);};inp.click();
 }
 function exportOneXLSX(id){
   if(window.__xlsxOffline||typeof XLSX==='undefined'){toast('Excel no disponible sin conexión a internet',false);return;}
@@ -7948,6 +7953,7 @@ function cotPrintDoc(o, reprint) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -8512,6 +8518,7 @@ function pedPrintDoc(o, reprint) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -8732,6 +8739,7 @@ function ventaDocBody(s){
 function ventaPrintDoc(s, reprint){
   const {html} = ventaDocBody(s);
   const w = window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(s.nro||'Comprobante')} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -9355,16 +9363,16 @@ function reportDocBody(period, since, now, ps, sales, emp){
   const desde = since.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
 
   const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
-  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totVentas = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+  const unidades = sales.reduce((a,s)=>a+saleUnits(s),0);
 
   const map={};
   sales.forEach(s=>{
     const key=(s.code||s.name||'').toLowerCase();
     if(!map[key]) map[key]={name:s.name,profit:0,units:0};
     map[key].profit += saleProfit(s);
-    map[key].units += (s.qty||1);
+    map[key].units += saleUnits(s);
   });
   const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
 
@@ -9415,16 +9423,16 @@ async function generateReport(period){
   const emp = DB.get('empresa',{});
 
   const totCompras = ps.reduce((a,p)=>a+(p.r?.ars||0),0);
-  const totVentas = sales.reduce((a,s)=>a+s.priceARS*(s.qty||1),0);
+  const totVentas = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totGanancia = sales.reduce((a,s)=>a+saleProfit(s),0);
-  const unidades = sales.reduce((a,s)=>a+(s.qty||1),0);
+  const unidades = sales.reduce((a,s)=>a+saleUnits(s),0);
 
   const map={};
   sales.forEach(s=>{
     const key=(s.code||s.name||'').toLowerCase();
     if(!map[key]) map[key]={name:s.name,profit:0,units:0};
     map[key].profit += saleProfit(s);
-    map[key].units += (s.qty||1);
+    map[key].units += saleUnits(s);
   });
   const top = Object.values(map).sort((a,b)=>b.profit-a.profit).slice(0,5);
 
@@ -9640,6 +9648,7 @@ function reprintOC(id) {
   </tr>`).join('');
 
   const w = window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${o.nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -9819,6 +9828,7 @@ function printOrdenNew() {
   </tr>`).join('');
 
   const w=window.open('','_blank','width=900,height=700');
+  if(!w){toast('El navegador bloqueó la ventana. Permití ventanas emergentes para imprimir.',false,5000);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${nro} · TBR TOOLS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -10271,7 +10281,7 @@ function nextFacturaNro(tipo) {
   const conf = getConf();
   const pdvInt = parseInt(conf.facturaPdv)||1;
   const pdv = String(pdvInt).padStart(5,'0');
-  const facturas = DB.get('facturas',[]).filter(f=>(tipo||'C')==='NC' ? f.tipo==='NC' : f.tipo!=='NC');
+  const facturas = DB.get('facturas',[]).filter(f=>(tipo||'C')==='NC' ? f.tipo==='NC' : (f.tipo!=='NC'&&f.tipo!=='RM'));
   const max = facturas.reduce((m,f)=>{
     if(!f.nro) return m;
     const p = f.nro.split('-');
@@ -10623,7 +10633,7 @@ function closeFacturaModal(){
 }
 
 function facturaAutoFillCliente(nombre){
-  const c = DB.get('clientes',[]).find(x=>x.nombre.toLowerCase()===nombre.toLowerCase());
+  const c = DB.get('clientes',[]).find(x=>(x.nombre||'').toLowerCase()===nombre.toLowerCase());
   if(!c) return;
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
   set('f-cuit',c.cuit||''); set('f-tel',c.tel||'');
@@ -11159,12 +11169,17 @@ function facturaPreview(id){
   requestAnimationFrame(function(){ applyMobileScale(); });
   window.addEventListener('resize', applyMobileScale);
   fr.onload = function(){ applyMobileScale(); };
+  fr._resizeHandler = applyMobileScale;
   fr.srcdoc = docBody;
 }
 
 function closeFacturaPreview(){
   var ov = document.getElementById('fp-overlay');
-  if(ov) ov.remove();
+  if(ov){
+    var fr = ov.querySelector('iframe');
+    if(fr && fr._resizeHandler) window.removeEventListener('resize', fr._resizeHandler);
+    ov.remove();
+  }
   document.body.style.overflow = '';
 }
 
@@ -11349,7 +11364,7 @@ function exportLibroIVA() {
   facturas.slice().sort((a,b)=>a.nro>b.nro?1:-1).forEach(f=>{
     rows.push([
       f.fecha||'',
-      'FC',
+      f.tipo==='NC'?'NC':'FC',
       f.nro||'',
       f.comprador?.nombre||'',
       f.comprador?.cuitDniCuil||'',
@@ -11843,7 +11858,7 @@ async function facturaShareWA(id){
   const empNombre = emp.razonSocial||emp.nombre||'TOBARES ALEXIS SEBASTIAN';
 
   // Build informative text message with invoice details
-  const items = (f.items||[]).map(it=>`  • ${it.desc||it.nombre||''} x${it.qty||1} = ${fmtA((it.precio||0)*(it.qty||1))}`).join('\n');
+  const items = (f.items||[]).map(it=>`  • ${it.descripcion||it.desc||it.nombre||''} x${it.qty||1} = ${fmtA((it.precioUnit||it.precio||0)*(it.qty||1))}`).join('\n');
   const nombreComprador = f.comprador?.nombre||'';
   const saludo = nombreComprador&&nombreComprador!=='Consumidor Final' ? `Hola ${nombreComprador}! ` : 'Hola! ';
   const defaultTxt = `${saludo}Te comparto tu ${tipoLbl} Nº ${f.nro||''}\n\nEmisor: ${empNombre}\nFecha: ${f.fecha||''}\n${items?items+'\n':''}\nTotal: ${fmtA(f.total||0)}${f.cae?'\nCAE: '+f.cae:''}`;
