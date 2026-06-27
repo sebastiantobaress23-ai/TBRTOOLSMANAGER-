@@ -10182,10 +10182,24 @@ window.onload = async function() {
     favicon.href = hdrLogo.src;
     document.head.appendChild(favicon);
   }
-  // Pedir PIN/Face ID de entrada lo antes posible (no depende de la red:
-  // usa la configuración ya guardada localmente). Antes se pedía recién
-  // después de initialSyncIfFresh, que puede tardar varios segundos.
-  checkAccessPin();
+  // Si hay usuarios locales, mostrar el lock de inmediato (sin esperar red).
+  // Si no hay usuarios locales, bloquear la pantalla con spinner hasta que
+  // Firebase confirme si existen usuarios remotos — evita que en un dispositivo
+  // nuevo se entre sin contraseña.
+  const _hasLocalUsers = (DB.get('settings',{}).users||[]).length > 0;
+  if (_hasLocalUsers) {
+    checkAccessPin();
+  } else {
+    // Mostrar lock con spinner mientras esperamos Firebase
+    const _ov = document.getElementById('lock-ov');
+    const _mn = document.getElementById('mob-nav');
+    const _fab = document.getElementById('qa-fab');
+    const _pinWrap = document.getElementById('lock-pin-wrap');
+    const _bioBtn = document.getElementById('lock-bio-btn');
+    if (_ov) { _ov.style.display='flex'; if(_pinWrap) _pinWrap.style.display='none'; if(_bioBtn) _bioBtn.style.display='none'; }
+    if (_mn) _mn.style.setProperty('visibility','hidden','important');
+    if (_fab) _fab.style.display='none';
+  }
   // Migración: corregir nombre de empresa si quedó como el default antiguo 'TBR TOOLS'
   (function migrateEmpNombre(){
     const emp = DB.get('empresa',{});
@@ -10200,6 +10214,17 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
+  // Si no había usuarios locales, ahora que Firebase sincronizó los settings,
+  // volver a evaluar el lock. Muestra login si hay usuarios remotos; si no hay
+  // ninguno configurado, ocultar el overlay y dejar entrar.
+  if (!_hasLocalUsers) {
+    const _pinWrap2 = document.getElementById('lock-pin-wrap');
+    const _bioBtn2 = document.getElementById('lock-bio-btn');
+    if (_pinWrap2) _pinWrap2.style.display='';
+    if (_bioBtn2) _bioBtn2.style.display='';
+    checkAccessPin();
+    updateLockBioBtn();
+  }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
   migrateCatalogPhotos();
