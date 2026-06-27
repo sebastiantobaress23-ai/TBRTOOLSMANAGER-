@@ -10220,24 +10220,40 @@ window.onload = async function() {
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
   // Tras sincronizar Firebase: evaluar si hay usuarios remotos.
-  // Si los hay → mostrar login. Si no hay ninguno configurado → dejar entrar.
-  // NUNCA ocultar el overlay aquí si checkAccessPin lo mantiene visible.
+  // REGLA: solo liberar acceso si estamos seguros de que no hay usuarios configurados
+  // (instalación nueva). Si Firebase falló o trajo usuarios, siempre pedir login.
   if (!_hasLocalUsers) {
     const afterUsers = (DB.get('settings',{}).users||[]).length > 0;
     const _pinWrap2 = document.getElementById('lock-pin-wrap');
-    const _bioBtn2 = document.getElementById('lock-bio-btn');
     if (_pinWrap2) _pinWrap2.style.display = '';
-    if (afterUsers) {
-      // Firebase trajo usuarios: mostrar formulario y exigir login
-      updateLockBioBtn();
-    } else {
-      // Instalación nueva sin usuarios: dejar entrar
-      const _ov2 = document.getElementById('lock-ov');
-      const _mn2 = document.getElementById('mob-nav');
-      const _fab2 = document.getElementById('qa-fab');
-      if (_ov2) _ov2.style.display = 'none';
-      if (_mn2) _mn2.style.removeProperty('visibility');
-      if (_fab2) _fab2.style.removeProperty('display');
+    updateLockBioBtn();
+    if (!afterUsers) {
+      // Solo liberar si Firebase confirmó que no hay NINGÚN usuario configurado.
+      // Para estar seguros, intentar un fetch directo al nodo settings.
+      let confirmedEmpty = false;
+      try {
+        const _chkUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
+        const _chkR = await fetch(_chkUrl, {cache:'no-store', signal:AbortSignal.timeout(6000)});
+        if (_chkR.ok) {
+          const _chkD = await _chkR.json();
+          const _remoteUsers = (_chkD && _chkD.users)||[];
+          if (_remoteUsers.length === 0) confirmedEmpty = true;
+          else {
+            // Firebase tiene usuarios pero initialSyncIfFresh no los escribió — forzar
+            try { localStorage.setItem('tbr_settings', JSON.stringify(_chkD)); } catch {}
+          }
+        }
+      } catch {}
+      if (confirmedEmpty) {
+        // Instalación nueva real: no hay usuarios en ningún lado
+        const _ov2 = document.getElementById('lock-ov');
+        const _mn2 = document.getElementById('mob-nav');
+        const _fab2 = document.getElementById('qa-fab');
+        if (_ov2) _ov2.style.display = 'none';
+        if (_mn2) _mn2.style.removeProperty('visibility');
+        if (_fab2) _fab2.style.removeProperty('display');
+      }
+      // Si no pudo confirmar (red caída, Firebase error) → overlay sigue visible
     }
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
