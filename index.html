@@ -5015,44 +5015,54 @@ function histCard(p, idx, badges=[], i=0) {
   const tce    = p.r?.TCE||0;
   const prods  = p.products?.length||0;
   const marginPct = invest>0 ? Math.round(gain/invest*100) : 0;
-  const hiLbl = (t)=>`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.25);text-align:right;margin-bottom:2px">${t}</div>`;
-  return `<div class="hi"${stg(i)}>
-    <div class="hi-hdr" onclick="toggleHi('${idx}')">
-      <div class="hi-hdr-l">
-        <div class="hi-n">${highlight(p.name||'Sin nombre',histSearch)}</div>
-        ${badges.length?`<div class="hi-badges">${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}</div>`:''}
-        <div class="hi-d" style="margin-top:4px">
-          <span>${fmtD(p.date)}</span>
-          <span class="hi-d-sep">·</span>
-          <span>${prods} prod.</span>
-          <span class="hi-d-sep">·</span>
-          <span>TCE ${fmtA(tce)}</span>
+  const gainColor = gain>=0?'var(--gr)':'var(--re)';
+  const border = 'rgba(237,217,180,.2)';
+  const statCols = [
+    {lbl:'Fecha', val:fmtD(p.date)},
+    {lbl:'Productos', val:`${prods} prod.`},
+    {lbl:'TCE', val:fmtA(tce)},
+  ];
+  return `<div style="background:linear-gradient(160deg,rgba(22,19,12,1),rgba(16,16,16,1));border:1px solid ${border};border-radius:14px;margin-bottom:10px;overflow:hidden"${stg(i)}>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px 16px 14px;gap:12px;cursor:pointer" onclick="toggleHi('${idx}')">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:15px;font-weight:700;color:var(--ch);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${highlight(p.name||'Sin nombre',histSearch)}</div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          ${badges.map(b=>`<span class="badge badge-${b.cls}">${b.txt}</span>`).join('')}
+          ${p.proveedor?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--di)">${esc(p.proveedor)}</span>`:''}
         </div>
       </div>
-      <div class="hi-r">
-        ${hiLbl('Invertido')}
-        <div class="hi-v">${fmtA(invest)}</div>
-        <div style="margin-top:10px">
-          ${hiLbl('Ganancia')}
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:2px">Invertido</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--ud);line-height:1">${fmtA(invest)}</div>
+        <div style="margin-top:8px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:2px">Ganancia</div>
           <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
-            <div class="hi-gain">${fmtA(gain)}</div>
-            ${marginPct>0?`<div class="hi-margin-chip">+${marginPct}%</div>`:''}
+            <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:${gainColor};line-height:1">${fmtA(gain)}</div>
+            ${marginPct>0?`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--gr);background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:4px;padding:1px 5px">+${marginPct}%</div>`:''}
           </div>
         </div>
       </div>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid ${border}">
+      ${statCols.map((s,si)=>`<div style="padding:10px 14px;${si<2?`border-right:1px solid ${border}`:''}">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--di);margin-bottom:3px">${s.lbl}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--si)">${s.val}</div>
+      </div>`).join('')}
+    </div>
     <div class="hi-body" id="${idx}">
-      ${p.notes?`<div class="hi-note">${esc(p.notes)}</div>`:''}
-      <div style="overflow-x:auto;margin-top:12px">
-        <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th></tr></thead>
-        <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
-      </div>
-      <div class="hi-acts">
-        <button class="btn-p btn-sm" onclick="printOrden('${p.id}')">${ic('printer')} OC</button>
-        <button class="btn-g btn-sm" onclick="exportOneXLSX('${p.id}')">⬇ Excel</button>
-        <button class="btn-g btn-sm" onclick="duplicatePurchase('${p.id}')">⎘ Duplicar</button>
-        <button class="btn-g btn-sm" onclick="reusar('${p.id}')">${ic('undo')} Reusar</button>
-        <button class="btn-d" onclick="delPurchase('${p.id}')">${ic('trash')} Borrar</button>
+      <div style="padding:14px 16px">
+        ${p.notes?`<div class="hi-note">${esc(p.notes)}</div>`:''}
+        <div style="overflow-x:auto;margin-top:4px">
+          <table><thead><tr><th>Producto</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">Precio lista</th><th class="tr">Costo ARS</th></tr></thead>
+          <tbody>${(p.products||[]).map(pr=>{const cu=(pr.p||0)*(p.r?.TCE||0);return `<tr><td class="tn">${esc(pr.n||'—')}</td><td class="tc">${esc(pr.c||'—')}</td><td class="tc2">${pr.q||1}</td><td class="tr tm csi">${(pr.lista||pr.p||0).toFixed(2)}</td><td class="tr tm csi">${fmtA(cu)}</td></tr>`;}).join('')}</tbody></table>
+        </div>
+        <div class="hi-acts" style="margin-top:12px">
+          <button class="btn-p btn-sm" onclick="printOrden('${p.id}')">${ic('printer')} OC</button>
+          <button class="btn-g btn-sm" onclick="exportOneXLSX('${p.id}')">⬇ Excel</button>
+          <button class="btn-g btn-sm" onclick="duplicatePurchase('${p.id}')">⎘ Duplicar</button>
+          <button class="btn-g btn-sm" onclick="reusar('${p.id}')">${ic('undo')} Reusar</button>
+          <button class="btn-d" onclick="delPurchase('${p.id}')">${ic('trash')} Borrar</button>
+        </div>
       </div>
     </div>
   </div>`;
