@@ -2736,9 +2736,9 @@ function smartAlerts() {
 function smartAlertsCard() {
   const alerts = smartAlerts();
   if (!alerts.length) return '';
-  return `<div class="card mb20">
-    <div class="sh mb12" style="margin-top:0">Alertas inteligentes</div>
-    ${alerts.map(a=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--b2)"><span style="font-size:16px;line-height:1.3">${a.icon}</span><span style="font-size:13px;color:var(--di)">${esc(a.text)}</span></div>`).join('')}
+  return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:16px 18px;margin-bottom:24px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:12px">Alertas</div>
+    ${alerts.map((a,i)=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;${i<alerts.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}"><span style="font-size:15px;line-height:1.4;flex-shrink:0">${a.icon}</span><span style="font-size:13px;color:var(--si);line-height:1.5">${esc(a.text)}</span></div>`).join('')}
   </div>`;
 }
 function purchaseGain(p) {
@@ -3854,6 +3854,8 @@ function pgDash() {
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   const settings = DB.get('settings',{});
   const goal = parseFloat(settings.monthlyGoal)||0;
+
+  // Meta del mes
   let goalCard = '';
   if (goal > 0) {
     const curMonth = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
@@ -3863,25 +3865,28 @@ function pgDash() {
     const C = 2*Math.PI*52;
     const offset = C*(1-ratio);
     const done = pct >= 100;
-    goalCard = `<div class="card goal-card mb20" data-done="${done?'1':'0'}" data-month-key="${now.getFullYear()}-${now.getMonth()}">
-      <div class="goal-ring-wrap${done?' complete':''}">
-        <svg class="goal-ring" width="120" height="120" viewBox="0 0 120 120">
-          <circle class="goal-ring-bg" cx="60" cy="60" r="52"/>
-          <circle class="goal-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-offset="${offset.toFixed(2)}"/>
-        </svg>
-        <div class="goal-ring-label">
-          <div class="goal-ring-pct">${pct}%</div>
+    goalCard = `<div class="card goal-card mb16" data-done="${done?'1':'0'}" data-month-key="${now.getFullYear()}-${now.getMonth()}" style="border:1px solid ${done?'rgba(74,222,128,.2)':'rgba(255,255,255,.06)'};background:${done?'rgba(74,222,128,.04)':'rgba(20,20,20,1)'};border-radius:14px;padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="goal-ring-wrap${done?' complete':''}" style="flex-shrink:0">
+          <svg class="goal-ring" width="80" height="80" viewBox="0 0 120 120">
+            <circle class="goal-ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="goal-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-offset="${offset.toFixed(2)}" style="stroke:${done?'var(--gr)':'var(--ud)'}"/>
+          </svg>
+          <div class="goal-ring-label">
+            <div class="goal-ring-pct" style="font-size:18px;color:${done?'var(--gr)':'var(--ud)'}">${pct}%</div>
+          </div>
         </div>
-      </div>
-      <div class="goal-info">
-        <div class="sc-l">Meta del mes</div>
-        <div class="goal-amounts">${fmtA(curMonth)} <span class="goal-sep">/</span> ${fmtA(goal)}</div>
-        <div class="sc-s">${done?'¡Meta alcanzada! 🎉':`Faltan ${fmtA(Math.max(goal-curMonth,0))} para llegar`}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:6px">Meta del mes</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--ch);line-height:1">${fmtA(curMonth)}</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--di);margin-top:3px">de ${fmtA(goal)}</div>
+          <div style="font-size:11px;color:${done?'var(--gr)':'var(--di)'};margin-top:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">${done?'Meta alcanzada':`Faltan ${fmtA(Math.max(goal-curMonth,0))}`}</div>
+        </div>
       </div>
     </div>`;
   }
 
-  // Monotributo billing limit card
+  // Monotributo
   const monoLimit = parseFloat(settings.monotributoLimit)||0;
   let monoCard = '';
   if (monoLimit > 0) {
@@ -3893,25 +3898,28 @@ function pgDash() {
     const billed = billedFacturas + billedSales;
     const monoRatio = Math.min(billed/monoLimit,1);
     const monoPct = Math.round(monoRatio*100);
-    const monoColor = monoPct>=90?'#f87171':monoPct>=70?'#fbbf24':'#4ade80';
-    const monoAlert = monoPct>=90?'⚠ Límite casi alcanzado':monoPct>=70?'Cerca del límite — revisá tu categoría':'Dentro del límite';
-    monoCard = `<div class="card mb20" style="padding:18px 20px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
-        <div style="flex:1">
-          <div class="sc-l" style="margin-bottom:2px">Facturación anual · Monotributo ${curYear}</div>
-          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-            <div class="mono-pct-lbl" style="color:${monoColor}">${monoPct}%</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--si)">${fmtA(billed)} <span style="color:var(--di);font-size:13px">/ ${fmtA(monoLimit)}</span></div>
+    const monoColor = monoPct>=90?'var(--re)':monoPct>=70?'var(--ye)':'var(--gr)';
+    const monoAlert = monoPct>=90?'Límite casi alcanzado':monoPct>=70?'Cerca del límite':'Dentro del límite';
+    monoCard = `<div class="card mb16" style="border:1px solid ${monoPct>=90?'rgba(248,113,113,.2)':monoPct>=70?'rgba(251,191,36,.15)':'rgba(255,255,255,.06)'};border-radius:14px;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:4px">Monotributo ${curYear}</div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${monoColor};line-height:1">${monoPct}%</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--si)">${fmtA(billed)} <span style="color:var(--di);font-size:12px">/ ${fmtA(monoLimit)}</span></div>
           </div>
-          <div class="mono-bar-wrap"><div class="mono-bar" id="mono-bar-fill" style="width:0%;background:${monoColor}" data-target="${(monoRatio*100).toFixed(1)}"></div></div>
-          <div class="mono-limit-lbl">${monoAlert} · Quedan ${fmtA(Math.max(monoLimit-billed,0))}</div>
         </div>
-        <button class="btn-g btn-sm" onclick="navigate('config')" style="flex-shrink:0;margin-top:2px">Editar límite</button>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:${monoColor};font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;font-weight:700">${monoAlert}</div>
+          <div style="font-size:11px;color:var(--di);margin-top:2px">Quedan ${fmtA(Math.max(monoLimit-billed,0))}</div>
+        </div>
       </div>
+      <div class="mono-bar-wrap" style="margin:0"><div class="mono-bar" id="mono-bar-fill" style="width:0%;background:${monoColor}" data-target="${(monoRatio*100).toFixed(1)}"></div></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn-g btn-sm" onclick="navigate('config')" style="height:28px;font-size:11px">Editar límite</button></div>
     </div>`;
   }
 
-  // Resumen de ventas del mes en curso, para que el dashboard no muestre solo el lado de compras
+  // Ventas del mes
   const sales = DB.get('sales',[]);
   const salesMonth = sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   const ventasMes = salesMonth.reduce((a,s)=>a+saleRevenue(s),0);
@@ -3920,76 +3928,89 @@ function pgDash() {
   const last8Sales = sales.slice(-8);
   const spVentas = last8Sales.map(saleRevenue);
   const spGanVentas = last8Sales.map(saleProfit);
-  const ventasSection = sales.length ? `<div class="sh mb16">Ventas</div>
-  <div class="g3 mb20">
-    <div class="sc accent-g">
-      <div class="sc-l">Ventas del mes</div>
-      <div class="sc-v g">${ventasMes?`<span class="count-val" data-target="${ventasMes}">${fmtA(ventasMes)}</span>`:'—'}</div>
-      <div class="sc-s">${salesMonth.length} venta${salesMonth.length!==1?'s':''} este mes</div>
-      ${sparkline(spVentas,'#4ade80')}
-    </div>
-    <div class="sc accent-y">
-      <div class="sc-l">Ganancia del mes</div>
-      <div class="sc-v y">${gananciaVentasMes?`<span class="count-val" data-target="${gananciaVentasMes}">${fmtA(gananciaVentasMes)}</span>`:'—'}</div>
-      <div class="sc-s">según ventas registradas</div>
-      ${sparkline(spGanVentas,'#fbbf24')}
-    </div>
-    <div class="sc accent-u">
-      <div class="sc-l">Unidades vendidas</div>
-      <div class="sc-v u">${unidadesMes||'—'}</div>
-      <div class="sc-s">en el mes actual</div>
-    </div>
+
+  // Helpers de stat cell para el dashboard
+  const dStat = (lbl, val, color, spark='', sub='', trend='') => `
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${lbl}</div>
+      <div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:${color};line-height:1">${val}</div>
+        ${trend?`<div style="font-size:11px;color:${tceUp?'var(--re)':'var(--gr)'};margin-top:4px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">${trend}</div>`:''}
+        ${sub&&!trend?`<div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px">${sub}</div>`:''}
+      </div>
+      ${spark}
+    </div>`;
+
+  const ventasSection = sales.length ? `
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Ventas</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
+    ${dStat('Ingresos del mes', ventasMes?`<span class="count-val" data-target="${ventasMes}">${fmtA(ventasMes)}</span>`:'—', 'var(--gr)', sparkline(spVentas,'#4ade80'), `${salesMonth.length} venta${salesMonth.length!==1?'s':''} este mes`)}
+    ${dStat('Ganancia del mes', gananciaVentasMes?`<span class="count-val" data-target="${gananciaVentasMes}">${fmtA(gananciaVentasMes)}</span>`:'—', 'var(--ye)', sparkline(spGanVentas,'#fbbf24'), 'según ventas registradas')}
+    ${dStat('Unidades vendidas', unidadesMes||'—', 'var(--us)', '', 'en el mes actual')}
   </div>` : '';
+
+  // Últimas compras con el nuevo estilo de card
+  const lastCards = last.length ? last.map(p=>`
+    <div onclick="navigate('historial')" style="display:flex;align-items:center;gap:0;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:border-color .18s" onmouseover="this.style.borderColor='rgba(255,255,255,.12)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+      <div style="flex:1;min-width:0;padding:14px 16px">
+        <div style="font-size:14px;font-weight:700;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${esc(p.name||'Sin nombre')}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);letter-spacing:.5px">${fmtD(p.date)} · ${p.products?.length||0} producto${(p.products?.length||0)!==1?'s':''} · TCE ${fmtA(p.r?.TCE||0)}</div>
+      </div>
+      <div style="padding:14px 18px;text-align:right;flex-shrink:0;border-left:1px solid rgba(255,255,255,.06)">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--us);line-height:1">${fmtA(p.r?.ars||0)}</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--gr);margin-top:3px;line-height:1">gan. ${fmtA(purchaseGain(p))}</div>
+      </div>
+    </div>`).join('') : emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.');
+
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const mesNombre = meses[now.getMonth()];
+
   return `<div class="pg">
-  <div class="sh mb20">Resumen general</div>
-  <div class="sc-hero mb20">
-    <div>
-      <div class="sc-l">Total invertido</div>
-      <div class="sc-v g sc-hero-val">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
-      <div class="sc-s">${ps.length} compra${ps.length!==1?'s':''} · ${fmtU(totU)}</div>
-    </div>
-    <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+    <div class="sh" style="margin:0">Resumen</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);letter-spacing:.5px;text-transform:uppercase">${mesNombre} ${now.getFullYear()}</div>
   </div>
+
+  <!-- Hero: total invertido -->
+  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Total invertido</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:40px;font-weight:700;color:var(--ch);line-height:1">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);margin-top:6px;letter-spacing:.5px">${ps.length} compra${ps.length!==1?'s':''} · ${fmtU(totU)}</div>
+    </div>
+    <div style="flex-shrink:0;opacity:.75">${sparkline(spTot,'#4ade80',130,52)}</div>
+  </div>
+
   ${goalCard}
   ${monoCard}
-  <div class="sh mb16">Compras</div>
-  <div class="g3 mb20">
-    <div class="sc accent-y">
-      <div class="sc-l">Ganancia proyectada</div>
-      <div class="sc-v y">${gan?`<span class="count-val" data-target="${gan}">${fmtA(gan)}</span>`:'—'}</div>
-      <div class="sc-s">según márgenes guardados</div>
-      ${sparkline(spGan,'#fbbf24')}
-    </div>
-    <div class="sc accent-u">
-      <div class="sc-l">Último TCE</div>
-      <div class="sc-v u">${ltce?`<span class="count-val" data-target="${ltce}">${fmtA(ltce)}</span>`:'—'}</div>
-      ${ps.length>1?`<div class="sc-trend ${tceUp?'up':'dn'}">${tceUp?'▲':'▼'} ${Math.abs(tceDiff).toFixed(1)}% vs anterior</div>`:`<div class="sc-s">${ps.length?fmtD(ps[ps.length-1].date):'sin compras'}</div>`}
-      ${sparkline(spTce,'#2dd4bf')}
-    </div>
-    <div class="sc accent-d">
-      <div class="sc-l">TCE promedio histórico</div>
-      <div class="sc-v">${tce?`<span class="count-val" data-target="${tce}">${fmtA(tce)}</span>`:'—'}</div>
-      <div class="sc-s">en ${ps.length} compra${ps.length!==1?'s':''}</div>
-      ${sparkline(spTce,'#EDD9B4')}
-    </div>
+
+  <!-- Compras -->
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Compras</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
+    ${dStat('Ganancia proyectada', gan?`<span class="count-val" data-target="${gan}">${fmtA(gan)}</span>`:'—', 'var(--ye)', sparkline(spGan,'#fbbf24'), 'según márgenes guardados')}
+    ${dStat('Último TCE', ltce?`<span class="count-val" data-target="${ltce}">${fmtA(ltce)}</span>`:'—', 'var(--us)', sparkline(spTce,'#2dd4bf'), ps.length?fmtD(ps[ps.length-1].date):'sin compras', ps.length>1?(tceUp?`▲ ${Math.abs(tceDiff).toFixed(1)}% vs anterior`:`▼ ${Math.abs(tceDiff).toFixed(1)}% vs anterior`):'')}
+    ${dStat('TCE promedio', tce?`<span class="count-val" data-target="${tce}">${fmtA(tce)}</span>`:'—', 'var(--ch)', sparkline(spTce,'rgba(237,217,180,.6)'), `en ${ps.length} compra${ps.length!==1?'s':''}`)}
   </div>
+
   ${ventasSection}
   ${smartAlertsCard()}
-  <div class="g2 mb20">
+
+  <!-- Gráficos -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
     <div>
-      <div class="sh mb16">Evolución del TCE</div>
-      <div class="card chart-card" style="padding:16px"><div id="ch-tce" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:8px">Evolución TCE</div>
+      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="ch-tce" style="width:100%;min-height:140px"></div>${ps.length<2?'<div class="empty" style="margin-top:-140px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
     <div>
-      <div class="sh mb16">Ganancia proyectada</div>
-      <div class="card chart-card" style="padding:16px"><div id="ch-gan" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:8px">Ganancia proyectada</div>
+      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="ch-gan" style="width:100%;min-height:140px"></div>${ps.length<2?'<div class="empty" style="margin-top:-140px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
   </div>
-  <div>
-    <div class="sh mb16">Últimas compras</div>
-    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(purchaseGain(p))}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
-  </div>
-  <div class="mt20"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
+
+  <!-- Últimas compras -->
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Últimas compras</div>
+  ${lastCards}
+  <div style="margin-top:16px"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
 </div>`;
 }
 
