@@ -8980,26 +8980,25 @@ function cliListHTML(list) {
       </div>
     </div>
     <div class="hi-body" id="cli${i}">
-      <div style="border-top:1px solid rgba(255,255,255,.06);padding:12px 16px">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:${cliPeds.length?'14px':'0'}">
-          ${c.tel?`<a class="btn-g btn-sm" href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="color:var(--wa)">${waIcon()}WhatsApp</a>`:''}
-          <button class="btn-g btn-sm" onclick="openCli('${c.id}')">${ic('edit')} Editar</button>
-          <button class="btn-g btn-sm" onclick="verFacturasCli('${esc(c.nombre)}')">${ic('fileText')} Facturas</button>
-          <div style="flex:1"></div>
-          <button class="btn-d btn-sm" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
-        </div>
-        ${cliPeds.length?`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Pedidos</div>
-          ${cliPeds.map((o,oi)=>{
-            const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
-            return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;${oi<cliPeds.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}" onclick="navigateToPed('${o.id}')">
-              <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)}</div>
-                <div style="font-size:11px;color:var(--di);margin-top:2px">${fmtD(o.date)} · ${o.items?.length||0} art. · ${pedStatusBadge(o.status)}</div>
-              </div>
-              <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')">${ic('undo')} Repetir</button>
-              <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ud);min-width:70px;text-align:right">${fmtA(t)}</div>
-            </div>`;
-          }).join('')}`:`<div style="font-size:12px;color:var(--di)">Sin pedidos registrados</div>`}
+      ${cliPeds.length?`<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 16px">
+        ${cliPeds.map((o,oi)=>{
+          const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;${oi<cliPeds.length-1?'border-bottom:1px solid rgba(255,255,255,.04)':''}" onclick="navigateToPed('${o.id}')">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)}</div>
+              <div style="font-size:11px;color:var(--di);margin-top:2px">${fmtD(o.date)} · ${o.items?.length||0} art. · ${pedStatusBadge(o.status)}</div>
+            </div>
+            <button style="background:none;border:none;color:var(--si);cursor:pointer;font-size:11px;padding:4px 8px;border-radius:6px" onclick="event.stopPropagation();duplicatePed('${o.id}')">${ic('undo',14)} Repetir</button>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ud);min-width:68px;text-align:right">${fmtA(t)}</div>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+      <div style="border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;padding:0 4px">
+        ${c.tel?`<a href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="display:flex;align-items:center;gap:5px;padding:11px 12px;font-size:12px;font-weight:600;color:var(--wa);text-decoration:none;cursor:pointer">${waIcon(14)}WhatsApp</a>`:''}
+        <button onclick="openCli('${c.id}')" style="display:flex;align-items:center;gap:5px;padding:11px 12px;font-size:12px;font-weight:600;color:var(--si);background:none;border:none;cursor:pointer">${ic('edit',14)} Editar</button>
+        <button onclick="verFacturasCli('${esc(c.nombre)}')" style="display:flex;align-items:center;gap:5px;padding:11px 12px;font-size:12px;font-weight:600;color:var(--si);background:none;border:none;cursor:pointer">${ic('fileText',14)} Facturas</button>
+        <div style="flex:1"></div>
+        <button onclick="delCli('${c.id}')" style="display:flex;align-items:center;gap:5px;padding:11px 12px;font-size:12px;font-weight:600;color:var(--re);background:none;border:none;cursor:pointer">${ic('trash',14)} Borrar</button>
       </div>
     </div>
   </div>`;
