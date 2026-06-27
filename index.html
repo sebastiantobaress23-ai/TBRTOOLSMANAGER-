@@ -5487,18 +5487,17 @@ function pgVentas(){
       const costo = s.costARS||items[0]?.cost||0;
       const expandId = 'sv'+si;
       return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleHi('${expandId}')">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;cursor:pointer" onclick="toggleHi('${expandId}')">
           <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:600;color:var(--ch);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px">${titulo}</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:${isML?'var(--ye)':'var(--si)'};background:${isML?'rgba(251,191,36,.1)':'rgba(255,255,255,.05)'};border:1px solid ${isML?'rgba(251,191,36,.2)':'rgba(255,255,255,.1)'};border-radius:4px;padding:1px 6px">${isML?'ML':'DIRECTA'}</span>
-              ${s.nro?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.3px">${esc(s.nro)}</span>`:''}
-              <span style="font-size:11px;color:var(--di)">${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</span>
+            <div style="font-size:14px;font-weight:600;color:var(--ch);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${titulo}</div>
+            <div style="margin-top:7px;display:flex;align-items:center;gap:8px">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:${isML?'var(--ye)':'var(--si)'};background:${isML?'rgba(251,191,36,.12)':'rgba(255,255,255,.06)'};border:1px solid ${isML?'rgba(251,191,36,.25)':'rgba(255,255,255,.12)'};border-radius:4px;padding:2px 7px;flex-shrink:0">${isML?'ML':'DIRECTA'}</span>
+              <span style="font-size:11px;color:var(--di);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.nro?esc(s.nro)+' · ':''}${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</span>
             </div>
           </div>
-          <div style="flex-shrink:0;text-align:right">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
-            <div style="font-size:10px;color:var(--di);margin-top:2px;letter-spacing:.3px">${marginPct}% margen</div>
+          <div style="flex-shrink:0;text-align:right;padding-top:1px">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:${profitColor};line-height:1;white-space:nowrap">${fmtA(profit)}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--di);margin-top:4px">${marginPct}% MARGEN</div>
           </div>
         </div>
         <div class="hi-body" id="${expandId}">
