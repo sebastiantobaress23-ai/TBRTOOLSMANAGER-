@@ -12091,12 +12091,12 @@ function riPickCliente() {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--di);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`).join('');
   const tmp = document.createElement('div');
-  tmp.className = 'mol';
-  tmp.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:16px;z-index:10003';
-  tmp.innerHTML = `<div style="background:var(--bg);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:420px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden">
+  tmp.id = 'ri-cli-picker';
+  tmp.style.cssText = 'position:fixed;inset:0;z-index:10010;display:flex;align-items:center;justify-content:center;padding:16px';
+  tmp.innerHTML = `<div style="background:var(--bg);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:420px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.7)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b2);flex-shrink:0">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800">Seleccionar Cliente</div>
-      <button onclick="this.closest('.mol').remove()" style="width:28px;height:28px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      <button onclick="document.getElementById('ri-cli-picker').remove()" style="width:28px;height:28px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
     </div>
     <div style="overflow-y:auto;flex:1">${listHTML}</div>
   </div>`;
@@ -12109,14 +12109,14 @@ function riSelectCliente(id) {
   const dest = document.getElementById('ri-dest'); if(dest) dest.value = c.nombre||'';
   const dir = document.getElementById('ri-dir'); if(dir) dir.value = c.dir||'';
   const tel = document.getElementById('ri-tel'); if(tel) tel.value = c.tel||'';
-  document.querySelectorAll('.mol').forEach(m=>{ if(m.querySelector(`[onclick*="${id}"]`)) m.remove(); });
+  const pk = document.getElementById('ri-cli-picker'); if(pk) pk.remove();
 }
 function riImportarPedido() {
   const peds = DB.get('pedidos',[]).slice().reverse();
   if (!peds.length) { toast('No hay pedidos registrados',false); return; }
   const listHTML = peds.map(o=>{
     const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
-    return `<div onclick="riCargarPedido('${o.id}');this.closest('.mol').style.display='none';unlockBody()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+    return `<div onclick="riCargarPedido('${o.id}');document.getElementById('ri-ped-picker').remove()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)} <span style="color:var(--di);font-weight:400">· ${esc(o.cliente||'—')}</span></div>
         <div style="font-size:11px;color:var(--di);margin-top:2px">${fmtD(o.date)} · ${(o.items||[]).length} art.</div>
@@ -12125,12 +12125,12 @@ function riImportarPedido() {
     </div>`;
   }).join('');
   const tmp = document.createElement('div');
-  tmp.className = 'mol';
-  tmp.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:16px;z-index:10002';
-  tmp.innerHTML = `<div style="background:var(--bg);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:420px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden">
+  tmp.id = 'ri-ped-picker';
+  tmp.style.cssText = 'position:fixed;inset:0;z-index:10010;display:flex;align-items:center;justify-content:center;padding:16px';
+  tmp.innerHTML = `<div style="background:var(--bg);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:420px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.7)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b2);flex-shrink:0">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800">Seleccionar Pedido</div>
-      <button onclick="this.closest('.mol').remove()" style="width:28px;height:28px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      <button onclick="document.getElementById('ri-ped-picker').remove()" style="width:28px;height:28px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
     </div>
     <div style="overflow-y:auto;flex:1">${listHTML}</div>
   </div>`;
