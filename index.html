@@ -1800,6 +1800,7 @@ html.light .sc::after{opacity:.6}
 <div id="app"></div>
 <div id="factura-modal" class="mol" style="display:none;align-items:flex-end;padding:0" onclick="if(event.target===this)closeFacturaModal()"></div>
 <div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
+<div id="import-doc-modal" class="mol" style="display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeImportDocSheet()"></div>
 
 <!-- CONFIRM MODAL -->
 <div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
@@ -10676,6 +10677,10 @@ function openFactura(id) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
           </button>
         </div>
+        <button class="btn-g" onclick="openImportDocSheet()" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:13px;border-radius:10px;width:100%;justify-content:center;border:1px dashed rgba(196,149,42,.3);color:var(--ud)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar desde Pedido o Remito
+        </button>
         <div id="f-items-wrap"></div>
         <div style="display:flex;justify-content:flex-end">
           <button class="btn-g btn-sm" onclick="facturaAddManualItem()">+ Ítem manual</button>
@@ -11793,6 +11798,131 @@ function ncDocBody(f){
     </div>
     ${f.observaciones?`<div class="obs"><b>Observaciones:</b> ${esc(f.observaciones)}</div>`:''}
   </div></body></html>`;
+}
+
+/* ─── IMPORTAR PEDIDO / REMITO EN FACTURADOR ─── */
+function openImportDocSheet() {
+  const peds = DB.get('pedidos',[]).slice().reverse();
+  const remitos = DB.get('facturas',[]).filter(f=>f.tipo==='RM').slice().reverse();
+  const modal = document.getElementById('import-doc-modal');
+
+  const pedRows = peds.length ? peds.map(o=>{
+    const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+    return `<div onclick="importFromPedido('${o.id}')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)} <span style="color:var(--di);font-weight:400">· ${esc(o.cliente||'—')}</span></div>
+        <div style="font-size:11px;color:var(--di);margin-top:2px">${fmtD(o.date)} · ${(o.items||[]).length} art.</div>
+      </div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--ud);flex-shrink:0">${fmtA(total)}</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--di);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  }).join('') : `<div style="padding:20px 16px;font-size:13px;color:var(--di);text-align:center">Sin pedidos registrados</div>`;
+
+  const remRows = remitos.length ? remitos.map(r=>{
+    return `<div onclick="importFromRemito('${r.id}')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(r.nro)} <span style="color:var(--di);font-weight:400">· ${esc(r.comprador?.nombre||'—')}</span></div>
+        <div style="font-size:11px;color:var(--di);margin-top:2px">${fmtD(r.fecha)} · ${(r.items||[]).length} art.</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--di);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  }).join('') : `<div style="padding:20px 16px;font-size:13px;color:var(--di);text-align:center">Sin remitos registrados</div>`;
+
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--b2);flex-shrink:0">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:.5px">Importar documento</div>
+      <button onclick="closeImportDocSheet()" style="width:30px;height:30px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+    <div style="overflow-y:auto;flex:1">
+      <div style="padding:12px 16px 6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase">Pedidos</div>
+      ${pedRows}
+      <div style="padding:12px 16px 6px;margin-top:4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--di);text-transform:uppercase;border-top:1px solid rgba(255,255,255,.05)">Remitos</div>
+      ${remRows}
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+  lockBody();
+}
+
+function closeImportDocSheet() {
+  const m = document.getElementById('import-doc-modal');
+  if (m) m.style.display = 'none';
+  unlockBody();
+}
+
+function importFromPedido(id) {
+  const o = DB.get('pedidos',[]).find(x=>x.id===id);
+  if (!o) return;
+  // Mapear items de pedido → formato factura
+  _factItems = (o.items||[]).map(p=>({
+    sku: p.c||'',
+    descripcion: p.n||'',
+    qty: p.q||1,
+    precioUnit: p.p||0,
+    subtotal: (p.q||1)*(p.p||0)
+  }));
+  // Pre-rellenar cliente si hay nombre
+  if (o.cliente) {
+    const cfCheck = document.getElementById('f-cf');
+    if (cfCheck && cfCheck.checked) {
+      facturaToggleCF(false);
+      cfCheck.checked = false;
+      const track = document.getElementById('f-cf-track');
+      const thumb = document.getElementById('f-cf-thumb');
+      if (track) track.style.background = 'var(--b3)';
+      if (thumb) thumb.style.left = '2px';
+    }
+    const fNombre = document.getElementById('f-nombre');
+    if (fNombre && !fNombre.value) fNombre.value = o.cliente;
+    const fTel = document.getElementById('f-tel');
+    if (fTel && !fTel.value && o.tel) fTel.value = o.tel;
+    const fCuit = document.getElementById('f-cuit');
+    if (fCuit && !fCuit.value && o.cuit) fCuit.value = o.cuit;
+  }
+  closeImportDocSheet();
+  renderFactItems();
+  toast(`Pedido ${o.nro} importado — ${_factItems.length} artículos`);
+}
+
+function importFromRemito(id) {
+  const r = DB.get('facturas',[]).find(x=>x.id===id && x.tipo==='RM');
+  if (!r) return;
+  // Remito items: {sku, descripcion, qty} — sin precio unitario, completar desde catálogo
+  const catalog = DB.get('catalog',[]);
+  _factItems = (r.items||[]).map(it=>{
+    const cat = catalog.find(p=>p.code===it.sku || p.name===it.descripcion);
+    const precio = cat ? (cat.salePrice||0) : 0;
+    return {
+      sku: it.sku||'',
+      descripcion: it.descripcion||'',
+      qty: it.qty||1,
+      precioUnit: precio,
+      subtotal: (it.qty||1)*precio
+    };
+  });
+  // Pre-rellenar comprador
+  if (r.comprador?.nombre && r.comprador.nombre !== 'Consumidor Final') {
+    const cfCheck = document.getElementById('f-cf');
+    if (cfCheck && cfCheck.checked) {
+      facturaToggleCF(false);
+      cfCheck.checked = false;
+      const track = document.getElementById('f-cf-track');
+      const thumb = document.getElementById('f-cf-thumb');
+      if (track) track.style.background = 'var(--b3)';
+      if (thumb) thumb.style.left = '2px';
+    }
+    const fNombre = document.getElementById('f-nombre');
+    if (fNombre && !fNombre.value) fNombre.value = r.comprador.nombre;
+    const fCuit = document.getElementById('f-cuit');
+    if (fCuit && !fCuit.value && r.comprador.cuitDniCuil) fCuit.value = r.comprador.cuitDniCuil;
+    const fTel = document.getElementById('f-tel');
+    if (fTel && !fTel.value && r.comprador.tel) fTel.value = r.comprador.tel;
+    const fDir = document.getElementById('f-dir');
+    if (fDir && !fDir.value && r.comprador.dir) fDir.value = r.comprador.dir;
+  }
+  closeImportDocSheet();
+  renderFactItems();
+  toast(`Remito ${r.nro} importado — ${_factItems.length} artículos`);
 }
 
 /* ─── REMITO ─── */
