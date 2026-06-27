@@ -2736,9 +2736,9 @@ function smartAlerts() {
 function smartAlertsCard() {
   const alerts = smartAlerts();
   if (!alerts.length) return '';
-  return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(251,191,36,.15);border-radius:14px;padding:16px 18px;margin-bottom:24px">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:12px">Alertas</div>
-    ${alerts.map((a,i)=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;${i<alerts.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}"><span style="font-size:15px;line-height:1.4;flex-shrink:0">${a.icon}</span><span style="font-size:13px;color:var(--si);line-height:1.5">${esc(a.text)}</span></div>`).join('')}
+  return `<div class="card mb20">
+    <div class="sh mb12" style="margin-top:0">Alertas inteligentes</div>
+    ${alerts.map(a=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--b2)"><span style="font-size:16px;line-height:1.3">${a.icon}</span><span style="font-size:13px;color:var(--di)">${esc(a.text)}</span></div>`).join('')}
   </div>`;
 }
 function purchaseGain(p) {
@@ -3854,8 +3854,6 @@ function pgDash() {
   const spTce  = ps.slice(-8).map(p=>p.r?.TCE||0);
   const settings = DB.get('settings',{});
   const goal = parseFloat(settings.monthlyGoal)||0;
-
-  // Meta del mes
   let goalCard = '';
   if (goal > 0) {
     const curMonth = ps.filter(p=>{const d=new Date(p.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();})
@@ -3865,28 +3863,25 @@ function pgDash() {
     const C = 2*Math.PI*52;
     const offset = C*(1-ratio);
     const done = pct >= 100;
-    goalCard = `<div class="card goal-card mb16" data-done="${done?'1':'0'}" data-month-key="${now.getFullYear()}-${now.getMonth()}" style="border:1px solid ${done?'rgba(74,222,128,.2)':'rgba(255,255,255,.06)'};background:${done?'rgba(74,222,128,.04)':'rgba(20,20,20,1)'};border-radius:14px;padding:20px 24px">
-      <div style="display:flex;align-items:center;gap:20px">
-        <div class="goal-ring-wrap${done?' complete':''}" style="flex-shrink:0">
-          <svg class="goal-ring" width="80" height="80" viewBox="0 0 120 120">
-            <circle class="goal-ring-bg" cx="60" cy="60" r="52"/>
-            <circle class="goal-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-offset="${offset.toFixed(2)}" style="stroke:${done?'var(--gr)':'var(--ud)'}"/>
-          </svg>
-          <div class="goal-ring-label">
-            <div class="goal-ring-pct" style="font-size:18px;color:${done?'var(--gr)':'var(--ud)'}">${pct}%</div>
-          </div>
+    goalCard = `<div class="card goal-card mb20" data-done="${done?'1':'0'}" data-month-key="${now.getFullYear()}-${now.getMonth()}">
+      <div class="goal-ring-wrap${done?' complete':''}">
+        <svg class="goal-ring" width="120" height="120" viewBox="0 0 120 120">
+          <circle class="goal-ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="goal-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-offset="${offset.toFixed(2)}"/>
+        </svg>
+        <div class="goal-ring-label">
+          <div class="goal-ring-pct">${pct}%</div>
         </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:6px">Meta del mes</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--ch);line-height:1">${fmtA(curMonth)}</div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--di);margin-top:3px">de ${fmtA(goal)}</div>
-          <div style="font-size:11px;color:${done?'var(--gr)':'var(--di)'};margin-top:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">${done?'Meta alcanzada':`Faltan ${fmtA(Math.max(goal-curMonth,0))}`}</div>
-        </div>
+      </div>
+      <div class="goal-info">
+        <div class="sc-l">Meta del mes</div>
+        <div class="goal-amounts">${fmtA(curMonth)} <span class="goal-sep">/</span> ${fmtA(goal)}</div>
+        <div class="sc-s">${done?'¡Meta alcanzada! 🎉':`Faltan ${fmtA(Math.max(goal-curMonth,0))} para llegar`}</div>
       </div>
     </div>`;
   }
 
-  // Monotributo
+  // Monotributo billing limit card
   const monoLimit = parseFloat(settings.monotributoLimit)||0;
   let monoCard = '';
   if (monoLimit > 0) {
@@ -3898,28 +3893,25 @@ function pgDash() {
     const billed = billedFacturas + billedSales;
     const monoRatio = Math.min(billed/monoLimit,1);
     const monoPct = Math.round(monoRatio*100);
-    const monoColor = monoPct>=90?'var(--re)':monoPct>=70?'var(--ye)':'var(--gr)';
-    const monoAlert = monoPct>=90?'Límite casi alcanzado':monoPct>=70?'Cerca del límite':'Dentro del límite';
-    monoCard = `<div class="card mb16" style="border:1px solid ${monoPct>=90?'rgba(248,113,113,.2)':monoPct>=70?'rgba(251,191,36,.15)':'rgba(255,255,255,.06)'};border-radius:14px;padding:18px 20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px">
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:4px">Monotributo ${curYear}</div>
-          <div style="display:flex;align-items:baseline;gap:8px">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${monoColor};line-height:1">${monoPct}%</div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--si)">${fmtA(billed)} <span style="color:var(--di);font-size:12px">/ ${fmtA(monoLimit)}</span></div>
+    const monoColor = monoPct>=90?'#f87171':monoPct>=70?'#fbbf24':'#4ade80';
+    const monoAlert = monoPct>=90?'⚠ Límite casi alcanzado':monoPct>=70?'Cerca del límite — revisá tu categoría':'Dentro del límite';
+    monoCard = `<div class="card mb20" style="padding:18px 20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div style="flex:1">
+          <div class="sc-l" style="margin-bottom:2px">Facturación anual · Monotributo ${curYear}</div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <div class="mono-pct-lbl" style="color:${monoColor}">${monoPct}%</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--si)">${fmtA(billed)} <span style="color:var(--di);font-size:13px">/ ${fmtA(monoLimit)}</span></div>
           </div>
+          <div class="mono-bar-wrap"><div class="mono-bar" id="mono-bar-fill" style="width:0%;background:${monoColor}" data-target="${(monoRatio*100).toFixed(1)}"></div></div>
+          <div class="mono-limit-lbl">${monoAlert} · Quedan ${fmtA(Math.max(monoLimit-billed,0))}</div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:${monoColor};font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;font-weight:700">${monoAlert}</div>
-          <div style="font-size:11px;color:var(--di);margin-top:2px">Quedan ${fmtA(Math.max(monoLimit-billed,0))}</div>
-        </div>
+        <button class="btn-g btn-sm" onclick="navigate('config')" style="flex-shrink:0;margin-top:2px">Editar límite</button>
       </div>
-      <div class="mono-bar-wrap" style="margin:0"><div class="mono-bar" id="mono-bar-fill" style="width:0%;background:${monoColor}" data-target="${(monoRatio*100).toFixed(1)}"></div></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn-g btn-sm" onclick="navigate('config')" style="height:28px;font-size:11px">Editar límite</button></div>
     </div>`;
   }
 
-  // Ventas del mes
+  // Resumen de ventas del mes en curso, para que el dashboard no muestre solo el lado de compras
   const sales = DB.get('sales',[]);
   const salesMonth = sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   const ventasMes = salesMonth.reduce((a,s)=>a+saleRevenue(s),0);
@@ -3928,89 +3920,76 @@ function pgDash() {
   const last8Sales = sales.slice(-8);
   const spVentas = last8Sales.map(saleRevenue);
   const spGanVentas = last8Sales.map(saleProfit);
-
-  // Helpers de stat cell para el dashboard
-  const dStat = (lbl, val, color, spark='', sub='', trend='') => `
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${lbl}</div>
-      <div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:${color};line-height:1">${val}</div>
-        ${trend?`<div style="font-size:11px;color:${tceUp?'var(--re)':'var(--gr)'};margin-top:4px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px">${trend}</div>`:''}
-        ${sub&&!trend?`<div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px">${sub}</div>`:''}
-      </div>
-      ${spark}
-    </div>`;
-
-  const ventasSection = sales.length ? `
-  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Ventas</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
-    ${dStat('Ingresos del mes', ventasMes?`<span class="count-val" data-target="${ventasMes}">${fmtA(ventasMes)}</span>`:'—', 'var(--gr)', sparkline(spVentas,'#4ade80'), `${salesMonth.length} venta${salesMonth.length!==1?'s':''} este mes`)}
-    ${dStat('Ganancia del mes', gananciaVentasMes?`<span class="count-val" data-target="${gananciaVentasMes}">${fmtA(gananciaVentasMes)}</span>`:'—', 'var(--ye)', sparkline(spGanVentas,'#fbbf24'), 'según ventas registradas')}
-    ${dStat('Unidades vendidas', unidadesMes||'—', 'var(--us)', '', 'en el mes actual')}
-  </div>` : '';
-
-  // Últimas compras con el nuevo estilo de card
-  const lastCards = last.length ? last.map(p=>`
-    <div onclick="navigate('historial')" style="display:flex;align-items:center;gap:0;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:border-color .18s" onmouseover="this.style.borderColor='rgba(255,255,255,.12)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
-      <div style="flex:1;min-width:0;padding:14px 16px">
-        <div style="font-size:14px;font-weight:700;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${esc(p.name||'Sin nombre')}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);letter-spacing:.5px">${fmtD(p.date)} · ${p.products?.length||0} producto${(p.products?.length||0)!==1?'s':''} · TCE ${fmtA(p.r?.TCE||0)}</div>
-      </div>
-      <div style="padding:14px 18px;text-align:right;flex-shrink:0;border-left:1px solid rgba(255,255,255,.06)">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--us);line-height:1">${fmtA(p.r?.ars||0)}</div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--gr);margin-top:3px;line-height:1">gan. ${fmtA(purchaseGain(p))}</div>
-      </div>
-    </div>`).join('') : emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.');
-
-  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  const mesNombre = meses[now.getMonth()];
-
-  return `<div class="pg">
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
-    <div class="sh" style="margin:0">Resumen</div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);letter-spacing:.5px;text-transform:uppercase">${mesNombre} ${now.getFullYear()}</div>
-  </div>
-
-  <!-- Hero: total invertido -->
-  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px">
-    <div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Total invertido</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:40px;font-weight:700;color:var(--ch);line-height:1">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);margin-top:6px;letter-spacing:.5px">${ps.length} compra${ps.length!==1?'s':''} · ${fmtU(totU)}</div>
+  const ventasSection = sales.length ? `<div class="sh mb16">Ventas</div>
+  <div class="g3 mb20">
+    <div class="sc accent-g">
+      <div class="sc-l">Ventas del mes</div>
+      <div class="sc-v g">${ventasMes?`<span class="count-val" data-target="${ventasMes}">${fmtA(ventasMes)}</span>`:'—'}</div>
+      <div class="sc-s">${salesMonth.length} venta${salesMonth.length!==1?'s':''} este mes</div>
+      ${sparkline(spVentas,'#4ade80')}
     </div>
-    <div style="flex-shrink:0;opacity:.75">${sparkline(spTot,'#4ade80',130,52)}</div>
+    <div class="sc accent-y">
+      <div class="sc-l">Ganancia del mes</div>
+      <div class="sc-v y">${gananciaVentasMes?`<span class="count-val" data-target="${gananciaVentasMes}">${fmtA(gananciaVentasMes)}</span>`:'—'}</div>
+      <div class="sc-s">según ventas registradas</div>
+      ${sparkline(spGanVentas,'#fbbf24')}
+    </div>
+    <div class="sc accent-u">
+      <div class="sc-l">Unidades vendidas</div>
+      <div class="sc-v u">${unidadesMes||'—'}</div>
+      <div class="sc-s">en el mes actual</div>
+    </div>
+  </div>` : '';
+  return `<div class="pg">
+  <div class="sh mb20">Resumen general</div>
+  <div class="sc-hero mb20">
+    <div>
+      <div class="sc-l">Total invertido</div>
+      <div class="sc-v g sc-hero-val">${tot?`<span class="count-val" data-target="${tot}">${fmtA(tot)}</span>`:'—'}</div>
+      <div class="sc-s">${ps.length} compra${ps.length!==1?'s':''} · ${fmtU(totU)}</div>
+    </div>
+    <div class="sc-hero-spark">${sparkline(spTot,'#4ade80',140,56)}</div>
   </div>
-
   ${goalCard}
   ${monoCard}
-
-  <!-- Compras -->
-  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Compras</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
-    ${dStat('Ganancia proyectada', gan?`<span class="count-val" data-target="${gan}">${fmtA(gan)}</span>`:'—', 'var(--ye)', sparkline(spGan,'#fbbf24'), 'según márgenes guardados')}
-    ${dStat('Último TCE', ltce?`<span class="count-val" data-target="${ltce}">${fmtA(ltce)}</span>`:'—', 'var(--us)', sparkline(spTce,'#2dd4bf'), ps.length?fmtD(ps[ps.length-1].date):'sin compras', ps.length>1?(tceUp?`▲ ${Math.abs(tceDiff).toFixed(1)}% vs anterior`:`▼ ${Math.abs(tceDiff).toFixed(1)}% vs anterior`):'')}
-    ${dStat('TCE promedio', tce?`<span class="count-val" data-target="${tce}">${fmtA(tce)}</span>`:'—', 'var(--ch)', sparkline(spTce,'rgba(237,217,180,.6)'), `en ${ps.length} compra${ps.length!==1?'s':''}`)}
+  <div class="sh mb16">Compras</div>
+  <div class="g3 mb20">
+    <div class="sc accent-y">
+      <div class="sc-l">Ganancia proyectada</div>
+      <div class="sc-v y">${gan?`<span class="count-val" data-target="${gan}">${fmtA(gan)}</span>`:'—'}</div>
+      <div class="sc-s">según márgenes guardados</div>
+      ${sparkline(spGan,'#fbbf24')}
+    </div>
+    <div class="sc accent-u">
+      <div class="sc-l">Último TCE</div>
+      <div class="sc-v u">${ltce?`<span class="count-val" data-target="${ltce}">${fmtA(ltce)}</span>`:'—'}</div>
+      ${ps.length>1?`<div class="sc-trend ${tceUp?'up':'dn'}">${tceUp?'▲':'▼'} ${Math.abs(tceDiff).toFixed(1)}% vs anterior</div>`:`<div class="sc-s">${ps.length?fmtD(ps[ps.length-1].date):'sin compras'}</div>`}
+      ${sparkline(spTce,'#2dd4bf')}
+    </div>
+    <div class="sc accent-d">
+      <div class="sc-l">TCE promedio histórico</div>
+      <div class="sc-v">${tce?`<span class="count-val" data-target="${tce}">${fmtA(tce)}</span>`:'—'}</div>
+      <div class="sc-s">en ${ps.length} compra${ps.length!==1?'s':''}</div>
+      ${sparkline(spTce,'#EDD9B4')}
+    </div>
   </div>
-
   ${ventasSection}
   ${smartAlertsCard()}
-
-  <!-- Gráficos -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+  <div class="g2 mb20">
     <div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:8px">Evolución TCE</div>
-      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="ch-tce" style="width:100%;min-height:140px"></div>${ps.length<2?'<div class="empty" style="margin-top:-140px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
+      <div class="sh mb16">Evolución del TCE</div>
+      <div class="card chart-card" style="padding:16px"><div id="ch-tce" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
     <div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:8px">Ganancia proyectada</div>
-      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="ch-gan" style="width:100%;min-height:140px"></div>${ps.length<2?'<div class="empty" style="margin-top:-140px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
+      <div class="sh mb16">Ganancia proyectada</div>
+      <div class="card chart-card" style="padding:16px"><div id="ch-gan" style="width:100%;min-height:150px"></div>${ps.length<2?'<div class="empty" style="margin-top:-150px;position:relative;z-index:1">Mínimo 2 compras</div>':''}</div>
     </div>
   </div>
-
-  <!-- Últimas compras -->
-  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);font-family:'Barlow Condensed',sans-serif;margin-bottom:10px">Últimas compras</div>
-  ${lastCards}
-  <div style="margin-top:16px"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
+  <div>
+    <div class="sh mb16">Últimas compras</div>
+    ${last.length?last.map(p=>`<div class="mc" onclick="navigate('historial')"><div><div class="mc-n">${esc(p.name||'Sin nombre')}</div><div class="mc-d">${fmtD(p.date)} · ${p.products?.length||0} productos · TCE ${fmtA(p.r?.TCE||0)}</div></div><div><div class="mc-v">${fmtA(p.r?.ars||0)}</div><div class="mc-s" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:1.2px;text-transform:uppercase;font-weight:700">gan. ${fmtA(purchaseGain(p))}</div></div></div>`).join(''):emptyState(EMPTY_ICONS.dashboard,'Sin compras','Guardá tu primera compra\npara ver el resumen aquí.')}
+  </div>
+  <div class="mt20"><button class="btn-go" onclick="navigate('compra')">+ Nueva compra</button></div>
 </div>`;
 }
 
@@ -5393,13 +5372,8 @@ function pgVentas(){
   const ranking = salesProductRanking(sales);
 
   return `<div class="pg">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px">
-    <div class="sh" style="margin:0">Ventas</div>
-  </div>
-
-  <!-- Formulario de registro -->
-  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;margin-bottom:20px">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Registrar venta</div>
+  <div class="sh mb16">Registrar venta</div>
+  <div class="card mb24">
     <div class="fg-w mb12">
       <div style="flex:1;min-width:220px"><label class="fl">Canal de venta</label><div class="ch-tg" id="sale-channel-tg">
         <button type="button" class="ch-tg-btn active" data-ch="ml" onclick="setSaleChannel('ml')">Mercado Libre</button>
@@ -5407,6 +5381,7 @@ function pgVentas(){
       </div><input type="hidden" id="sale-channel" value="ml"></div>
     </div>
 
+    <!-- ── CAMPOS ML ── -->
     <div class="sale-ml-only">
       <div class="fg-w">
         <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod" onchange="fillSaleCost()">
@@ -5416,13 +5391,14 @@ function pgVentas(){
         <div style="flex:0 0 90px;min-width:80px"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="sale-qty" value="1" min="1" step="1"></div></div>
       </div>
       <div class="fg-w mt10">
-        <div style="flex:1;min-width:160px"><label class="fl">Precio al comprador (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
+        <div style="flex:1;min-width:160px"><label class="fl">Precio de venta al comprador (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-price" min="0" step="100" placeholder="0"></div></div>
         <div style="flex:1;min-width:160px"><label class="fl">Lo que recibí de ML (ARS) <span style="color:var(--re)">*</span></label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-ml-received" min="0" step="100" placeholder="Monto acreditado por ML"></div></div>
         <div style="flex:1;min-width:160px"><label class="fl">Costo del producto (ARS, c/u)</label><div class="iw"><span class="ipre">$</span><input type="number" id="sale-cost" min="0" step="100" placeholder="0" oninput="syncSaleMargin('cost')"></div></div>
       </div>
-      <div class="hint mt10">Ganancia real = <strong>Lo que recibí de ML</strong> − Costo. El monto de ML ya incluye comisión, envío y cualquier bonus.</div>
+      <div class="hint mt10">Ganancia real = <strong>Lo que recibí de ML</strong> − Costo. El monto de ML ya incluye la deducción de comisión, envío, y cualquier bonus (Flex, oferta compartida).</div>
     </div>
 
+    <!-- ── CAMPOS VENTA DIRECTA ── -->
     <div class="sale-directa-only" style="display:none">
       <div class="fg-w">
         <div style="flex:2;min-width:200px"><label class="fl">Producto</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><select id="sale-prod-d" onchange="fillSaleCostDirecta()">
@@ -5445,68 +5421,48 @@ function pgVentas(){
         </div>
         <div style="flex:1;min-width:160px"><label class="fl">Teléfono WhatsApp (opcional)</label><div class="iw"><input type="text" id="sale-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
       </div>
-      <div class="hint mt10" id="sale-channel-hint">Venta directa: la rentabilidad real es precio − costo.</div>
+      <div class="hint mt10" id="sale-channel-hint">Venta directa: la rentabilidad real es precio − costo. Podés generar un comprobante y enviarlo por WhatsApp.</div>
     </div>
 
-    <div class="fe mt16"><button class="btn-go" onclick="addSale()">+ Registrar venta</button></div>
+    <div class="fe mt16"><button class="btn-p" onclick="addSale()">+ Registrar venta</button></div>
   </div>
 
-  <!-- Stats totales -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:24px">
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Ingresos totales</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--gr);line-height:1">${totalRev?fmtA(totalRev):'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${sales.length} venta${sales.length!==1?'s':''} · ${totalUnits} ud${totalUnits!==1?'s':''}</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Ganancia real</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ye);line-height:1">${totalRev?fmtA(totalProfit):'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">neto de comisión y costo</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Margen promedio</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--us);line-height:1">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">sobre ingresos</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Ticket promedio</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ch);line-height:1">${sales.length?fmtA(totalRev/sales.length):'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">por venta</div>
-    </div>
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Ingresos totales</div><div class="sc-v g">${totalRev?fmtA(totalRev):'—'}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''} · ${totalUnits} unidad${totalUnits!==1?'es':''}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${totalRev?fmtA(totalProfit):'—'}</div><div class="sc-s">neto de comisión, envío y costo</div></div>
+    <div class="sc accent-u"><div class="sc-l">Margen real promedio</div><div class="sc-v u">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
+    <div class="sc accent-d"><div class="sc-l">Ticket promedio</div><div class="sc-v">${sales.length?fmtA(totalRev/sales.length):'—'}</div><div class="sc-s">por venta</div></div>
   </div>
 
-  <!-- Ranking de rentabilidad -->
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Ranking por producto</div>
-  ${ranking.length ? `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;margin-bottom:24px">
+  <div class="sh mb16">Ranking de rentabilidad por producto</div>
+  ${ranking.length ? `<div class="card mb24" style="padding:0;overflow:hidden">
     ${ranking.map((r,i)=>{
-      const rColor=['#c9a227','#8a8a8a','#8a5c2e'];
-      const rBorder=['rgba(201,162,39,.2)','rgba(138,138,138,.14)','rgba(138,92,46,.18)'];
-      const barColor = r.marginPct>=20?'var(--gr)':r.marginPct>=10?'var(--ye)':'var(--re)';
-      const barW = Math.min(100, Math.abs(r.marginPct));
-      return `<div style="display:flex;align-items:center;gap:0;${i<ranking.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}">
-        <div style="width:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:stretch;border-right:1px solid rgba(255,255,255,.05)">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:${i<3?rColor[i]:'var(--mu)'}">${i+1}</span>
-        </div>
-        <div style="flex:1;min-width:0;padding:12px 14px">
-          <div style="font-size:14px;font-weight:700;color:var(--ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${esc(r.name)}</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di)">${r.units} ud${r.units!==1?'s':''}</span>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:${barColor}">${r.marginPct.toFixed(1)}% margen</span>
+      const rankColors=['var(--ye)','rgba(255,255,255,.45)','#cd7f32'];
+      const rankColor = i<3 ? rankColors[i] : 'var(--di)';
+      const barW = Math.min(100, r.marginPct);
+      return `<div style="padding:14px 16px;${i<ranking.length-1?'border-bottom:1px solid var(--b2)':''}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid ${rankColor};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${rankColor}">${i===0?'🏆':i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span style="font-size:11px;color:var(--di)">${r.units} ud${r.units!==1?'s':''} vendida${r.units!==1?'s':''}</span>
+              <span style="font-size:11px;font-weight:700;color:${r.marginPct>=20?'var(--gr)':r.marginPct>=10?'var(--ye)':'var(--re)'}">${r.marginPct.toFixed(1)}% margen</span>
+            </div>
+            <div style="margin-top:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${r.marginPct>=20?'var(--gr)':r.marginPct>=10?'var(--ye)':'var(--re)'};border-radius:2px;transition:width .4s"></div>
+            </div>
           </div>
-          <div style="height:2px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden">
-            <div style="height:100%;width:${barW}%;background:${barColor};border-radius:2px"></div>
+          <div style="flex-shrink:0;text-align:right">
+            <div style="font-weight:700;font-size:15px;color:${r.profit>=0?'var(--gr)':'var(--re)'}">${fmtA(r.profit)}</div>
+            <div style="font-size:10px;color:var(--di);margin-top:2px">de ${fmtA(r.revenue)}</div>
           </div>
-        </div>
-        <div style="padding:12px 16px;text-align:right;flex-shrink:0;border-left:1px solid rgba(255,255,255,.05)">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:${r.profit>=0?'var(--gr)':'var(--re)'};line-height:1">${fmtA(r.profit)}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--di);margin-top:3px">de ${fmtA(r.revenue)}</div>
         </div>
       </div>`;}).join('')}
-  </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad por producto.</div>'}
+  </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
 
-  <!-- Historial de ventas -->
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Historial</div>
-  ${sales.length ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+  <div class="sh mb16">Historial de ventas</div>
+  ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
     ${sales.map(s=>{
       const items=saleItems(s);
       const multi=items.length>1;
@@ -5515,57 +5471,57 @@ function pgVentas(){
       const profit = saleProfit(s);
       const profitColor = profit>=0?'var(--gr)':'var(--re)';
       const chBadge = isML
-        ? `<span style="display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ye);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle">ML</span>`
-        : `<span style="display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--in);background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.2);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle">DIRECTA</span>`;
+        ? `<span class="badge badge-ml">ML</span>`
+        : `<span class="badge badge-dim">DIRECTA</span>`;
       const precio = s.priceARS||items[0]?.p||0;
       const recibido = s.mlReceived||0;
       const costo = s.costARS||items[0]?.cost||0;
-      return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden">
-        <div style="display:flex;align-items:flex-start;gap:0">
-          <div style="flex:1;min-width:0;padding:14px 16px">
-            <div style="font-size:14px;font-weight:700;color:var(--ch);line-height:1.3;margin-bottom:4px">${titulo}${chBadge}</div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);letter-spacing:.3px">${s.nro?`<span style="color:rgba(255,255,255,.3)">${esc(s.nro)}</span> · `:''}${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</div>
-            ${isML ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);letter-spacing:.5px;margin-bottom:2px">VENDIDO</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700">${fmtA(precio)}</div>
+      return `<div style="padding:14px 16px;border-bottom:1px solid var(--b2)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13.5px;line-height:1.3">${titulo}${chBadge}</div>
+            <div style="font-size:11px;color:var(--di);margin-top:3px">${s.nro?`<span style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;color:rgba(255,255,255,.35)">${esc(s.nro)}</span> · `:''} ${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</div>
+            ${isML ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">VENDIDO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(precio)}</div>
               </div>
-              ${recibido?`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);letter-spacing:.5px;margin-bottom:2px">RECIBIDO ML</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--ye)">${fmtA(recibido)}</div>
+              ${recibido?`<div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">RECIBIDO ML</div>
+                <div style="font-size:12px;font-weight:600;color:var(--ye)">${fmtA(recibido)}</div>
               </div>`:''}
-              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);letter-spacing:.5px;margin-bottom:2px">COSTO</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700">${fmtA(costo)}</div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">COSTO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(costo)}</div>
               </div>
-            </div>` : (!multi?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);letter-spacing:.5px;margin-bottom:2px">VENTA</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700">${fmtA(items[0].p)}</div>
+            </div>` : (!multi?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">VENTA</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(items[0].p)}</div>
               </div>
-              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 10px">
-                <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);letter-spacing:.5px;margin-bottom:2px">COSTO</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700">${fmtA(items[0].cost||0)}</div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:6px;padding:4px 8px">
+                <div style="font-size:9px;color:var(--di);margin-bottom:1px">COSTO</div>
+                <div style="font-size:12px;font-weight:600">${fmtA(items[0].cost||0)}</div>
               </div>
             </div>`:'')}
-            ${!isML?`<div class="hi-acts" style="margin-top:10px">
-              <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
-              ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
-            </div>`:''}
-            ${multi?`<div style="overflow-x:auto;margin-top:10px">
-              <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
-              <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
-              </table>
-            </div>`:''}
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;padding:14px 16px;border-left:1px solid rgba(255,255,255,.06);flex-shrink:0;min-width:100px">
+          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
             <div style="text-align:right">
-              <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--di);margin-top:3px;letter-spacing:.5px">GANANCIA</div>
+              <div style="font-size:18px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
+              <div style="font-size:9px;color:var(--di);margin-top:2px;letter-spacing:.5px;text-transform:uppercase">ganancia</div>
             </div>
-            <button class="btn-d" onclick="delSale('${s.id}')" style="margin-top:12px">${ic('close',12)}</button>
+            <button class="btn-d" onclick="delSale('${s.id}')">${ic('close',12)}</button>
           </div>
         </div>
+        ${multi?`<div style="overflow-x:auto;margin-top:10px">
+          <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
+          <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>`:''}
+        ${!isML?`<div class="hi-acts" style="margin-top:8px">
+          <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
+          ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
+        </div>`:''}
       </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
@@ -5639,27 +5595,11 @@ function pgViaje(){
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Total estimado</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--gr);line-height:1">${fmtU(totalUSD)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${t.tce?'≈ '+fmtA(totalARS):'cargá tipo de cambio'}</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Presupuesto</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ye);line-height:1">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${t.budgetUSD?(overBudget?'excedido':'dentro del presupuesto'):'sin definir'}</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Comprado</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--us);line-height:1">${fmtU(checkedUSD)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Tipo de cambio</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--ch);line-height:1">${t.tce?fmtA(t.tce):'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">para conversión</div>
-    </div>
+  <div class="g4 mb20">
+    <div class="sc accent-g"><div class="sc-l">Total estimado</div><div class="sc-v g">${fmtU(totalUSD)}</div><div class="sc-s">${t.tce?'≈ '+fmtA(totalARS):'cargá un tipo de cambio para ver en ARS'}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Presupuesto</div><div class="sc-v y">${t.budgetUSD?fmtU(t.budgetUSD):'—'}</div><div class="sc-s">${t.budgetUSD ? (overBudget?ic('alert')+' excedido':'dentro del presupuesto') : 'sin definir'}</div></div>
+    <div class="sc accent-u"><div class="sc-l">Comprado</div><div class="sc-v u">${fmtU(checkedUSD)}</div><div class="sc-s">${t.items.filter(i=>i.checked).length} de ${t.items.length} ítems</div></div>
+    <div class="sc accent-d"><div class="sc-l">Tipo de cambio</div><div class="sc-v">${t.tce?fmtA(t.tce):'—'}</div><div class="sc-s">usado para la conversión</div></div>
   </div>
 
   ${t.budgetUSD>0?`
@@ -5705,7 +5645,7 @@ function pgCat() {
   const lowStock=DB.get('settings',{}).lowStockThreshold||2;
   return `<div class="pg">
   <div class="cat-hdr mb20">
-    <div class="sh" style="margin:0">Productos</div>
+    <div class="sh" style="margin:0">Catálogo de productos</div>
     <div class="cat-hdr-acts">
       <button class="btn-g btn-sm ${ro?'on':''}" onclick="toggleCatReorder()" title="Reordenar productos">${ic('grip')} <span class="cat-reorder-t">${ro?'Listo':'Reordenar'}</span></button>
       <button class="btn-g btn-sm" onclick="openStockMovs()">${ic('exchange')} <span class="cat-movs-t">Movimientos</span></button>
@@ -6186,14 +6126,13 @@ function statsRecords(ps) {
   const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
   const topProd = Object.entries(pm).sort((a,b)=>b[1]-a[1])[0];
   if (topProd) cards.push({icon:ic('star',16),lbl:'Producto más comprado',val:topProd[0],sub:`${topProd[1]} unidades en total`});
-  return `
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Récords</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
-    ${cards.map(c=>`<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="color:var(--ud);margin-bottom:10px;opacity:.8">${c.icon}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">${c.lbl}</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch);line-height:1.2;margin-bottom:4px">${esc(c.val)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);font-family:'Barlow Condensed',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.sub)}</div>
+  return `<div class="sh mb16">Récords</div>
+  <div class="g4 mb24">
+    ${cards.map(c=>`<div class="record-card">
+      <div class="record-icon">${c.icon}</div>
+      <div class="sc-l">${c.lbl}</div>
+      <div class="record-val">${esc(c.val)}</div>
+      <div class="sc-s">${esc(c.sub)}</div>
     </div>`).join('')}
   </div>`;
 }
@@ -6208,14 +6147,13 @@ function salesRecords(sales) {
   const topUnits = ranking.slice().sort((a,b)=>b.units-a.units)[0];
   if (topUnits) cards.push({icon:ic('star',16),lbl:'Producto más vendido',val:topUnits.name||'—',sub:`${topUnits.units} unidades en total`});
   if (ranking.length) cards.push({icon:ic('exchange',16),lbl:'Mejor margen',val:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].marginPct.toFixed(1)+'%',sub:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].name||'—'});
-  return `
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Récords de ventas</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
-    ${cards.map(c=>`<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="color:var(--gr);margin-bottom:10px;opacity:.8">${c.icon}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">${c.lbl}</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch);line-height:1.2;margin-bottom:4px">${esc(c.val)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);font-family:'Barlow Condensed',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.sub)}</div>
+  return `<div class="sh mb16">Récords de ventas</div>
+  <div class="g4 mb24">
+    ${cards.map(c=>`<div class="record-card">
+      <div class="record-icon">${c.icon}</div>
+      <div class="sc-l">${c.lbl}</div>
+      <div class="record-val">${esc(c.val)}</div>
+      <div class="sc-s">${esc(c.sub)}</div>
     </div>`).join('')}
   </div>`;
 }
@@ -6242,51 +6180,33 @@ function pgGastos() {
   const totAll = gastos.reduce((s,g)=>s+g.amount,0);
   const byCat = {};
   gastos.forEach(g=>{ byCat[g.cat]=(byCat[g.cat]||0)+g.amount; });
-  const topCatEntry = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
   return `<div class="pg">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div class="sh" style="margin:0">Gastos</div>
+  <div class="dash-hdr mb24">
+    <div class="sh" style="margin:0">Gastos operativos</div>
   </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(248,113,113,.15);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Gasto del mes</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--re);line-height:1">${fmtA(totMes)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${thisMes.length} registro${thisMes.length!==1?'s':''}</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Total histórico</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--re);line-height:1">${fmtA(totAll)}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${gastos.length} registros</div>
-    </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Mayor categoría</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--ch);line-height:1;margin-top:4px">${topCatEntry?_gastoCat(topCatEntry[0]).label:'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${topCatEntry?fmtA(topCatEntry[1]):'sin datos'}</div>
-    </div>
+  <div class="g3 mb24">
+    <div class="sc accent-d"><div class="sc-l">Gasto del mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totMes)}</div><div class="sc-s">${thisMes.length} registro${thisMes.length!==1?'s':''}</div></div>
+    <div class="sc"><div class="sc-l">Total histórico</div><div class="sc-v" style="color:var(--re)">${fmtA(totAll)}</div><div class="sc-s">${gastos.length} registros</div></div>
+    <div class="sc accent-d"><div class="sc-l">Mayor categoría</div><div class="sc-v" style="font-size:15px">${Object.keys(byCat).length?_gastoCat(Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]?.[0]).label:'—'}</div><div class="sc-s">${Object.keys(byCat).length?fmtA(Object.values(byCat).sort((a,b)=>b-a)[0]):'sin datos'}</div></div>
   </div>
-
-  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;margin-bottom:20px">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Registrar gasto</div>
+  <div class="card mb24">
+    <div style="font-size:13px;color:var(--ch);margin-bottom:14px;font-weight:600">Registrar gasto</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:120px"><label class="fl">Fecha</label><div class="iw"><input type="date" id="g-date" value="${now.toISOString().slice(0,10)}"></div></div>
       <div style="flex:2;min-width:180px"><label class="fl">Descripción</label><div class="iw"><input type="text" id="g-desc" placeholder="Ej: Cajas medianas x50"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl">Categoría</label><div class="iw"><select id="g-cat">${GASTO_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select></div></div>
       <div style="flex:1;min-width:140px"><label class="fl">Monto (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="g-amount" min="0" step="100" placeholder="0"></div></div>
-      <button class="btn-go" style="height:42px;padding:0 20px" onclick="saveGasto()">Agregar</button>
+      <button class="btn-p" style="height:42px;padding:0 20px" onclick="saveGasto()">Agregar</button>
     </div>
   </div>
-
-  ${gastos.length ? `
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Historial</div>
-  <div style="display:flex;flex-direction:column;gap:6px">
+  ${gastos.length ? `<div class="sh mb12">Historial</div><div style="display:flex;flex-direction:column;gap:6px">
     ${gastos.map(g=>{
       const cat=_gastoCat(g.cat);
-      return `<div style="display:flex;align-items:center;gap:10px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${cat.color};background:${cat.color}18;border:1px solid ${cat.color}28;border-radius:4px;padding:2px 7px;flex-shrink:0">${cat.label}</span>
-        <span style="flex:1;font-size:13px;color:var(--ch);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.desc||'Sin descripción')}</span>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);flex-shrink:0">${fmtD(g.date)}</span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--re);flex-shrink:0">${fmtA(g.amount)}</span>
+      return `<div class="gasto-row">
+        <span class="gasto-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}28">${cat.label}</span>
+        <span class="gasto-desc">${esc(g.desc||'Sin descripción')}</span>
+        <span class="gasto-date">${fmtD(g.date)}</span>
+        <span class="gasto-amount">${fmtA(g.amount)}</span>
         <button class="btn-d btn-sm" onclick="delGasto('${g.id}')" style="flex-shrink:0">${ic('close')}</button>
       </div>`;
     }).join('')}
@@ -6340,64 +6260,48 @@ function pgStats() {
   const totGastosYear=gastosYear.reduce((s,g)=>s+g.amount,0);
   const totGastosMes=gastosMes.reduce((s,g)=>s+g.amount,0);
   const realNetYear=salesProfitTot-totGastosYear;
-  const stStat=(lbl,val,color='var(--ch)',sub='')=>`
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${lbl}</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:${color};line-height:1">${val}</div>
-      ${sub?`<div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${sub}</div>`:''}
-    </div>`;
-  const stChart=(title,id,h=160)=>`
-    <div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${title}</div>
-      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="${id}" style="width:100%;min-height:${h}px"></div></div>
-    </div>`;
-  const gastosSection=gastos.length?`
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Gastos operativos</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-    ${stStat('Gastos este mes',fmtA(totGastosMes),'var(--re)',`${gastosMes.length} registro${gastosMes.length!==1?'s':''}`)}
-    ${stStat('Gastos este año',fmtA(totGastosYear),'var(--re)',`${gastosYear.length} registros`)}
-    ${stStat('Ganancia neta anual',fmtA(realNetYear),'var(--ye)','ventas − gastos op.')}
+  const gastosSection=gastos.length?`<div class="sh mb16">Gastos operativos</div>
+  <div class="g3 mb24">
+    <div class="sc accent-d"><div class="sc-l">Gastos este mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosMes)}</div><div class="sc-s">${gastosMes.length} registro${gastosMes.length!==1?'s':''}</div></div>
+    <div class="sc accent-d"><div class="sc-l">Gastos este año</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosYear)}</div><div class="sc-s">${gastosYear.length} registros</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia neta anual</div><div class="sc-v y">${fmtA(realNetYear)}</div><div class="sc-s">ventas − gastos op.</div></div>
   </div>
-  <div style="margin-bottom:24px">${stChart('Gastos por categoría','ch-gastos',60)}</div>`:'';
-
+  <div class="card chart-card mb24"><div class="sh mb16">Gastos por categoría</div><div id="ch-gastos" style="width:100%;min-height:60px"></div></div>`:'';
   return `<div class="pg">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px">
+  <div class="dash-hdr mb24">
     <div class="sh" style="margin:0">Estadísticas</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Semanal</button>
-      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Mensual</button>
+    <div class="dash-hdr-acts">
+      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
+      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
     </div>
   </div>
-
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Compras</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-    ${stStat('Total invertido',fmtA(tot),'var(--gr)',`${ps.length} compras`)}
-    ${stStat('Ganancia proyectada',fmtA(gan),'var(--ye)','según márgenes')}
-    ${stStat('TCE promedio',tce?fmtA(tce):'—','var(--us)','ARS/USDT histórico')}
-    ${stStat('USDT comprado',fmtT(usdt),'var(--ch)','total histórico')}
+  <div class="sh mb16">Compras</div>
+  <div class="g4 mb24">
+    <div class="sc"><div class="sc-l">Total invertido</div><div class="sc-v g">${fmtA(tot)}</div><div class="sc-s">${ps.length} compras</div></div>
+    <div class="sc"><div class="sc-l">Ganancia proyectada</div><div class="sc-v y">${fmtA(gan)}</div><div class="sc-s">según márgenes</div></div>
+    <div class="sc"><div class="sc-l">TCE promedio</div><div class="sc-v">${tce?fmtA(tce):'—'}</div><div class="sc-s">ARS/USDT histórico</div></div>
+    <div class="sc"><div class="sc-l">USDT comprado</div><div class="sc-v u">${fmtT(usdt)}</div><div class="sc-s">total histórico</div></div>
   </div>
   ${statsRecords(ps)}
   ${ps.length<2?emptyState(EMPTY_ICONS.stats,'Sin datos suficientes','Necesitás al menos 2 compras\npara ver las estadísticas.'):`
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-    ${stChart('TCE por compra','ch-tce2',180)}
-    ${stChart('ARS invertido','ch-ars',180)}
+  <div class="g2 mb20">
+    <div class="card chart-card"><div class="sh mb16">TCE por compra</div><div id="ch-tce2" style="width:100%;min-height:200px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">ARS invertido</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
   </div>
-  <div style="margin-bottom:24px">${stChart('Productos más comprados','ch-prods',60)}</div>`}
-
+  <div class="card chart-card mb24"><div class="sh mb16">Productos más comprados</div><div id="ch-prods" style="width:100%;min-height:60px"></div></div>`}
   ${gastosSection}
-
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Ventas</div>
+  <div class="sh mb16">Ventas</div>
   ${!sales.length?emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá ventas para ver\nsu rentabilidad real aquí.'):`
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-    ${stStat('Ventas totales',fmtA(salesRev),'var(--gr)',`${sales.length} venta${sales.length!==1?'s':''}`)}
-    ${stStat('Ganancia real',fmtA(salesProfitTot),'var(--ye)','neta de comisiones')}
-    ${stStat('Unidades vendidas',String(salesUnits),'var(--ch)',`en ${sales.length} venta${sales.length!==1?'s':''}`)}
-    ${stStat('Margen promedio',salesMarginPct.toFixed(1)+'%','var(--us)','ganancia / facturado')}
+  <div class="g4 mb24">
+    <div class="sc accent-g"><div class="sc-l">Ventas totales</div><div class="sc-v g">${fmtA(salesRev)}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''}</div></div>
+    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${fmtA(salesProfitTot)}</div><div class="sc-s">neta de comisiones y envíos</div></div>
+    <div class="sc"><div class="sc-l">Unidades vendidas</div><div class="sc-v">${salesUnits}</div><div class="sc-s">en ${sales.length} venta${sales.length!==1?'s':''}</div></div>
+    <div class="sc accent-u"><div class="sc-l">Margen promedio</div><div class="sc-v u">${salesMarginPct.toFixed(1)}%</div><div class="sc-s">ganancia / facturado</div></div>
   </div>
   ${salesRecords(sales)}
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
-    ${stChart('Ventas por canal','ch-channel',60)}
-    ${stChart('Productos más rentables','ch-top-profit',60)}
+  <div class="g2 mb20">
+    <div class="card chart-card"><div class="sh mb16">Ventas por canal</div><div id="ch-channel" style="width:100%;min-height:60px"></div></div>
+    <div class="card chart-card"><div class="sh mb16">Productos más rentables</div><div id="ch-top-profit" style="width:100%;min-height:60px"></div></div>
   </div>`}
 </div>`;
 }
@@ -8227,13 +8131,10 @@ function pgPedidos() {
   const pedTotal = PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
 
   return `<div class="pg">
-  <div style="margin-bottom:20px">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">Nuevo</div>
-    <div style="font-size:22px;font-weight:700;color:var(--ch);line-height:1.1">Pedido / Presupuesto</div>
-  </div>
+  <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
 
-  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Datos del cliente</div>
+  <div class="card mb16">
+    <div class="sh mb16">Datos del cliente</div>
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
       <div style="flex:1;min-width:200px"><label class="fl mb8">Cliente</label>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
@@ -8251,9 +8152,9 @@ function pgPedidos() {
     <div class="hint mt12">Al elegir un cliente ya cargado se completan automáticamente su teléfono y CUIT/DNI guardados.</div>
   </div>
 
-  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px" class="items-card">
+  <div class="card mb16 items-card">
     <div class="fb mb16">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22)">Artículos</span>
+      <span class="sh-inline">Artículos</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatSheet()">Del catálogo</button>`:''}
         <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
@@ -8282,7 +8183,7 @@ function pgPedidos() {
   </div>
 
   ${peds.length>0?`<div>
-  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Pedidos y presupuestos</div>
+  <div class="sh mb16">Pedidos y presupuestos</div>
   ${peds.map((o,i)=>{
     const total=pedFinalTotal(o);
     return `<div class="hi"${stg(i)}>
@@ -8298,7 +8199,7 @@ function pgPedidos() {
     </div>
     <div class="hi-body${_pedEditId===o.id?' open':''}" id="ped${i}">
       ${_pedEditId===o.id?`
-      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin:12px 0 16px">
+      <div class="card mb16" style="margin-top:12px">
         <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
           <div style="flex:1;min-width:160px"><label class="fl mb8">Cliente</label>
           <div class="iw"><input type="text" id="pedit-cliente" value="${esc(o.cliente||'')}" autocomplete="off"></div></div>
@@ -8972,12 +8873,12 @@ function pgClientes() {
   const list = filtered.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 
   return `<div class="pg">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px">
-    <div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">Gestión</div>
-      <div style="font-size:22px;font-weight:700;color:var(--ch);line-height:1.1">Clientes</div>
+  <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
+    <div style="flex:1;min-width:200px">
+      <div class="sh" style="margin-bottom:4px">Clientes</div>
+      <div style="font-size:12px;color:var(--di)">Datos de contacto e historial de pedidos por cliente.</div>
     </div>
-    <button class="btn-p" onclick="openCli()" style="height:40px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
+    <button class="btn-p" onclick="openCli()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
   </div>
 
   ${clientes.length>0?`<div class="iw mb16"><input type="text" placeholder="Buscar cliente..." value="${esc(cliSearch)}" oninput="setCliSearch(this.value)"></div>`:''}
@@ -9001,10 +8902,10 @@ function pgClientes() {
 }
 
 function cliListHTML(list) {
-  if (!list.length) return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:40px 20px;text-align:center">
-    <div style="margin-bottom:12px;color:var(--di)">${ic('user',32)}</div>
-    <div style="font-size:15px;font-weight:600;color:var(--ch);margin-bottom:6px">${cliSearch?'Sin resultados':'Sin clientes'}</div>
-    <div style="font-size:13px;color:var(--si);max-width:340px;margin:0 auto">${cliSearch?`No hay clientes para "${esc(cliSearch)}".`:'Los clientes se guardan automáticamente al generar un pedido, o agregalos manualmente.'}</div>
+  if (!list.length) return `<div class="card" style="text-align:center;padding:40px 20px">
+    <div style="margin-bottom:12px">${ic('user',32)}</div>
+    <div class="empty-title">${cliSearch?'Sin resultados':'Sin clientes'}</div>
+    <div class="empty-sub">${cliSearch?`No hay clientes para "${esc(cliSearch)}".`:'Los clientes se guardan automáticamente al generar un pedido, o agregalos manualmente.'}</div>
     ${cliSearch?'':`<button class="btn-p" onclick="openCli()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear cliente</button>`}
    </div>`;
 
@@ -9043,18 +8944,18 @@ function cliListHTML(list) {
         <div style="flex:1"></div>
         <button class="btn-d btn-sm" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
       </div>
-      ${cliPeds.length?`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin:14px 0 8px">Historial de pedidos</div>
-        ${cliPeds.map((o,oi)=>{
+      ${cliPeds.length?`<div class="ph-l mt14 mb8">Historial de pedidos</div>
+        ${cliPeds.map(o=>{
           const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
-          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;${oi<cliPeds.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}" onclick="navigateToPed('${o.id}')">
+          return `<div class="mc" style="cursor:pointer" onclick="navigateToPed('${o.id}')">
             <div style="flex:1">
-              <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)}</div>
-              <div style="font-size:11px;color:var(--si);margin-top:2px">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div>
+              <div class="mc-n">${esc(o.nro)}</div>
+              <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div>
             </div>
             <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ud);min-width:80px;text-align:right">${fmtA(t)}</div>
+            <div class="hi-v">${fmtA(t)}</div>
           </div>`;
-        }).join('')}`:`<div style="font-size:12px;color:var(--di);padding:8px 0">Sin pedidos registrados</div>`}
+        }).join('')}`:`<div class="empty">Sin pedidos registrados</div>`}
     </div>
   </div>`;
   }).join('');
@@ -10537,22 +10438,22 @@ function pgFacturador() {
     </select>
   </div>
 
-  <!-- KPI Cards -->
+  <!-- KPI Cards: 2x2 en mobile, 4 en desktop -->
   <div style="display:grid;grid-template-columns:${mob?'repeat(2,1fr)':'repeat(4,1fr)'};gap:${mob?'8px':'10px'};margin-bottom:16px">
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Total emitido</div>
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Total emitido</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--ch);line-height:1">${fmtA(totEmitidas)}</div>
     </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(74,222,128,.15);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Cobrado</div>
+    <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),var(--bg1));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--gr);opacity:.7;text-transform:uppercase;margin-bottom:4px">Cobrado</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--gr);line-height:1">${fmtA(totPagadas)}</div>
     </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(251,191,36,${totPendiente>0?'.18':'.06'});border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Pendiente</div>
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg1));border:1px solid rgba(251,191,36,${totPendiente>0?'.25':'.08'});border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ye);opacity:.7;text-transform:uppercase;margin-bottom:4px">Pendiente</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:${totPendiente>0?'var(--ye)':'var(--di)'};line-height:1">${fmtA(totPendiente)}</div>
     </div>
-    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Documentos</div>
+    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Documentos</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--di);line-height:1">${facturas.length}</div>
     </div>
   </div>
