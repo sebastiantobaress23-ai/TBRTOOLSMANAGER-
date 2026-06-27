@@ -10213,25 +10213,31 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  // Tras Firebase sync: re-evaluar acceso.
+  // Tras Firebase sync: re-evaluar acceso en dispositivo nuevo.
   if (!_hasLocalUsers) {
-    // Intentar traer settings directamente si initialSyncIfFresh no lo hizo
-    if ((DB.get('settings',{}).users||[]).length === 0) {
-      try {
-        const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
-        const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(6000)});
-        if (_sR.ok) {
-          const _sD = await _sR.json();
-          if (_sD && typeof _sD === 'object') {
-            try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
-          }
+    // Fetch directo al nodo settings para asegurarnos de tener los usuarios remotos.
+    // Por defecto bloqueamos — solo liberamos si Firebase CONFIRMA que no hay usuarios.
+    let _fbConfirmedNoUsers = false;
+    try {
+      const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
+      const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(8000)});
+      if (_sR.ok) {
+        const _sD = await _sR.json();
+        const _remUsers = (_sD && _sD.users)||[];
+        if (_remUsers.length > 0) {
+          // Hay usuarios en Firebase — guardar localmente y exigir login
+          try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
+          updateLockBioBtn();
+        } else {
+          // Firebase respondió OK y no hay usuarios: instalación nueva
+          _fbConfirmedNoUsers = true;
         }
-      } catch {}
+      }
+      // Si fetch falló (no ok) → _fbConfirmedNoUsers sigue false → seguimos bloqueados
+    } catch {
+      // Error de red → seguir bloqueados
     }
-    const afterUsers = (DB.get('settings',{}).users||[]).length > 0;
-    updateLockBioBtn();
-    if (!afterUsers) {
-      // Firebase confirmó: no hay usuarios configurados → instalación nueva, dejar entrar
+    if (_fbConfirmedNoUsers) {
       const _ov2 = document.getElementById('lock-ov');
       const _mn2 = document.getElementById('mob-nav');
       const _fab2 = document.getElementById('qa-fab');
@@ -10239,7 +10245,7 @@ window.onload = async function() {
       if (_mn2) _mn2.style.removeProperty('visibility');
       if (_fab2) _fab2.style.removeProperty('display');
     }
-    // Si hay usuarios (locales o traídos de Firebase) → overlay sigue visible con formulario
+    // Si Firebase no confirmó que está vacío → overlay permanece, usuario debe loguearse
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
