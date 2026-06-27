@@ -10182,23 +10182,28 @@ window.onload = async function() {
     favicon.href = hdrLogo.src;
     document.head.appendChild(favicon);
   }
-  // Si hay usuarios locales, mostrar el lock de inmediato (sin esperar red).
-  // Si no hay usuarios locales, bloquear la pantalla con spinner hasta que
-  // Firebase confirme si existen usuarios remotos — evita que en un dispositivo
-  // nuevo se entre sin contraseña.
+  // Bloquear siempre al inicio. Si hay usuarios locales, mostrar login de inmediato.
+  // Si no hay (PC nueva), mantener bloqueado con spinner hasta confirmar con Firebase.
   const _hasLocalUsers = (DB.get('settings',{}).users||[]).length > 0;
-  if (_hasLocalUsers) {
-    checkAccessPin();
-  } else {
-    // Mostrar lock con spinner mientras esperamos Firebase
+  {
     const _ov = document.getElementById('lock-ov');
     const _mn = document.getElementById('mob-nav');
     const _fab = document.getElementById('qa-fab');
     const _pinWrap = document.getElementById('lock-pin-wrap');
     const _bioBtn = document.getElementById('lock-bio-btn');
-    if (_ov) { _ov.style.display='flex'; if(_pinWrap) _pinWrap.style.display='none'; if(_bioBtn) _bioBtn.style.display='none'; }
+    if (_ov) _ov.style.display = 'flex';
     if (_mn) _mn.style.setProperty('visibility','hidden','important');
-    if (_fab) _fab.style.display='none';
+    if (_fab) _fab.style.display = 'none';
+    if (_hasLocalUsers) {
+      // Usuarios locales: mostrar formulario de login ya
+      if (_pinWrap) _pinWrap.style.display = '';
+      checkAccessPin();
+      updateLockBioBtn();
+    } else {
+      // Sin usuarios locales: ocultar formulario hasta que Firebase confirme
+      if (_pinWrap) _pinWrap.style.display = 'none';
+      if (_bioBtn) _bioBtn.style.display = 'none';
+    }
   }
   // Migración: corregir nombre de empresa si quedó como el default antiguo 'TBR TOOLS'
   (function migrateEmpNombre(){
@@ -10214,16 +10219,26 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  // Si no había usuarios locales, ahora que Firebase sincronizó los settings,
-  // volver a evaluar el lock. Muestra login si hay usuarios remotos; si no hay
-  // ninguno configurado, ocultar el overlay y dejar entrar.
+  // Tras sincronizar Firebase: evaluar si hay usuarios remotos.
+  // Si los hay → mostrar login. Si no hay ninguno configurado → dejar entrar.
+  // NUNCA ocultar el overlay aquí si checkAccessPin lo mantiene visible.
   if (!_hasLocalUsers) {
+    const afterUsers = (DB.get('settings',{}).users||[]).length > 0;
     const _pinWrap2 = document.getElementById('lock-pin-wrap');
     const _bioBtn2 = document.getElementById('lock-bio-btn');
-    if (_pinWrap2) _pinWrap2.style.display='';
-    if (_bioBtn2) _bioBtn2.style.display='';
-    checkAccessPin();
-    updateLockBioBtn();
+    if (_pinWrap2) _pinWrap2.style.display = '';
+    if (afterUsers) {
+      // Firebase trajo usuarios: mostrar formulario y exigir login
+      updateLockBioBtn();
+    } else {
+      // Instalación nueva sin usuarios: dejar entrar
+      const _ov2 = document.getElementById('lock-ov');
+      const _mn2 = document.getElementById('mob-nav');
+      const _fab2 = document.getElementById('qa-fab');
+      if (_ov2) _ov2.style.display = 'none';
+      if (_mn2) _mn2.style.removeProperty('visibility');
+      if (_fab2) _fab2.style.removeProperty('display');
+    }
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
