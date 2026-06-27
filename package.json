@@ -3,6 +3,19 @@
   "version": "1.0.0",
   "dependencies": {
     "node-forge": "^1.3.1",
+    "playwright": "^1.61.1",
     "soap": "^1.1.0"
-  }
+  },
+  "description": "",
+  "main": "catalogo-data.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:41729/git/sebastiantobaress23-ai/TBRTOOLSMANAGER-"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
