@@ -10552,16 +10552,10 @@ function pgFacturador() {
   <!-- Action Toolbar -->
   <div style="margin-bottom:20px;display:flex;flex-direction:column;gap:8px">
     <button class="btn-p" onclick="openFactura(null)" style="width:100%;justify-content:center;">${ic('edit')} Nueva Factura C</button>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn-g" onclick="openRemitoIndependiente('sin-valor')" style="height:40px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:7px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        Nuevo Remito
-      </button>
-      <button class="btn-g" onclick="openRemitoIndependiente('valorizado')" style="height:40px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:7px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        Remito R (valorizado)
-      </button>
-    </div>
+    <button class="btn-g" onclick="openRemitoIndependiente()" style="width:100%;height:40px;justify-content:center;font-size:12px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Nuevo Remito
+    </button>
   </div>
 
   <!-- Document Sections -->
@@ -10604,8 +10598,8 @@ function openFactura(id) {
         <div style="font-size:10px;color:var(--di);margin-top:3px;letter-spacing:.3px">Monotributo · Sin IVA discriminado</div>
       </div>
       ${isNew?`<button onclick="openImportDocSheet()" style="height:34px;padding:0 12px;border-radius:8px;background:rgba(196,149,42,.1);border:1px solid rgba(196,149,42,.3);color:var(--ud);font-size:11px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Importar
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Referencias
       </button>`:''}
       <button onclick="closeFacturaModal()" style="width:32px;height:32px;border-radius:8px;background:var(--b2);border:none;color:var(--si);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">×</button>
     </div>
@@ -11897,11 +11891,14 @@ function importFromPedido(id) {
 function importFromRemito(id) {
   const r = DB.get('facturas',[]).find(x=>x.id===id && x.tipo==='RM');
   if (!r) return;
-  // Remito items: {sku, descripcion, qty} — sin precio unitario, completar desde catálogo
+  const esValorizadoR = r.valorizado === true || r.subTipo === 'R';
   const catalog = DB.get('catalog',[]);
   _factItems = (r.items||[]).map(it=>{
-    const cat = catalog.find(p=>p.code===it.sku || p.name===it.descripcion);
-    const precio = cat ? (cat.salePrice||0) : 0;
+    let precio = it.precio||0;
+    if (!esValorizadoR || !precio) {
+      const cat = catalog.find(p=>p.code===it.sku || p.name===it.descripcion);
+      precio = cat ? (cat.salePrice||0) : precio;
+    }
     return {
       sku: it.sku||'',
       descripcion: it.descripcion||'',
@@ -11936,10 +11933,34 @@ function importFromRemito(id) {
 }
 
 /* ─── REMITO INDEPENDIENTE ─── */
-function openRemitoIndependiente(tipo) {
-  // tipo: 'sin-valor' (sin precios) | 'valorizado' (Remito R, con precios)
+let _riTipoDoc = 'remito';   // 'remito' | 'remitoR'
+let _riValorizado = false;   // true | false
+
+function riSetTipo(val) {
+  _riTipoDoc = val;
+  ['btn-ri-tipo-remito','btn-ri-tipo-r'].forEach(id=>{
+    const b = document.getElementById(id);
+    if (b) { b.style.background = b.dataset.v === val ? 'var(--ud)' : 'var(--b3)'; b.style.color = b.dataset.v === val ? '#111' : 'var(--si)'; }
+  });
+  const lbl = document.getElementById('ri-tipo-label');
+  if (lbl) lbl.textContent = val === 'remitoR' ? 'Remito R — para transporte o viaje' : 'Remito — entrega local';
+}
+function riSetValorizado(val) {
+  _riValorizado = val;
+  ['btn-ri-val-si','btn-ri-val-no'].forEach(id=>{
+    const b = document.getElementById(id);
+    if (b) { b.style.background = (b.dataset.v === String(val)) ? 'var(--ud)' : 'var(--b3)'; b.style.color = (b.dataset.v === String(val)) ? '#111' : 'var(--si)'; }
+  });
+  const lbl = document.getElementById('ri-val-label');
+  if (lbl) lbl.textContent = val ? 'Con precios y total — sin valor fiscal' : 'Sin precios, solo unidades y descripción';
+  riRenderItems();
+}
+
+function openRemitoIndependiente() {
+  _riTipoDoc = 'remito';
+  _riValorizado = false;
+  _riItems = [];
   const clientes = DB.get('clientes',[]);
-  const catalog = DB.get('catalog',[]);
   const allDocs = DB.get('facturas',[]);
   const maxRM = allDocs.filter(f=>f.tipo==='RM').reduce((m,f)=>{
     const n = parseInt((f.nro||'0').replace(/\D/g,''))||0; return n>m?n:m;
@@ -11947,19 +11968,38 @@ function openRemitoIndependiente(tipo) {
   const nroSug = String(maxRM+1).padStart(4,'0');
   const today = new Date().toISOString().slice(0,10);
   const cliOpts = clientes.map(c=>`<option value="${esc(c.nombre)}">${esc(c.nombre)}</option>`).join('');
-  const prodOpts = catalog.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
-  const esValorizado = tipo === 'valorizado';
-  const titulo = esValorizado ? 'REMITO R — Valorizado' : 'NUEVO REMITO';
-  const subtitle = esValorizado ? 'Con precios · Sin valor fiscal' : 'Sin valorizar · Sin valor fiscal';
+
+  const togBtn = (id, v, label, active) =>
+    `<button id="${id}" data-v="${v}" onclick="ri${id.includes('tipo')?'SetTipo':'SetValorizado'}(${id.includes('tipo')?`'${v}'`:v})"
+      style="flex:1;height:34px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;transition:background .15s,color .15s;background:${active?'var(--ud)':'var(--b3)'};color:${active?'#111':'var(--si)'}">${label}</button>`;
 
   const modal = document.getElementById('remito-modal');
   modal.innerHTML = `<div class="mbox" style="max-width:600px;width:calc(100% - 32px)">
     <div class="mhdr">
-      <span>${titulo}</span>
+      <span>NUEVO REMITO</span>
       <button class="btn-rm" onclick="closeRemitoModal()">×</button>
     </div>
     <div class="mbody" style="display:flex;flex-direction:column;gap:14px;padding:18px">
-      <div style="font-size:11px;color:var(--di)">${subtitle}</div>
+
+      <!-- Toggle Tipo -->
+      <div>
+        <label class="fl">Tipo de remito</label>
+        <div style="display:flex;gap:6px;background:var(--b2);padding:4px;border-radius:10px">
+          ${togBtn('btn-ri-tipo-remito','remito','Remito',true)}
+          ${togBtn('btn-ri-tipo-r','remitoR','Remito R',false)}
+        </div>
+        <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:5px">Remito — entrega local</div>
+      </div>
+
+      <!-- Toggle Valorizado -->
+      <div>
+        <label class="fl">Valorizado</label>
+        <div style="display:flex;gap:6px;background:var(--b2);padding:4px;border-radius:10px">
+          ${togBtn('btn-ri-val-no','false','Sin valorizar',true)}
+          ${togBtn('btn-ri-val-si','true','Valorizado',false)}
+        </div>
+        <div id="ri-val-label" style="font-size:11px;color:var(--di);margin-top:5px">Sin precios, solo unidades y descripción</div>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label class="fl">Nro. Remito</label><div class="iw"><input type="text" id="ri-nro" value="${esc(nroSug)}" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:2px"></div></div>
@@ -11982,24 +12022,22 @@ function openRemitoIndependiente(tipo) {
       </div>
       <div><label class="fl">Transportista / Forma de entrega</label><div class="iw"><input type="text" id="ri-transp" placeholder="Ej: Correo Andreani, retiro en local..."></div></div>
 
-      <!-- Importar desde Pedido -->
       <button class="btn-g" onclick="riImportarPedido()" style="height:38px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;border:1px dashed rgba(196,149,42,.3);color:var(--ud)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Importar items desde Pedido
       </button>
 
-      <!-- Items -->
       <div>
         <label class="fl">Artículos</label>
         <div id="ri-items-wrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-        <button class="btn-g btn-sm" onclick="riAddItem(${esValorizado})" style="width:100%;justify-content:center">+ Agregar artículo</button>
+        <button class="btn-g btn-sm" onclick="riAddItem()" style="width:100%;justify-content:center">+ Agregar artículo</button>
       </div>
 
       <div><label class="fl">Observaciones</label><div class="iw iw-ta"><textarea id="ri-obs" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
 
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn-g" onclick="closeRemitoModal()" style="flex:1;height:44px">Cancelar</button>
-        <button class="btn-p" onclick="guardarRemitoIndependiente(${esValorizado})" style="flex:2;height:44px">
+        <button class="btn-p" onclick="guardarRemitoIndependiente()" style="flex:2;height:44px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           Generar Remito
         </button>
@@ -12008,11 +12046,12 @@ function openRemitoIndependiente(tipo) {
   </div>`;
   modal.style.display = 'flex';
   lockBody();
-  riRenderItems(esValorizado);
+  riRenderItems();
 }
 
 let _riItems = [];
-function riRenderItems(esValorizado) {
+function riRenderItems() {
+  const esValorizado = _riValorizado;
   const catalog = DB.get('catalog',[]);
   const prodOpts = catalog.map(p=>`<option value="${esc(p.name)}">`).join('');
   const wrap = document.getElementById('ri-items-wrap');
@@ -12022,32 +12061,27 @@ function riRenderItems(esValorizado) {
     <div style="display:grid;grid-template-columns:${esValorizado?'1fr 60px 100px auto':'1fr 60px auto'};gap:6px;align-items:center">
       <div class="iw" style="min-width:0"><input type="text" value="${esc(it.descripcion||'')}" placeholder="Descripción" list="ri-prod-opts-${i}" oninput="_riItems[${i}].descripcion=this.value" style="font-size:13px">
         <datalist id="ri-prod-opts-${i}">${prodOpts}</datalist></div>
-      <div class="iw"><input type="number" value="${it.qty||1}" min="1" placeholder="Cant." oninput="_riItems[${i}].qty=+this.value||1;${esValorizado?'riUpdateSubtotal('+i+')':''}" style="text-align:center;font-size:13px"></div>
-      ${esValorizado?`<div class="iw" style="min-width:0"><input type="number" value="${it.precio||''}" min="0" step="0.01" placeholder="Precio" oninput="_riItems[${i}].precio=+this.value||0;riUpdateSubtotal(${i})" style="font-size:13px"></div>`:''}
-      <button onclick="_riItems.splice(${i},1);riRenderItems(${esValorizado})" style="width:28px;height:28px;background:none;border:none;cursor:pointer;color:var(--re);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic('trash',14)}</button>
+      <div class="iw"><input type="number" value="${it.qty||1}" min="1" placeholder="Cant." oninput="_riItems[${i}].qty=+this.value||1" style="text-align:center;font-size:13px"></div>
+      ${esValorizado?`<div class="iw" style="min-width:0"><input type="number" value="${it.precio||''}" min="0" step="0.01" placeholder="Precio" oninput="_riItems[${i}].precio=+this.value||0" style="font-size:13px"></div>`:''}
+      <button onclick="_riItems.splice(${i},1);riRenderItems()" style="width:28px;height:28px;background:none;border:none;cursor:pointer;color:var(--re);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic('trash',14)}</button>
     </div>`).join('');
 }
-function riUpdateSubtotal(i){
-  // solo para render actualizado — subtotal se calcula al guardar
-}
-function riAddItem(esValorizado) {
+function riAddItem() {
   _riItems.push({descripcion:'',qty:1,sku:'',precio:0});
-  riRenderItems(esValorizado);
+  riRenderItems();
 }
 function riAutoFillCliente() {
   const nombre = (document.getElementById('ri-dest')?.value||'').trim();
   if (!nombre) return;
   const c = DB.get('clientes',[]).find(x=>(x.nombre||'').toLowerCase()===nombre.toLowerCase());
   if (c) {
-    const d = document.getElementById('ri-dir'); if(d&&!d.value) d.value = '';
+    const d = document.getElementById('ri-dir'); if(d&&!d.value&&c.dir) d.value = c.dir;
     const t = document.getElementById('ri-tel'); if(t&&!t.value&&c.tel) t.value = c.tel;
   }
 }
 function riImportarPedido() {
   const peds = DB.get('pedidos',[]).slice().reverse();
   if (!peds.length) { toast('No hay pedidos registrados',false); return; }
-  const esValorizado = document.getElementById('ri-items-wrap') !== null &&
-    document.querySelector('#ri-items-wrap input[placeholder="Precio"]') !== null;
   const listHTML = peds.map(o=>{
     const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
     return `<div onclick="riCargarPedido('${o.id}');this.closest('.mol').style.display='none';unlockBody()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
@@ -12075,16 +12109,14 @@ function riCargarPedido(pedId) {
   const o = DB.get('pedidos',[]).find(x=>x.id===pedId);
   if (!o) return;
   _riItems = (o.items||[]).map(p=>({sku:p.c||'',descripcion:p.n||'',qty:p.q||1,precio:p.p||0}));
-  if (o.cliente && !document.getElementById('ri-dest')?.value) {
-    const d = document.getElementById('ri-dest'); if(d) d.value = o.cliente;
+  if (o.cliente) {
+    const d = document.getElementById('ri-dest'); if(d&&!d.value) d.value = o.cliente;
     const t = document.getElementById('ri-tel'); if(t&&!t.value&&o.tel) t.value = o.tel;
   }
-  const esValorizado = !!document.querySelector('#ri-items-wrap input[placeholder="Precio"]') ||
-    (_riItems.length && typeof _riItems[0].precio !== 'undefined');
-  riRenderItems(esValorizado);
+  riRenderItems();
   toast(`Pedido ${o.nro} importado — ${_riItems.length} artículos`);
 }
-function guardarRemitoIndependiente(esValorizado) {
+function guardarRemitoIndependiente() {
   const nro = (document.getElementById('ri-nro')?.value||'').trim();
   const fecha = document.getElementById('ri-fecha')?.value || new Date().toISOString().slice(0,10);
   const dest = (document.getElementById('ri-dest')?.value||'').trim();
@@ -12097,12 +12129,13 @@ function guardarRemitoIndependiente(esValorizado) {
   const emp = DB.get('empresa',{});
   const remito = {
     id: uid(), nro, fecha, tipo: 'RM',
-    subTipo: esValorizado ? 'R' : 'sin-valor',
+    tipoDoc: _riTipoDoc,
+    valorizado: _riValorizado,
     comprador: { nombre: dest||'—', dir, tel },
     transportista: transp,
     observaciones: obs,
-    items: _riItems.map(it=>({sku:it.sku||'',descripcion:it.descripcion||'',qty:it.qty||1,...(esValorizado?{precio:it.precio||0}:{})})),
-    total: esValorizado ? _riItems.reduce((s,it)=>(it.qty||1)*(it.precio||0)+s,0) : 0,
+    items: _riItems.map(it=>({sku:it.sku||'',descripcion:it.descripcion||'',qty:it.qty||1,...(_riValorizado?{precio:it.precio||0}:{})})),
+    total: _riValorizado ? _riItems.reduce((s,it)=>(it.qty||1)*(it.precio||0)+s,0) : 0,
     emisor: { nombre: emp.razonSocial||emp.nombre||'TBR TOOLS', dir: emp.dir||'', cuit: emp.cuit||'' },
     estado: 'emitida'
   };
@@ -12238,7 +12271,8 @@ function remitoDocBody(f) {
   const emp = f.emisor||{};
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
-  const esValorizado = f.subTipo === 'R';
+  const esValorizado = f.valorizado === true || f.subTipo === 'R';
+  const esRemitoR = f.tipoDoc === 'remitoR' || f.subTipo === 'R';
   const totalValorizado = esValorizado ? (f.items||[]).reduce((s,it)=>(it.qty||1)*(it.precio||0)+s,0) : 0;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -12277,7 +12311,7 @@ function remitoDocBody(f) {
         <div style="font-size:10px;color:#666">CUIT: ${esc(emp.cuit||'')}</div>
       </div>
       <div class="tipo-box">
-        <div class="tipo-rm">${esValorizado?'REMITO R':'REMITO'}</div>
+        <div class="tipo-rm">${esRemitoR?'REMITO R':'REMITO'}</div>
         <div style="font-size:10px;color:#666;margin-top:6px">${esValorizado?'Valorizado · Sin valor fiscal':'Sin valor fiscal'}</div>
       </div>
       <div class="hdr-right">
