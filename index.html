@@ -6186,13 +6186,14 @@ function statsRecords(ps) {
   const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
   const topProd = Object.entries(pm).sort((a,b)=>b[1]-a[1])[0];
   if (topProd) cards.push({icon:ic('star',16),lbl:'Producto más comprado',val:topProd[0],sub:`${topProd[1]} unidades en total`});
-  return `<div class="sh mb16">Récords</div>
-  <div class="g4 mb24">
-    ${cards.map(c=>`<div class="record-card">
-      <div class="record-icon">${c.icon}</div>
-      <div class="sc-l">${c.lbl}</div>
-      <div class="record-val">${esc(c.val)}</div>
-      <div class="sc-s">${esc(c.sub)}</div>
+  return `
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Récords</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+    ${cards.map(c=>`<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
+      <div style="color:var(--ud);margin-bottom:10px;opacity:.8">${c.icon}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">${c.lbl}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch);line-height:1.2;margin-bottom:4px">${esc(c.val)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);font-family:'Barlow Condensed',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.sub)}</div>
     </div>`).join('')}
   </div>`;
 }
@@ -6207,13 +6208,14 @@ function salesRecords(sales) {
   const topUnits = ranking.slice().sort((a,b)=>b.units-a.units)[0];
   if (topUnits) cards.push({icon:ic('star',16),lbl:'Producto más vendido',val:topUnits.name||'—',sub:`${topUnits.units} unidades en total`});
   if (ranking.length) cards.push({icon:ic('exchange',16),lbl:'Mejor margen',val:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].marginPct.toFixed(1)+'%',sub:ranking.slice().sort((a,b)=>b.marginPct-a.marginPct)[0].name||'—'});
-  return `<div class="sh mb16">Récords de ventas</div>
-  <div class="g4 mb24">
-    ${cards.map(c=>`<div class="record-card">
-      <div class="record-icon">${c.icon}</div>
-      <div class="sc-l">${c.lbl}</div>
-      <div class="record-val">${esc(c.val)}</div>
-      <div class="sc-s">${esc(c.sub)}</div>
+  return `
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Récords de ventas</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+    ${cards.map(c=>`<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
+      <div style="color:var(--gr);margin-bottom:10px;opacity:.8">${c.icon}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">${c.lbl}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--ch);line-height:1.2;margin-bottom:4px">${esc(c.val)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);font-family:'Barlow Condensed',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.sub)}</div>
     </div>`).join('')}
   </div>`;
 }
@@ -6240,33 +6242,51 @@ function pgGastos() {
   const totAll = gastos.reduce((s,g)=>s+g.amount,0);
   const byCat = {};
   gastos.forEach(g=>{ byCat[g.cat]=(byCat[g.cat]||0)+g.amount; });
+  const topCatEntry = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
   return `<div class="pg">
-  <div class="dash-hdr mb24">
-    <div class="sh" style="margin:0">Gastos operativos</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div class="sh" style="margin:0">Gastos</div>
   </div>
-  <div class="g3 mb24">
-    <div class="sc accent-d"><div class="sc-l">Gasto del mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totMes)}</div><div class="sc-s">${thisMes.length} registro${thisMes.length!==1?'s':''}</div></div>
-    <div class="sc"><div class="sc-l">Total histórico</div><div class="sc-v" style="color:var(--re)">${fmtA(totAll)}</div><div class="sc-s">${gastos.length} registros</div></div>
-    <div class="sc accent-d"><div class="sc-l">Mayor categoría</div><div class="sc-v" style="font-size:15px">${Object.keys(byCat).length?_gastoCat(Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]?.[0]).label:'—'}</div><div class="sc-s">${Object.keys(byCat).length?fmtA(Object.values(byCat).sort((a,b)=>b-a)[0]):'sin datos'}</div></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(248,113,113,.15);border-radius:12px;padding:16px 18px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Gasto del mes</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--re);line-height:1">${fmtA(totMes)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${thisMes.length} registro${thisMes.length!==1?'s':''}</div>
+    </div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Total histórico</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:var(--re);line-height:1">${fmtA(totAll)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${gastos.length} registros</div>
+    </div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">Mayor categoría</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--ch);line-height:1;margin-top:4px">${topCatEntry?_gastoCat(topCatEntry[0]).label:'—'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${topCatEntry?fmtA(topCatEntry[1]):'sin datos'}</div>
+    </div>
   </div>
-  <div class="card mb24">
-    <div style="font-size:13px;color:var(--ch);margin-bottom:14px;font-weight:600">Registrar gasto</div>
+
+  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;margin-bottom:20px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Registrar gasto</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:120px"><label class="fl">Fecha</label><div class="iw"><input type="date" id="g-date" value="${now.toISOString().slice(0,10)}"></div></div>
       <div style="flex:2;min-width:180px"><label class="fl">Descripción</label><div class="iw"><input type="text" id="g-desc" placeholder="Ej: Cajas medianas x50"></div></div>
       <div style="flex:1;min-width:140px"><label class="fl">Categoría</label><div class="iw"><select id="g-cat">${GASTO_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select></div></div>
       <div style="flex:1;min-width:140px"><label class="fl">Monto (ARS)</label><div class="iw"><span class="ipre">$</span><input type="number" id="g-amount" min="0" step="100" placeholder="0"></div></div>
-      <button class="btn-p" style="height:42px;padding:0 20px" onclick="saveGasto()">Agregar</button>
+      <button class="btn-go" style="height:42px;padding:0 20px" onclick="saveGasto()">Agregar</button>
     </div>
   </div>
-  ${gastos.length ? `<div class="sh mb12">Historial</div><div style="display:flex;flex-direction:column;gap:6px">
+
+  ${gastos.length ? `
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Historial</div>
+  <div style="display:flex;flex-direction:column;gap:6px">
     ${gastos.map(g=>{
       const cat=_gastoCat(g.cat);
-      return `<div class="gasto-row">
-        <span class="gasto-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}28">${cat.label}</span>
-        <span class="gasto-desc">${esc(g.desc||'Sin descripción')}</span>
-        <span class="gasto-date">${fmtD(g.date)}</span>
-        <span class="gasto-amount">${fmtA(g.amount)}</span>
+      return `<div style="display:flex;align-items:center;gap:10px;background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${cat.color};background:${cat.color}18;border:1px solid ${cat.color}28;border-radius:4px;padding:2px 7px;flex-shrink:0">${cat.label}</span>
+        <span style="flex:1;font-size:13px;color:var(--ch);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.desc||'Sin descripción')}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--di);flex-shrink:0">${fmtD(g.date)}</span>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--re);flex-shrink:0">${fmtA(g.amount)}</span>
         <button class="btn-d btn-sm" onclick="delGasto('${g.id}')" style="flex-shrink:0">${ic('close')}</button>
       </div>`;
     }).join('')}
@@ -6320,48 +6340,64 @@ function pgStats() {
   const totGastosYear=gastosYear.reduce((s,g)=>s+g.amount,0);
   const totGastosMes=gastosMes.reduce((s,g)=>s+g.amount,0);
   const realNetYear=salesProfitTot-totGastosYear;
-  const gastosSection=gastos.length?`<div class="sh mb16">Gastos operativos</div>
-  <div class="g3 mb24">
-    <div class="sc accent-d"><div class="sc-l">Gastos este mes</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosMes)}</div><div class="sc-s">${gastosMes.length} registro${gastosMes.length!==1?'s':''}</div></div>
-    <div class="sc accent-d"><div class="sc-l">Gastos este año</div><div class="sc-v" style="color:var(--re)">${fmtA(totGastosYear)}</div><div class="sc-s">${gastosYear.length} registros</div></div>
-    <div class="sc accent-y"><div class="sc-l">Ganancia neta anual</div><div class="sc-v y">${fmtA(realNetYear)}</div><div class="sc-s">ventas − gastos op.</div></div>
+  const stStat=(lbl,val,color='var(--ch)',sub='')=>`
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 18px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${lbl}</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:${color};line-height:1">${val}</div>
+      ${sub?`<div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px;font-family:'Barlow Condensed',sans-serif">${sub}</div>`:''}
+    </div>`;
+  const stChart=(title,id,h=160)=>`
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:8px">${title}</div>
+      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px"><div id="${id}" style="width:100%;min-height:${h}px"></div></div>
+    </div>`;
+  const gastosSection=gastos.length?`
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Gastos operativos</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    ${stStat('Gastos este mes',fmtA(totGastosMes),'var(--re)',`${gastosMes.length} registro${gastosMes.length!==1?'s':''}`)}
+    ${stStat('Gastos este año',fmtA(totGastosYear),'var(--re)',`${gastosYear.length} registros`)}
+    ${stStat('Ganancia neta anual',fmtA(realNetYear),'var(--ye)','ventas − gastos op.')}
   </div>
-  <div class="card chart-card mb24"><div class="sh mb16">Gastos por categoría</div><div id="ch-gastos" style="width:100%;min-height:60px"></div></div>`:'';
+  <div style="margin-bottom:24px">${stChart('Gastos por categoría','ch-gastos',60)}</div>`:'';
+
   return `<div class="pg">
-  <div class="dash-hdr mb24">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px">
     <div class="sh" style="margin:0">Estadísticas</div>
-    <div class="dash-hdr-acts">
-      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Reporte semanal</button>
-      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Reporte mensual</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-g btn-sm" onclick="generateReport('week')">${waIcon(13)}Semanal</button>
+      <button class="btn-g btn-sm" onclick="generateReport('month')">${waIcon(13)}Mensual</button>
     </div>
   </div>
-  <div class="sh mb16">Compras</div>
-  <div class="g4 mb24">
-    <div class="sc"><div class="sc-l">Total invertido</div><div class="sc-v g">${fmtA(tot)}</div><div class="sc-s">${ps.length} compras</div></div>
-    <div class="sc"><div class="sc-l">Ganancia proyectada</div><div class="sc-v y">${fmtA(gan)}</div><div class="sc-s">según márgenes</div></div>
-    <div class="sc"><div class="sc-l">TCE promedio</div><div class="sc-v">${tce?fmtA(tce):'—'}</div><div class="sc-s">ARS/USDT histórico</div></div>
-    <div class="sc"><div class="sc-l">USDT comprado</div><div class="sc-v u">${fmtT(usdt)}</div><div class="sc-s">total histórico</div></div>
+
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Compras</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    ${stStat('Total invertido',fmtA(tot),'var(--gr)',`${ps.length} compras`)}
+    ${stStat('Ganancia proyectada',fmtA(gan),'var(--ye)','según márgenes')}
+    ${stStat('TCE promedio',tce?fmtA(tce):'—','var(--us)','ARS/USDT histórico')}
+    ${stStat('USDT comprado',fmtT(usdt),'var(--ch)','total histórico')}
   </div>
   ${statsRecords(ps)}
   ${ps.length<2?emptyState(EMPTY_ICONS.stats,'Sin datos suficientes','Necesitás al menos 2 compras\npara ver las estadísticas.'):`
-  <div class="g2 mb20">
-    <div class="card chart-card"><div class="sh mb16">TCE por compra</div><div id="ch-tce2" style="width:100%;min-height:200px"></div></div>
-    <div class="card chart-card"><div class="sh mb16">ARS invertido</div><div id="ch-ars" style="width:100%;min-height:200px"></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+    ${stChart('TCE por compra','ch-tce2',180)}
+    ${stChart('ARS invertido','ch-ars',180)}
   </div>
-  <div class="card chart-card mb24"><div class="sh mb16">Productos más comprados</div><div id="ch-prods" style="width:100%;min-height:60px"></div></div>`}
+  <div style="margin-bottom:24px">${stChart('Productos más comprados','ch-prods',60)}</div>`}
+
   ${gastosSection}
-  <div class="sh mb16">Ventas</div>
+
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:10px">Ventas</div>
   ${!sales.length?emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá ventas para ver\nsu rentabilidad real aquí.'):`
-  <div class="g4 mb24">
-    <div class="sc accent-g"><div class="sc-l">Ventas totales</div><div class="sc-v g">${fmtA(salesRev)}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''}</div></div>
-    <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${fmtA(salesProfitTot)}</div><div class="sc-s">neta de comisiones y envíos</div></div>
-    <div class="sc"><div class="sc-l">Unidades vendidas</div><div class="sc-v">${salesUnits}</div><div class="sc-s">en ${sales.length} venta${sales.length!==1?'s':''}</div></div>
-    <div class="sc accent-u"><div class="sc-l">Margen promedio</div><div class="sc-v u">${salesMarginPct.toFixed(1)}%</div><div class="sc-s">ganancia / facturado</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    ${stStat('Ventas totales',fmtA(salesRev),'var(--gr)',`${sales.length} venta${sales.length!==1?'s':''}`)}
+    ${stStat('Ganancia real',fmtA(salesProfitTot),'var(--ye)','neta de comisiones')}
+    ${stStat('Unidades vendidas',String(salesUnits),'var(--ch)',`en ${sales.length} venta${sales.length!==1?'s':''}`)}
+    ${stStat('Margen promedio',salesMarginPct.toFixed(1)+'%','var(--us)','ganancia / facturado')}
   </div>
   ${salesRecords(sales)}
-  <div class="g2 mb20">
-    <div class="card chart-card"><div class="sh mb16">Ventas por canal</div><div id="ch-channel" style="width:100%;min-height:60px"></div></div>
-    <div class="card chart-card"><div class="sh mb16">Productos más rentables</div><div id="ch-top-profit" style="width:100%;min-height:60px"></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+    ${stChart('Ventas por canal','ch-channel',60)}
+    ${stChart('Productos más rentables','ch-top-profit',60)}
   </div>`}
 </div>`;
 }
@@ -10498,22 +10534,22 @@ function pgFacturador() {
     </select>
   </div>
 
-  <!-- KPI Cards: 2x2 en mobile, 4 en desktop -->
+  <!-- KPI Cards -->
   <div style="display:grid;grid-template-columns:${mob?'repeat(2,1fr)':'repeat(4,1fr)'};gap:${mob?'8px':'10px'};margin-bottom:16px">
-    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Total emitido</div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Total emitido</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--ch);line-height:1">${fmtA(totEmitidas)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,rgba(74,222,128,.06),var(--bg1));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--gr);opacity:.7;text-transform:uppercase;margin-bottom:4px">Cobrado</div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(74,222,128,.15);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Cobrado</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--gr);line-height:1">${fmtA(totPagadas)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg1));border:1px solid rgba(251,191,36,${totPendiente>0?'.25':'.08'});border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ye);opacity:.7;text-transform:uppercase;margin-bottom:4px">Pendiente</div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(251,191,36,${totPendiente>0?'.18':'.06'});border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Pendiente</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:${totPendiente>0?'var(--ye)':'var(--di)'};line-height:1">${fmtA(totPendiente)}</div>
     </div>
-    <div style="background:linear-gradient(135deg,var(--bg2),var(--bg1));border:1px solid var(--b2);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--di);text-transform:uppercase;margin-bottom:4px">Documentos</div>
+    <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:${mob?'12px':'14px 16px'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-bottom:8px">Documentos</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:${mob?'18px':'22px'};font-weight:700;color:var(--di);line-height:1">${facturas.length}</div>
     </div>
   </div>
