@@ -8227,10 +8227,13 @@ function pgPedidos() {
   const pedTotal = PED.reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
 
   return `<div class="pg">
-  <div class="sh mb16">Nuevo pedido / presupuesto para cliente</div>
+  <div style="margin-bottom:20px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">Nuevo</div>
+    <div style="font-size:22px;font-weight:700;color:var(--ch);line-height:1.1">Pedido / Presupuesto</div>
+  </div>
 
-  <div class="card mb16">
-    <div class="sh mb16">Datos del cliente</div>
+  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Datos del cliente</div>
     <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
       <div style="flex:1;min-width:200px"><label class="fl mb8">Cliente</label>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
@@ -8248,9 +8251,9 @@ function pgPedidos() {
     <div class="hint mt12">Al elegir un cliente ya cargado se completan automáticamente su teléfono y CUIT/DNI guardados.</div>
   </div>
 
-  <div class="card mb16 items-card">
+  <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px" class="items-card">
     <div class="fb mb16">
-      <span class="sh-inline">Artículos</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22)">Artículos</span>
       <div class="fg">
         ${cat.length>0?`<button class="btn-g btn-sm" onclick="openPedCatSheet()">Del catálogo</button>`:''}
         <button class="btn-g btn-sm" onclick="scanForPed()" title="Escanear código de barras">${ic('camera')}</button>
@@ -8279,7 +8282,7 @@ function pgPedidos() {
   </div>
 
   ${peds.length>0?`<div>
-  <div class="sh mb16">Pedidos y presupuestos</div>
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:14px">Pedidos y presupuestos</div>
   ${peds.map((o,i)=>{
     const total=pedFinalTotal(o);
     return `<div class="hi"${stg(i)}>
@@ -8295,7 +8298,7 @@ function pgPedidos() {
     </div>
     <div class="hi-body${_pedEditId===o.id?' open':''}" id="ped${i}">
       ${_pedEditId===o.id?`
-      <div class="card mb16" style="margin-top:12px">
+      <div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin:12px 0 16px">
         <div class="fb" style="flex-wrap:wrap;gap:16px 24px">
           <div style="flex:1;min-width:160px"><label class="fl mb8">Cliente</label>
           <div class="iw"><input type="text" id="pedit-cliente" value="${esc(o.cliente||'')}" autocomplete="off"></div></div>
@@ -8969,12 +8972,12 @@ function pgClientes() {
   const list = filtered.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 
   return `<div class="pg">
-  <div class="fb mb20" style="flex-wrap:wrap;gap:12px">
-    <div style="flex:1;min-width:200px">
-      <div class="sh" style="margin-bottom:4px">Clientes</div>
-      <div style="font-size:12px;color:var(--di)">Datos de contacto e historial de pedidos por cliente.</div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin-bottom:6px">Gestión</div>
+      <div style="font-size:22px;font-weight:700;color:var(--ch);line-height:1.1">Clientes</div>
     </div>
-    <button class="btn-p" onclick="openCli()" style="height:42px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
+    <button class="btn-p" onclick="openCli()" style="height:40px;white-space:nowrap;flex:0 0 auto">+ Nuevo cliente</button>
   </div>
 
   ${clientes.length>0?`<div class="iw mb16"><input type="text" placeholder="Buscar cliente..." value="${esc(cliSearch)}" oninput="setCliSearch(this.value)"></div>`:''}
@@ -8998,10 +9001,10 @@ function pgClientes() {
 }
 
 function cliListHTML(list) {
-  if (!list.length) return `<div class="card" style="text-align:center;padding:40px 20px">
-    <div style="margin-bottom:12px">${ic('user',32)}</div>
-    <div class="empty-title">${cliSearch?'Sin resultados':'Sin clientes'}</div>
-    <div class="empty-sub">${cliSearch?`No hay clientes para "${esc(cliSearch)}".`:'Los clientes se guardan automáticamente al generar un pedido, o agregalos manualmente.'}</div>
+  if (!list.length) return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:40px 20px;text-align:center">
+    <div style="margin-bottom:12px;color:var(--di)">${ic('user',32)}</div>
+    <div style="font-size:15px;font-weight:600;color:var(--ch);margin-bottom:6px">${cliSearch?'Sin resultados':'Sin clientes'}</div>
+    <div style="font-size:13px;color:var(--si);max-width:340px;margin:0 auto">${cliSearch?`No hay clientes para "${esc(cliSearch)}".`:'Los clientes se guardan automáticamente al generar un pedido, o agregalos manualmente.'}</div>
     ${cliSearch?'':`<button class="btn-p" onclick="openCli()" style="margin-top:20px;height:44px;padding:0 24px">+ Crear cliente</button>`}
    </div>`;
 
@@ -9040,18 +9043,18 @@ function cliListHTML(list) {
         <div style="flex:1"></div>
         <button class="btn-d btn-sm" onclick="delCli('${c.id}')">${ic('trash')} Borrar</button>
       </div>
-      ${cliPeds.length?`<div class="ph-l mt14 mb8">Historial de pedidos</div>
-        ${cliPeds.map(o=>{
+      ${cliPeds.length?`<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.22);margin:14px 0 8px">Historial de pedidos</div>
+        ${cliPeds.map((o,oi)=>{
           const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
-          return `<div class="mc" style="cursor:pointer" onclick="navigateToPed('${o.id}')">
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;${oi<cliPeds.length-1?'border-bottom:1px solid rgba(255,255,255,.05)':''}" onclick="navigateToPed('${o.id}')">
             <div style="flex:1">
-              <div class="mc-n">${esc(o.nro)}</div>
-              <div class="mc-d">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)}</div>
+              <div style="font-size:11px;color:var(--si);margin-top:2px">${fmtD(o.date)} · ${o.items?.length||0} artículos · ${pedStatusBadge(o.status)}</div>
             </div>
             <button class="btn-g btn-sm" onclick="event.stopPropagation();duplicatePed('${o.id}')" title="Repetir este pedido">${ic('undo')} Repetir</button>
-            <div class="hi-v">${fmtA(t)}</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--ud);min-width:80px;text-align:right">${fmtA(t)}</div>
           </div>`;
-        }).join('')}`:`<div class="empty">Sin pedidos registrados</div>`}
+        }).join('')}`:`<div style="font-size:12px;color:var(--di);padding:8px 0">Sin pedidos registrados</div>`}
     </div>
   </div>`;
   }).join('');
