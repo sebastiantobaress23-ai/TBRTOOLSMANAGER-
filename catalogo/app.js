@@ -1568,28 +1568,22 @@ function applyLiveData(){
 let _livePhotosMap = null;
 function startLiveSync(){
   if(!rtdb) return false;
-  // Catalog metadata listener (fast, no photos)
-  rtdb.ref('tbr/catalog').on('value', snap=>{
-    _rawCatalog = snap.val();
+  // Use once() instead of on() to avoid persistent listeners that drain bandwidth
+  Promise.all([
+    rtdb.ref('tbr/catalog').once('value'),
+    rtdb.ref('tbr/empresa').once('value'),
+    rtdb.ref('tbr/catalog_photos').once('value'),
+  ]).then(([catalogSnap, empresaSnap, photosSnap])=>{
+    _rawCatalog = catalogSnap.val();
+    _livePhotosMap = photosSnap.val();
+    liveEmpresa = empresaSnap.val();
     const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
     if(products){ liveCatalog = products; applyLiveData(); }
-  });
-  rtdb.ref('tbr/empresa').on('value', snap=>{
-    liveEmpresa = snap.val();
-    if(liveCatalog) applyLiveData();
-  });
-  // Photos listener (separate, doesn't block initial render)
-  rtdb.ref('tbr/catalog_photos').on('value', snap=>{
-    _livePhotosMap = snap.val();
-    if(!_livePhotosMap) return;
-    if(ITEMS.length){
-      // Products already rendered — patch photos in place
-      applyPhotosMap(_livePhotosMap);
-    } else if(_rawCatalog){
-      // Photos arrived before or alongside catalog — do a full remap
-      const products = mapLiveCatalog(_rawCatalog, _livePhotosMap);
-      if(products){ liveCatalog = products; applyLiveData(); }
-    }
+  }).catch(()=>{
+    // Fallback to REST if SDK reads fail
+    fetchLive().then(live=>{
+      if(live){ EMPRESA=live.empresa; PRODUCTS=live.products; bootUI(); applyHash(); }
+    });
   });
   return true;
 }
