@@ -10182,28 +10182,22 @@ window.onload = async function() {
     favicon.href = hdrLogo.src;
     document.head.appendChild(favicon);
   }
-  // Bloquear siempre al inicio. Si hay usuarios locales, mostrar login de inmediato.
-  // Si no hay (PC nueva), mantener bloqueado con spinner hasta confirmar con Firebase.
+  // Bloquear siempre al inicio, sin excepción.
   const _hasLocalUsers = (DB.get('settings',{}).users||[]).length > 0;
   {
     const _ov = document.getElementById('lock-ov');
     const _mn = document.getElementById('mob-nav');
     const _fab = document.getElementById('qa-fab');
-    const _pinWrap = document.getElementById('lock-pin-wrap');
-    const _bioBtn = document.getElementById('lock-bio-btn');
     if (_ov) _ov.style.display = 'flex';
     if (_mn) _mn.style.setProperty('visibility','hidden','important');
     if (_fab) _fab.style.display = 'none';
     if (_hasLocalUsers) {
-      // Usuarios locales: mostrar formulario de login ya
-      if (_pinWrap) _pinWrap.style.display = '';
+      // Usuarios locales conocidos: evaluar sesión existente o mostrar login
       checkAccessPin();
       updateLockBioBtn();
-    } else {
-      // Sin usuarios locales: ocultar formulario hasta que Firebase confirme
-      if (_pinWrap) _pinWrap.style.display = 'none';
-      if (_bioBtn) _bioBtn.style.display = 'none';
     }
+    // Sin usuarios locales: formulario visible pero tryUnlock fallará hasta que
+    // initialSyncIfFresh traiga los usuarios de Firebase
   }
   // Migración: corregir nombre de empresa si quedó como el default antiguo 'TBR TOOLS'
   (function migrateEmpNombre(){
@@ -10219,42 +10213,33 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  // Tras sincronizar Firebase: evaluar si hay usuarios remotos.
-  // REGLA: solo liberar acceso si estamos seguros de que no hay usuarios configurados
-  // (instalación nueva). Si Firebase falló o trajo usuarios, siempre pedir login.
+  // Tras Firebase sync: re-evaluar acceso.
   if (!_hasLocalUsers) {
-    const afterUsers = (DB.get('settings',{}).users||[]).length > 0;
-    const _pinWrap2 = document.getElementById('lock-pin-wrap');
-    if (_pinWrap2) _pinWrap2.style.display = '';
-    updateLockBioBtn();
-    if (!afterUsers) {
-      // Solo liberar si Firebase confirmó que no hay NINGÚN usuario configurado.
-      // Para estar seguros, intentar un fetch directo al nodo settings.
-      let confirmedEmpty = false;
+    // Intentar traer settings directamente si initialSyncIfFresh no lo hizo
+    if ((DB.get('settings',{}).users||[]).length === 0) {
       try {
-        const _chkUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
-        const _chkR = await fetch(_chkUrl, {cache:'no-store', signal:AbortSignal.timeout(6000)});
-        if (_chkR.ok) {
-          const _chkD = await _chkR.json();
-          const _remoteUsers = (_chkD && _chkD.users)||[];
-          if (_remoteUsers.length === 0) confirmedEmpty = true;
-          else {
-            // Firebase tiene usuarios pero initialSyncIfFresh no los escribió — forzar
-            try { localStorage.setItem('tbr_settings', JSON.stringify(_chkD)); } catch {}
+        const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
+        const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(6000)});
+        if (_sR.ok) {
+          const _sD = await _sR.json();
+          if (_sD && typeof _sD === 'object') {
+            try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
           }
         }
       } catch {}
-      if (confirmedEmpty) {
-        // Instalación nueva real: no hay usuarios en ningún lado
-        const _ov2 = document.getElementById('lock-ov');
-        const _mn2 = document.getElementById('mob-nav');
-        const _fab2 = document.getElementById('qa-fab');
-        if (_ov2) _ov2.style.display = 'none';
-        if (_mn2) _mn2.style.removeProperty('visibility');
-        if (_fab2) _fab2.style.removeProperty('display');
-      }
-      // Si no pudo confirmar (red caída, Firebase error) → overlay sigue visible
     }
+    const afterUsers = (DB.get('settings',{}).users||[]).length > 0;
+    updateLockBioBtn();
+    if (!afterUsers) {
+      // Firebase confirmó: no hay usuarios configurados → instalación nueva, dejar entrar
+      const _ov2 = document.getElementById('lock-ov');
+      const _mn2 = document.getElementById('mob-nav');
+      const _fab2 = document.getElementById('qa-fab');
+      if (_ov2) _ov2.style.display = 'none';
+      if (_mn2) _mn2.style.removeProperty('visibility');
+      if (_fab2) _fab2.style.removeProperty('display');
+    }
+    // Si hay usuarios (locales o traídos de Firebase) → overlay sigue visible con formulario
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
