@@ -5472,11 +5472,11 @@ function pgVentas(){
   </div>` : '<div class="empty mb24">Registrá ventas para ver el ranking de rentabilidad real por producto.</div>'}
 
   <div class="sh mb16">Historial de ventas</div>
-  ${sales.length ? `<div class="card mb16" style="padding:0;overflow:hidden">
+  ${sales.length ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
     ${sales.map((s,si)=>{
       const items=saleItems(s);
       const multi=items.length>1;
-      const titulo = multi ? `${items.length} artículos` : `${esc(items[0].n)}${items[0].q>1?` ×${items[0].q}`:''}`;
+      const titulo = multi ? `${items.length} artículos` : esc(items[0].n)+(items[0].q>1?` ×${items[0].q}`:'');
       const isML = s.channel !== 'directa';
       const profit = saleProfit(s);
       const profitColor = profit>=0?'var(--gr)':'var(--re)';
@@ -5485,33 +5485,51 @@ function pgVentas(){
       const precio = s.priceARS||items[0]?.p||0;
       const recibido = s.mlReceived||0;
       const costo = s.costARS||items[0]?.cost||0;
-      const detalle = isML
-        ? `${fmtA(precio)} vendido${recibido?` · ${fmtA(recibido)} recibido ML`:''} · ${fmtA(costo)} costo`
-        : (!multi ? `${fmtA(items[0].p||0)} vendido · ${fmtA(items[0].cost||0)} costo` : '');
-      return `<div style="padding:13px 16px;${si<sales.length-1?'border-bottom:1px solid var(--b2)':''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      const expandId = 'sv'+si;
+      return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleHi('${expandId}')">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${titulo} <span class="${isML?'badge badge-ml':'badge badge-dim'}">${isML?'ML':'DIRECTA'}</span></div>
-            <div style="font-size:11px;color:var(--di);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.nro?`<span style="color:rgba(255,255,255,.3)">${esc(s.nro)}</span> · `:''}${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</div>
-            ${detalle?`<div style="font-size:11px;color:var(--mu);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detalle}</div>`:''}
-          </div>
-          <div style="flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-            <div>
-              <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
-              <div style="font-size:10px;color:var(--di);margin-top:1px">${marginPct}% margen</div>
+            <div style="font-size:14px;font-weight:600;color:var(--ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">${titulo}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:${isML?'var(--ye)':'var(--si)'};background:${isML?'rgba(251,191,36,.1)':'rgba(255,255,255,.05)'};border:1px solid ${isML?'rgba(251,191,36,.2)':'rgba(255,255,255,.1)'};border-radius:4px;padding:1px 6px">${isML?'ML':'DIRECTA'}</span>
+              ${s.nro?`<span style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.3px">${esc(s.nro)}</span>`:''}
+              <span style="font-size:11px;color:var(--di)">${fmtD(s.date)}${s.cliente?' · '+esc(s.cliente):''}</span>
             </div>
-            <button class="btn-d" onclick="delSale('${s.id}')">${ic('close',12)}</button>
+          </div>
+          <div style="flex-shrink:0;text-align:right">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:${profitColor};line-height:1">${fmtA(profit)}</div>
+            <div style="font-size:10px;color:var(--di);margin-top:2px;letter-spacing:.3px">${marginPct}% margen</div>
           </div>
         </div>
-        ${multi?`<div style="overflow-x:auto;margin-top:8px">
-          <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
-          <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
-          </table>
-        </div>`:''}
-        ${!isML?`<div class="hi-acts" style="margin-top:8px">
-          <button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>
-          ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
-        </div>`:''}
+        <div class="hi-body" id="${expandId}">
+          <div style="border-top:1px solid rgba(255,255,255,.06);padding:12px 16px">
+            <div style="display:grid;grid-template-columns:repeat(${isML&&recibido?3:2},1fr);gap:1px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden;margin-bottom:12px">
+              <div style="background:rgba(14,14,14,1);padding:10px 12px">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--di);margin-bottom:3px">Vendido</div>
+                <div style="font-size:13px;font-weight:600;color:var(--ch)">${fmtA(precio)}</div>
+              </div>
+              ${isML&&recibido?`<div style="background:rgba(14,14,14,1);padding:10px 12px">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--di);margin-bottom:3px">Recibido ML</div>
+                <div style="font-size:13px;font-weight:600;color:var(--ye)">${fmtA(recibido)}</div>
+              </div>`:''}
+              <div style="background:rgba(14,14,14,1);padding:10px 12px">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--di);margin-bottom:3px">Costo</div>
+                <div style="font-size:13px;font-weight:600;color:var(--ch)">${fmtA(costo)}</div>
+              </div>
+            </div>
+            ${multi?`<div style="overflow-x:auto;margin-bottom:12px">
+              <table><thead><tr><th>Descripción</th><th>Código</th><th class="tc2">Cant.</th><th class="tr">P. Unit.</th><th class="tr">Subtotal</th></tr></thead>
+              <tbody>${items.map(it=>`<tr><td class="tn">${esc(it.n||'—')}</td><td class="tc">${esc(it.c||'—')}</td><td class="tc2">${it.q||1}</td><td class="tr">${fmtA(it.p||0)}</td><td class="tr">${fmtA((it.q||1)*(it.p||0))}</td></tr>`).join('')}</tbody>
+              </table>
+            </div>`:''}
+            <div style="display:flex;gap:8px;align-items:center">
+              ${!isML?`<button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>`:''}
+              ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
+              <div style="flex:1"></div>
+              <button class="btn-d btn-sm" onclick="confirm2('¿Borrar esta venta?',()=>delSale('${s.id}'),'Borrar','btn-d')">${ic('trash',13)} Borrar</button>
+            </div>
+          </div>
+        </div>
       </div>`;}).join('')}
   </div>` : emptyState(EMPTY_ICONS.purchases,'Sin ventas registradas','Registrá tus ventas para\nver la rentabilidad real por producto.')}
 </div>`;
