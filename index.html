@@ -3505,7 +3505,7 @@ function render() {
   const app = document.getElementById('app');
   const fns = {dashboard:pgDash,compra:pgCompra,historial:pgHist,ventas:pgVentas,pedidos:pgPedidos,catalogo:pgCat,stats:pgStats,publicar:pgML,competencia:pgComp,config:pgConfig,orden:pgOrden,cotizaciones:pgCotizaciones,proveedores:pgProveedores,clientes:pgClientes,viaje:pgViaje,facturador:pgFacturador,gastos:pgGastos};
   if (fns[PAGE]) {
-    app.innerHTML = fns[PAGE]();
+    try { app.innerHTML = fns[PAGE](); } catch(e) { console.error('[render]',PAGE,e); app.innerHTML=`<div class="pg"><div class="card" style="text-align:center;padding:40px 20px"><div style="color:var(--re);font-size:20px;margin-bottom:8px">⚠</div><div style="font-weight:600;margin-bottom:4px">Error al cargar la página</div><div class="hint">Recargá la app. Si persiste, reportá el error.</div></div></div>`; }
     if (_pageTransition) {
       _pageTransition = false;
       app.classList.remove('slide-r','slide-l');
@@ -5866,9 +5866,10 @@ function setCePhotos(arr){cePhotos=Array.isArray(arr)?arr.slice():[];renderCePho
 ═══════════════════════════════════════════ */
 function openCatalogoDigital(){
   const items = DB.get('catalog',[]).filter(c=>c.salePrice);
-  if(!items.length){toast('Cargá precios de venta en el catálogo para usar el catálogo digital.',false);return;}
+  if(!items.length){toast('Cargá precios de venta en los productos para activar el catálogo digital.',false,4000);return;}
   const emp = DB.get('empresa',{});
-  window.open(emp.catalogUrl || DEFAULT_CATALOG_URL, '_blank', 'noopener');
+  const w = window.open(emp.catalogUrl || DEFAULT_CATALOG_URL, '_blank', 'noopener');
+  if(!w) toast('El navegador bloqueó la ventana emergente. Permití ventanas emergentes para este sitio.', false, 5000);
 }
 function ceCost(){
   const usd=parseFloat(document.getElementById('ce-price').value)||0;
