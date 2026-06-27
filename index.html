@@ -7782,6 +7782,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(p.conf?.name||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${nro}</div>
 </div>
 </body></html>`);
@@ -8128,6 +8129,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}</div>
 </div>
 </body></html>`);
@@ -8693,6 +8695,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   </div>
   ${condicionesHTML()}
   ${paymentInfoHTML(emp)}
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}</div>
 </div>
 </body></html>`);
@@ -8745,6 +8748,7 @@ function pedDocBody(o){
   </div>
   ${condicionesHTML()}
   ${paymentInfoHTML(emp)}
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${o.status==='entregado'?' · Entregado/Cobrado':''}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -8813,6 +8817,7 @@ function ventaDocBody(s){
     </div>
   </div>
   ${paymentInfoHTML(emp)}
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${esc(s.nro||'')}${s.pedidoNro?' · '+esc(s.pedidoNro):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9107,8 +9112,9 @@ function ensureHtml2Canvas(){
 
 const DOC_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111}
-.doc{background:#fff}
+body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;min-height:100vh}
+.doc{background:#fff;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -9209,6 +9215,7 @@ function ocDocBody(o){
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9255,6 +9262,7 @@ function cotDocBody(o){
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9294,6 +9302,7 @@ function catalogDocBody(cat, emp){
   </div>
   <div class="cat-grid">${cards}</div>
   ${condicionesHTML()}
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · Catálogo · ${fecha}</div>
 </div>`;
   return {css: DOC_CSS + CATALOG_GRID_CSS, html};
@@ -9489,6 +9498,7 @@ function reportDocBody(period, since, now, ps, sales, emp){
     <tbody>${rows}</tbody>
   </table>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${label} · ${fecha}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9833,6 +9843,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro} · Reimpresión</div>
 </div>
 </body></html>`);
@@ -10017,6 +10028,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(prov?.name||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
+  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${nro}</div>
 </div>
 </body></html>`);
