@@ -12309,7 +12309,9 @@ function remitoDocBody(f) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff;padding:20px}
-    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px;background:#fff}
+    .page{max-width:800px;margin:0 auto;border:1px solid #ddd;padding:24px;background:#fff;min-height:calc(100vh - 40px);display:flex;flex-direction:column}
+    .page-body{flex:1}
+    .page-footer{margin-top:auto;padding-top:24px}
     .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee}
     .biz-name{font-size:18px;font-weight:800}
     .tipo-box{text-align:center}
@@ -12332,7 +12334,7 @@ function remitoDocBody(f) {
     .firma-row{display:flex;justify-content:space-between;margin-top:32px;gap:24px}
     .firma-box{flex:1;border-top:1px solid #666;padding-top:6px;text-align:center;font-size:10px;color:#555}
     .obs-box{font-size:10px;color:#666;border-top:1px solid #eee;padding-top:10px;margin-bottom:16px}
-    @media print{body{padding:0}.page{border:none;padding:16px}}
+    @media print{body{padding:0}.page{border:none;padding:16px;min-height:100vh}}
   </style></head><body>
   <div class="page">
     <div class="hdr">
@@ -12354,35 +12356,39 @@ function remitoDocBody(f) {
         </tbody></table>
       </div>
     </div>
-    ${f.facturaOrigen?`<div class="ref-box">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen)}</b></div>`:''}
-    <div class="dest-box">
-      <div><span class="lbl">Destinatario:</span> <b>${esc(f.comprador?.nombre||'—')}</b></div>
-      <div><span class="lbl">Tel.:</span> ${esc(f.comprador?.tel||'—')}</div>
-      <div><span class="lbl">Domicilio:</span> ${esc(f.comprador?.dir||'—')}</div>
-      <div><span class="lbl">Localidad:</span> ${esc(f.comprador?.localidad||f.comprador?.ciudad||'—')}</div>
+    <div class="page-body">
+      ${f.facturaOrigen?`<div class="ref-box">Corresponde a: <b>Factura C Nº ${esc(f.facturaOrigen)}</b></div>`:''}
+      <div class="dest-box">
+        <div><span class="lbl">Destinatario:</span> <b>${esc(f.comprador?.nombre||'—')}</b></div>
+        <div><span class="lbl">Tel.:</span> ${esc(f.comprador?.tel||'—')}</div>
+        <div><span class="lbl">Domicilio:</span> ${esc(f.comprador?.dir||'—')}</div>
+        <div><span class="lbl">Localidad:</span> ${esc(f.comprador?.localidad||f.comprador?.ciudad||'—')}</div>
+      </div>
+      ${f.observaciones?`<div class="obs-box"><b>Obs:</b> ${esc(f.observaciones)}</div>`:''}
+      <table class="items-table">
+        <thead><tr>
+          <th style="width:80px">SKU</th>
+          <th>Descripción</th>
+          <th class="tc" style="width:70px">Cant.</th>
+          ${esValorizado?`<th class="tr" style="width:100px">P. Unit.</th><th class="tr" style="width:100px">Subtotal</th>`:`<th style="width:110px">Recibido</th>`}
+        </tr></thead>
+        <tbody>${(f.items||[]).map(it=>{
+          const sub = (it.qty||1)*(it.precio||0);
+          return `<tr>
+            <td>${esc(it.sku||'—')}</td>
+            <td>${esc(it.descripcion||'—')}</td>
+            <td class="tc"><b>${it.qty||0}</b></td>
+            ${esValorizado?`<td class="tr">$${(it.precio||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td><td class="tr"><b>$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}</b></td>`:`<td style="border-bottom:1px solid #ccc;color:#aaa">&nbsp;</td>`}
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      ${esValorizado?`<div class="total-box"><div class="total-inner"><div class="tl">Total</div><div class="tv">$${totalValorizado.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div></div>`:''}
     </div>
-    ${f.observaciones?`<div class="obs-box"><b>Obs:</b> ${esc(f.observaciones)}</div>`:''}
-    <table class="items-table">
-      <thead><tr>
-        <th style="width:80px">SKU</th>
-        <th>Descripción</th>
-        <th class="tc" style="width:70px">Cant.</th>
-        ${esValorizado?`<th class="tr" style="width:100px">P. Unit.</th><th class="tr" style="width:100px">Subtotal</th>`:`<th style="width:110px">Recibido</th>`}
-      </tr></thead>
-      <tbody>${(f.items||[]).map(it=>{
-        const sub = (it.qty||1)*(it.precio||0);
-        return `<tr>
-          <td>${esc(it.sku||'—')}</td>
-          <td>${esc(it.descripcion||'—')}</td>
-          <td class="tc"><b>${it.qty||0}</b></td>
-          ${esValorizado?`<td class="tr">$${(it.precio||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td><td class="tr"><b>$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}</b></td>`:`<td style="border-bottom:1px solid #ccc;color:#aaa">&nbsp;</td>`}
-        </tr>`;
-      }).join('')}</tbody>
-    </table>
-    ${esValorizado?`<div class="total-box"><div class="total-inner"><div class="tl">Total</div><div class="tv">$${totalValorizado.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div></div>`:''}
-    <div class="firma-row">
-      <div class="firma-box">Entregué conforme<br><br><br>${esc(emp.nombre||'TBR TOOLS')}</div>
-      <div class="firma-box">Recibí conforme<br><br><br>${esc(f.comprador?.nombre||'Cliente')}</div>
+    <div class="page-footer">
+      <div class="firma-row">
+        <div class="firma-box">Entregué conforme<br><br><br>${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div class="firma-box">Recibí conforme<br><br><br>${esc(f.comprador?.nombre||'Cliente')}</div>
+      </div>
     </div>
   </div>
   </body></html>`;
