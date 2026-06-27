@@ -1801,6 +1801,7 @@ html.light .sc::after{opacity:.6}
 <div id="factura-modal" class="mol" style="display:none;align-items:flex-end;padding:0" onclick="if(event.target===this)closeFacturaModal()"></div>
 <div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
 <div id="import-doc-modal" class="mol" style="display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeImportDocSheet()"></div>
+<div id="form-config-modal" class="mol" style="display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeFormConfig()"></div>
 
 <!-- CONFIRM MODAL -->
 <div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
@@ -7173,6 +7174,26 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Formularios</div>
+  <div class="card mb24">
+    <div class="hint mb16">Personalizá el contenido de cada comprobante: pie de página, observaciones por defecto, condiciones y opciones de visualización.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      ${[
+        {id:'factura',   label:'Factura C',       icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'},
+        {id:'nc',        label:'Nota de Crédito', icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/>'},
+        {id:'remito',    label:'Remito',          icon:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>'},
+        {id:'pedido',    label:'Pedido',          icon:'<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'},
+        {id:'venta',     label:'Comp. de Venta',  icon:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>'},
+        {id:'cotizacion',label:'Cotización',       icon:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'},
+        {id:'oc',        label:'Orden de Compra',  icon:'<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>'},
+      ].map(f=>`
+        <button onclick="openFormConfig('${f.id}')" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;background:var(--bg3);border:1px solid var(--b2);border-radius:12px;cursor:pointer;transition:all .18s;color:var(--si);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase" onmouseover="this.style.borderColor='var(--ud)';this.style.color='var(--ud)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--si)'">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${f.icon}</svg>
+          ${esc(f.label)}
+        </button>`).join('')}
+    </div>
+  </div>
+
   <div class="sh mb16">Zona de peligro</div>
   <div class="card"><button class="btn-d" style="border:1px solid var(--b3);height:42px" onclick="clearAll()">${ic('trash')} Borrar todos los datos</button><div class="hint mt12">Elimina todo: compras, catálogo, proveedores y configuraciones.</div></div>
 
@@ -8125,12 +8146,13 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   </table>
   </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
+  ${(()=>{const _fc=(DB.get('formConfig',{}).cotizacion)||{};return _fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(_fc.condiciones)}</div>`:''})()}
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
   <div class="doc-push"></div>
-  <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}</div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}${(()=>{const _fc=(DB.get('formConfig',{}).cotizacion)||{};return _fc.piePagina?' · '+esc(_fc.piePagina):'';})()}</div>
 </div>
 </body></html>`);
   w.document.close();
@@ -8704,6 +8726,8 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 
 function pedDocBody(o){
   const emp = DB.get('empresa',{});
+  const fc = (DB.get('formConfig',{}).pedido)||{};
+  const mostrarPrecios = fc.mostrarPrecios !== false;
   const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
   const total = (o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
@@ -8712,8 +8736,7 @@ function pedDocBody(o){
     <td>${esc(p.n||'—')}</td>
     <td>${esc(p.c||'—')}</td>
     <td class="ctr">${p.q||1}</td>
-    <td class="cright">$ ${(p.p||0).toFixed(2)}</td>
-    <td class="cright">$ ${((p.q||1)*(p.p||0)).toFixed(2)}</td>
+    ${mostrarPrecios?`<td class="cright">$ ${(p.p||0).toFixed(2)}</td><td class="cright">$ ${((p.q||1)*(p.p||0)).toFixed(2)}</td>`:''}
   </tr>`).join('');
   const html = `<div class="doc">
   <div class="doc-head">
@@ -8731,25 +8754,23 @@ function pedDocBody(o){
     ${o.cuit?`<div class="meta-item"><div class="meta-lbl">CUIT/DNI</div><div class="meta-val">${esc(o.cuit)}</div></div>`:''}
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+    ${fc.validezDias?`<div class="meta-item"><div class="meta-lbl">Validez</div><div class="meta-val">${esc(fc.validezDias)} días</div></div>`:''}
   </div>
   <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th>#</th><th>Descripción</th><th>Código</th>
-      <th class="ctr">Cant.</th><th class="cright">P. Unit.</th><th class="cright">Subtotal</th>
+      <th class="ctr">Cant.</th>${mostrarPrecios?`<th class="cright">P. Unit.</th><th class="cright">Subtotal</th>`:''}
     </tr></thead>
     <tbody>${items}</tbody>
   </table>
   </div>
-  <div class="doc-totals">
-    <div class="totals-box">
-      <div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div>
-    </div>
-  </div>
+  ${mostrarPrecios?`<div class="doc-totals"><div class="totals-box"><div class="tot-row main"><span>TOTAL</span><span>$ ${total.toFixed(2)}</span></div></div></div>`:''}
   ${condicionesHTML()}
   ${paymentInfoHTML(emp)}
+  ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
   <div class="doc-push"></div>
-  <div class="foot-note">TBR TOOLS · ${o.nro}${o.status==='entregado'?' · Entregado/Cobrado':''}</div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}${o.status==='entregado'?' · Entregado/Cobrado':''}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
 }
@@ -8773,6 +8794,7 @@ async function sharePedWA(id){
 /* Comprobante de venta / factura para el cliente (PDF + reimpresión + WhatsApp) */
 function ventaDocBody(s){
   const emp = DB.get('empresa',{});
+  const fc = (DB.get('formConfig',{}).venta)||{};
   const fecha = new Date(s.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const items = saleItems(s);
   const totalUnits = items.reduce((a,it)=>a+(it.q||1),0);
@@ -8817,8 +8839,9 @@ function ventaDocBody(s){
     </div>
   </div>
   ${paymentInfoHTML(emp)}
+  ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
   <div class="doc-push"></div>
-  <div class="foot-note">TBR TOOLS · ${esc(s.nro||'')}${s.pedidoNro?' · '+esc(s.pedidoNro):''}</div>
+  <div class="foot-note">TBR TOOLS · ${esc(s.nro||'')}${s.pedidoNro?' · '+esc(s.pedidoNro):''}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
 }
@@ -9168,6 +9191,7 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
 
 function ocDocBody(o){
   const emp = DB.get('empresa',{});
+  const fc = (DB.get('formConfig',{}).oc)||{};
   const sym = o.currency==='ARS' ? '$' : 'US$';
   const total = o.currency==='ARS' ? (o.totalARS||0) : (o.totalUSD||0);
   const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
@@ -9211,18 +9235,21 @@ function ocDocBody(o){
       <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
     </div>
   </div>
+  ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
+  ${fc.contacto?`<div style="font-size:10px;color:#555;padding:6px 0;line-height:1.6"><strong>Contacto:</strong> ${esc(fc.contacto)}</div>`:''}
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
   <div class="doc-push"></div>
-  <div class="foot-note">TBR TOOLS · ${o.nro}</div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
 }
 
 function cotDocBody(o){
   const emp = DB.get('empresa',{});
+  const fc = (DB.get('formConfig',{}).cotizacion)||{};
   const fecha = new Date(o.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const totalUnits = (o.items||[]).reduce((s,p)=>s+(p.q||1),0);
   const items = (o.items||[]).map((p,i)=>`<tr>
@@ -9247,6 +9274,7 @@ function cotDocBody(o){
     <div class="meta-item"><div class="meta-lbl">Proveedor</div><div class="meta-val">${esc(o.proveedor||'—')}</div></div>
     <div class="meta-item"><div class="meta-lbl">Fecha</div><div class="meta-val">${fecha}</div></div>
     <div class="meta-item"><div class="meta-lbl">Artículos</div><div class="meta-val">${(o.items||[]).length} ítems · ${totalUnits} u.</div></div>
+    ${fc.validezDias?`<div class="meta-item"><div class="meta-lbl">Validez</div><div class="meta-val">${esc(fc.validezDias)} días</div></div>`:''}
   </div>
   <div class="tbl-wrap">
   <table>
@@ -9258,12 +9286,13 @@ function cotDocBody(o){
   </table>
   </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
+  ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
   <div class="doc-push"></div>
-  <div class="foot-note">TBR TOOLS · ${o.nro}</div>
+  <div class="foot-note">TBR TOOLS · ${o.nro}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
 }
@@ -10736,7 +10765,7 @@ function openFactura(id) {
       <!-- Observaciones -->
       <div style="${fCardStyle}">
         ${fSecLbl('Observaciones')}
-        <div class="iw iw-ta"><textarea id="f-obs" rows="3" style="min-height:66px">${esc(f?.observaciones||conf.facturaObs||'Gracias por elegir TBR Tools. Trabajamos con productos nuevos, originales y con garantía. Contás con 30 días para cambios o devoluciones.')}</textarea></div>
+        <div class="iw iw-ta"><textarea id="f-obs" rows="3" style="min-height:66px">${esc(f?.observaciones||conf.facturaObs||(DB.get('formConfig',{}).factura||{}).obsDefault||'Gracias por elegir TBR Tools. Trabajamos con productos nuevos, originales y con garantía. Contás con 30 días para cambios o devoluciones.')}</textarea></div>
       </div>
 
     </div>
@@ -11140,6 +11169,8 @@ function facturaDocBody(f){
   const empLocalidad = conf.facturaLocalidad||dbEmp.localidad||'';
   const empIngBrutos = emp.ingBrutos||conf.facturaIngBrutos||dbEmp.ingBrutos||'';
   const empInicioActividad = emp.inicioActividad||conf.facturaInicioActividad||dbEmp.inicioActividad||'';
+  const fc = (DB.get('formConfig',{}).factura)||{};
+  const mostrarSkuF = fc.mostrarSku !== false;
   const logo = PhotoDB.getLogo();
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const fmtA = n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -11244,19 +11275,19 @@ function facturaDocBody(f){
     </div>
     <div class="items-section">
     <table class="items-table"><thead><tr>
-      <th style="width:8%">SKU</th>
-      <th style="width:44%">DESCRIPCIÓN</th>
+      ${mostrarSkuF?`<th style="width:8%">SKU</th>`:''}
+      <th style="${mostrarSkuF?'width:44%':'width:52%'}">DESCRIPCIÓN</th>
       <th class="tc" style="width:12%">CANTIDAD</th>
       <th class="tr" style="width:18%">PRECIO UNITARIO</th>
       <th class="tr" style="width:18%">IMPORTE SUBTOTAL</th>
     </tr></thead><tbody>
     ${(f.items||[]).length?f.items.map((it,i)=>`<tr${i%2===1?' style="background:#fafafa"':''}>
-      <td style="color:var(--di)">${esc(it.sku||'—')}</td>
+      ${mostrarSkuF?`<td style="color:var(--di)">${esc(it.sku||'—')}</td>`:''}
       <td>${esc(it.descripcion||'—')}</td>
       <td class="tc">${it.qty||1}</td>
       <td class="tr">${fmtA(it.precioUnit||0)}</td>
       <td class="tr" style="font-weight:700">${fmtA(it.subtotal||0)}</td>
-    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--si);padding:16px;font-style:italic">Sin ítems detallados</td></tr>`}
+    </tr>`).join(''):`<tr><td colspan="${mostrarSkuF?5:4}" style="text-align:center;color:var(--si);padding:16px;font-style:italic">Sin ítems detallados</td></tr>`}
     </tbody></table>
     </div>
     <div class="footer">
@@ -11276,6 +11307,8 @@ function facturaDocBody(f){
       </div>
     </div>
     ${f.observaciones?`<div class="obs"><b>Observaciones:</b> ${esc(f.observaciones)}</div>`:''}
+    ${fc.condiciones?`<div class="obs" style="font-style:italic;color:#777">${esc(fc.condiciones)}</div>`:''}
+    ${fc.piePagina?`<div style="border-top:1px solid #eee;padding:6px 12px;font-size:8px;color:#999;text-align:center">${esc(fc.piePagina)}</div>`:''}
   </div></body></html>`;
 }
 
@@ -11671,6 +11704,7 @@ function emitirNotaCredito(facturaId) {
 
 function ncDocBody(f){
   const emp = f.emisor||{};
+  const fcNC = (DB.get('formConfig',{}).nc)||{};
   const conf = getConf();
   const dbEmp = DB.get('empresa',{});
   const _n = (v) => (!v||v==='TBR TOOLS'||v==='TBR Tools')?null:v;
@@ -11813,6 +11847,8 @@ function ncDocBody(f){
       </div>
     </div>
     ${f.observaciones?`<div class="obs"><b>Observaciones:</b> ${esc(f.observaciones)}</div>`:''}
+    ${fcNC.condiciones?`<div class="obs" style="font-style:italic;color:#777">${esc(fcNC.condiciones)}</div>`:''}
+    ${fcNC.piePagina?`<div style="border-top:1px solid #eee;padding:6px 12px;font-size:8px;color:#999;text-align:center">${esc(fcNC.piePagina)}</div>`:''}
   </div></body></html>`;
 }
 
@@ -12317,6 +12353,8 @@ function remitoDocBody(f) {
   const fmtF = d=>d?d.split('-').reverse().join('/'):'—';
   const esValorizado = f.valorizado === true || f.subTipo === 'R';
   const esRemitoR = f.tipoDoc === 'remitoR' || f.subTipo === 'R';
+  const fc = (DB.get('formConfig',{}).remito)||{};
+  const mostrarSkuR = fc.mostrarSku !== false;
   const totalValorizado = esValorizado ? (f.items||[]).reduce((s,it)=>(it.qty||1)*(it.precio||0)+s,0) : 0;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -12379,15 +12417,15 @@ function remitoDocBody(f) {
       ${f.observaciones?`<div class="obs-box"><b>Obs:</b> ${esc(f.observaciones)}</div>`:''}
       <table class="items-table">
         <thead><tr>
-          <th style="width:80px">SKU</th>
+          ${mostrarSkuR?`<th style="width:80px">SKU</th>`:''}
           <th>Descripción</th>
           <th class="tc" style="width:70px">Cant.</th>
-          ${esValorizado?`<th class="tr" style="width:100px">P. Unit.</th><th class="tr" style="width:100px">Subtotal</th>`:`<th style="width:110px">Recibido</th>`}
+          ${esValorizado?`<th class="tr" style="width:100px">P. Unit.</th><th class="tr" style="width:100px">Subtotal</th>`:`<th style="width:110px">${esc(fc.labelRecibido||'Recibido conforme')}</th>`}
         </tr></thead>
         <tbody>${(f.items||[]).map(it=>{
           const sub = (it.qty||1)*(it.precio||0);
           return `<tr>
-            <td>${esc(it.sku||'—')}</td>
+            ${mostrarSkuR?`<td>${esc(it.sku||'—')}</td>`:''}
             <td>${esc(it.descripcion||'—')}</td>
             <td class="tc"><b>${it.qty||0}</b></td>
             ${esValorizado?`<td class="tr">$${(it.precio||0).toLocaleString('es-AR',{minimumFractionDigits:2})}</td><td class="tr"><b>$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}</b></td>`:`<td style="border-bottom:1px solid #ccc;color:#aaa">&nbsp;</td>`}
@@ -12397,13 +12435,164 @@ function remitoDocBody(f) {
       ${esValorizado?`<div class="total-box"><div class="total-inner"><div class="tl">Total</div><div class="tv">$${totalValorizado.toLocaleString('es-AR',{minimumFractionDigits:2})}</div></div></div>`:''}
     </div>
     <div class="page-footer">
+      ${fc.piePagina?`<div style="font-size:9px;color:#777;text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee">${esc(fc.piePagina)}</div>`:''}
       <div class="firma-row">
-        <div class="firma-box">Entregué conforme<br><br><br>${esc(emp.nombre||'TBR TOOLS')}</div>
-        <div class="firma-box">Recibí conforme<br><br><br>${esc(f.comprador?.nombre||'Cliente')}</div>
+        <div class="firma-box">${esc(fc.labelEntrego||'Entregué conforme')}<br><br><br>${esc(emp.nombre||'TBR TOOLS')}</div>
+        <div class="firma-box">${esc(fc.labelRecibio||'Recibí conforme')}<br><br><br>${esc(f.comprador?.nombre||'Cliente')}</div>
       </div>
     </div>
   </div>
   </body></html>`;
+}
+
+/* ─── FORMULARIOS CONFIG ─── */
+const FORM_CONFIG_META = {
+  factura: {
+    label: 'Factura C',
+    fields: [
+      { key: 'piePagina',    label: 'Pie de página',              type: 'textarea', placeholder: 'Ej: Gracias por su compra. Sin devolución pasados los 30 días.' },
+      { key: 'condiciones',  label: 'Condiciones de venta',       type: 'textarea', placeholder: 'Ej: Precios en pesos argentinos. IVA no incluido.' },
+      { key: 'obsDefault',   label: 'Observaciones por defecto',  type: 'text',     placeholder: 'Se pre-llena en cada factura nueva' },
+      { key: 'mostrarSku',   label: 'Mostrar código SKU en tabla',type: 'toggle',   default: true },
+    ]
+  },
+  nc: {
+    label: 'Nota de Crédito C',
+    fields: [
+      { key: 'piePagina',    label: 'Pie de página',              type: 'textarea', placeholder: 'Ej: Nota de crédito emitida conforme lo acordado.' },
+      { key: 'condiciones',  label: 'Condiciones',                type: 'textarea', placeholder: '' },
+    ]
+  },
+  remito: {
+    label: 'Remito / Remito R',
+    fields: [
+      { key: 'piePagina',        label: 'Pie de página',                    type: 'textarea', placeholder: 'Ej: Documento sin valor fiscal.' },
+      { key: 'labelRecibido',    label: 'Etiqueta columna "Recibido"',      type: 'text',     placeholder: 'Recibido conforme', default: 'Recibido conforme' },
+      { key: 'labelEntrego',     label: 'Etiqueta firma "Entregué"',        type: 'text',     placeholder: 'Entregué conforme', default: 'Entregué conforme' },
+      { key: 'labelRecibio',     label: 'Etiqueta firma "Recibí"',          type: 'text',     placeholder: 'Recibí conforme',   default: 'Recibí conforme' },
+      { key: 'mostrarSku',       label: 'Mostrar SKU en tabla',             type: 'toggle',   default: true },
+      { key: 'obsDefault',       label: 'Observaciones por defecto',        type: 'text',     placeholder: '' },
+    ]
+  },
+  pedido: {
+    label: 'Pedido / Presupuesto',
+    fields: [
+      { key: 'validezDias',  label: 'Validez del presupuesto (días)',  type: 'number',   placeholder: '15', default: '15' },
+      { key: 'condiciones',  label: 'Condiciones',                     type: 'textarea', placeholder: 'Ej: Precios sujetos a variación sin previo aviso.' },
+      { key: 'piePagina',    label: 'Pie de página',                   type: 'textarea', placeholder: '' },
+      { key: 'mostrarPrecios', label: 'Mostrar precios unitarios',     type: 'toggle',   default: true },
+    ]
+  },
+  venta: {
+    label: 'Comprobante de Venta',
+    fields: [
+      { key: 'piePagina',    label: 'Pie de página',              type: 'textarea', placeholder: 'Ej: Gracias por su compra.' },
+      { key: 'condiciones',  label: 'Condiciones',                type: 'textarea', placeholder: '' },
+      { key: 'obsDefault',   label: 'Observaciones por defecto',  type: 'text',     placeholder: '' },
+    ]
+  },
+  cotizacion: {
+    label: 'Cotización',
+    fields: [
+      { key: 'validezDias',  label: 'Validez (días)',             type: 'number',   placeholder: '7', default: '7' },
+      { key: 'condiciones',  label: 'Condiciones',                type: 'textarea', placeholder: 'Ej: Cotización no vinculante. Sujeta a disponibilidad de stock.' },
+      { key: 'piePagina',    label: 'Pie de página',              type: 'textarea', placeholder: '' },
+    ]
+  },
+  oc: {
+    label: 'Orden de Compra',
+    fields: [
+      { key: 'condiciones',  label: 'Condiciones de compra',      type: 'textarea', placeholder: 'Ej: La mercadería debe llegar en perfectas condiciones.' },
+      { key: 'piePagina',    label: 'Pie de página',              type: 'textarea', placeholder: '' },
+      { key: 'contacto',     label: 'Contacto para consultas',    type: 'text',     placeholder: 'Ej: compras@tbr.com / 2604-XXXXXX' },
+    ]
+  },
+};
+
+function openFormConfig(tipo) {
+  const meta = FORM_CONFIG_META[tipo];
+  if (!meta) return;
+  const cfg = DB.get('formConfig', {});
+  const vals = cfg[tipo] || {};
+
+  const fieldsHTML = meta.fields.map(f => {
+    const val = vals[f.key] !== undefined ? vals[f.key] : (f.default !== undefined ? f.default : '');
+    if (f.type === 'toggle') {
+      const on = val === true || val === 'true' || (val === '' && f.default !== false);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div>
+          <div style="font-size:13px;color:var(--ch)">${esc(f.label)}</div>
+        </div>
+        <button id="fctog-${f.key}" onclick="fcToggle('${f.key}')" data-on="${on}" style="width:46px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:background .2s;position:relative;background:${on?'var(--ud)':'var(--b3)'}">
+          <span style="position:absolute;top:3px;left:${on?'23px':'3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;display:block"></span>
+        </button>
+      </div>`;
+    }
+    if (f.type === 'textarea') {
+      return `<div>
+        <label class="fl">${esc(f.label)}</label>
+        <div class="iw iw-ta"><textarea id="fc-${f.key}" rows="3" placeholder="${esc(f.placeholder||'')}" style="font-size:13px">${esc(val)}</textarea></div>
+      </div>`;
+    }
+    return `<div>
+      <label class="fl">${esc(f.label)}</label>
+      <div class="iw"><input type="${f.type==='number'?'number':'text'}" id="fc-${f.key}" value="${esc(String(val))}" placeholder="${esc(f.placeholder||'')}" style="font-size:13px"${f.type==='number'?' min="1" max="365"':''}></div>
+    </div>`;
+  }).join('');
+
+  const modal = document.getElementById('form-config-modal');
+  modal.dataset.tipo = tipo;
+  modal.innerHTML = `<div class="mbox" style="max-width:520px;width:calc(100% - 32px)">
+    <div class="mhdr">
+      <span>Formulario — ${esc(meta.label)}</span>
+      <button class="btn-rm" onclick="closeFormConfig()">${ic('close')}</button>
+    </div>
+    <div class="mbody" style="display:flex;flex-direction:column;gap:14px;padding:18px">
+      ${fieldsHTML}
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn-g" onclick="closeFormConfig()" style="flex:1;height:44px">Cancelar</button>
+        <button class="btn-go" onclick="saveFormConfig('${tipo}')" style="flex:2;height:44px;font-size:12px">Guardar cambios</button>
+      </div>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+  lockBody();
+}
+
+function fcToggle(key) {
+  const btn = document.getElementById('fctog-' + key);
+  if (!btn) return;
+  const on = btn.dataset.on !== 'true';
+  btn.dataset.on = String(on);
+  btn.style.background = on ? 'var(--ud)' : 'var(--b3)';
+  const span = btn.querySelector('span');
+  if (span) span.style.left = on ? '23px' : '3px';
+}
+
+function saveFormConfig(tipo) {
+  const meta = FORM_CONFIG_META[tipo];
+  if (!meta) return;
+  const cfg = DB.get('formConfig', {});
+  const vals = {};
+  meta.fields.forEach(f => {
+    if (f.type === 'toggle') {
+      const btn = document.getElementById('fctog-' + f.key);
+      vals[f.key] = btn ? btn.dataset.on === 'true' : (f.default !== false);
+    } else {
+      const el = document.getElementById('fc-' + f.key);
+      vals[f.key] = el ? el.value.trim() : '';
+    }
+  });
+  cfg[tipo] = vals;
+  DB.set('formConfig', cfg);
+  closeFormConfig();
+  toast(`Formulario "${meta.label}" guardado`);
+}
+
+function closeFormConfig() {
+  const m = document.getElementById('form-config-modal');
+  if (m) m.style.display = 'none';
+  unlockBody();
 }
 
 async function forzarActualizacion(){
