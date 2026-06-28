@@ -551,14 +551,16 @@ html.light body::before{
 .tab.on{color:rgba(245,240,228,.92);border-bottom-color:var(--ud);text-shadow:0 0 20px rgba(237,217,180,.25)}
 
 /* CONTENT */
+/* Los transforms en #app rompen position:fixed de los modales hijos
+   (crean un nuevo containing block). Se usa solo opacity para las transiciones. */
 #app{flex:1;position:relative;z-index:1;animation:pgFadeIn .28s ease}
-@keyframes pgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pgFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes modalBackdropIn{from{opacity:0}to{opacity:1}}
 @keyframes modalBoxIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 /* ── DIRECTIONAL PAGE TRANSITIONS ── */
-@keyframes pageSlideInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
-@keyframes pageSlideInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pageSlideInR{from{opacity:0}to{opacity:1}}
+@keyframes pageSlideInL{from{opacity:0}to{opacity:1}}
 #app.slide-r{animation:pageSlideInR .32s cubic-bezier(.22,.61,.36,1)}
 #app.slide-l{animation:pageSlideInL .32s cubic-bezier(.22,.61,.36,1)}
 
