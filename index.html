@@ -5619,7 +5619,7 @@ function pgVentas(){
               ${!isML?`<button class="btn-p btn-sm" onclick="reprintSale('${s.id}')">${ic('printer')} Comprobante</button>`:''}
               ${s.tel?`<button class="btn-g btn-sm" style="color:var(--wa)" onclick="shareSaleWA('${s.id}')">${waIcon()}WhatsApp</button>`:''}
               <div style="flex:1"></div>
-              <button class="btn-d btn-sm" onclick="confirm2('¿Borrar esta venta?',()=>delSale('${s.id}'),'Borrar')">${ic('trash',13)} Borrar</button>
+              <button class="btn-d btn-sm" onclick="delSale('${s.id}')">${ic('trash',13)} Borrar</button>
             </div>
           </div>
         </div>
