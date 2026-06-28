@@ -12119,9 +12119,9 @@ function riRenderItems() {
   if (!wrap) return;
   if (!_riItems.length) { wrap.innerHTML = `<div style="font-size:12px;color:var(--di);padding:8px 0">Sin artículos agregados</div>`; return; }
   wrap.innerHTML = _riItems.map((it,i)=>`
-    <div style="display:grid;grid-template-columns:${esValorizado?'1fr 60px 100px auto':'1fr 60px auto'};gap:6px;align-items:center">
-      <div class="iw" style="min-width:0"><input type="text" value="${esc(it.descripcion||'')}" placeholder="Descripción" list="ri-prod-opts-${i}" oninput="_riItems[${i}].descripcion=this.value" style="font-size:13px">
-        <datalist id="ri-prod-opts-${i}">${prodOpts}</datalist></div>
+    <div style="display:grid;grid-template-columns:${esValorizado?'auto 1fr 60px 100px auto':'auto 1fr 60px auto'};gap:6px;align-items:center">
+      <button onclick="openRiCatSheet(${i})" style="width:34px;height:34px;background:var(--b3);border:1px solid rgba(196,149,42,.25);border-radius:8px;cursor:pointer;color:var(--ud);display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Buscar en catálogo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <div class="iw" style="min-width:0"><input type="text" value="${esc(it.descripcion||'')}" placeholder="Descripción" oninput="_riItems[${i}].descripcion=this.value" style="font-size:13px"></div>
       <div class="iw"><input type="number" value="${it.qty||1}" min="1" placeholder="Cant." oninput="_riItems[${i}].qty=+this.value||1" style="text-align:center;font-size:13px"></div>
       ${esValorizado?`<div class="iw" style="min-width:0"><input type="number" value="${it.precio||''}" min="0" step="0.01" placeholder="Precio" oninput="_riItems[${i}].precio=+this.value||0" style="font-size:13px"></div>`:''}
       <button onclick="_riItems.splice(${i},1);riRenderItems()" style="width:28px;height:28px;background:none;border:none;cursor:pointer;color:var(--re);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ic('trash',14)}</button>
@@ -12130,6 +12130,14 @@ function riRenderItems() {
 function riAddItem() {
   _riItems.push({descripcion:'',qty:1,sku:'',precio:0});
   riRenderItems();
+}
+function openRiCatSheet(i) {
+  openCatalogSheet(function(p){
+    _riItems[i].descripcion = p.name;
+    _riItems[i].sku = p.code||'';
+    _riItems[i].precio = p.salePrice||p.lastPrice||p.defaultPrice||0;
+    riRenderItems();
+  });
 }
 function riAutoFillCliente() {
   const nombre = (document.getElementById('ri-dest')?.value||'').trim();
