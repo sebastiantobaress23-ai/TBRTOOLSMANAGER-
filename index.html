@@ -6012,18 +6012,23 @@ async function saveCat(){
       img.src=p;
     }).catch(()=>p);
   }
-  // Full-res photos for local use (IndexedDB / PDF / print)
-  const photos = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?1600:1200, idx===0?0.92:0.88)));
-  const photo=photos[0]||'';
-  let cat=DB.get('catalog',[]);
-  const prodId=eid||uid();
-  // Save full-res photos in IndexedDB
-  await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
-  // Upload full-res photos to Firebase Storage (async, non-blocking)
-  if(photo) fbWritePhotos(prodId, photo, photos);
-  if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
-  else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
-  DB.set('catalog',cat);closeCatEdit();render();
+  try {
+    // Full-res photos for local use (IndexedDB / PDF / print)
+    const photos = await Promise.all(cePhotos.slice(0,6).map((p,idx)=>resizePhoto(p, idx===0?1600:1200, idx===0?0.92:0.88)));
+    const photo=photos[0]||'';
+    let cat=DB.get('catalog',[]);
+    const prodId=eid||uid();
+    // Save full-res photos in IndexedDB
+    await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
+    // Upload full-res photos to Firebase Storage (async, non-blocking)
+    if(photo) fbWritePhotos(prodId, photo, photos);
+    if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
+    else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
+    DB.set('catalog',cat);closeCatEdit();render();
+  } catch(e) {
+    toast('Error al guardar: ' + (e?.message||'intentá de nuevo'), false, 5000);
+    if(btn){btn.disabled=false;btn.textContent='Guardar';}
+  }
 }
 function delCat(id){confirm2('¿Eliminar del catálogo?',()=>{
   const cat=DB.get('catalog',[]);
