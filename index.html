@@ -11112,10 +11112,22 @@ async function saveFactura(emitir=false){
     createdAt: _facturaEdit?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+  const isNew = !_facturaEdit;
   let facturas = DB.get('facturas',[]);
   if(_facturaEdit) facturas = facturas.map(f=>f.id===factura.id?factura:f);
   else facturas.push(factura);
   DB.set('facturas',facturas);
+  // Descontar stock al crear una factura nueva (no en ediciones)
+  if(isNew){
+    const cat = DB.get('catalog',[]);
+    let catChanged = false;
+    (factura.items||[]).forEach(it=>{
+      const qty = it.qty||1;
+      const ci = cat.find(c=>it.sku?c.code===it.sku:c.name===it.descripcion);
+      if(ci && ci.stock!=null){ ci.stock -= qty; logStockMov(ci, -qty, 'factura'); catChanged=true; }
+    });
+    if(catChanged) DB.set('catalog',cat);
+  }
   closeFacturaModal();
   render();
   if(emitir) { setTimeout(()=>facturaPreview(factura.id),300); toast(`Factura ${nro} emitida`); }
@@ -11719,6 +11731,15 @@ function emitirNotaCredito(facturaId) {
     const allDocs = DB.get('facturas',[]);
     allDocs.push(nc);
     DB.set('facturas', allDocs);
+    // Restaurar stock al emitir NC (devuelve la mercadería al inventario)
+    const cat = DB.get('catalog',[]);
+    let catChanged = false;
+    (orig.items||[]).forEach(it=>{
+      const qty = it.qty||1;
+      const ci = cat.find(c=>it.sku?c.code===it.sku:c.name===it.descripcion);
+      if(ci && ci.stock!=null){ ci.stock += qty; logStockMov(ci, qty, 'nota_credito'); catChanged=true; }
+    });
+    if(catChanged) DB.set('catalog',cat);
     render();
     toast(`Nota de Crédito ${nroNC} emitida con CAE`);
     setTimeout(()=>facturaPreview(nc.id), 400);
