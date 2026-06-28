@@ -1804,6 +1804,86 @@ html.light .sc::after{opacity:.6}
 <div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
 <div id="import-doc-modal" class="mol" style="display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeImportDocSheet()"></div>
 <div id="form-config-modal" class="mol" style="display:none;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeFormConfig()"></div>
+<!-- MODAL MOVIMIENTOS DE STOCK -->
+<div id="stock-movs-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockMovs()">
+  <div class="mbox" style="max-width:640px"><div class="mhdr"><span>Movimientos de stock</span><button class="btn-rm" onclick="closeStockMovs()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="mbody" id="stock-movs-body"></div></div>
+</div>
+<!-- MODAL AJUSTE MANUAL DE STOCK -->
+<div id="stock-adj-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockAdj()">
+  <div class="mbox"><div class="mhdr"><span>Ajustar stock</span><button class="btn-rm" onclick="closeStockAdj()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="mbody">
+    <div class="mb16" style="font-weight:600" id="adj-prod-name"></div>
+    <div class="ch-tg" id="adj-dir-tg">
+      <button type="button" class="ch-tg-btn active" data-dir="add" onclick="setAdjDir('add')">+ Sumar</button>
+      <button type="button" class="ch-tg-btn" data-dir="sub" onclick="setAdjDir('sub')">− Restar</button>
+    </div>
+    <input type="hidden" id="adj-dir" value="add">
+    <div class="mt12"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="adj-qty" placeholder="Ej: 5" step="1" min="1"></div></div>
+    <div class="hint" id="adj-hint">Sumá si recibiste mercadería extra o un conteo encontró más stock del registrado.</div>
+    <div class="mt12"><label class="fl">Motivo</label><div class="iw"><select id="adj-reason">
+      <option value="conteo">Conteo físico</option>
+      <option value="rotura">Rotura / daño</option>
+      <option value="perdida">Pérdida / robo</option>
+      <option value="otro">Otro</option>
+    </select></div></div>
+    <input type="hidden" id="adj-id">
+    <button class="btn-go" style="margin-top:8px" onclick="saveStockAdj()">Guardar ajuste</button>
+  </div></div>
+</div>
+<!-- MODAL VISTA 360 -->
+<div id="prod360-modal" class="mol" style="display:none" onclick="if(event.target===this)closeProd360()">
+  <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="prod360-body" class="mbody"></div></div>
+</div>
+<!-- MODAL EDITAR PRODUCTO CATALOGO -->
+<div id="cat-edit-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatEdit()">
+  <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="mbody">
+    <div class="mb16">
+      <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Fotos del producto</div>
+      <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 5MB cada una.</div>
+      <div id="ce-photos-wrap" class="ce-photos-wrap"></div>
+      <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="addCePhoto(this)">
+      <input type="file" id="ce-photo-rep-inp" accept="image/*" style="display:none" onchange="_onCePhotoReplace(this)">
+    </div>
+    <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
+    <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
+    <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0" oninput="updateCeCostHint()"></div></div>
+    <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div></div>
+    <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
+    <div class="hint">Se descuenta al vender y suma al comprar. Vacío = sin control de stock.</div>
+    <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div class="fg-w"><div class="iw" style="flex:1;min-width:125px"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 108px;min-width:108px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px;flex:0 0 auto;padding:0 8px" title="Sugerir según costo + margen">Sugerir</button></div></div>
+    <div class="hint">Precio al cliente en Pedidos. "%" es el margen sobre el costo — editá uno y el otro se recalcula.</div>
+    <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical;min-height:70px;box-sizing:border-box"></textarea></div>
+    <div class="hint">Se muestra en la ficha del producto dentro del catálogo digital, debajo del nombre.</div>
+    <div class="mt12" style="border-top:1px solid var(--b2);padding-top:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--ch);margin-bottom:4px">Posición en el hero del catálogo digital (opcional)</div>
+      <div class="hint mb8">Si la foto del producto en el hero queda mal encuadrada, ajustá estos valores. Solo afecta el hero, no las cards.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-x" placeholder="Ej: 65%" title="Posición horizontal de la imagen en el hero (ej: 65%, left, right, center)"><span class="isuf" style="font-size:10px">X</span></div>
+        <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-y" placeholder="Ej: 30%" title="Posición vertical de la imagen en el hero (ej: 30%, top, bottom, center)"><span class="isuf" style="font-size:10px">Y</span></div>
+        <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-size" placeholder="Ej: 120%" title="Tamaño de la imagen en el hero (ej: 120%, cover, contain)"><span class="isuf" style="font-size:10px">Zoom</span></div>
+      </div>
+      <div class="hint">X: más alto = imagen más a la derecha (ej: 65%). Y: más alto = más abajo (ej: 30%). Zoom: más alto = más cerca (ej: 120%). Dejá vacío para usar el valor por defecto.</div>
+    </div>
+    <input type="hidden" id="ce-id">
+    <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
+  </div></div>
+</div>
+<!-- MODAL CLIENTE -->
+<div id="cli-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCli()">
+  <div class="mbox">
+    <div class="mhdr"><span id="cli-title">Nuevo cliente</span><button class="btn-rm" onclick="closeCli()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mbody">
+      <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="cli-nombre" placeholder="Nombre del cliente" autocomplete="off"></div></div>
+      <div><label class="fl">Teléfono (WhatsApp)</label><div class="iw"><input type="text" id="cli-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
+      <div><label class="fl">CUIT / DNI</label><div class="iw"><input type="text" id="cli-cuit" placeholder="Ej: 20304050607" autocomplete="off"></div></div>
+      <input type="hidden" id="cli-id">
+      <button class="btn-go" style="margin-top:8px" onclick="saveCli()">Guardar cliente</button>
+    </div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div id="ocr-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOcrModal()">
@@ -5738,73 +5818,6 @@ function pgCat() {
       </div>`;
     }).join('')}
   </div>`}
-  <!-- MODAL MOVIMIENTOS DE STOCK -->
-  <div id="stock-movs-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockMovs()">
-    <div class="mbox" style="max-width:640px"><div class="mhdr"><span>Movimientos de stock</span><button class="btn-rm" onclick="closeStockMovs()">${ic('close')}</button></div>
-    <div class="mbody" id="stock-movs-body"></div></div>
-  </div>
-  <!-- MODAL AJUSTE MANUAL DE STOCK -->
-  <div id="stock-adj-modal" class="mol" style="display:none" onclick="if(event.target===this)closeStockAdj()">
-    <div class="mbox"><div class="mhdr"><span>Ajustar stock</span><button class="btn-rm" onclick="closeStockAdj()">${ic('close')}</button></div>
-    <div class="mbody">
-      <div class="mb16" style="font-weight:600" id="adj-prod-name"></div>
-      <div class="ch-tg" id="adj-dir-tg">
-        <button type="button" class="ch-tg-btn active" data-dir="add" onclick="setAdjDir('add')">+ Sumar</button>
-        <button type="button" class="ch-tg-btn" data-dir="sub" onclick="setAdjDir('sub')">− Restar</button>
-      </div>
-      <input type="hidden" id="adj-dir" value="add">
-      <div class="mt12"><label class="fl">Cantidad</label><div class="iw"><input type="number" id="adj-qty" placeholder="Ej: 5" step="1" min="1"></div></div>
-      <div class="hint" id="adj-hint">Sumá si recibiste mercadería extra o un conteo encontró más stock del registrado.</div>
-      <div class="mt12"><label class="fl">Motivo</label><div class="iw"><select id="adj-reason">
-        <option value="conteo">Conteo físico</option>
-        <option value="rotura">Rotura / daño</option>
-        <option value="perdida">Pérdida / robo</option>
-        <option value="otro">Otro</option>
-      </select></div></div>
-      <input type="hidden" id="adj-id">
-      <button class="btn-go" style="margin-top:8px" onclick="saveStockAdj()">Guardar ajuste</button>
-    </div></div>
-  </div>
-  <!-- MODAL VISTA 360 -->
-  <div id="prod360-modal" class="mol" style="display:none" onclick="if(event.target===this)closeProd360()">
-    <div class="mbox" style="max-width:640px"><div class="mhdr"><span id="prod360-title">Vista 360</span><button class="btn-rm" onclick="closeProd360()">${ic('close')}</button></div>
-    <div id="prod360-body" class="mbody"></div></div>
-  </div>
-  <!-- MODAL -->
-  <div id="cat-edit-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatEdit()">
-    <div class="mbox"><div class="mhdr"><span id="cat-edit-title">Agregar producto</span><button class="btn-rm" onclick="closeCatEdit()">${ic('close')}</button></div>
-    <div class="mbody">
-      <div class="mb16">
-        <div style="font-size:13px;color:var(--ch);margin-bottom:4px">Fotos del producto</div>
-        <div class="hint mb8">Se muestran en el catálogo digital para que los clientes vean el producto desde distintos ángulos. La primera es la foto de portada (se usa en el catálogo y al compartir). Máx. 6 fotos, 5MB cada una.</div>
-        <div id="ce-photos-wrap" class="ce-photos-wrap"></div>
-        <input type="file" id="ce-photo-inp" accept="image/*" style="display:none" onchange="addCePhoto(this)">
-        <input type="file" id="ce-photo-rep-inp" accept="image/*" style="display:none" onchange="_onCePhotoReplace(this)">
-      </div>
-      <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="ce-name" placeholder="Amoladora 20V"></div></div>
-      <div><label class="fl">Código</label><div class="iw"><input type="text" id="ce-code" placeholder="TAGL271532"></div></div>
-      <div><label class="fl">Precio USD por defecto</label><div class="iw"><span class="ipre">USD</span><input type="number" id="ce-price" placeholder="0.00" step="0.5" min="0" oninput="updateCeCostHint()"></div></div>
-      <div><label class="fl">Código de barras</label><div style="display:flex;gap:8px"><div class="iw" style="flex:1"><input type="text" id="ce-barcode" placeholder="7791234567890"></div><button class="btn-g btn-sm" onclick="scanForCatalog()" title="Escanear código de barras" style="height:42px">${ic('camera')}</button></div></div>
-      <div><label class="fl">Stock (opcional)</label><div class="iw"><input type="number" id="ce-stock" placeholder="Sin control de stock" step="1" min="0"></div></div>
-      <div class="hint">Se descuenta al vender y suma al comprar. Vacío = sin control de stock.</div>
-      <div class="mt12"><label class="fl">Precio de venta (ARS)</label><div class="fg-w"><div class="iw" style="flex:1;min-width:125px"><span class="ipre">$</span><input type="number" id="ce-saleprice" placeholder="0" step="100" min="0" oninput="syncCeMargin('price')"></div><div class="iw" style="flex:0 0 108px;min-width:108px"><input type="number" id="ce-margin" placeholder="0" step="1" oninput="syncCeMargin('margin')"><span class="isuf">%</span></div><button class="btn-g btn-sm" onclick="sugerirVenta()" style="height:42px;flex:0 0 auto;padding:0 8px" title="Sugerir según costo + margen">Sugerir</button></div></div>
-      <div class="hint">Precio al cliente en Pedidos. "%" es el margen sobre el costo — editá uno y el otro se recalcula.</div>
-      <div class="mt12"><label class="fl">Descripción / Especificaciones (opcional)</label><textarea id="ce-specs" rows="3" placeholder="Ej: Batería 20V incluida, 2 velocidades, mandril de 13mm, incluye maletín y accesorios..." style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:6px;padding:10px;color:var(--ch);font-size:13px;outline:none;font-family:inherit;resize:vertical;min-height:70px;box-sizing:border-box"></textarea></div>
-      <div class="hint">Se muestra en la ficha del producto dentro del catálogo digital, debajo del nombre.</div>
-      <div class="mt12" style="border-top:1px solid var(--b2);padding-top:12px">
-        <div style="font-size:13px;font-weight:600;color:var(--ch);margin-bottom:4px">Posición en el hero del catálogo digital (opcional)</div>
-        <div class="hint mb8">Si la foto del producto en el hero queda mal encuadrada, ajustá estos valores. Solo afecta el hero, no las cards.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-x" placeholder="Ej: 65%" title="Posición horizontal de la imagen en el hero (ej: 65%, left, right, center)"><span class="isuf" style="font-size:10px">X</span></div>
-          <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-y" placeholder="Ej: 30%" title="Posición vertical de la imagen en el hero (ej: 30%, top, bottom, center)"><span class="isuf" style="font-size:10px">Y</span></div>
-          <div class="iw" style="flex:1;min-width:90px"><input type="text" id="ce-hero-size" placeholder="Ej: 120%" title="Tamaño de la imagen en el hero (ej: 120%, cover, contain)"><span class="isuf" style="font-size:10px">Zoom</span></div>
-        </div>
-        <div class="hint">X: más alto = imagen más a la derecha (ej: 65%). Y: más alto = más abajo (ej: 30%). Zoom: más alto = más cerca (ej: 120%). Dejá vacío para usar el valor por defecto.</div>
-      </div>
-      <input type="hidden" id="ce-id">
-      <button class="btn-go" style="margin-top:8px" onclick="saveCat()">Guardar</button>
-    </div></div>
-  </div>
 </div>`;
 }
 let _pendingRender=false;
@@ -8966,19 +8979,6 @@ function pgClientes() {
 
   <div id="cli-list">${cliListHTML(list)}</div>
 
-  <!-- MODAL CLIENTE -->
-  <div id="cli-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCli()">
-    <div class="mbox">
-      <div class="mhdr"><span id="cli-title">Nuevo cliente</span><button class="btn-rm" onclick="closeCli()">${ic('close')}</button></div>
-      <div class="mbody">
-        <div><label class="fl">Nombre</label><div class="iw"><input type="text" id="cli-nombre" placeholder="Nombre del cliente" autocomplete="off"></div></div>
-        <div><label class="fl">Teléfono (WhatsApp)</label><div class="iw"><input type="text" id="cli-tel" placeholder="Ej: 5491122334455" autocomplete="off"></div></div>
-        <div><label class="fl">CUIT / DNI</label><div class="iw"><input type="text" id="cli-cuit" placeholder="Ej: 20304050607" autocomplete="off"></div></div>
-        <input type="hidden" id="cli-id">
-        <button class="btn-go" style="margin-top:8px" onclick="saveCli()">Guardar cliente</button>
-      </div>
-    </div>
-  </div>
 </div>`;
 }
 
