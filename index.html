@@ -2202,6 +2202,15 @@ window.addEventListener('online', async () => {
   }
 });
 window.addEventListener('offline', () => setSyncDot(false));
+// En mobile los setInterval se throttlean a >1min en background.
+// Al volver al tab, forzar sync inmediato para que los datos de PC
+// aparezcan sin esperar el próximo intervalo.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    _lastWrite = 0; // resetear guard para que fbSync corra siempre al volver
+    fbSync();
+  }
+});
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
@@ -10391,6 +10400,9 @@ window.onload = async function() {
   }
   // Firebase sync cada 10s
   setInterval(fbSync, 10000);
+  // Resetear _lastWrite para que el sync inicial siempre corra,
+  // incluso si fbWrite/DB.set corrieron durante el init (forceCatalogSync, migración).
+  _lastWrite = 0;
   fbSync();
   // Backup proactivo: si hay logo/QR en IDB pero no en Firebase, subirlos
   setTimeout(async () => {
