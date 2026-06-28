@@ -10521,10 +10521,10 @@ function pgFacturador() {
         <button class="btn-g btn-sm" onclick="openFactura('${f.id}')">${ic('edit')}${mob?'':' Editar'}</button>
         <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')}${mob?'':' PDF'}</button>
         ${waBtn}
-        ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓${mob?'':' Pagada'}</button>`:''}
+        ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'&&f.tipo!=='RM'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓${mob?'':' Pagada'}</button>`:''}
         ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${emitirSvg}${mob?'':' Emitir'}</button>`:''}
-        ${f.tipo!=='NC'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Nota de Crédito">${ic('fileText')} NC</button>`:''}
-        ${f.tipo!=='NC'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕</button>`:''}
+        ${f.tipo!=='NC'&&f.tipo!=='RM'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Nota de Crédito">${ic('fileText')} NC</button>`:''}
+        ${f.tipo!=='NC'&&f.tipo!=='RM'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕</button>`:''}
         ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')}${mob?'':' Remito'}</button>`:''}
         <button class="btn-d btn-sm" onclick="deleteFactura('${f.id}')">${ic('trash')}</button>
       </div>
