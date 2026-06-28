@@ -6150,8 +6150,9 @@ function openProd360(id) {
     </div>`}
   `;
   document.getElementById('prod360-modal').style.display='flex';
+  lockBody();
 }
-function closeProd360(){const m=document.getElementById('prod360-modal');if(m)m.style.display='none';}
+function closeProd360(){const m=document.getElementById('prod360-modal');if(m)m.style.display='none';unlockBody();}
 
 /* ═══════════════════════════════════════════
    RÉCORDS — destacados con acento dorado
