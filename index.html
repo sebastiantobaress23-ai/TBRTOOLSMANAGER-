@@ -2388,8 +2388,14 @@ async function fbSync() {
       if (hasRelevantChange) {
         const ae = document.activeElement;
         const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
-        const anyModalOpen = !!document.querySelector('.mol[style*="flex"]');
-        if (!typing && !anyModalOpen) render(); else _pendingRender = true;
+        // Solo bloquear render si hay un modal con estado de formulario activo
+        // (factura-modal y remito-modal tienen estado propio que render() borraría).
+        // Los demás modales son lectura o están fuera de #app → render() es seguro.
+        const blockingModal = !!(
+          document.getElementById('factura-modal')?.style.display==='flex' ||
+          document.getElementById('remito-modal')?.style.display==='flex'
+        );
+        if (!typing && !blockingModal) render(); else _pendingRender = true;
       }
       if (settingsChanged) checkAccessPin();
     }
@@ -10836,6 +10842,7 @@ function closeFacturaModal(){
   unlockBody();
   _factItems=[];
   _facturaEdit=null;
+  if(_pendingRender){_pendingRender=false;render();}
 }
 
 function facturaAutoFillCliente(nombre){
@@ -12357,6 +12364,7 @@ function closeRemitoModal(){
   document.getElementById('remito-modal').style.display='none';
   unlockBody();
   _remitoFacturaId = null;
+  if(_pendingRender){_pendingRender=false;render();}
 }
 
 function guardarRemito(facturaId, itemsOrig) {
