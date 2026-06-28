@@ -9034,11 +9034,11 @@ function cliListHTML(list) {
           </div>`;
         }).join('')}
       </div>`:''}
-      <div style="border-top:1px solid rgba(255,255,255,.05);display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.05)">
-        ${c.tel?`<a href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;font-size:12px;font-weight:600;color:var(--wa);text-decoration:none;background:rgba(20,20,20,1)">${waIcon(14)}WhatsApp</a>`:`<div style="background:rgba(20,20,20,1)"></div>`}
-        <button onclick="openCli('${c.id}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;font-size:12px;font-weight:600;color:var(--si);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('edit',14)} Editar</button>
-        <button onclick="verFacturasCli('${esc(c.nombre)}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;font-size:12px;font-weight:600;color:var(--si);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('fileText',14)} Facturas</button>
-        <button onclick="delCli('${c.id}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;font-size:12px;font-weight:600;color:var(--re);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('trash',14)} Borrar</button>
+      <div style="border-top:1px solid rgba(255,255,255,.05);display:grid;grid-template-columns:${c.tel?'1fr 1fr 1fr 1fr':'1fr 1fr 1fr'};gap:1px;background:rgba(255,255,255,.05)">
+        ${c.tel?`<a href="https://wa.me/${esc(c.tel.replace(/\D/g,''))}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 6px;font-size:12px;font-weight:600;color:var(--wa);text-decoration:none;background:rgba(20,20,20,1)">${waIcon(14)}WhatsApp</a>`:''}
+        <button onclick="openCli('${c.id}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 6px;font-size:12px;font-weight:600;color:var(--si);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('edit',14)} Editar</button>
+        <button onclick="verFacturasCli('${esc(c.nombre)}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 6px;font-size:12px;font-weight:600;color:var(--si);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('fileText',14)} Facturas</button>
+        <button onclick="delCli('${c.id}')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 6px;font-size:12px;font-weight:600;color:var(--re);background:rgba(20,20,20,1);border:none;cursor:pointer">${ic('trash',14)} Borrar</button>
       </div>
     </div>
   </div>`;
