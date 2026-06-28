@@ -2205,7 +2205,7 @@ window.addEventListener('offline', () => setSyncDot(false));
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
 // guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos'];
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos','formConfig'];
 
 // Fallback cuando /tbr.json completo falla: trae nodo a nodo usando auth.
 async function _fbFallbackPublic() {
@@ -2275,19 +2275,19 @@ async function fbSync() {
       // Solo re-renderizar si algún dato relevante para la página actual cambió.
       // Evita que syncs de otras secciones reseteen el scroll y el estado visual.
       const PAGE_KEYS = {
-        dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa','gastos','facturas'],
+        dashboard:    ['purchases','sales','pedidos','catalog','settings','empresa','gastos','facturas','formConfig'],
         compra:       ['catalog','configs','settings'],
         historial:    ['purchases','configs'],
         ventas:       ['sales','catalog','settings'],
-        pedidos:      ['pedidos','settings','empresa'],
+        pedidos:      ['pedidos','settings','empresa','formConfig'],
         catalogo:     ['catalog','settings'],
         stats:        ['purchases','sales','pedidos','catalog','gastos'],
         gastos:       ['gastos','settings'],
         publicar:     ['mlpubs','catalog','settings'],
         competencia:  ['catalog'],
         config:       ['settings','empresa','configs'],
-        orden:        ['ordenes'],
-        cotizaciones: ['cotizaciones','catalog','configs'],
+        orden:        ['ordenes','formConfig'],
+        cotizaciones: ['cotizaciones','catalog','configs','formConfig'],
         proveedores:  ['configs'],
         clientes:     ['clientes','sales','pedidos'],
         viaje:        ['trip','configs'],
