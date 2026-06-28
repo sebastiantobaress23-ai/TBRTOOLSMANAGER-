@@ -7734,7 +7734,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -7824,11 +7825,11 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
       <div class="tot-row main"><span>TOTAL ${currency}</span><span>${currSym} ${totalNet.toFixed(2)}</span></div>
     </div>
   </div>
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(p.conf?.name||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${nro}</div>
 </div>
 </body></html>`);
@@ -8092,7 +8093,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -8172,11 +8174,11 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
   </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
   ${(()=>{const _fc=(DB.get('formConfig',{}).cotizacion)||{};return _fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(_fc.condiciones)}</div>`:''})()}
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${reprint?' · Reimpresión':''}${(()=>{const _fc=(DB.get('formConfig',{}).cotizacion)||{};return _fc.piePagina?' · '+esc(_fc.piePagina):'';})()}</div>
 </div>
 </body></html>`);
@@ -8659,7 +8661,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -8884,7 +8887,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -9249,11 +9253,11 @@ function ocDocBody(o){
   </div>
   ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
   ${fc.contacto?`<div style="font-size:10px;color:#555;padding:6px 0;line-height:1.6"><strong>Contacto:</strong> ${esc(fc.contacto)}</div>`:''}
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9299,11 +9303,11 @@ function cotDocBody(o){
   </div>
   <div class="note">Por favor completar el precio unitario cotizado por artículo y enviarnos esta solicitud respondida, indicando el número <strong>${o.nro}</strong> como referencia.</div>
   ${fc.condiciones?`<div style="font-size:10px;color:#555;padding:8px 0;border-top:1px solid #eee;margin-top:8px;line-height:1.6">${esc(fc.condiciones)}</div>`:''}
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Solicitante</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro}${fc.piePagina?' · '+esc(fc.piePagina):''}</div>
 </div>`;
   return {css: DOC_CSS, html};
@@ -9793,7 +9797,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -9880,11 +9885,11 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
       <div class="tot-row main"><span>TOTAL ${o.currency||'USD'}</span><span>${sym} ${total.toFixed(2)}</span></div>
     </div>
   </div>
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(o.proveedor||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${o.nro} · Reimpresión</div>
 </div>
 </body></html>`);
@@ -9974,7 +9979,8 @@ body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#111;padd
 .toolbar span{font-size:13px;color:#555}
 .btn-print{background:#111;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700}
 .btn-close{background:transparent;border:1px solid #ccc;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
-.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.doc{border:1px solid #ddd;border-radius:8px;overflow:hidden;min-height:100vh;display:flex;flex-direction:column}
+.doc-push{flex:1}
 .doc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:2px solid #111;background:#fff}
 .brand h1{font-size:20px;font-weight:900;letter-spacing:1px;margin-bottom:3px}
 .brand p{font-size:10px;color:#666;margin:1px 0}
@@ -10065,11 +10071,11 @@ tbody td{padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;vertical-a
       <div class="tot-row main"><span>TOTAL USD</span><span>US$ ${totalUSD.toFixed(2)}</span></div>
     </div>
   </div>
+  <div class="doc-push"></div>
   <div class="doc-footer">
     <div class="firma"><hr><strong>${esc(emp.razonSocial||'')}</strong><p>Firma · Comprador</p></div>
     <div class="firma"><hr><strong>${esc(prov?.name||'Proveedor')}</strong><p>Firma · Proveedor</p></div>
   </div>
-  <div class="doc-push"></div>
   <div class="foot-note">TBR TOOLS · ${nro}</div>
 </div>
 </body></html>`);
