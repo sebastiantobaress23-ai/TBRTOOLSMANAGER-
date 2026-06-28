@@ -2254,6 +2254,11 @@ async function fbWrite(k, v) {
       return;
     }
 
+    // Actualizar timestamp liviano para que otros dispositivos sepan que hay datos nuevos
+    // sin tener que descargar el árbol completo en cada poll.
+    const tsUrl = await fbUrl(`${FB}/__ts.json`);
+    fetch(tsUrl, {method:'PUT', headers:{'Content-Type':'application/json'}, body:String(Date.now())}).catch(()=>{});
+
     _lastWrite = Date.now();
     try {
       const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]').filter(x=>x!==k);
@@ -2315,11 +2320,10 @@ async function _fbFallbackPublic() {
 }
 
 let _lastWrite = 0;
+let _lastRemoteTs = 0; // timestamp del último dato descargado de Firebase
 async function fbSync() {
   if (Date.now()-_lastWrite < 3000) return;
-  // Antes de traer datos remotos, subir cualquier cambio local que haya
-  // quedado sin confirmar (p.ej. la app se cerró antes del debounce de
-  // fbWrite), para no pisarlo con una versión vieja de Firebase.
+  // Antes de traer datos remotos, subir cualquier cambio local pendiente.
   try {
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
     for (const k of pending) {
@@ -2328,20 +2332,30 @@ async function fbSync() {
     }
   } catch {}
   try {
+    // Primero consultar solo el timestamp liviano (~50 bytes).
+    // Si no cambió desde la última descarga completa, saltar para no
+    // desperdiciar ancho de banda (el árbol completo puede ser varios MB).
+    const tsUrl = await fbUrl(`${FB}/__ts.json`, 't='+Date.now());
+    const tsR = await fetch(tsUrl, {cache:'no-store', signal:AbortSignal.timeout(4000)});
+    if (tsR.ok) {
+      const remoteTs = await tsR.json();
+      if (remoteTs && typeof remoteTs === 'number' && remoteTs <= _lastRemoteTs) {
+        setSyncDot(true);
+        return; // nada nuevo en Firebase, evitar descarga innecesaria
+      }
+    }
+
     const url = await fbUrl(FB+'.json', 't='+Date.now());
-    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
+    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
     let d;
     if (!r.ok) {
-      // El fetch de todo el árbol puede fallar por permisos (auth anónima
-      // fallida) aunque /tbr/catalog y /tbr/empresa sean de lectura pública.
-      // Reintentar esas claves por separado sin auth para no dejar el
-      // catálogo sin sincronizar.
       d = await _fbFallbackPublic();
       if (!d) return;
     } else {
       d = await r.json();
     }
     if (!d) return;
+    _lastRemoteTs = d.__ts || Date.now();
     const changedKeys = [];
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
@@ -10418,7 +10432,7 @@ window.onload = async function() {
     navigate(lastPage && validPages.includes(lastPage) ? lastPage : homePage);
   }
   // Firebase sync cada 10s
-  setInterval(fbSync, 10000);
+  setInterval(fbSync, 15000);
   // Resetear _lastWrite para que el sync inicial siempre corra,
   // incluso si fbWrite/DB.set corrieron durante el init (forceCatalogSync, migración).
   _lastWrite = 0;
