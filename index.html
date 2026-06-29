@@ -1802,6 +1802,31 @@ html.light .sc::after{opacity:.6}
 <div id="app"></div>
 <div id="factura-modal" class="mol" style="display:none;align-items:flex-end;padding:0" onclick="if(event.target===this)closeFacturaModal()"></div>
 <div id="remito-modal" class="mol" style="display:none" onclick="if(event.target===this)closeRemitoModal()"></div>
+<!-- MODALES CATÁLOGO / PLANTILLAS / COBRAR (estáticos fuera de #app para evitar stacking context issues) -->
+<div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
+  <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCatModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="cat-modal-body" class="mbody"></div></div>
+</div>
+<div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
+  <div class="mbox"><div class="mhdr"><span>Plantillas de compra</span><button class="btn-rm" onclick="closeTplModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="tpl-modal-body" class="mbody"></div></div>
+</div>
+<div id="cot-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCotCatModal()">
+  <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCotCatModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="cot-cat-body" class="mbody"></div></div>
+</div>
+<div id="ped-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closePedCatModal()">
+  <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closePedCatModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="ped-cat-body" class="mbody"></div></div>
+</div>
+<div id="cobrar-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCobrarModal()">
+  <div class="mbox" style="max-width:380px"><div class="mhdr"><span>Cobrar con Mercado Pago</span><button class="btn-rm" onclick="closeCobrarModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="mbody" id="cobrar-body" style="text-align:center"></div></div>
+</div>
+<div id="ord-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOrdCatModal()">
+  <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeOrdCatModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div id="ord-cat-body" class="mbody"></div></div>
+</div>
 <!-- MODAL PROVEEDOR -->
 <div id="conf-modal" class="mol" style="display:none" onclick="if(event.target===this)closeConf()">
   <div class="mbox">
@@ -4408,14 +4433,6 @@ function pgCompra() {
     <textarea id="pnotes" class="notes-ta" placeholder="Notas (ej: llegó en 5 días, proveedor cambió precios…)"></textarea>
   </div>
   <!-- MODAL CATÁLOGO -->
-  <div id="cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCatModal()">
-    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCatModal()">${ic('close')}</button></div>
-    <div id="cat-modal-body" class="mbody"></div></div>
-  </div>
-  <div id="tpl-modal" class="mol" style="display:none" onclick="if(event.target===this)closeTplModal()">
-    <div class="mbox"><div class="mhdr"><span>Plantillas de compra</span><button class="btn-rm" onclick="closeTplModal()">${ic('close')}</button></div>
-    <div id="tpl-modal-body" class="mbody"></div></div>
-  </div>
 </div>`;
 }
 
@@ -7322,7 +7339,7 @@ function openConf(id){
   lockBody();
   requestAnimationFrame(()=>{const mb=_cm.querySelector('.mbody');if(mb)mb.scrollTop=0;});
 }
-function closeConf(){const m=document.getElementById('conf-modal');if(m)m.style.display='none';unlockBody();}
+function closeConf(){const m=document.getElementById('conf-modal');if(m)m.style.display='none';unlockBody();_boni=[];}
 function saveConf(){
   const name=document.getElementById('cm-name').value.trim();
   if(!name){toast('Ingresá el nombre del proveedor.',false);return;}
@@ -7340,10 +7357,12 @@ function saveConf(){
   let cs=DB.get('configs',[]);
   const idx=cs.findIndex(c=>c.id===conf.id);
   if(idx>=0)cs[idx]=conf;else cs.push(conf);
-  DB.set('configs',cs);
-  const s=DB.get('settings',{});
-  if(!s.activeConfig){s.activeConfig=conf.id;DB.set('settings',s);}
-  closeConf();render();toast('Proveedor guardado');
+  try {
+    DB.set('configs',cs);
+    const s=DB.get('settings',{});
+    if(!s.activeConfig){s.activeConfig=conf.id;DB.set('settings',s);}
+    closeConf();render();toast('Proveedor guardado');
+  } catch(e){toast('Error al guardar proveedor: '+(e?.message||'intentá de nuevo'),false,4000);}
 }
 function getDefaultPM(){return [{name:'Efectivo / Transferencia',pct:0}];}
 function getPM(){
@@ -8021,10 +8040,6 @@ function pgCotizaciones() {
   </div>`).join('')}
   </div>`:''}
 
-  <div id="cot-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCotCatModal()">
-    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeCotCatModal()">${ic('close')}</button></div>
-    <div id="cot-cat-body" class="mbody"></div></div>
-  </div>
 </div>`;
 }
 
@@ -8372,15 +8387,6 @@ function pgPedidos() {
   }).join('')}
   </div>`:''}
 
-  <div id="ped-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closePedCatModal()">
-    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closePedCatModal()">${ic('close')}</button></div>
-    <div id="ped-cat-body" class="mbody"></div></div>
-  </div>
-
-  <div id="cobrar-modal" class="mol" style="display:none" onclick="if(event.target===this)closeCobrarModal()">
-    <div class="mbox" style="max-width:380px"><div class="mhdr"><span>Cobrar con Mercado Pago</span><button class="btn-rm" onclick="closeCobrarModal()">${ic('close')}</button></div>
-    <div class="mbody" id="cobrar-body" style="text-align:center"></div></div>
-  </div>
 </div>`;
 }
 function openCobrarModal(id){
@@ -9124,8 +9130,10 @@ function saveCli(){
     if(clientes.some(c=>(c.nombre||'').trim().toLowerCase()===nombre.toLowerCase())){toast('Ya existe un cliente con ese nombre.',false);return;}
     clientes.push({id:uid(),nombre,tel,cuit});
   }
-  DB.set('clientes',clientes);
-  closeCli();render();toast('Cliente guardado');
+  try {
+    DB.set('clientes',clientes);
+    closeCli();render();toast('Cliente guardado');
+  } catch(e){toast('Error al guardar cliente: '+(e?.message||'intentá de nuevo'),false,4000);}
 }
 function delCli(id){confirm2('¿Eliminar este cliente? El historial de pedidos no se borra.',()=>{
   const clis=DB.get('clientes',[]);
@@ -9737,10 +9745,6 @@ function pgOrden() {
   </div>`:''}
 
   <!-- Modal catálogo para orden -->
-  <div id="ord-cat-modal" class="mol" style="display:none" onclick="if(event.target===this)closeOrdCatModal()">
-    <div class="mbox"><div class="mhdr"><span>Agregar del catálogo</span><button class="btn-rm" onclick="closeOrdCatModal()">${ic('close')}</button></div>
-    <div id="ord-cat-body" class="mbody"></div></div>
-  </div>
 </div>`;
 }
 
@@ -12309,14 +12313,16 @@ function guardarRemitoIndependiente() {
     emisor: { nombre: emp.razonSocial||emp.nombre||'TBR TOOLS', dir: emp.dir||'', cuit: emp.cuit||'' },
     estado: 'emitida'
   };
-  const allDocs = DB.get('facturas',[]);
-  allDocs.push(remito);
-  DB.set('facturas', allDocs);
-  _riItems = [];
-  closeRemitoModal();
-  render();
-  toast(`Remito ${nro} generado`);
-  setTimeout(()=>facturaPreview(remito.id), 400);
+  try {
+    const allDocs = DB.get('facturas',[]);
+    allDocs.push(remito);
+    DB.set('facturas', allDocs);
+    _riItems = [];
+    closeRemitoModal();
+    render();
+    toast(`Remito ${nro} generado`);
+    setTimeout(()=>facturaPreview(remito.id), 400);
+  } catch(e){toast('Error al guardar remito: '+(e?.message||'intentá de nuevo'),false,4000);}
 }
 
 /* ─── REMITO (desde factura) ─── */
