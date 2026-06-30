@@ -10783,13 +10783,13 @@ function openFactura(id) {
         </div>
 
         <!-- Descuento — separado, abajo de artículos -->
-        <div style="background:rgba(196,149,42,.05);border:1px solid rgba(196,149,42,.18);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ud);flex-shrink:0">Descuento</span>
-          <div style="flex:1;display:flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(196,149,42,.2);border-radius:7px;overflow:hidden">
-            <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="flex:1;background:transparent;border:none;color:var(--ch);font-size:15px;font-family:'DM Mono',monospace;text-align:center;padding:7px 2px;outline:none;min-width:0">
-            <span style="color:var(--ud);font-size:11px;font-family:'Barlow Condensed',sans-serif;padding:0 10px 0 2px;letter-spacing:1px;opacity:.7">%</span>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--di);flex-shrink:0">Descuento</span>
+          <div class="iw" style="flex:0 0 110px;height:36px">
+            <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="flex:1;background:transparent;border:none;color:var(--ch);font-size:14px;font-family:'DM Mono',monospace;text-align:center;padding:0;outline:none;min-width:0;height:100%">
+            <span style="color:var(--di);font-size:12px;font-family:'Barlow Condensed',sans-serif;padding-right:10px;letter-spacing:1px;font-weight:600">%</span>
           </div>
-          <span id="f-tot-desc" style="color:var(--re);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;min-width:72px;text-align:right">—</span>
+          <span id="f-tot-desc" style="color:var(--di);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;flex:1;text-align:right">—</span>
         </div>
 
         <!-- Totales -->
@@ -11071,7 +11071,7 @@ function updateFactTotals(){
   const descEl = document.getElementById('f-tot-desc');
   const totEl = document.getElementById('f-tot-total');
   if(subEl) subEl.textContent = fmtA(subtotal);
-  if(descEl) descEl.textContent = descPct>0 ? `-${fmtA(descMonto)}` : '—';
+  if(descEl) { descEl.textContent = descPct>0 ? `-${fmtA(descMonto)}` : '—'; descEl.style.color = descPct>0 ? 'var(--re)' : 'var(--di)'; }
   if(totEl) totEl.textContent = fmtA(total);
 }
 
