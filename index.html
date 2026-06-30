@@ -12072,6 +12072,12 @@ function riSetTipo(val) {
   });
   const lbl = document.getElementById('ri-tipo-label');
   if (lbl) lbl.textContent = val === 'remitoR' ? 'Remito R — para transporte o viaje' : 'Remito — entrega local';
+  // Despliega la sección valorizado la primera vez que se elige un tipo
+  const vw = document.getElementById('ri-val-wrap');
+  if (vw && vw.style.display === 'none') {
+    vw.style.display = 'block';
+    vw.style.animation = 'pgFadeIn .2s ease both';
+  }
 }
 function riSetValorizado(val) {
   _riValorizado = val;
@@ -12104,18 +12110,12 @@ function openRemitoIndependiente() {
   const modal = document.getElementById('remito-modal');
   modal.innerHTML = `<div class="mbox" style="max-width:600px;width:calc(100% - 32px)">
     <div class="mhdr">
-      <span style="flex:1;min-width:0">NUEVO REMITO</span>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <button class="btn-g" onclick="riImportarPedido()" style="height:34px;padding:0 12px;font-size:11px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;gap:6px;color:var(--ud);border-color:rgba(196,149,42,.3)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          Referenciar
-        </button>
-        <button class="btn-rm" onclick="closeRemitoModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
+      <span>NUEVO REMITO</span>
+      <button class="btn-rm" onclick="closeRemitoModal()"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="mbody" style="display:flex;flex-direction:column;gap:14px;padding:18px">
 
-      <!-- Toggle Tipo -->
+      <!-- Toggle Tipo — al hacer clic despliega Valorizado -->
       <div>
         <label class="fl">Tipo de remito</label>
         <div style="display:flex;gap:6px;background:var(--b2);padding:4px;border-radius:10px">
@@ -12125,15 +12125,21 @@ function openRemitoIndependiente() {
         <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:5px">Remito — entrega local</div>
       </div>
 
-      <!-- Toggle Valorizado -->
-      <div>
-        <label class="fl">Valorizado</label>
+      <!-- Valorizado — se despliega al elegir tipo (empieza oculto) -->
+      <div id="ri-val-wrap" style="display:none">
+        <label class="fl">¿Con precios?</label>
         <div style="display:flex;gap:6px;background:var(--b2);padding:4px;border-radius:10px">
           ${togBtn('btn-ri-val-no','false','Sin valorizar',true)}
           ${togBtn('btn-ri-val-si','true','Valorizado',false)}
         </div>
         <div id="ri-val-label" style="font-size:11px;color:var(--di);margin-top:5px">Sin precios, solo unidades y descripción</div>
       </div>
+
+      <!-- Referenciar Pedido — botón prominente en el cuerpo -->
+      <button class="btn-p" onclick="riImportarPedido()" style="width:100%;justify-content:center;height:42px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Referenciar Pedido
+      </button>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label class="fl">Nro. Remito</label><div class="iw"><input type="text" id="ri-nro" value="${esc(nroSug)}" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:2px"></div></div>
