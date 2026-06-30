@@ -10783,13 +10783,13 @@ function openFactura(id) {
         </div>
 
         <!-- Descuento — separado, abajo de artículos -->
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:linear-gradient(135deg,rgba(44,34,12,1),rgba(30,22,6,1));border:1px solid rgba(237,217,180,.28);border-radius:10px">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(237,217,180,.8);flex-shrink:0">Descuento</span>
-          <div class="iw" style="flex:0 0 110px;height:36px;background:rgba(0,0,0,.25);border-color:rgba(237,217,180,.15)">
-            <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="flex:1;background:transparent;border:none;color:var(--ch);font-size:14px;font-family:'DM Mono',monospace;text-align:center;padding:0;outline:none;min-width:0;height:100%">
-            <span style="color:rgba(237,217,180,.5);font-size:12px;font-family:'Barlow Condensed',sans-serif;padding-right:10px;letter-spacing:1px;font-weight:600">%</span>
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;background:linear-gradient(135deg,#f6e8c8,#d8c090);border-radius:10px;box-shadow:0 2px 24px rgba(237,217,180,.2)">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#1a1610;flex-shrink:0">Descuento</span>
+          <div style="flex:0 0 110px;height:36px;display:flex;align-items:center;background:rgba(0,0,0,.1);border:1px solid rgba(0,0,0,.1);border-radius:8px;overflow:hidden">
+            <input type="number" id="f-desc" value="${f?.descuentoPct||0}" min="0" max="100" step="0.5" oninput="updateFactTotals()" style="flex:1;background:transparent;border:none;color:#1a1610;font-size:15px;font-family:'DM Mono',monospace;text-align:center;padding:0;outline:none;min-width:0;height:100%">
+            <span style="color:rgba(26,22,16,.45);font-size:12px;font-family:'Barlow Condensed',sans-serif;padding-right:10px;letter-spacing:1px;font-weight:700">%</span>
           </div>
-          <span id="f-tot-desc" style="color:var(--di);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;flex:1;text-align:right">—</span>
+          <span id="f-tot-desc" style="color:rgba(26,22,16,.35);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;flex:1;text-align:right">—</span>
         </div>
 
         <!-- Totales -->
@@ -11071,7 +11071,7 @@ function updateFactTotals(){
   const descEl = document.getElementById('f-tot-desc');
   const totEl = document.getElementById('f-tot-total');
   if(subEl) subEl.textContent = fmtA(subtotal);
-  if(descEl) { descEl.textContent = descPct>0 ? `-${fmtA(descMonto)}` : '—'; descEl.style.color = descPct>0 ? 'var(--re)' : 'var(--di)'; }
+  if(descEl) { descEl.textContent = descPct>0 ? `-${fmtA(descMonto)}` : '—'; descEl.style.color = descPct>0 ? '#b91c1c' : 'rgba(26,22,16,.35)'; }
   if(totEl) totEl.textContent = fmtA(total);
 }
 
@@ -12070,9 +12070,10 @@ function riSetTipo(val) {
     const b = document.getElementById(id);
     if (b) {
       const on = b.dataset.v === val;
-      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'transparent';
-      b.style.color = on ? '#1a1610' : 'var(--si)';
-      b.style.boxShadow = on ? '0 2px 8px rgba(196,149,42,.25)' : '';
+      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'rgba(255,255,255,.03)';
+      b.style.color = on ? '#1a1610' : 'rgba(255,255,255,.65)';
+      b.style.border = on ? 'none' : '1px solid rgba(255,255,255,.14)';
+      b.style.boxShadow = on ? '0 2px 24px rgba(237,217,180,.2)' : '';
     }
   });
   const lbl = document.getElementById('ri-tipo-label');
@@ -12086,9 +12087,10 @@ function riSetValorizado(val) {
     const b = document.getElementById(id);
     if (b) {
       const on = b.dataset.v === String(val);
-      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'transparent';
-      b.style.color = on ? '#1a1610' : 'var(--si)';
-      b.style.boxShadow = on ? '0 2px 8px rgba(196,149,42,.25)' : '';
+      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'rgba(255,255,255,.03)';
+      b.style.color = on ? '#1a1610' : 'rgba(255,255,255,.65)';
+      b.style.border = on ? 'none' : '1px solid rgba(255,255,255,.14)';
+      b.style.boxShadow = on ? '0 2px 24px rgba(237,217,180,.2)' : '';
     }
   });
   const lbl = document.getElementById('ri-val-label');
@@ -12113,7 +12115,7 @@ function openRemitoIndependiente() {
 
   const togBtn = (id, v, label, active) =>
     `<button id="${id}" data-v="${v}" onclick="ri${id.includes('tipo')?'SetTipo':'SetValorizado'}(${id.includes('tipo')?`'${v}'`:v})"
-      style="flex:1;height:38px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;transition:all .18s;background:${active?'linear-gradient(135deg,#f6e8c8,#d8c090)':'transparent'};color:${active?'#1a1610':'var(--si)'}${active?';box-shadow:0 2px 8px rgba(196,149,42,.25)':''}">${label}</button>`;
+      style="flex:1;height:46px;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all .18s;${active?'background:linear-gradient(135deg,#f6e8c8,#d8c090);border:none;color:#1a1610;box-shadow:0 2px 24px rgba(237,217,180,.2)':'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65)'}">${label}</button>`;
 
   const modal = document.getElementById('remito-modal');
   modal.innerHTML = `<div class="mbox" style="max-width:600px;width:calc(100% - 32px)">
@@ -12123,27 +12125,23 @@ function openRemitoIndependiente() {
     </div>
     <div class="mbody" style="display:flex;flex-direction:column;gap:14px;padding:18px">
 
-      <!-- Tipo + Valorizado en accordion: tipo siempre visible,
-           valorizado se despliega al elegir tipo y se colapsa al elegir valorizado -->
-      <div style="background:var(--b2);border-radius:12px;overflow:hidden">
-        <!-- Tipo -->
-        <div style="padding:12px 12px 10px">
-          <label class="fl" style="margin-bottom:8px">Tipo de remito</label>
-          <div style="display:flex;gap:6px;background:var(--b3);padding:4px;border-radius:8px">
-            ${togBtn('btn-ri-tipo-remito','remito','Remito',true)}
-            ${togBtn('btn-ri-tipo-r','remitoR','Remito R',false)}
-          </div>
-          <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:6px;min-height:16px">Remito — entrega local</div>
+      <!-- Tipo de remito -->
+      <div>
+        <label class="fl" style="margin-bottom:8px">Tipo de remito</label>
+        <div style="display:flex;gap:8px">
+          ${togBtn('btn-ri-tipo-remito','remito','Remito',true)}
+          ${togBtn('btn-ri-tipo-r','remitoR','Remito R',false)}
         </div>
-        <!-- Valorizado — oculto hasta que se elige tipo -->
-        <div id="ri-val-wrap" style="display:none;border-top:1px solid rgba(255,255,255,.06);padding:12px 12px 10px;animation:pgFadeIn .2s ease both">
-          <label class="fl" style="margin-bottom:8px">¿Con precios?</label>
-          <div style="display:flex;gap:6px;background:var(--b3);padding:4px;border-radius:8px">
-            ${togBtn('btn-ri-val-no','false','Sin valorizar',false)}
-            ${togBtn('btn-ri-val-si','true','Valorizado',false)}
-          </div>
-          <div id="ri-val-label" style="font-size:11px;color:var(--di);margin-top:6px;min-height:16px"></div>
+      </div>
+
+      <!-- Valorizado — oculto hasta que se elige tipo -->
+      <div id="ri-val-wrap" style="display:none;animation:pgFadeIn .2s ease both">
+        <label class="fl" style="margin-bottom:8px">¿Con precios?</label>
+        <div style="display:flex;gap:8px">
+          ${togBtn('btn-ri-val-no','false','Sin valorizar',false)}
+          ${togBtn('btn-ri-val-si','true','Valorizado',false)}
         </div>
+        <div id="ri-val-label" style="font-size:11px;color:var(--di);margin-top:6px;min-height:16px"></div>
       </div>
 
       <!-- Referenciar Pedido — debajo del accordion tipo/valorizado -->
