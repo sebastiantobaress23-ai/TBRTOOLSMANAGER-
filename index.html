@@ -11032,32 +11032,32 @@ function renderFactItems(){
     wrap.innerHTML='<div class="hint" style="text-align:center;padding:12px">Sin ítems. Buscá un producto o agregá uno manual.</div>';
     updateFactTotals(); return;
   }
-  wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">
-    <colgroup>
-      <col>
-      <col style="width:36px">
-      <col style="width:72px">
-      <col style="width:72px">
-      <col style="width:22px">
-    </colgroup>
-    <thead><tr style="border-bottom:1px solid var(--b2)">
-      <th style="text-align:left;padding:8px 4px;color:var(--di);font-weight:500;font-size:11px">Descripción</th>
-      <th style="text-align:center;padding:8px 4px;color:var(--di);font-weight:500;font-size:11px">Cant.</th>
-      <th style="text-align:right;padding:8px 4px;color:var(--di);font-weight:500;font-size:11px">P. Unit.</th>
-      <th style="text-align:right;padding:8px 4px;color:var(--di);font-weight:500;font-size:11px">Subtotal</th>
-      <th></th>
-    </tr></thead>
-    <tbody>${_factItems.map((it,i)=>`<tr style="border-bottom:1px solid var(--b2)">
-      <td style="padding:6px 4px;overflow:hidden">
-        ${it.sku ? `<div style="font-size:10px;color:var(--di);margin-bottom:2px">${esc(it.sku)}</div>` : ''}
-        <input type="text" value="${esc(it.descripcion)}" oninput="facturaItemChange(${i},'descripcion',this.value)" style="width:100%;background:transparent;border:none;color:inherit;font-size:12px">
-      </td>
-      <td style="padding:6px 4px;text-align:center"><input type="number" value="${it.qty}" min="1" oninput="facturaItemChange(${i},'qty',this.value)" style="width:100%;text-align:center;background:transparent;border:none;color:inherit;font-size:12px"></td>
-      <td style="padding:6px 4px;text-align:right"><input type="number" value="${it.precioUnit}" min="0" step="100" oninput="facturaItemChange(${i},'precioUnit',this.value)" style="width:100%;text-align:right;background:transparent;border:none;color:inherit;font-size:12px"></td>
-      <td style="padding:6px 4px;text-align:right;font-weight:600">${fmtA(it.subtotal)}</td>
-      <td style="padding:6px 4px"><button class="btn-rm" onclick="facturaRemoveItem(${i})">${ic('close')}</button></td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:6px">
+    ${_factItems.map((it,i)=>`
+    <div style="background:var(--b2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          ${it.sku?`<div style="font-size:10px;color:var(--di);margin-bottom:2px;letter-spacing:.5px">${esc(it.sku)}</div>`:''}
+          <input type="text" value="${esc(it.descripcion)}" oninput="facturaItemChange(${i},'descripcion',this.value)"
+            style="width:100%;background:transparent;border:none;color:var(--ch);font-size:13px;font-weight:600;padding:0;outline:none;font-family:inherit">
+        </div>
+        <button class="btn-d" onclick="facturaRemoveItem(${i})" style="flex-shrink:0;margin-top:2px">${ic('close')}</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:0;border-top:1px solid var(--b3);padding-top:8px">
+        <div style="flex:0 0 auto;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--di);letter-spacing:.5px;text-transform:uppercase">Cant.</span>
+          <input type="number" value="${it.qty}" min="1" oninput="facturaItemChange(${i},'qty',this.value)"
+            style="width:38px;text-align:center;background:var(--b3);border:none;border-radius:6px;color:var(--ch);font-size:13px;padding:4px 2px;outline:none">
+        </div>
+        <div style="flex:1;display:flex;align-items:center;gap:6px;margin-left:14px">
+          <span style="font-size:10px;color:var(--di);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap">P. Unit.</span>
+          <input type="number" value="${it.precioUnit}" min="0" step="100" oninput="facturaItemChange(${i},'precioUnit',this.value)"
+            style="width:100%;text-align:right;background:var(--b3);border:none;border-radius:6px;color:var(--ch);font-size:13px;padding:4px 6px;outline:none">
+        </div>
+        <div style="flex:0 0 auto;text-align:right;font-weight:700;font-size:14px;color:var(--ch);margin-left:12px;white-space:nowrap">${fmtA(it.subtotal)}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
   updateFactTotals();
 }
 
