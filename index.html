@@ -12068,7 +12068,12 @@ function riSetTipo(val) {
   _riTipoDoc = val;
   ['btn-ri-tipo-remito','btn-ri-tipo-r'].forEach(id=>{
     const b = document.getElementById(id);
-    if (b) { b.style.background = b.dataset.v === val ? 'var(--ud)' : 'var(--b3)'; b.style.color = b.dataset.v === val ? '#111' : 'var(--si)'; }
+    if (b) {
+      const on = b.dataset.v === val;
+      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'transparent';
+      b.style.color = on ? '#1a1610' : 'var(--si)';
+      b.style.boxShadow = on ? '0 2px 8px rgba(196,149,42,.25)' : '';
+    }
   });
   const lbl = document.getElementById('ri-tipo-label');
   if (lbl) lbl.textContent = val === 'remitoR' ? 'Remito R — para transporte o viaje' : 'Remito — entrega local';
@@ -12079,7 +12084,12 @@ function riSetValorizado(val) {
   _riValorizado = val;
   ['btn-ri-val-si','btn-ri-val-no'].forEach(id=>{
     const b = document.getElementById(id);
-    if (b) { b.style.background = (b.dataset.v === String(val)) ? 'var(--ud)' : 'var(--b3)'; b.style.color = (b.dataset.v === String(val)) ? '#111' : 'var(--si)'; }
+    if (b) {
+      const on = b.dataset.v === String(val);
+      b.style.background = on ? 'linear-gradient(135deg,#f6e8c8,#d8c090)' : 'transparent';
+      b.style.color = on ? '#1a1610' : 'var(--si)';
+      b.style.boxShadow = on ? '0 2px 8px rgba(196,149,42,.25)' : '';
+    }
   });
   const lbl = document.getElementById('ri-val-label');
   if (lbl) lbl.textContent = val ? 'Con precios y total — sin valor fiscal' : 'Sin precios, solo unidades y descripción';
@@ -12103,7 +12113,7 @@ function openRemitoIndependiente() {
 
   const togBtn = (id, v, label, active) =>
     `<button id="${id}" data-v="${v}" onclick="ri${id.includes('tipo')?'SetTipo':'SetValorizado'}(${id.includes('tipo')?`'${v}'`:v})"
-      style="flex:1;height:34px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;transition:background .15s,color .15s;background:${active?'var(--ud)':'var(--b3)'};color:${active?'#111':'var(--si)'}">${label}</button>`;
+      style="flex:1;height:38px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;transition:all .18s;background:${active?'linear-gradient(135deg,#f6e8c8,#d8c090)':'transparent'};color:${active?'#1a1610':'var(--si)'}${active?';box-shadow:0 2px 8px rgba(196,149,42,.25)':''}">${label}</button>`;
 
   const modal = document.getElementById('remito-modal');
   modal.innerHTML = `<div class="mbox" style="max-width:600px;width:calc(100% - 32px)">
@@ -12120,10 +12130,10 @@ function openRemitoIndependiente() {
         <div style="padding:12px 12px 10px">
           <label class="fl" style="margin-bottom:8px">Tipo de remito</label>
           <div style="display:flex;gap:6px;background:var(--b3);padding:4px;border-radius:8px">
-            ${togBtn('btn-ri-tipo-remito','remito','Remito',false)}
+            ${togBtn('btn-ri-tipo-remito','remito','Remito',true)}
             ${togBtn('btn-ri-tipo-r','remitoR','Remito R',false)}
           </div>
-          <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:6px;min-height:16px"></div>
+          <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:6px;min-height:16px">Remito — entrega local</div>
         </div>
         <!-- Valorizado — oculto hasta que se elige tipo -->
         <div id="ri-val-wrap" style="display:none;border-top:1px solid rgba(255,255,255,.06);padding:12px 12px 10px;animation:pgFadeIn .2s ease both">
@@ -12167,16 +12177,16 @@ function openRemitoIndependiente() {
       <div>
         <label class="fl">Artículos</label>
         <div id="ri-items-wrap" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-        <button class="btn-g btn-sm" onclick="riAddItem()" style="width:100%;justify-content:center">+ Agregar artículo</button>
+        <button class="btn-p" onclick="riAddItem()" style="width:100%;justify-content:center;height:44px;gap:8px">+ AGREGAR ARTÍCULO</button>
       </div>
 
       <div><label class="fl">Observaciones</label><div class="iw iw-ta"><textarea id="ri-obs" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
 
       <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn-g" onclick="closeRemitoModal()" style="flex:1;height:44px">Cancelar</button>
-        <button class="btn-p" onclick="guardarRemitoIndependiente()" style="flex:2;height:44px">
+        <button class="btn-g" onclick="closeRemitoModal()" style="flex:1;height:48px">CANCELAR</button>
+        <button class="btn-go" onclick="guardarRemitoIndependiente()" style="flex:2;height:48px;width:auto;display:flex;align-items:center;justify-content:center;gap:8px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          Generar Remito
+          GENERAR REMITO
         </button>
       </div>
     </div>
