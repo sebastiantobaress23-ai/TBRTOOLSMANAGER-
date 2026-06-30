@@ -12072,12 +12072,6 @@ function riSetTipo(val) {
   });
   const lbl = document.getElementById('ri-tipo-label');
   if (lbl) lbl.textContent = val === 'remitoR' ? 'Remito R — para transporte o viaje' : 'Remito — entrega local';
-  // Despliega la sección valorizado la primera vez que se elige un tipo
-  const vw = document.getElementById('ri-val-wrap');
-  if (vw && vw.style.display === 'none') {
-    vw.style.display = 'block';
-    vw.style.animation = 'pgFadeIn .2s ease both';
-  }
 }
 function riSetValorizado(val) {
   _riValorizado = val;
@@ -12125,8 +12119,8 @@ function openRemitoIndependiente() {
         <div id="ri-tipo-label" style="font-size:11px;color:var(--di);margin-top:5px">Remito — entrega local</div>
       </div>
 
-      <!-- Valorizado — se despliega al elegir tipo (empieza oculto) -->
-      <div id="ri-val-wrap" style="display:none">
+      <!-- Valorizado — visible desde el inicio -->
+      <div id="ri-val-wrap">
         <label class="fl">¿Con precios?</label>
         <div style="display:flex;gap:6px;background:var(--b2);padding:4px;border-radius:10px">
           ${togBtn('btn-ri-val-no','false','Sin valorizar',true)}
@@ -12134,12 +12128,6 @@ function openRemitoIndependiente() {
         </div>
         <div id="ri-val-label" style="font-size:11px;color:var(--di);margin-top:5px">Sin precios, solo unidades y descripción</div>
       </div>
-
-      <!-- Referenciar Pedido — botón prominente en el cuerpo -->
-      <button class="btn-p" onclick="riImportarPedido()" style="width:100%;justify-content:center;height:42px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Referenciar Pedido
-      </button>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label class="fl">Nro. Remito</label><div class="iw"><input type="text" id="ri-nro" value="${esc(nroSug)}" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:2px"></div></div>
@@ -12161,6 +12149,12 @@ function openRemitoIndependiente() {
         <div><label class="fl">Teléfono</label><div class="iw"><input type="tel" id="ri-tel" placeholder="2604..."></div></div>
       </div>
       <div><label class="fl">Transportista / Forma de entrega</label><div class="iw"><input type="text" id="ri-transp" placeholder="Ej: Correo Andreani, retiro en local..."></div></div>
+
+      <!-- Referenciar Pedido — después de datos de entrega, antes de artículos -->
+      <button class="btn-p" onclick="riImportarPedido()" style="width:100%;justify-content:center;height:44px;gap:8px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Referenciar pedido
+      </button>
 
       <div>
         <label class="fl">Artículos</label>
