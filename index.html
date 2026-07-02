@@ -2465,10 +2465,18 @@ async function fbSync() {
   // a quedar aislado para siempre esperando un push que nunca se resuelve.
   // Esto es lo que causaba que un dispositivo (ej. el celular) dejara de
   // recibir ventas/cambios nuevos hechos en otro dispositivo (ej. la PC).
+  //
+  // EXCEPCIÓN: 'settings' y 'bio' nunca se auto-descartan así. Contienen
+  // usuario/contraseña y credenciales de Face ID/Touch ID — adoptar a ciegas
+  // una versión remota vieja de esto pisa las credenciales actuales y deja
+  // al usuario afuera de su propia app. Para estas dos, mejor seguir
+  // bloqueando la bajada indefinidamente (como antes de este circuit
+  // breaker) hasta que el push realmente logre confirmarse.
+  const NEVER_AUTO_OVERWRITE_KEYS = ['settings','bio'];
   const STUCK_PENDING_MS = 120000;
   const _pendingNow = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
   const _pendingSinceMap = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
-  const _stuckKeys = _pendingNow.filter(k => _pendingSinceMap[k] && (Date.now()-_pendingSinceMap[k]) > STUCK_PENDING_MS);
+  const _stuckKeys = _pendingNow.filter(k => !NEVER_AUTO_OVERWRITE_KEYS.includes(k) && _pendingSinceMap[k] && (Date.now()-_pendingSinceMap[k]) > STUCK_PENDING_MS);
   if (_stuckKeys.length) {
     localStorage.setItem('tbr__pending', JSON.stringify(_pendingNow.filter(k => !_stuckKeys.includes(k))));
     _stuckKeys.forEach(k => delete _pendingSinceMap[k]);
@@ -10455,6 +10463,29 @@ function migrateCatalogPhotos() {
 window.onload = async function() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0,0);
+  // Recuperación de acceso: visitar la app con ?recover=1 agrega un usuario
+  // temporal (recovery / recovery123) para poder entrar si las credenciales
+  // quedaron desincronizadas entre dispositivos (ej. un sync trajo una
+  // versión vieja de 'settings' y pisó el usuario/contraseña actual). No
+  // suma un riesgo de seguridad real: usuario/contraseña ya se guardan sin
+  // cifrar en localStorage/Firebase, esto es solo un gate de uso, no auth.
+  // Entrando con 'recovery' se puede ver/arreglar la lista real de usuarios
+  // en Configuración y borrar este usuario temporal después.
+  (function handleRecoveryUrl(){
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('recover') === '1') {
+        const s = DB.get('settings', {});
+        s.users = s.users || [];
+        if (!s.users.some(x=>x.user==='recovery')) {
+          s.users.push({id:uid(), user:'recovery', pass:'recovery123'});
+          DB.set('settings', s);
+        }
+        sessionStorage.removeItem('tbr_unlocked');
+        history.replaceState(null,'',location.pathname);
+      }
+    } catch(e) {}
+  })();
   // Favicon: reusar el logo del header (evita duplicar el base64 en <head>)
   const hdrLogo = document.querySelector('.hdr img');
   if (hdrLogo) {
