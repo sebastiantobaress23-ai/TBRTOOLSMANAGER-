@@ -1649,6 +1649,7 @@ html.light .sc::after{opacity:.6}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
         <span id="lock-bio-label">Usar Face ID / Touch ID</span>
       </button>
+      <a href="javascript:void(0)" onclick="triggerAccessRecovery()" style="margin-top:14px;font-size:11px;color:var(--di);text-decoration:underline;cursor:pointer">¿No podés entrar? Recuperar acceso</a>
     </div>
   </div>
 </div>
@@ -7749,6 +7750,34 @@ function tryUnlock(){
     document.getElementById('lock-err').style.display='block';
   }
 }
+// Crea (si no existe ya) un usuario temporal con contraseña aleatoria para
+// poder entrar cuando el usuario/contraseña real quedó desincronizado entre
+// dispositivos. Se puede disparar por URL (?recover=1) o desde el botón
+// "¿No podés entrar?" de la pantalla de login — este último es la única vía
+// que funciona en apps agregadas a la pantalla de inicio (no tienen barra de
+// direcciones para escribir la URL con el parámetro).
+function createRecoveryUser(){
+  try {
+    const s = DB.get('settings', {});
+    s.users = s.users || [];
+    if (s.users.some(x=>x.user==='recovery')) {
+      toast('Ya existe un usuario "recovery" en este dispositivo — probá esa contraseña, o borralo desde Configuración y volvé a intentar.', false, 7000);
+      return;
+    }
+    const tempPass = Math.random().toString(36).slice(2,10);
+    s.users.push({id:uid(), user:'recovery', pass:tempPass});
+    DB.set('settings', s);
+    sessionStorage.removeItem('tbr_unlocked');
+    setTimeout(()=>alert(`Usuario temporal creado.\n\nUsuario: recovery\nContraseña: ${tempPass}\n\nAnotala — no se vuelve a mostrar. Entrá con esto y arreglá tu usuario real en Configuración, después borrá este temporal.`), 200);
+  } catch(e) {}
+}
+function triggerAccessRecovery(){
+  confirm2(
+    'Esto crea un usuario temporal para que puedas entrar sin perder tus datos. Una vez adentro, revisá y arreglá tu usuario real en Configuración.',
+    createRecoveryUser,
+    'Crear acceso temporal','cm-ok'
+  );
+}
 /* ═══════════════════════════════════════════
    FACE ID / TOUCH ID — autenticación biométrica (WebAuthn)
 ═══════════════════════════════════════════ */
@@ -10533,23 +10562,10 @@ window.onload = async function() {
   // de 'settings' y pisó el usuario/contraseña actual). Entrando con
   // 'recovery' se puede ver/arreglar la lista real de usuarios en
   // Configuración y borrar este usuario temporal después.
-  (function handleRecoveryUrl(){
-    try {
-      const params = new URLSearchParams(location.search);
-      if (params.get('recover') === '1') {
-        const s = DB.get('settings', {});
-        s.users = s.users || [];
-        if (!s.users.some(x=>x.user==='recovery')) {
-          const tempPass = Math.random().toString(36).slice(2,10);
-          s.users.push({id:uid(), user:'recovery', pass:tempPass});
-          DB.set('settings', s);
-          setTimeout(()=>alert(`Usuario temporal creado.\n\nUsuario: recovery\nContraseña: ${tempPass}\n\nAnotala — no se vuelve a mostrar. Entrá con esto y arreglá tu usuario real en Configuración, después borrá este temporal.`), 300);
-        }
-        sessionStorage.removeItem('tbr_unlocked');
-        history.replaceState(null,'',location.pathname);
-      }
-    } catch(e) {}
-  })();
+  if (new URLSearchParams(location.search).get('recover') === '1') {
+    createRecoveryUser();
+    history.replaceState(null,'',location.pathname);
+  }
   // Favicon: reusar el logo del header (evita duplicar el base64 en <head>)
   const hdrLogo = document.querySelector('.hdr img');
   if (hdrLogo) {
