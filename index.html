@@ -2888,14 +2888,15 @@ const fmtU = n=> 'US$ '+(+n||0).toFixed(2);
 const fmtT = n=> (+n||0).toFixed(2)+' USDT';
 const fmtD = d=> d ? new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
 const cliInitials = n=> (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
-const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc  = s=> String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const stg  = i=> ` style="animation-delay:${Math.min(i*0.04,0.4).toFixed(2)}s"`;
 function highlight(text, query){
   const safe = esc(text);
   if (!query) return safe;
-  const idx = safe.toLowerCase().indexOf(esc(query).toLowerCase());
+  const safeQuery = esc(query);
+  const idx = safe.toLowerCase().indexOf(safeQuery.toLowerCase());
   if (idx < 0) return safe;
-  return safe.slice(0,idx)+'<mark class="hl">'+safe.slice(idx,idx+query.length)+'</mark>'+safe.slice(idx+query.length);
+  return safe.slice(0,idx)+'<mark class="hl">'+safe.slice(idx,idx+safeQuery.length)+'</mark>'+safe.slice(idx+safeQuery.length);
 }
 // Encabezado de marca para documentos imprimibles (OC, cotizaciones, pedidos, ventas, reportes):
 // solo muestra los datos de la empresa que estén realmente cargados, sin placeholders vacíos.
@@ -4092,7 +4093,7 @@ function toast(msg, ok=true, ms=2500, undo=null) {
   el.style.color = ok ? 'var(--gr)' : 'var(--re)';
   el.style.borderColor = ok ? 'rgba(74,222,128,.3)' : 'rgba(248,113,113,.3)';
   const undoBtn = undo ? `<button class="toast-undo" id="toast-undo-btn">Deshacer</button>` : '';
-  el.innerHTML = `<span class="toast-icon ${ok?'ok':'err'}">${ok?`<span class="toast-check">${ic('check')}</span>`:ic('alert')}</span><span class="toast-msg">${msg}</span>${undoBtn}<span class="toast-bar" style="animation-duration:${ms}ms"></span>`;
+  el.innerHTML = `<span class="toast-icon ${ok?'ok':'err'}">${ok?`<span class="toast-check">${ic('check')}</span>`:ic('alert')}</span><span class="toast-msg">${esc(msg)}</span>${undoBtn}<span class="toast-bar" style="animation-duration:${ms}ms"></span>`;
   document.body.appendChild(el);
   playSound(ok?'ok':'err');
   if (undo) {
@@ -5065,7 +5066,10 @@ function duplicatePurchase(id) {
   fleteReal = null;
   document.title = '✏ TBR TOOLS · Manager';
   navigate('compra');
-  toast('Compra cargada para editar');
+  // Aclarar que esto arma una compra NUEVA con los mismos ítems — si dijera
+  // "para editar" el usuario podría pensar que va a reemplazar la compra
+  // original, y al guardar terminaría duplicando el stock sumado.
+  toast('Ítems cargados — al guardar se crea una compra nueva, no reemplaza la original', true, 4500);
 }
 
 /* ── SORT HISTORY ── */
@@ -5197,8 +5201,15 @@ function savePurchase() {
   let cat=DB.get('catalog',[]);
   CALC.v.forEach(p=>{
     if (!p.n) return;
-    const newPrice = p.lista||p.p;
-    const ex=cat.find(c=>(p.c && c.code===p.c) || (!p.c && c.name===p.n));
+    // Usar el precio EFECTIVO (post-descuento por volumen b1/b2), no el precio
+    // de lista: si no hay descuento, calcEf devuelve el mismo valor que lista,
+    // así que esto no cambia nada para compras sin descuento.
+    const newPrice = p.p||p.lista;
+    // Normalizar código/nombre igual que findCatalogByCode, para no crear un
+    // segundo ítem de catálogo por una diferencia de mayúsculas/espacios.
+    const pcNorm = (p.c||'').trim().toLowerCase();
+    const pnNorm = (p.n||'').trim().toLowerCase();
+    const ex=cat.find(c=>pcNorm ? (c.code||'').trim().toLowerCase()===pcNorm : (c.name||'').trim().toLowerCase()===pnNorm);
     if (ex) {
       const hist = ex.priceHistory||[];
       if (ex.lastPrice && ex.lastPrice !== newPrice) hist.push({price:ex.lastPrice,date:ex.lastUpdated});
@@ -5579,7 +5590,25 @@ function addSale(){
   ['sale-qty-d','sale-price-d','sale-cost-d','sale-margin-d','sale-cliente','sale-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='sale-qty-d'?'1':'';});
   render();
 }
-function delSale(id){confirm2('¿Borrar esta venta del registro?',()=>{DB.set('sales',DB.get('sales',[]).filter(x=>x.id!==id));render();});}
+function delSale(id){
+  confirm2('¿Borrar esta venta del registro?',()=>{
+    const sales = DB.get('sales',[]);
+    const s = sales.find(x=>x.id===id);
+    // Restaurar el stock que la venta había descontado — antes borrar una
+    // venta cargada por error dejaba el stock permanentemente de menos.
+    if (s) {
+      const cat = DB.get('catalog',[]);
+      let catChanged = false;
+      saleItems(s).forEach(it=>{
+        const ci = cat.find(c=>it.c?c.code===it.c:c.name===it.n);
+        if (ci && ci.stock!=null) { ci.stock += (it.q||1); logStockMov(ci, it.q||1, 'venta-eliminada'); catChanged = true; }
+      });
+      if (catChanged) DB.set('catalog',cat);
+    }
+    DB.set('sales', sales.filter(x=>x.id!==id));
+    render();
+  });
+}
 /* Normaliza una venta (registro clásico de un solo producto, o factura con varios ítems) a un array de ítems */
 function saleItems(s){
   if (Array.isArray(s.items)) return s.items;
@@ -5753,9 +5782,9 @@ function pgVentas(){
       const profitColor = profit>=0?'var(--gr)':'var(--re)';
       const revenue = saleRevenue(s);
       const marginPct = revenue>0 ? (profit/revenue*100).toFixed(1) : '0.0';
-      const precio = s.priceARS||items[0]?.p||0;
+      const precio = multi ? revenue : (s.priceARS||items[0]?.p||0);
       const recibido = s.mlReceived||0;
-      const costo = s.costARS||items[0]?.cost||0;
+      const costo = multi ? items.reduce((a,it)=>a+(it.cost||0)*(it.q||1),0) : (s.costARS||items[0]?.cost||0);
       const expandId = 'sv'+si;
       const cols = isML&&recibido ? 3 : 2;
       return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
@@ -5912,8 +5941,29 @@ function pgViaje(){
 </div>`;
 }
 function toggleHi(id){const e=document.getElementById(id);if(e)e.classList.toggle('open');}
-function delPurchase(id){confirm2('¿Borrar esta compra del historial?',()=>{DB.set('purchases',DB.get('purchases',[]).filter(p=>p.id!==id));render();});}
-function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)return;PP=(p.products||[]).map(pr=>({...pr,id:uid()}));CALC=null;navigate('compra');}
+function delPurchase(id){
+  confirm2('¿Borrar esta compra del historial?',()=>{
+    const purchases = DB.get('purchases',[]);
+    const p = purchases.find(x=>x.id===id);
+    // Revertir el stock que la compra había sumado — antes borrar una compra
+    // cargada por error dejaba el stock permanentemente de más.
+    if (p) {
+      const cat = DB.get('catalog',[]);
+      let catChanged = false;
+      (p.products||[]).forEach(pr=>{
+        if (!pr.n || !pr.q) return;
+        const pcNorm = (pr.c||'').trim().toLowerCase();
+        const pnNorm = (pr.n||'').trim().toLowerCase();
+        const ci = cat.find(c=>pcNorm ? (c.code||'').trim().toLowerCase()===pcNorm : (c.name||'').trim().toLowerCase()===pnNorm);
+        if (ci && ci.stock!=null) { ci.stock -= pr.q; logStockMov(ci, -pr.q, 'compra-eliminada'); catChanged = true; }
+      });
+      if (catChanged) DB.set('catalog',cat);
+    }
+    DB.set('purchases', purchases.filter(x=>x.id!==id));
+    render();
+  });
+}
+function reusar(id){const p=DB.get('purchases',[]).find(x=>x.id===id);if(!p)return;PP=(p.products||[]).map(pr=>({...pr,id:uid()}));CALC=null;navigate('compra');toast('Ítems cargados — al guardar se crea una compra nueva, no reemplaza la original', true, 4500);}
 
 /* ═══════════════════════════════════════════
    CATÁLOGO
@@ -6200,8 +6250,16 @@ async function saveCat(){
     await PhotoDB.setProductPhotos(prodId,{photo:photo,photos:photos});
     // Upload full-res photos to Firebase Storage (async, non-blocking)
     if(photo) fbWritePhotos(prodId, photo, photos);
+    // Stock previo, para loguear el ajuste en stockMovs si cambia desde acá
+    // (antes un cambio de stock hecho editando el producto no dejaba rastro
+    // en el historial de movimientos, a diferencia de compras/ventas/ajustes).
+    const prevStock = eid ? cat.find(c=>c.id===eid)?.stock : undefined;
     if(eid)cat=cat.map(c=>c.id===eid?{...c,name,code,barcode,lastPrice:price,defaultPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{salePrice:undefined}),...(specs?{specs}:{specs:undefined}),...(heroX?{heroX}:{heroX:undefined}),...(heroY?{heroY}:{heroY:undefined}),...(heroSize?{heroSize}:{heroSize:undefined}),photo:undefined,photos:undefined}:c);
     else cat.push({id:prodId,name,code,barcode,defaultPrice:price,lastPrice:price,lastUpdated:new Date().toISOString(),...(stock!==undefined?{stock}:{}),...(salePrice!==undefined?{salePrice}:{}),...(specs?{specs}:{}),...(heroX?{heroX}:{}),...(heroY?{heroY}:{}),...(heroSize?{heroSize}:{})});
+    if(eid && stock!==undefined && prevStock!==undefined && stock!==prevStock){
+      const updated=cat.find(c=>c.id===eid);
+      if(updated) logStockMov(updated, stock-prevStock, 'edición');
+    }
     DB.set('catalog',cat);closeCatEdit();render();
   } catch(e) {
     toast('Error al guardar: ' + (e?.message||'intentá de nuevo'), false, 5000);
@@ -8762,9 +8820,14 @@ function pedToVenta(id){
   DB.set('pedidos',peds);
 
   const cat=DB.get('catalog',[]);
+  // Distribuir el recargo por forma de pago (o.pago.pct) en el precio de cada
+  // ítem, para que la venta generada no pierda ese importe — antes se copiaba
+  // p.p crudo y el total de la venta quedaba por debajo del total cotizado/
+  // cobrado en el pedido.
+  const recargoPct = o.pago?.pct||0;
   const items=(o.items||[]).map(p=>{
     const ci=cat.find(c=>p.c?c.code===p.c:c.name===p.n);
-    return {n:p.n, c:p.c||'', q:p.q||1, p:p.p||0, cost: ci?suggestSaleCost(ci.code,ci.name):0};
+    return {n:p.n, c:p.c||'', q:p.q||1, p:(p.p||0)*(1+recargoPct/100), cost: ci?suggestSaleCost(ci.code,ci.name):0};
   });
   // Las ventas generadas desde Pedidos/Cotizaciones son siempre ventas directas:
   // su precio ya está calculado sin comisión ni envío de Mercado Libre.
@@ -8977,8 +9040,8 @@ function ventaDocBody(s){
   const fc = (DB.get('formConfig',{}).venta)||{};
   const fecha = new Date(s.date||Date.now()).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
   const items = saleItems(s);
-  const totalUnits = items.reduce((a,it)=>a+(it.q||1),0);
-  const total = items.reduce((a,it)=>a+(it.q||1)*(it.p||0),0);
+  const totalUnits = saleUnits(s);
+  const total = saleRevenue(s);
   const rows = items.map((it,i)=>`<tr>
       <td class="num">${i+1}</td>
       <td>${esc(it.n||'—')}</td>
@@ -9179,7 +9242,7 @@ function cliListHTML(list) {
     <div class="hi-body" id="cli${i}">
       ${cliPeds.length?`<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 16px">
         ${cliPeds.map((o,oi)=>{
-          const t=(o.items||[]).reduce((s,p)=>s+(p.q||1)*(p.p||0),0);
+          const t=pedFinalTotal(o);
           return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;${oi<cliPeds.length-1?'border-bottom:1px solid rgba(255,255,255,.04)':''}" onclick="navigateToPed('${o.id}')">
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(o.nro)}</div>
@@ -10718,10 +10781,7 @@ function pgFacturador() {
   const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
   const notasCredito = facturas.filter(f=>f.tipo==='NC');
   const remitos = facturas.filter(f=>f.tipo==='RM');
-  const idsConNC = new Set();
-  const nrosConNC = new Set(notasCredito.filter(n=>n.facturaOrigen).map(n=>n.facturaOrigen));
-  notasCredito.filter(n=>n.facturaOrigenId).forEach(n=>idsConNC.add(n.facturaOrigenId));
-  soloFacturas.filter(f=>nrosConNC.has(f.nro)).forEach(f=>idsConNC.add(f.id));
+  const idsConNC = facturaIdsConNC(facturas);
   const anuladas = soloFacturas.filter(f=>idsConNC.has(f.id)||f.anulada||f.estado==='cancelada');
   const anulSet = new Set(anuladas.map(f=>f.id));
   const pendientes = soloFacturas.filter(f=>(f.estado==='borrador'||f.estado==='emitida') && !anulSet.has(f.id));
@@ -10756,7 +10816,7 @@ function pgFacturador() {
         <button class="btn-g btn-sm" onclick="facturaPreview('${f.id}')">${ic('eye')}${mob?'':' PDF'}</button>
         ${waBtn}
         ${f.estado==='emitida'&&!tieneNC&&f.tipo!=='NC'&&f.tipo!=='RM'?`<button class="btn-p btn-sm" onclick="marcarPagada('${f.id}')">✓${mob?'':' Pagada'}</button>`:''}
-        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="emitirFactura('${f.id}')">${emitirSvg}${mob?'':' Emitir'}</button>`:''}
+        ${f.estado==='borrador'?`<button class="btn-p btn-sm" onclick="openFactura('${f.id}')">${emitirSvg}${mob?'':' Emitir'}</button>`:''}
         ${f.tipo!=='NC'&&f.tipo!=='RM'&&(f.estado==='emitida'||f.estado==='pagada')&&!tieneNC?`<button class="btn-g btn-sm" onclick="emitirNotaCredito('${f.id}')" title="Nota de Crédito">${ic('fileText')} NC</button>`:''}
         ${f.tipo!=='NC'&&f.tipo!=='RM'&&f.estado!=='cancelada'&&!tieneNC?`<button class="btn-d btn-sm" onclick="marcarAnulada('${f.id}')" title="Anular">✕</button>`:''}
         ${f.tipo!=='NC'&&(!f.tipo||f.tipo==='C'||f.tipo==='FC')?`<button class="btn-g btn-sm" onclick="abrirRemito('${f.id}')" title="Remito">${ic('package')}${mob?'':' Remito'}</button>`:''}
@@ -11087,7 +11147,7 @@ function renderClientSheet(q){
   const all = DB.get('clientes',[]);
   const items = q ? all.filter(c=>(c.nombre||'').toLowerCase().includes(q)||(c.cuit||'').includes(q)) : all;
   if(!items.length){
-    list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+q+'"':'No hay clientes guardados'}</div>`;
+    list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+esc(q)+'"':'No hay clientes guardados'}</div>`;
     return;
   }
   list.innerHTML = items.map((c,i)=>`
@@ -11181,7 +11241,7 @@ function renderCatalogSheet(q){
     ? _catalogSheetItems.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q))
     : _catalogSheetItems;
   if(!items.length){
-    list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+q+'"':'El catálogo está vacío'}</div>`;
+    list.innerHTML=`<div class="cs-empty">${q?'Sin resultados para "'+esc(q)+'"':'El catálogo está vacío'}</div>`;
     return;
   }
   list.innerHTML = items.map((p)=>`
@@ -11273,10 +11333,14 @@ function updateFactTotals(){
 async function saveFactura(emitir=false){
   const conf = getConf();
   const emp = DB.get('empresa',{});
-  const nro = document.getElementById('f-nro')?.value.trim();
+  let nro = document.getElementById('f-nro')?.value.trim();
   const isCFcheck = document.getElementById('f-cf')?.checked;
   const nombre = isCFcheck ? 'Consumidor Final' : (document.getElementById('f-nombre')?.value.trim()||'');
   if(!nro){ toast('Ingresá el número de factura.',false); return; }
+  // Evitar dos Facturas C guardadas con el mismo número (ej. dos borradores
+  // abiertos a la vez, o un número tipeado a mano por error).
+  const _dupeFactura = DB.get('facturas',[]).find(f=>f.tipo==='C' && f.nro===nro && f.id!==_facturaEdit?.id);
+  if(_dupeFactura){ toast('Ya existe una Factura C con ese número.',false,5000); return; }
   if(!isCFcheck && !nombre){ toast('Ingresá el nombre del comprador.',false); return; }
   if(!_factItems.length){ toast('Agregá al menos un ítem.',false); return; }
   const subtotalItems = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
@@ -11295,10 +11359,19 @@ async function saveFactura(emitir=false){
       const fecha = document.getElementById('f-fecha')?.value||new Date().toISOString().slice(0,10);
       const parts = nro.split('-');
       const pdv = parseInt(parts[0])||1;
+      const pdvStr = String(pdv).padStart(5,'0');
       const resp = await fetch('/api/arca-cae',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({pdv,fecha:fecha.replace(/-/g,''),cuitComprador:cuitVal||'0',concepto,importe:total})});
       const data = await resp.json();
-      if(data.cae){ cae=data.cae; caeFecha=data.caeFecha; toast('CAE obtenido'); }
+      if(data.cae){
+        cae=data.cae; caeFecha=data.caeFecha;
+        // Usar el número de comprobante que ARCA realmente autorizó, no el
+        // que estaba tipeado en el formulario — evita que el nro impreso
+        // quede desincronizado del que respalda el CAE si el contador local
+        // se atrasó (factura editada a mano, borrador salteado, etc.)
+        if(data.cbteNro){ nro = pdvStr + '-' + String(data.cbteNro).padStart(8,'0'); }
+        toast('CAE obtenido');
+      }
       else { toast('ARCA: '+(data.error||'Sin CAE'),false,6000); if(btn){btn.disabled=false;btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg> Emitir y solicitar CAE`;} return; }
     } catch(e){
       toast('Error CAE: '+e.message,false,6000);
@@ -11400,6 +11473,7 @@ async function solicitarCAE(){
     const total = _factItems.reduce((s,it)=>s+(it.subtotal||0),0);
     const parts = nro.split('-');
     const pdv = parseInt(parts[0])||1;
+    const pdvStr = String(pdv).padStart(5,'0');
     const resp = await fetch('/api/arca-cae',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -11410,8 +11484,12 @@ async function solicitarCAE(){
     if(data.cae){
       const caeEl=document.getElementById('f-cae');
       const caeFechaEl=document.getElementById('f-caefecha');
+      const nroEl=document.getElementById('f-nro');
       if(caeEl) caeEl.value=data.cae;
       if(caeFechaEl) caeFechaEl.value=data.caeFecha;
+      // Reflejar el número que ARCA autorizó de verdad, no dejar el tipeado
+      // a mano si difiere (mismo motivo que en saveFactura).
+      if(data.cbteNro && nroEl) nroEl.value = pdvStr + '-' + String(data.cbteNro).padStart(8,'0');
       toast('CAE obtenido correctamente');
     } else {
       toast('ARCA no devolvió CAE: '+(data.error||'Error desconocido'),false,6000);
@@ -11667,13 +11745,20 @@ function pedidoToFactura(id) {
   const nro = nextFacturaNro();
   const today = new Date().toISOString().slice(0,10);
   const vto30 = new Date(Date.now()+30*86400000).toISOString().slice(0,10);
-  const items = (o.items||[]).map(it=>({
-    sku: it.c||'',
-    descripcion: it.n||'',
-    qty: it.q||1,
-    precioUnit: it.p||0,
-    subtotal: (it.q||1)*(it.p||0)
-  }));
+  // Distribuir el recargo por forma de pago (o.pago.pct) en el precio de cada
+  // ítem — antes se perdía al convertir el pedido en factura (recargoPct
+  // quedaba hardcodeado en 0 y el total no reflejaba lo cotizado/cobrado).
+  const recargoPct = o.pago?.pct||0;
+  const items = (o.items||[]).map(it=>{
+    const precioUnit = (it.p||0)*(1+recargoPct/100);
+    return {
+      sku: it.c||'',
+      descripcion: it.n||'',
+      qty: it.q||1,
+      precioUnit,
+      subtotal: (it.q||1)*precioUnit
+    };
+  });
   const total = items.reduce((s,it)=>s+it.subtotal,0);
   const cli = DB.get('clientes',[]).find(c=>c.nombre&&o.cliente&&c.nombre.toLowerCase()===o.cliente.toLowerCase());
   const factura = {
@@ -11690,7 +11775,7 @@ function pedidoToFactura(id) {
       condVenta:'Contado',
       metodoPago:'Efectivo'
     },
-    cuotas:0, recargoPct:0, descuentoPct:0,
+    cuotas:0, recargoPct, descuentoPct:0,
     items, subtotal:total, otrosImpuestos:0, total,
     totalLetras: numToWords(total),
     cae:'', caeFecha:'',
@@ -11864,11 +11949,26 @@ function exportLibroIVA() {
   toast('Libro IVA exportado correctamente');
 }
 
+// IDs de facturas que ya tienen una Nota de Crédito asociada (total o
+// parcialmente acreditadas) — se comparan tanto por facturaOrigenId como por
+// facturaOrigen (nro), ya que NCs más viejas solo guardaban el nro. Usado para
+// no contar como "pendiente de cobro" una factura ya acreditada por una NC.
+function facturaIdsConNC(facturas) {
+  const notasCredito = facturas.filter(f=>f.tipo==='NC');
+  const soloFacturas = facturas.filter(f=>f.tipo!=='NC'&&f.tipo!=='RM');
+  const idsConNC = new Set();
+  const nrosConNC = new Set(notasCredito.filter(n=>n.facturaOrigen).map(n=>n.facturaOrigen));
+  notasCredito.filter(n=>n.facturaOrigenId).forEach(n=>idsConNC.add(n.facturaOrigenId));
+  soloFacturas.filter(f=>nrosConNC.has(f.nro)).forEach(f=>idsConNC.add(f.id));
+  return idsConNC;
+}
 function clienteBalance(nombre) {
   const key = (nombre||'').trim().toLowerCase();
   const facturas = DB.get('facturas',[]);
+  const idsConNC = facturaIdsConNC(facturas);
   const pendientes = facturas.filter(f=>
     (f.estado==='emitida'||f.estado==='borrador') &&
+    f.tipo!=='NC' && f.tipo!=='RM' && !idsConNC.has(f.id) &&
     (f.comprador?.nombre||'').trim().toLowerCase()===key
   );
   return {
@@ -12434,7 +12534,7 @@ function riPickCliente() {
     <div onclick="riSelectCliente('${c.id}')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--ch)">${esc(c.nombre||'—')}</div>
-        <div style="font-size:11px;color:var(--di);margin-top:2px">${[c.tel,c.dir].filter(Boolean).join(' · ')||'Sin datos'}</div>
+        <div style="font-size:11px;color:var(--di);margin-top:2px">${esc([c.tel,c.dir].filter(Boolean).join(' · ')||'Sin datos')}</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--di);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`).join('');
@@ -12585,7 +12685,7 @@ function abrirRemito(facturaId) {
     </div>
     <div class="savebar">
       <button class="btn-g" onclick="closeRemitoModal()">Cancelar</button>
-      <button class="btn-p" onclick="guardarRemito('${facturaId}',${JSON.stringify(orig.items||[]).replace(/'/g,"\\'")})">${ic('package')} Generar Remito</button>
+      <button class="btn-p" onclick="guardarRemito('${facturaId}')">${ic('package')} Generar Remito</button>
     </div>
   </div>`;
   modal.style.display='flex';
@@ -12599,7 +12699,7 @@ function closeRemitoModal(){
   if(_pendingRender){_pendingRender=false;render();}
 }
 
-function guardarRemito(facturaId, itemsOrig) {
+function guardarRemito(facturaId) {
   const orig = DB.get('facturas',[]).find(f=>f.id===facturaId);
   if(!orig){ toast('Factura no encontrada',false); return; }
   const conf = getConf();
