@@ -1999,6 +1999,7 @@ const FB_API_KEY = 'AIzaSyCH9N-fRsuTmJYxaiUBFML8EjhLKAnXDsM';
 // guarda en localStorage y se reutiliza/renueva automáticamente.
 let _authToken = null;
 let _authPromise = null;
+let _lastAuthError = null; // último motivo por el que no se pudo obtener/renovar el token (ver panel de diagnóstico)
 async function ensureAuth() {
   try {
     const stored = JSON.parse(localStorage.getItem('tbr__auth')||'null');
@@ -2006,11 +2007,20 @@ async function ensureAuth() {
       _authToken = stored.idToken;
       return _authToken;
     }
-  } catch {}
+  } catch {
+    // tbr__auth corrupto: no abortar acá, sino limpiarlo y seguir para
+    // pedir un token nuevo más abajo. Antes, un JSON corrupto en este
+    // localStorage dejaba el dispositivo sin poder autenticarse NUNCA MÁS
+    // (ensureAuth devolvía null para siempre), lo que explica un 401
+    // "Permission denied" persistente en TODAS las escrituras.
+    try { localStorage.removeItem('tbr__auth'); } catch {}
+  }
   if (_authPromise) return _authPromise;
   _authPromise = (async () => {
     try {
-      const stored = JSON.parse(localStorage.getItem('tbr__auth')||'null');
+      let stored = null;
+      try { stored = JSON.parse(localStorage.getItem('tbr__auth')||'null'); }
+      catch { try { localStorage.removeItem('tbr__auth'); } catch {} }
       let d = null;
       if (stored && stored.refreshToken) {
         const r = await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_API_KEY}`, {
@@ -2021,6 +2031,8 @@ async function ensureAuth() {
         if (r.ok) {
           const j = await r.json();
           d = {idToken:j.id_token, refreshToken:j.refresh_token, expiresIn:j.expires_in};
+        } else {
+          _lastAuthError = {step:'refresh', status:r.status, msg:(await r.text().catch(()=>'')).slice(0,200), ts:Date.now()};
         }
       }
       if (!d) {
@@ -2029,14 +2041,23 @@ async function ensureAuth() {
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify({returnSecureToken:true})
         });
-        if (!r.ok) return null;
+        if (!r.ok) {
+          _lastAuthError = {step:'signup', status:r.status, msg:(await r.text().catch(()=>'')).slice(0,200), ts:Date.now()};
+          // Token viejo (posiblemente vencido) es mejor que ninguno: si había
+          // uno guardado, reintentarlo en vez de dejar todas las requests sin auth.
+          return stored && stored.idToken ? stored.idToken : null;
+        }
         const j = await r.json();
         d = {idToken:j.idToken, refreshToken:j.refreshToken, expiresIn:j.expiresIn};
       }
       _authToken = d.idToken;
+      _lastAuthError = null;
       try { localStorage.setItem('tbr__auth', JSON.stringify({idToken:d.idToken, refreshToken:d.refreshToken, exp:Date.now()+(+d.expiresIn)*1000})); } catch {}
       return _authToken;
-    } catch { return null; }
+    } catch (e) {
+      _lastAuthError = {step:'exception', status:'network', msg:String(e && e.message || e).slice(0,200), ts:Date.now()};
+      return null;
+    }
     finally { _authPromise = null; }
   })();
   return _authPromise;
@@ -10326,13 +10347,38 @@ function renderSyncDiag() {
         </div>`;
       }).join('')
     : `<div style="color:var(--gr);font-size:12px">${ic('check')} Todo sincronizado, sin cambios pendientes de subir.</div>`;
+  const authRow = _lastAuthError
+    ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);font-size:12px">
+        <span style="color:var(--re)">${ic('alert')} Autenticación con Firebase falló (${esc(_lastAuthError.step)}): ${esc(String(_lastAuthError.status))} — ${esc(_lastAuthError.msg||'')}, ${_fmtAgo(_lastAuthError.ts)}</span>
+        <div class="fe mt8"><button class="btn-g btn-sm" onclick="resetFirebaseAuth()">Reautenticar con Firebase</button></div>
+      </div>`
+    : '';
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px">
       <span>Conexión: <b style="color:${navigator.onLine?'var(--gr)':'var(--re)'}">${navigator.onLine?'Online':'Offline'}</b></span>
       <span>Última sync con Firebase: <b>${_fmtAgo(_lastSyncOk)}</b></span>
     </div>
     ${rows}
+    ${authRow}
   `;
+}
+// Fuerza un token de autenticación nuevo: limpia el guardado (puede estar
+// corrupto o vencido de forma irrecuperable) y pide uno de cero. Botón de
+// recuperación manual para cuando el panel muestra un error de auth.
+async function resetFirebaseAuth() {
+  try { localStorage.removeItem('tbr__auth'); } catch {}
+  _authToken = null;
+  _authPromise = null;
+  _lastAuthError = null;
+  toast('Reautenticando…');
+  const token = await ensureAuth();
+  if (token) {
+    toast('Reautenticado. Sincronizando…', true);
+    await forceSyncNow();
+  } else {
+    renderSyncDiag();
+    toast('No se pudo reautenticar. Revisá tu conexión e intentá de nuevo.', false, 6000);
+  }
 }
 async function forceSyncNow() {
   toast('Sincronizando…');
