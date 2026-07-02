@@ -2364,25 +2364,32 @@ document.addEventListener('visibilitychange', () => {
 // guardan con DB.set para que viajen entre dispositivos)
 const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos','formConfig'];
 
-// Fallback cuando /tbr.json completo falla: trae nodo a nodo usando auth.
+// Trae SOLO las claves de FB_SYNC_KEYS, cada una por separado (en paralelo),
+// en vez de descargar el árbol completo '/tbr.json'. Esto es crítico: el
+// árbol completo incluye catalog_photos y empresa_assets (fotos en base64,
+// pueden pesar varios MB), que este código nunca usa — antes se descargaban
+// igual en cada sync y se descartaban, siendo la causa principal del consumo
+// excesivo de descarga en Firebase.
 async function _fbFallbackPublic() {
   const out = {};
-  for (const k of FB_SYNC_KEYS) {
+  await Promise.all(FB_SYNC_KEYS.map(async k => {
     try {
       const url = await fbUrl(`${FB}/${k}.json`, 't='+Date.now());
-      const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(5000)});
+      const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
       if (r.ok) {
         const v = await r.json();
         if (v!=null) out[k] = v;
       }
     } catch {}
-  }
+  }));
   return Object.keys(out).length ? out : null;
 }
 
 let _lastWrite = 0;
 let _lastRemoteTs = 0;  // timestamp del último dato descargado de Firebase
 let _lastFullFetch = 0; // cuándo se hizo la última descarga completa
+let _lastPhotoSync = 0; // throttle de _syncPhotosFromFirebase (descarga pesada)
+let _lastAssetSync = 0; // throttle de _syncAssetsFromFirebase (descarga pesada)
 let _fbSyncing = false; // mutex: evita llamadas concurrentes de fbSync
 async function fbSync() {
   if (_fbSyncing) return; // setInterval + visibilitychange + online pueden solaparse
@@ -2408,8 +2415,9 @@ async function fbSync() {
     // exclusivamente de __ts (cuya escritura es fire-and-forget y puede fallar).
     const tsUrl = await fbUrl(`${FB}/__ts.json`, 't='+Date.now());
     const tsR = await fetch(tsUrl, {cache:'no-store', signal:AbortSignal.timeout(4000)});
+    let remoteTs = null;
     if (tsR.ok) {
-      const remoteTs = await tsR.json();
+      remoteTs = await tsR.json();
       const forceFullFetch = Date.now() - _lastFullFetch > 90000;
       if (!forceFullFetch && remoteTs && typeof remoteTs === 'number' && remoteTs <= _lastRemoteTs) {
         setSyncDot(true);
@@ -2417,21 +2425,15 @@ async function fbSync() {
       }
     }
 
-    const url = await fbUrl(FB+'.json', 't='+Date.now());
-    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-    let d;
-    if (!r.ok) {
-      d = await _fbFallbackPublic();
-      if (!d) return;
-    } else {
-      d = await r.json();
-    }
+    // Traer por clave (nunca el árbol completo '/tbr.json'): evita arrastrar
+    // catalog_photos/empresa_assets (fotos pesadas en base64) en cada sync.
+    const d = await _fbFallbackPublic();
     if (!d) return;
     _lastFullFetch = Date.now();
     // CRÍTICO: no usar Date.now() como fallback si __ts no existe.
     // Si se hace _lastRemoteTs = Date.now() cuando __ts es undefined, todos los
     // syncs futuros verán remoteTs <= _lastRemoteTs y se saltarán para siempre.
-    if (d.__ts && typeof d.__ts === 'number') _lastRemoteTs = d.__ts;
+    if (typeof remoteTs === 'number' && remoteTs) _lastRemoteTs = remoteTs;
     const changedKeys = [];
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
@@ -2493,9 +2495,19 @@ async function fbSync() {
       if (settingsChanged) checkAccessPin();
     }
     setSyncDot(true);
-    // Background: import photos and assets from Firebase for devices that don't have them yet
-    _syncPhotosFromFirebase();
-    _syncAssetsFromFirebase();
+    // Background: import photos/assets faltantes, pero solo cuando la clave
+    // relacionada realmente cambió y no más seguido que cada 3 min — estas
+    // descargan el mapa completo de fotos (pesado en base64), así que
+    // correrlas en cada tick de sync es lo que disparaba el consumo excesivo.
+    const now = Date.now();
+    if (changedKeys.includes('catalog') && now - _lastPhotoSync > 180000) {
+      _lastPhotoSync = now;
+      _syncPhotosFromFirebase();
+    }
+    if (changedKeys.includes('empresa') && now - _lastAssetSync > 180000) {
+      _lastAssetSync = now;
+      _syncAssetsFromFirebase();
+    }
   } catch { setSyncDot(false); }
   } finally { _fbSyncing = false; }
 }
@@ -2583,15 +2595,8 @@ async function syncCatalogOrders() {
 async function initialSyncIfFresh() {
   if (!navigator.onLine) return;
   try {
-    const url = await fbUrl(FB+'.json', 't='+Date.now());
-    const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-    let d;
-    if (!r.ok) {
-      d = await _fbFallbackPublic();
-      if (!d) return;
-    } else {
-      d = await r.json();
-    }
+    // Traer por clave (nunca el árbol completo) para no arrastrar fotos.
+    const d = await _fbFallbackPublic();
     if (!d) return;
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
     let restored = false;
@@ -10367,41 +10372,14 @@ window.onload = async function() {
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
   migrateCatalogPhotos();
-  // Recuperar fotos desde Firebase si IndexedDB está vacío pero el catálogo tiene productos
-  await (async function recoverPhotosFromFirebase() {
-    try {
-      const cat = DB.get('catalog', []);
-      const photosMap = PhotoDB.getAllPhotos();
-      const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
-      if (!cat.length || hasPhotos || !navigator.onLine) return;
-      const url = await fbUrl(FB+'.json', 't='+Date.now());
-      const r = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-      if (!r.ok) return;
-      const d = await r.json();
-      if (!Array.isArray(d && d.catalog)) return;
-      const recovered = {};
-      d.catalog.forEach(p => {
-        if (!p || !p.id) return;
-        const hasPhoto = (p.photo && p.photo.startsWith('data:')) || (p.photos && p.photos.some(ph => ph && ph.startsWith('data:')));
-        if (hasPhoto) recovered[p.id] = { photo: p.photo||'', photos: p.photos||[] };
-      });
-      if (!Object.keys(recovered).length) return;
-      for (const [id, data] of Object.entries(recovered)) {
-        await PhotoDB.setProductPhotos(id, data);
-      }
-      render();
-      toast('Fotos del catálogo restauradas', true, 3000);
-    } catch(e) {}
-  })();
-  // Forzar sync del catálogo a Firebase con fotos incluidas si IndexedDB tiene datos
-  await (async function forceCatalogSync() {
-    try {
-      const photosMap = PhotoDB.getAllPhotos();
-      const hasPhotos = Object.keys(photosMap).some(k => photosMap[k] && (photosMap[k].photo || (photosMap[k].photos && photosMap[k].photos.length)));
-      if (!hasPhotos || !navigator.onLine) return;
-      await fbWrite('catalog', DB.get('catalog', []));
-    } catch(e) {}
-  })();
+  // Recuperar fotos/logo/QR desde Firebase (catalog_photos/empresa_assets),
+  // consultando solo esos nodos puntuales — nunca el árbol completo (que
+  // arrastraría todas las fotos en cada carga de la app).
+  if (navigator.onLine) {
+    _lastPhotoSync = Date.now();
+    _lastAssetSync = Date.now();
+    await Promise.all([_syncPhotosFromFirebase(), _syncAssetsFromFirebase()]);
+  }
   // Inicializar defaults mínimos si no existen (sin datos de usuario hardcodeados).
   // Se escriben directo en localStorage (sin pasar por DB.set) para no subir
   // estos valores por defecto a Firebase: si la sincronización inicial falló
@@ -10466,7 +10444,7 @@ window.onload = async function() {
   // Firebase sync cada 10s
   setInterval(fbSync, 15000);
   // Resetear _lastWrite para que el sync inicial siempre corra,
-  // incluso si fbWrite/DB.set corrieron durante el init (forceCatalogSync, migración).
+  // incluso si fbWrite/DB.set corrieron durante el init (migración).
   _lastWrite = 0;
   fbSync();
   // Backup proactivo: si hay logo/QR en IDB pero no en Firebase, subirlos
