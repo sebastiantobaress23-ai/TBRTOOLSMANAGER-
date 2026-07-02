@@ -2068,6 +2068,14 @@ const DB = {
         pending.push(k);
         localStorage.setItem('tbr__pending', JSON.stringify(pending));
       }
+      // Guardar desde cuándo esta clave está sin poder subirse (solo la
+      // primera vez; no se pisa mientras siga pendiente). fbSync usa esto
+      // como circuit breaker: ver comentario en _failedPending.
+      const since = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
+      if (!since[k]) {
+        since[k] = Date.now();
+        localStorage.setItem('tbr__pendingSince', JSON.stringify(since));
+      }
     } catch {}
     // Se marca _lastWrite siempre (online u offline) para que fbSync no
     // pise un cambio recién hecho localmente mientras no hay conexión.
@@ -2323,6 +2331,11 @@ async function fbWrite(k, v) {
     try {
       const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]').filter(x=>x!==k);
       localStorage.setItem('tbr__pending', JSON.stringify(pending));
+      const since = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
+      if (since[k]) {
+        delete since[k];
+        localStorage.setItem('tbr__pendingSince', JSON.stringify(since));
+      }
     } catch {}
 
   } catch (err) {
@@ -2405,7 +2418,25 @@ async function fbSync() {
     }
   } catch {}
   // Claves que fallaron al subirse: si fbWrite falló, siguen en tbr__pending.
-  // No sobreescribir el dato local con el remoto viejo para estas claves.
+  // No sobreescribir el dato local con el remoto viejo para estas claves —
+  // PERO solo durante un margen razonable. Si una clave lleva más de 2 min
+  // sin poder subirse (bug de red, dato corrupto, etc.), dejar de bloquear
+  // la bajada de cambios remotos: es preferible adoptar lo último que hay
+  // en Firebase (y que el dispositivo vuelva a estar al día con el resto)
+  // a quedar aislado para siempre esperando un push que nunca se resuelve.
+  // Esto es lo que causaba que un dispositivo (ej. el celular) dejara de
+  // recibir ventas/cambios nuevos hechos en otro dispositivo (ej. la PC).
+  const STUCK_PENDING_MS = 120000;
+  const _pendingNow = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+  const _pendingSinceMap = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
+  const _stuckKeys = _pendingNow.filter(k => _pendingSinceMap[k] && (Date.now()-_pendingSinceMap[k]) > STUCK_PENDING_MS);
+  if (_stuckKeys.length) {
+    localStorage.setItem('tbr__pending', JSON.stringify(_pendingNow.filter(k => !_stuckKeys.includes(k))));
+    _stuckKeys.forEach(k => delete _pendingSinceMap[k]);
+    localStorage.setItem('tbr__pendingSince', JSON.stringify(_pendingSinceMap));
+    console.warn('fbSync: descartando cambio local atascado (>2min sin subir), se adopta lo último de Firebase:', _stuckKeys);
+    toast('Un cambio local no se pudo sincronizar y se actualizó con la versión más reciente de otro dispositivo.', false, 6000);
+  }
   const _failedPending = new Set(JSON.parse(localStorage.getItem('tbr__pending')||'[]'));
   try {
     // Primero consultar solo el timestamp liviano (~50 bytes).
