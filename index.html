@@ -2296,6 +2296,16 @@ async function resyncAllPhotos() {
   }
   toast(`✓ ${ok} producto(s) sincronizados al catálogo digital`);
 }
+// Guarda el motivo real por el que una clave no pudo subirse a Firebase
+// (código HTTP o error de red), para mostrarlo en el panel de diagnóstico
+// de Config en vez de que quede solo en la consola del navegador.
+function _recordPendingError(k, code, msg) {
+  try {
+    const errs = JSON.parse(localStorage.getItem('tbr__pendingError')||'{}');
+    errs[k] = { code, msg: String(msg||'').slice(0,200), ts: Date.now() };
+    localStorage.setItem('tbr__pendingError', JSON.stringify(errs));
+  } catch {}
+}
 async function fbWrite(k, v) {
   try {
     let payload = v;
@@ -2316,7 +2326,9 @@ async function fbWrite(k, v) {
     });
 
     if (!r.ok) {
-      console.error('Firebase error', k, r.status);
+      const txt = await r.text().catch(()=>'');
+      console.error('Firebase error', k, r.status, txt);
+      _recordPendingError(k, r.status, txt);
       return;
     }
 
@@ -2336,10 +2348,16 @@ async function fbWrite(k, v) {
         delete since[k];
         localStorage.setItem('tbr__pendingSince', JSON.stringify(since));
       }
+      const errs = JSON.parse(localStorage.getItem('tbr__pendingError')||'{}');
+      if (errs[k]) {
+        delete errs[k];
+        localStorage.setItem('tbr__pendingError', JSON.stringify(errs));
+      }
     } catch {}
 
   } catch (err) {
     console.error('Firebase error', err);
+    _recordPendingError(k, 'network', String(err && err.message || err));
   }
 }
 
@@ -10288,13 +10306,23 @@ function renderSyncDiag() {
   if (!el) return;
   const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
   const since = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
+  const errs = JSON.parse(localStorage.getItem('tbr__pendingError')||'{}');
+  // Pendientes de antes de este panel (sin "since" registrado): arrancarles
+  // el conteo ahora para que el mensaje no quede en "—" para siempre.
+  let backfilled = false;
+  pending.forEach(k => { if (!since[k]) { since[k] = Date.now(); backfilled = true; } });
+  if (backfilled) localStorage.setItem('tbr__pendingSince', JSON.stringify(since));
   const rows = pending.length
     ? pending.map(k=>{
         const ms = since[k] ? Date.now()-since[k] : 0;
         const stuck = ms > 120000;
-        return `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px">
-          <span>${esc(k)}</span>
-          <span style="color:${stuck?'var(--re)':'var(--ye)'}">sin subir, ${_fmtAgo(since[k])}${stuck?' (atascado)':''}</span>
+        const e = errs[k];
+        return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <span>${esc(k)}</span>
+            <span style="color:${stuck?'var(--re)':'var(--ye)'}">sin subir, ${_fmtAgo(since[k])}${stuck?' (atascado)':''}</span>
+          </div>
+          ${e ? `<div style="color:var(--re);margin-top:2px">Error: ${esc(String(e.code))} — ${esc(e.msg||'')} (${_fmtAgo(e.ts)})</div>` : ''}
         </div>`;
       }).join('')
     : `<div style="color:var(--gr);font-size:12px">${ic('check')} Todo sincronizado, sin cambios pendientes de subir.</div>`;
