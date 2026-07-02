@@ -10464,13 +10464,12 @@ window.onload = async function() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0,0);
   // Recuperación de acceso: visitar la app con ?recover=1 agrega un usuario
-  // temporal (recovery / recovery123) para poder entrar si las credenciales
-  // quedaron desincronizadas entre dispositivos (ej. un sync trajo una
-  // versión vieja de 'settings' y pisó el usuario/contraseña actual). No
-  // suma un riesgo de seguridad real: usuario/contraseña ya se guardan sin
-  // cifrar en localStorage/Firebase, esto es solo un gate de uso, no auth.
-  // Entrando con 'recovery' se puede ver/arreglar la lista real de usuarios
-  // en Configuración y borrar este usuario temporal después.
+  // temporal con contraseña ALEATORIA (generada en el momento, no fija en
+  // el código) para poder entrar si las credenciales quedaron
+  // desincronizadas entre dispositivos (ej. un sync trajo una versión vieja
+  // de 'settings' y pisó el usuario/contraseña actual). Entrando con
+  // 'recovery' se puede ver/arreglar la lista real de usuarios en
+  // Configuración y borrar este usuario temporal después.
   (function handleRecoveryUrl(){
     try {
       const params = new URLSearchParams(location.search);
@@ -10478,8 +10477,10 @@ window.onload = async function() {
         const s = DB.get('settings', {});
         s.users = s.users || [];
         if (!s.users.some(x=>x.user==='recovery')) {
-          s.users.push({id:uid(), user:'recovery', pass:'recovery123'});
+          const tempPass = Math.random().toString(36).slice(2,10);
+          s.users.push({id:uid(), user:'recovery', pass:tempPass});
           DB.set('settings', s);
+          setTimeout(()=>alert(`Usuario temporal creado.\n\nUsuario: recovery\nContraseña: ${tempPass}\n\nAnotala — no se vuelve a mostrar. Entrá con esto y arreglá tu usuario real en Configuración, después borrá este temporal.`), 300);
         }
         sessionStorage.removeItem('tbr_unlocked');
         history.replaceState(null,'',location.pathname);
