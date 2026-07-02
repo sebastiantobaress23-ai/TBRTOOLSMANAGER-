@@ -2402,18 +2402,21 @@ window.addEventListener('online', async () => {
       }
       _lastWrite = 0; // resetear para que fbSync descargue cambios remotos aunque acabemos de escribir
       await fbSync();
+      startRealtimeSync(); // reconectar el listener en tiempo real con la conexión nueva
       return; // éxito — el tilde lo pone fbSync
     } catch {}
   }
 });
-window.addEventListener('offline', () => setSyncDot(false));
-// En mobile los setInterval se throttlean a >1min en background.
-// Al volver al tab, forzar sync inmediato para que los datos de PC
-// aparezcan sin esperar el próximo intervalo.
+window.addEventListener('offline', () => { setSyncDot(false); stopRealtimeSync(); });
+// En mobile los setInterval se throttlean a >1min en background, y el navegador
+// puede cortar la conexión SSE mientras la app está en segundo plano. Al volver
+// al tab, forzar sync inmediato y reabrir el listener en tiempo real, para que
+// los datos de PC aparezcan sin esperar el próximo intervalo.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     _lastWrite = 0; // resetear guard para que fbSync corra siempre al volver
     fbSync();
+    startRealtimeSync();
   }
 });
 
@@ -2615,6 +2618,52 @@ async function fbSync() {
     }
   } catch { setSyncDot(false); }
   } finally { _fbSyncing = false; }
+}
+
+/* ── SYNC EN TIEMPO REAL (Server-Sent Events) ──────────────────────────────
+   En vez de solo consultar __ts.json cada 15s (polling), se abre una
+   conexión persistente a Firebase que avisa AL INSTANTE cuando __ts cambia
+   en cualquier dispositivo — así los cambios llegan en segundos, no en
+   hasta 15-90s. No reemplaza el polling: si esta conexión falla o el
+   navegador la bloquea, setInterval(fbSync,...) sigue funcionando igual
+   que antes como respaldo — este es un extra, no un reemplazo riesgoso.
+
+   Deliberadamente escucha solo __ts.json (liviano) y no el árbol '/tbr'
+   completo: así nunca arrastra las fotos de catalog_photos/empresa_assets
+   por esta vía. Cuando avisa que hay algo nuevo, dispara el fbSync() de
+   siempre, que ya trae los datos clave por clave. */
+let _rtEventSource = null;
+let _rtReconnectTimer = null;
+async function startRealtimeSync() {
+  if (typeof EventSource === 'undefined') return; // navegador sin soporte: sigue el polling nomás
+  try {
+    stopRealtimeSync();
+    const token = await ensureAuth();
+    if (!token) { _rtReconnectTimer = setTimeout(startRealtimeSync, 30000); return; }
+    const url = `${FB}/__ts.json?auth=${token}`;
+    const es = new EventSource(url);
+    _rtEventSource = es;
+    const onChange = () => { _lastWrite = 0; fbSync(); };
+    es.addEventListener('put', onChange);
+    es.addEventListener('patch', onChange);
+    es.onerror = () => {
+      // EventSource reintenta solo los cortes de red, pero si el token
+      // venció el navegador no sabe pedir uno nuevo — hay que recrear la
+      // conexión. Esperar un poco para no martillar si Firebase está caído.
+      es.close();
+      if (_rtEventSource === es) _rtEventSource = null;
+      clearTimeout(_rtReconnectTimer);
+      _rtReconnectTimer = setTimeout(startRealtimeSync, 8000);
+    };
+    // Renovar antes de que venza el token (~1h), sin depender de que
+    // onerror detecte el vencimiento.
+    clearTimeout(_rtReconnectTimer);
+    _rtReconnectTimer = setTimeout(startRealtimeSync, 45*60*1000);
+  } catch(e) { console.log('startRealtimeSync:', e); }
+}
+function stopRealtimeSync() {
+  if (_rtEventSource) { try{_rtEventSource.close();}catch{} _rtEventSource = null; }
+  clearTimeout(_rtReconnectTimer);
 }
 
 // Helper para leer valores tipados de Firestore REST (cada campo viene como
@@ -10737,12 +10786,16 @@ window.onload = async function() {
     const homePage = (_initSettings.homePage && validPages.includes(_initSettings.homePage)) ? _initSettings.homePage : 'dashboard';
     navigate(lastPage && validPages.includes(lastPage) ? lastPage : homePage);
   }
-  // Firebase sync cada 10s
-  setInterval(fbSync, 15000);
+  // Polling de respaldo: con la conexión en tiempo real (startRealtimeSync)
+  // los cambios ya llegan al instante, así que esto queda solo como red de
+  // seguridad por si esa conexión falla o el navegador la bloquea — antes
+  // era el único mecanismo y corría cada 15s.
+  setInterval(fbSync, 60000);
   // Resetear _lastWrite para que el sync inicial siempre corra,
   // incluso si fbWrite/DB.set corrieron durante el init (migración).
   _lastWrite = 0;
   fbSync();
+  startRealtimeSync();
   // Backup proactivo: si hay logo/QR en IDB pero no en Firebase, subirlos
   setTimeout(async () => {
     try {
