@@ -2672,11 +2672,14 @@ async function initialSyncIfFresh() {
   } catch {}
 }
 
+let _lastSyncOk = 0; // timestamp del último round-trip exitoso con Firebase (ver panel de diagnóstico en Config)
 function setSyncDot(ok) {
   const d = document.getElementById('sync-dot');
   if (d) d.className = ok ? 'sync-dot' : 'sync-dot sync-off';
   const b = document.getElementById('offline-badge');
   if (b) b.style.display = navigator.onLine ? 'none' : 'block';
+  if (ok) _lastSyncOk = Date.now();
+  if (PAGE==='config') renderSyncDiag();
   updateOfflineBanner();
 }
 
@@ -7217,6 +7220,13 @@ function pgConfig() {
     </div>
   </div>
 
+  <div class="sh mb16">Diagnóstico de sincronización</div>
+  <div class="card mb16">
+    <div class="hint mb16">Estado real de la sincronización con Firebase en este dispositivo. Si algo no aparece en otro dispositivo, revisá esto primero antes de reportar un error.</div>
+    <div id="sync-diag"></div>
+    <div class="fe mt16"><button class="btn-g btn-sm" onclick="forceSyncNow()">↻ Sincronizar ahora</button></div>
+  </div>
+
   <div class="sh mb16">Excel</div>
   <div class="card mb16"><button class="btn-g" onclick="exportAllXLSX()" style="height:42px">⬇ Exportar todo a Excel</button></div>
 
@@ -10259,7 +10269,51 @@ function _initNavDrag() {
   };
 }
 
-after.config = ()=>{ renderPMRows(); _initNavDrag(); };
+after.config = ()=>{ renderPMRows(); _initNavDrag(); renderSyncDiag(); };
+
+// Panel de diagnóstico de sincronización (Config > Diagnóstico de sincronización):
+// muestra el estado REAL de este dispositivo (no una suposición) para poder
+// diferenciar "no sincronizó todavía" de "hay un cambio local trabado" sin
+// tener que adivinar leyendo el código.
+function _fmtAgo(ts) {
+  if (!ts) return '—';
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<5) return 'ahora mismo';
+  if (s<60) return `hace ${s}s`;
+  if (s<3600) return `hace ${Math.floor(s/60)}min`;
+  return `hace ${Math.floor(s/3600)}h`;
+}
+function renderSyncDiag() {
+  const el = document.getElementById('sync-diag');
+  if (!el) return;
+  const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+  const since = JSON.parse(localStorage.getItem('tbr__pendingSince')||'{}');
+  const rows = pending.length
+    ? pending.map(k=>{
+        const ms = since[k] ? Date.now()-since[k] : 0;
+        const stuck = ms > 120000;
+        return `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px">
+          <span>${esc(k)}</span>
+          <span style="color:${stuck?'var(--re)':'var(--ye)'}">sin subir, ${_fmtAgo(since[k])}${stuck?' (atascado)':''}</span>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--gr);font-size:12px">${ic('check')} Todo sincronizado, sin cambios pendientes de subir.</div>`;
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px">
+      <span>Conexión: <b style="color:${navigator.onLine?'var(--gr)':'var(--re)'}">${navigator.onLine?'Online':'Offline'}</b></span>
+      <span>Última sync con Firebase: <b>${_fmtAgo(_lastSyncOk)}</b></span>
+    </div>
+    ${rows}
+  `;
+}
+async function forceSyncNow() {
+  toast('Sincronizando…');
+  _lastWrite = 0;
+  _lastRemoteTs = 0;
+  await fbSync();
+  renderSyncDiag();
+  toast('Sincronización completa', true);
+}
 
 /* ═══════════════════════════════════════════
    INIT
