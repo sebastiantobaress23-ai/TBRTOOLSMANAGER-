@@ -2312,10 +2312,12 @@ async function fbWrite(k, v) {
       return;
     }
 
-    // Actualizar timestamp liviano para que otros dispositivos sepan que hay datos nuevos
-    // sin tener que descargar el árbol completo en cada poll.
+    // Actualizar timestamp liviano para que otros dispositivos sepan que hay datos nuevos.
+    // Se usa await para garantizar que __ts llega a Firebase antes de continuar;
+    // si es fire-and-forget y falla, los otros dispositivos no detectan el cambio
+    // y se saltan la descarga completa indefinidamente.
     const tsUrl = await fbUrl(`${FB}/__ts.json`);
-    fetch(tsUrl, {method:'PUT', headers:{'Content-Type':'application/json'}, body:String(Date.now())}).catch(()=>{});
+    await fetch(tsUrl, {method:'PUT', headers:{'Content-Type':'application/json'}, body:String(Date.now())}).catch(()=>{});
 
     _lastWrite = Date.now();
     try {
@@ -2378,9 +2380,14 @@ async function _fbFallbackPublic() {
 }
 
 let _lastWrite = 0;
-let _lastRemoteTs = 0; // timestamp del último dato descargado de Firebase
+let _lastRemoteTs = 0;  // timestamp del último dato descargado de Firebase
+let _lastFullFetch = 0; // cuándo se hizo la última descarga completa
+let _fbSyncing = false; // mutex: evita llamadas concurrentes de fbSync
 async function fbSync() {
+  if (_fbSyncing) return; // setInterval + visibilitychange + online pueden solaparse
   if (Date.now()-_lastWrite < 3000) return;
+  _fbSyncing = true;
+  try {
   // Antes de traer datos remotos, subir cualquier cambio local pendiente.
   try {
     const pending = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
@@ -2393,11 +2400,14 @@ async function fbSync() {
     // Primero consultar solo el timestamp liviano (~50 bytes).
     // Si no cambió desde la última descarga completa, saltar para no
     // desperdiciar ancho de banda (el árbol completo puede ser varios MB).
+    // Fallback: cada 90s forzar descarga completa para no depender
+    // exclusivamente de __ts (cuya escritura es fire-and-forget y puede fallar).
     const tsUrl = await fbUrl(`${FB}/__ts.json`, 't='+Date.now());
     const tsR = await fetch(tsUrl, {cache:'no-store', signal:AbortSignal.timeout(4000)});
     if (tsR.ok) {
       const remoteTs = await tsR.json();
-      if (remoteTs && typeof remoteTs === 'number' && remoteTs <= _lastRemoteTs) {
+      const forceFullFetch = Date.now() - _lastFullFetch > 90000;
+      if (!forceFullFetch && remoteTs && typeof remoteTs === 'number' && remoteTs <= _lastRemoteTs) {
         setSyncDot(true);
         return; // nada nuevo en Firebase, evitar descarga innecesaria
       }
@@ -2413,7 +2423,11 @@ async function fbSync() {
       d = await r.json();
     }
     if (!d) return;
-    _lastRemoteTs = d.__ts || Date.now();
+    _lastFullFetch = Date.now();
+    // CRÍTICO: no usar Date.now() como fallback si __ts no existe.
+    // Si se hace _lastRemoteTs = Date.now() cuando __ts es undefined, todos los
+    // syncs futuros verán remoteTs <= _lastRemoteTs y se saltarán para siempre.
+    if (d.__ts && typeof d.__ts === 'number') _lastRemoteTs = d.__ts;
     const changedKeys = [];
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
@@ -2476,6 +2490,7 @@ async function fbSync() {
     _syncPhotosFromFirebase();
     _syncAssetsFromFirebase();
   } catch { setSyncDot(false); }
+  } finally { _fbSyncing = false; }
 }
 
 // Helper para leer valores tipados de Firestore REST (cada campo viene como
