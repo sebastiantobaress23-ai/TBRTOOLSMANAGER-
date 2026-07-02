@@ -2079,6 +2079,10 @@ const DB = {
   },
   set(k, v) {
     try { localStorage.setItem('tbr_'+k, JSON.stringify(v)); } catch (e) { try { toast('No se pudo guardar: almacenamiento lleno.', false, 6000); } catch {} }
+    // 'bio' (credencial Face ID/Touch ID) es 100% local a este dispositivo:
+    // no se sube a Firebase ni se sincroniza entre dispositivos (ver comentario
+    // en FB_SYNC_KEYS).
+    if (k === 'bio') return;
     // Marcar como pendiente de confirmar en Firebase. Se saca de la lista
     // recién cuando fbWrite confirma el guardado remoto, así si la app se
     // cierra antes de que termine el guardado (debounce de 600ms) no se
@@ -2109,6 +2113,7 @@ const DB = {
   },
   del(k) {
     try { localStorage.removeItem('tbr_'+k); } catch {}
+    if (k === 'bio') return; // local-only, ver DB.set
     if (navigator.onLine) fbUrl(`${FB}/${k}.json`).then(url=>fetch(url,{method:'DELETE'})).catch(()=>{});
   }
 };
@@ -2414,8 +2419,14 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Claves que se sincronizan con Firebase (deben listarse todas las que se
-// guardan con DB.set para que viajen entre dispositivos)
-const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','bio','facturas','gastos','formConfig'];
+// guardan con DB.set para que viajen entre dispositivos).
+// 'bio' queda afuera a propósito: es una credencial de Face ID/Touch ID
+// ligada al hardware de ESTE dispositivo (WebAuthn). Sincronizarla entre
+// dispositivos no tiene sentido (el credId de un celular no sirve en otro) y
+// además rompía Face ID: si un dispositivo pisaba 'bio' con la credencial de
+// otro, el propio dispositivo que lo había registrado dejaba de poder
+// usarlo. Face ID ahora es 100% local a cada dispositivo, como corresponde.
+const FB_SYNC_KEYS = ['purchases','catalog','configs','settings','empresa','mlpubs','mlprecios','ordenes','cotizaciones','pedidos','sales','trip','templates','clientes','stockMovs','facturas','gastos','formConfig'];
 
 // Trae SOLO las claves de FB_SYNC_KEYS, cada una por separado (en paralelo),
 // en vez de descargar el árbol completo '/tbr.json'. Esto es crítico: el
@@ -2528,6 +2539,22 @@ async function fbSync() {
         const localQr   = PhotoDB.getQR()   || DB.get('empresa',{}).mpQr;
         if (!incoming.logo && localLogo) incoming.logo = localLogo;
         if (!incoming.mpQr && localQr)   incoming.mpQr = localQr;
+      }
+      // Unir usuarios (login) por id en vez de reemplazar la lista entera:
+      // un sync nunca debe poder SACAR un usuario que este dispositivo tiene
+      // localmente — eso es lo que dejaba a alguien afuera de su propia app
+      // si otro dispositivo sincronizaba una lista de usuarios más vieja o
+      // distinta. Borrar un usuario sigue siendo una acción local explícita
+      // (delUser) que se propaga normalmente por su propio push.
+      if (k === 'settings' && incoming && typeof incoming === 'object') {
+        const localUsers = DB.get('settings',{}).users || [];
+        const incomingUsers = incoming.users || [];
+        if (localUsers.length || incomingUsers.length) {
+          const byId = new Map();
+          localUsers.forEach(u=>u && u.id && byId.set(u.id,u));
+          incomingUsers.forEach(u=>u && u.id && byId.set(u.id,u));
+          incoming = { ...incoming, users: Array.from(byId.values()) };
+        }
       }
       const cur = JSON.stringify(DB.get(k));
       if (cur !== JSON.stringify(incoming)) {
