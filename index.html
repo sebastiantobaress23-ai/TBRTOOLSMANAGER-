@@ -2343,6 +2343,7 @@ window.addEventListener('online', async () => {
         const v = DB.get(k);
         if (v !== null) await fbWrite(k, v);
       }
+      _lastWrite = 0; // resetear para que fbSync descargue cambios remotos aunque acabemos de escribir
       await fbSync();
       return; // éxito — el tilde lo pone fbSync
     } catch {}
@@ -2396,6 +2397,9 @@ async function fbSync() {
       if (v !== null) await fbWrite(k, v);
     }
   } catch {}
+  // Claves que fallaron al subirse: si fbWrite falló, siguen en tbr__pending.
+  // No sobreescribir el dato local con el remoto viejo para estas claves.
+  const _failedPending = new Set(JSON.parse(localStorage.getItem('tbr__pending')||'[]'));
   try {
     // Primero consultar solo el timestamp liviano (~50 bytes).
     // Si no cambió desde la última descarga completa, saltar para no
@@ -2432,6 +2436,9 @@ async function fbSync() {
     let settingsChanged = false;
     for (const k of FB_SYNC_KEYS) {
       if (d[k]==null) continue;
+      // Si la escritura de esta clave falló, el remoto tiene datos viejos —
+      // saltear para no pisar el dato local nuevo con el viejo de Firebase.
+      if (_failedPending.has(k)) continue;
       let incoming = d[k];
       // Preserve local binary blobs (logo/QR live in PhotoDB, not Firebase empresa node)
       if (k === 'empresa' && incoming && typeof incoming === 'object') {
