@@ -1649,7 +1649,6 @@ html.light .sc::after{opacity:.6}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
         <span id="lock-bio-label">Usar Face ID / Touch ID</span>
       </button>
-      <a href="javascript:void(0)" onclick="triggerAccessRecovery()" style="margin-top:14px;font-size:11px;color:var(--di);text-decoration:underline;cursor:pointer">¿No podés entrar? Recuperar acceso</a>
     </div>
   </div>
 </div>
@@ -7828,10 +7827,9 @@ function tryUnlock(){
 }
 // Crea (si no existe ya) un usuario temporal con contraseña aleatoria para
 // poder entrar cuando el usuario/contraseña real quedó desincronizado entre
-// dispositivos. Se puede disparar por URL (?recover=1) o desde el botón
-// "¿No podés entrar?" de la pantalla de login — este último es la única vía
-// que funciona en apps agregadas a la pantalla de inicio (no tienen barra de
-// direcciones para escribir la URL con el parámetro).
+// dispositivos. Se dispara solo por URL (?recover=1) — a propósito no hay
+// ningún botón visible en la pantalla de login, para que no quede expuesto
+// a cualquiera que abra la app.
 function createRecoveryUser(){
   try {
     const s = DB.get('settings', {});
