@@ -1645,7 +1645,8 @@ html.light .sc::after{opacity:.6}
       <div class="iw"><input type="password" id="lock-pass" placeholder="Contraseña" autocomplete="current-password" style="text-align:center" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
       <div id="lock-syncing" style="display:none;font-size:12px;color:var(--ye);margin-top:4px">↻ Sincronizando datos por primera vez, esperá unos segundos antes de entrar…</div>
       <div id="lock-retry-wrap" style="display:none;margin-top:4px">
-        <div style="font-size:12px;color:var(--re);margin-bottom:8px">No se pudo bajar tu usuario todavía. Revisá tu conexión y probá de nuevo.</div>
+        <div style="font-size:12px;color:var(--re);margin-bottom:4px">No se pudo bajar tu usuario todavía. Revisá tu conexión y probá de nuevo.</div>
+        <div id="lock-retry-detail" style="font-size:11px;color:var(--di);margin-bottom:8px"></div>
         <button class="btn-g" style="width:100%" onclick="retryInitialLoginSync()">↻ Reintentar sincronización</button>
       </div>
       <div id="lock-err" style="display:none;font-size:12px;color:var(--re)">Usuario o contraseña incorrectos</div>
@@ -7795,6 +7796,9 @@ function delUser(id){
     render();
   },'Eliminar','cm-ok');
 }
+// Último motivo por el que _tryRestoreUsersFromFirebase falló, para
+// mostrarlo en la pantalla de login en vez de un genérico "no se pudo".
+let _lastLoginSyncError = null;
 // Intenta bajar los usuarios reales desde Firebase para un dispositivo sin
 // usuarios locales (instalación nueva). Devuelve true si logró algo
 // concluyente (encontró usuarios, o confirmó que Firebase no tiene
@@ -7803,12 +7807,17 @@ async function _tryRestoreUsersFromFirebase(){
   try {
     const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
     const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-    if (!_sR.ok) return false;
+    if (!_sR.ok) {
+      const _txt = await _sR.text().catch(()=>'');
+      _lastLoginSyncError = `HTTP ${_sR.status}${_txt?' — '+_txt.slice(0,150):''}`;
+      return false;
+    }
     const _sD = await _sR.json();
     const _remUsers = (_sD && _sD.users)||[];
     if (_remUsers.length > 0) {
       try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
       updateLockBioBtn();
+      _lastLoginSyncError = null;
       return true;
     }
     // Firebase respondió OK y no hay usuarios: instalación nueva de verdad, liberar.
@@ -7818,8 +7827,12 @@ async function _tryRestoreUsersFromFirebase(){
     if (_ov2) _ov2.style.display = 'none';
     if (_mn2) _mn2.style.removeProperty('visibility');
     if (_fab2) _fab2.style.removeProperty('display');
+    _lastLoginSyncError = null;
     return true;
-  } catch { return false; }
+  } catch (e) {
+    _lastLoginSyncError = String(e && e.message || e).slice(0,150);
+    return false;
+  }
 }
 // Botón manual "Reintentar sincronización" en la pantalla de login, para
 // cuando los reintentos automáticos del arranque tampoco lograron bajar
@@ -7828,6 +7841,7 @@ async function retryInitialLoginSync(){
   const _sy = document.getElementById('lock-syncing');
   const _eb = document.getElementById('lock-entrar-btn');
   const _rt = document.getElementById('lock-retry-wrap');
+  const _rd = document.getElementById('lock-retry-detail');
   if (_sy) _sy.style.display = 'block';
   if (_eb) _eb.disabled = true;
   if (_rt) _rt.style.display = 'none';
@@ -7835,6 +7849,7 @@ async function retryInitialLoginSync(){
   if (_sy) _sy.style.display = 'none';
   if (_eb) _eb.disabled = false;
   if (_rt) _rt.style.display = ok ? 'none' : 'block';
+  if (_rd) _rd.textContent = (!ok && _lastLoginSyncError) ? ('Motivo: '+_lastLoginSyncError) : '';
   if (ok) toast('Sincronizado', true);
 }
 function checkAccessPin(){
@@ -10750,9 +10765,11 @@ window.onload = async function() {
     const _sy2 = document.getElementById('lock-syncing');
     const _eb2 = document.getElementById('lock-entrar-btn');
     const _rt2 = document.getElementById('lock-retry-wrap');
+    const _rd2 = document.getElementById('lock-retry-detail');
     if (_sy2) _sy2.style.display = 'none';
     if (_eb2) _eb2.disabled = false;
     if (_rt2) _rt2.style.display = ok ? 'none' : 'block';
+    if (_rd2) _rd2.textContent = (!ok && _lastLoginSyncError) ? ('Motivo: '+_lastLoginSyncError) : '';
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
