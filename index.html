@@ -5759,6 +5759,12 @@ function pgVentas(){
   const totalRev = sales.reduce((a,s)=>a+saleRevenue(s),0);
   const totalProfit = sales.reduce((a,s)=>a+saleProfit(s),0);
   const totalUnits = sales.reduce((a,s)=>a+saleUnits(s),0);
+  // Total realmente acreditado: en ventas ML es mlReceived (ya neto de
+  // comisión/envío/bonus), en ventas directas es el ingreso completo (no
+  // hay descuentos de por medio). Distinto tanto de "Ingresos totales"
+  // (precio de venta bruto que pagó el comprador) como de "Ganancia real"
+  // (que además resta el costo del producto).
+  const totalRecibido = sales.reduce((a,s)=>a+(s.channel!=='directa' ? (s.mlReceived||saleRevenue(s)) : saleRevenue(s)),0);
 
   // Ranking de rentabilidad por producto
   const ranking = salesProductRanking(sales);
@@ -5831,8 +5837,9 @@ function pgVentas(){
 
   <div class="g4 mb20">
     <div class="sc accent-g"><div class="sc-l">Ingresos totales</div><div class="sc-v g">${totalRev?fmtA(totalRev):'—'}</div><div class="sc-s">${sales.length} venta${sales.length!==1?'s':''} · ${totalUnits} unidad${totalUnits!==1?'es':''}</div></div>
+    <div class="sc accent-u"><div class="sc-l">Recibido real</div><div class="sc-v u">${totalRev?fmtA(totalRecibido):'—'}</div><div class="sc-s">acreditado en tu cuenta (ML ya neto)</div></div>
     <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${totalRev?fmtA(totalProfit):'—'}</div><div class="sc-s">neto de comisión, envío y costo</div></div>
-    <div class="sc accent-u"><div class="sc-l">Margen real promedio</div><div class="sc-v u">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
+    <div class="sc accent-d"><div class="sc-l">Margen real promedio</div><div class="sc-v">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
     <div class="sc accent-d"><div class="sc-l">Ticket promedio</div><div class="sc-v">${sales.length?fmtA(totalRev/sales.length):'—'}</div><div class="sc-s">por venta</div></div>
   </div>
 
