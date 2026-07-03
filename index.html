@@ -1643,8 +1643,9 @@ html.light .sc::after{opacity:.6}
     <div id="lock-pin-wrap" style="width:100%;display:flex;flex-direction:column;gap:10px">
       <div class="iw"><input type="text" id="lock-user" placeholder="Usuario" autocomplete="username" style="text-align:center" onkeydown="if(event.key==='Enter')document.getElementById('lock-pass').focus()"></div>
       <div class="iw"><input type="password" id="lock-pass" placeholder="Contraseña" autocomplete="current-password" style="text-align:center" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
+      <div id="lock-syncing" style="display:none;font-size:12px;color:var(--ye);margin-top:4px">↻ Sincronizando datos por primera vez, esperá unos segundos antes de entrar…</div>
       <div id="lock-err" style="display:none;font-size:12px;color:var(--re)">Usuario o contraseña incorrectos</div>
-      <button class="btn-p" style="width:100%;margin-top:6px" onclick="tryUnlock()">Entrar</button>
+      <button id="lock-entrar-btn" class="btn-p" style="width:100%;margin-top:6px" onclick="tryUnlock()">Entrar</button>
       <button id="lock-bio-btn" class="btn-g" style="width:100%;display:none;align-items:center;justify-content:center;gap:8px" onclick="loginBiometric()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
         <span id="lock-bio-label">Usar Face ID / Touch ID</span>
@@ -10661,9 +10662,18 @@ window.onload = async function() {
       // Usuarios locales conocidos: evaluar sesión existente o mostrar login
       checkAccessPin();
       updateLockBioBtn();
+    } else {
+      // Sin usuarios locales (instalación nueva, ej. recién agregada a la
+      // pantalla de inicio): el formulario está visible pero cualquier
+      // intento de entrar va a fallar hasta que termine de bajar los
+      // usuarios reales de Firebase más abajo. Avisar y bloquear el botón
+      // en vez de dejar que el usuario pruebe y vea "incorrecto" sin saber
+      // por qué.
+      const _sy = document.getElementById('lock-syncing');
+      const _eb = document.getElementById('lock-entrar-btn');
+      if (_sy) _sy.style.display = 'block';
+      if (_eb) _eb.disabled = true;
     }
-    // Sin usuarios locales: formulario visible pero tryUnlock fallará hasta que
-    // initialSyncIfFresh traiga los usuarios de Firebase
   }
   // Migración: corregir nombre de empresa si quedó como el default antiguo 'TBR TOOLS'
   (function migrateEmpNombre(){
@@ -10712,6 +10722,13 @@ window.onload = async function() {
       if (_fab2) _fab2.style.removeProperty('display');
     }
     // Si Firebase no confirmó que está vacío → overlay permanece, usuario debe loguearse
+    // Ya bajó (o intentó bajar) los datos: dejar de mostrar "sincronizando"
+    // y habilitar el botón, haya salido bien o mal (si falló, el usuario
+    // puede reintentar más tarde con conexión).
+    const _sy2 = document.getElementById('lock-syncing');
+    const _eb2 = document.getElementById('lock-entrar-btn');
+    if (_sy2) _sy2.style.display = 'none';
+    if (_eb2) _eb2.disabled = false;
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
