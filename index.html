@@ -5920,7 +5920,6 @@ function pgVentas(){
     <div class="sc accent-u"><div class="sc-l">Recibido real</div><div class="sc-v u">${totalRev?fmtA(totalRecibido):'—'}</div><div class="sc-s">acreditado en tu cuenta (ML ya neto)</div></div>
     <div class="sc accent-y"><div class="sc-l">Ganancia real</div><div class="sc-v y">${totalRev?fmtA(totalProfit):'—'}</div><div class="sc-s">neto de comisión, envío y costo</div></div>
     <div class="sc accent-d"><div class="sc-l">Margen real promedio</div><div class="sc-v">${totalRev?(totalProfit/totalRev*100).toFixed(1)+'%':'—'}</div><div class="sc-s">sobre ingresos</div></div>
-    <div class="sc accent-d"><div class="sc-l">Ticket promedio</div><div class="sc-v">${sales.length?fmtA(totalRev/sales.length):'—'}</div><div class="sc-s">por venta</div></div>
   </div>
 
   <div class="sh mb16">Ranking de rentabilidad por producto</div>
