@@ -5763,6 +5763,16 @@ function pgVentas(){
   // Ranking de rentabilidad por producto
   const ranking = salesProductRanking(sales);
 
+  // Totales por mes, para agrupar el historial (evita un listado largo sin
+  // separar, difícil de ubicar algo puntual).
+  const monthProfitTotals = new Map();
+  sales.forEach(sl=>{
+    const d = new Date(sl.date||Date.now());
+    const mk = d.getFullYear()+'-'+d.getMonth();
+    monthProfitTotals.set(mk, (monthProfitTotals.get(mk)||0) + saleProfit(sl));
+  });
+  let _lastSaleMonthKey = null;
+
   return `<div class="pg">
   <div class="sh mb16">Registrar venta</div>
   <div class="card mb24">
@@ -5856,6 +5866,18 @@ function pgVentas(){
   <div class="sh mb16">Historial de ventas</div>
   ${sales.length ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
     ${sales.map((s,si)=>{
+      const _saleDate = new Date(s.date||Date.now());
+      const _saleMonthKey = _saleDate.getFullYear()+'-'+_saleDate.getMonth();
+      let monthHeader = '';
+      if (_saleMonthKey !== _lastSaleMonthKey) {
+        _lastSaleMonthKey = _saleMonthKey;
+        const _label = _saleDate.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+        const _mProfit = monthProfitTotals.get(_saleMonthKey)||0;
+        monthHeader = `<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:${si===0?'0':'14px'} 2px 2px">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(237,217,180,.55)">${_label.charAt(0).toUpperCase()+_label.slice(1)}</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:${_mProfit>=0?'var(--gr)':'var(--re)'}">${fmtA(_mProfit)}</span>
+        </div>`;
+      }
       const items=saleItems(s);
       const multi=items.length>1;
       const titulo = multi ? `${items.length} artículos` : esc(items[0].n)+(items[0].q>1?` ×${items[0].q}`:'');
@@ -5869,7 +5891,7 @@ function pgVentas(){
       const costo = multi ? items.reduce((a,it)=>a+(it.cost||0)*(it.q||1),0) : (s.costARS||items[0]?.cost||0);
       const expandId = 'sv'+si;
       const cols = isML&&recibido ? 3 : 2;
-      return `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
+      return monthHeader + `<div style="background:rgba(20,20,20,1);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
         <div style="display:flex;align-items:flex-start;gap:14px;padding:16px;cursor:pointer" onclick="toggleHi('${expandId}')">
           <div style="flex-shrink:0;width:44px;height:44px;border-radius:8px;background:${isML?'rgba(251,191,36,.08)':'rgba(255,255,255,.04)'};border:1px solid ${isML?'rgba(251,191,36,.18)':'rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center">
             <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:${isML?'var(--ye)':'var(--si)'}">${isML?'ML':'DIR'}</span>
