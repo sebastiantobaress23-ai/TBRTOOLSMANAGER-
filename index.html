@@ -1644,6 +1644,10 @@ html.light .sc::after{opacity:.6}
       <div class="iw"><input type="text" id="lock-user" placeholder="Usuario" autocomplete="username" style="text-align:center" onkeydown="if(event.key==='Enter')document.getElementById('lock-pass').focus()"></div>
       <div class="iw"><input type="password" id="lock-pass" placeholder="Contraseña" autocomplete="current-password" style="text-align:center" onkeydown="if(event.key==='Enter')tryUnlock()"></div>
       <div id="lock-syncing" style="display:none;font-size:12px;color:var(--ye);margin-top:4px">↻ Sincronizando datos por primera vez, esperá unos segundos antes de entrar…</div>
+      <div id="lock-retry-wrap" style="display:none;margin-top:4px">
+        <div style="font-size:12px;color:var(--re);margin-bottom:8px">No se pudo bajar tu usuario todavía. Revisá tu conexión y probá de nuevo.</div>
+        <button class="btn-g" style="width:100%" onclick="retryInitialLoginSync()">↻ Reintentar sincronización</button>
+      </div>
       <div id="lock-err" style="display:none;font-size:12px;color:var(--re)">Usuario o contraseña incorrectos</div>
       <button id="lock-entrar-btn" class="btn-p" style="width:100%;margin-top:6px" onclick="tryUnlock()">Entrar</button>
       <button id="lock-bio-btn" class="btn-g" style="width:100%;display:none;align-items:center;justify-content:center;gap:8px" onclick="loginBiometric()">
@@ -7791,6 +7795,48 @@ function delUser(id){
     render();
   },'Eliminar','cm-ok');
 }
+// Intenta bajar los usuarios reales desde Firebase para un dispositivo sin
+// usuarios locales (instalación nueva). Devuelve true si logró algo
+// concluyente (encontró usuarios, o confirmó que Firebase no tiene
+// ninguno), false si falló por red y conviene reintentar.
+async function _tryRestoreUsersFromFirebase(){
+  try {
+    const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
+    const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(8000)});
+    if (!_sR.ok) return false;
+    const _sD = await _sR.json();
+    const _remUsers = (_sD && _sD.users)||[];
+    if (_remUsers.length > 0) {
+      try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
+      updateLockBioBtn();
+      return true;
+    }
+    // Firebase respondió OK y no hay usuarios: instalación nueva de verdad, liberar.
+    const _ov2 = document.getElementById('lock-ov');
+    const _mn2 = document.getElementById('mob-nav');
+    const _fab2 = document.getElementById('qa-fab');
+    if (_ov2) _ov2.style.display = 'none';
+    if (_mn2) _mn2.style.removeProperty('visibility');
+    if (_fab2) _fab2.style.removeProperty('display');
+    return true;
+  } catch { return false; }
+}
+// Botón manual "Reintentar sincronización" en la pantalla de login, para
+// cuando los reintentos automáticos del arranque tampoco lograron bajar
+// los usuarios (sin tener que cerrar y reabrir toda la app).
+async function retryInitialLoginSync(){
+  const _sy = document.getElementById('lock-syncing');
+  const _eb = document.getElementById('lock-entrar-btn');
+  const _rt = document.getElementById('lock-retry-wrap');
+  if (_sy) _sy.style.display = 'block';
+  if (_eb) _eb.disabled = true;
+  if (_rt) _rt.style.display = 'none';
+  const ok = await _tryRestoreUsersFromFirebase();
+  if (_sy) _sy.style.display = 'none';
+  if (_eb) _eb.disabled = false;
+  if (_rt) _rt.style.display = ok ? 'none' : 'block';
+  if (ok) toast('Sincronizado', true);
+}
 function checkAccessPin(){
   const s=DB.get('settings',{});
   const users=s.users||[];
@@ -10689,46 +10735,24 @@ window.onload = async function() {
   // traer primero lo que haya en Firebase antes de inicializar valores por
   // defecto, para no perder usuarios/PIN ni otros datos ya guardados.
   await initialSyncIfFresh();
-  // Tras Firebase sync: re-evaluar acceso en dispositivo nuevo.
+  // Tras Firebase sync: re-evaluar acceso en dispositivo nuevo. Reintenta
+  // varias veces antes de rendirse — un dispositivo recién agregado a la
+  // pantalla de inicio suele fallar el primer intento (red todavía
+  // arrancando), y antes eso dejaba al usuario bloqueado sin explicación
+  // ni forma de reintentar sin cerrar y reabrir toda la app.
   if (!_hasLocalUsers) {
-    // Fetch directo al nodo settings para asegurarnos de tener los usuarios remotos.
-    // Por defecto bloqueamos — solo liberamos si Firebase CONFIRMA que no hay usuarios.
-    let _fbConfirmedNoUsers = false;
-    try {
-      const _sUrl = await fbUrl(`${FB}/settings.json`, 't='+Date.now());
-      const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(8000)});
-      if (_sR.ok) {
-        const _sD = await _sR.json();
-        const _remUsers = (_sD && _sD.users)||[];
-        if (_remUsers.length > 0) {
-          // Hay usuarios en Firebase — guardar localmente y exigir login
-          try { localStorage.setItem('tbr_settings', JSON.stringify(_sD)); } catch {}
-          updateLockBioBtn();
-        } else {
-          // Firebase respondió OK y no hay usuarios: instalación nueva
-          _fbConfirmedNoUsers = true;
-        }
-      }
-      // Si fetch falló (no ok) → _fbConfirmedNoUsers sigue false → seguimos bloqueados
-    } catch {
-      // Error de red → seguir bloqueados
+    let ok = false;
+    for (const delay of [0, 2000, 4000]) {
+      if (delay) await new Promise(r=>setTimeout(r, delay));
+      ok = await _tryRestoreUsersFromFirebase();
+      if (ok) break;
     }
-    if (_fbConfirmedNoUsers) {
-      const _ov2 = document.getElementById('lock-ov');
-      const _mn2 = document.getElementById('mob-nav');
-      const _fab2 = document.getElementById('qa-fab');
-      if (_ov2) _ov2.style.display = 'none';
-      if (_mn2) _mn2.style.removeProperty('visibility');
-      if (_fab2) _fab2.style.removeProperty('display');
-    }
-    // Si Firebase no confirmó que está vacío → overlay permanece, usuario debe loguearse
-    // Ya bajó (o intentó bajar) los datos: dejar de mostrar "sincronizando"
-    // y habilitar el botón, haya salido bien o mal (si falló, el usuario
-    // puede reintentar más tarde con conexión).
     const _sy2 = document.getElementById('lock-syncing');
     const _eb2 = document.getElementById('lock-entrar-btn');
+    const _rt2 = document.getElementById('lock-retry-wrap');
     if (_sy2) _sy2.style.display = 'none';
     if (_eb2) _eb2.disabled = false;
+    if (_rt2) _rt2.style.display = ok ? 'none' : 'block';
   }
   // Init IndexedDB photo storage (migrates from localStorage automatically)
   await PhotoDB.init();
