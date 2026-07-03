@@ -7809,7 +7809,15 @@ async function _tryRestoreUsersFromFirebase(){
     const _sR = await fetch(_sUrl, {cache:'no-store', signal:AbortSignal.timeout(8000)});
     if (!_sR.ok) {
       const _txt = await _sR.text().catch(()=>'');
-      _lastLoginSyncError = `HTTP ${_sR.status}${_txt?' — '+_txt.slice(0,150):''}`;
+      // Un 401/403 acá casi siempre es CONSECUENCIA de no haber conseguido
+      // token de autenticación (ensureAuth), no la causa real — si
+      // _lastAuthError tiene algo, mostrar eso, que es lo que efectivamente
+      // falló (signup/refresh anónimo con Firebase Auth).
+      if (_lastAuthError) {
+        _lastLoginSyncError = `auth/${_lastAuthError.step}: ${_lastAuthError.status} — ${_lastAuthError.msg||''}`;
+      } else {
+        _lastLoginSyncError = `HTTP ${_sR.status}${_txt?' — '+_txt.slice(0,150):''}`;
+      }
       return false;
     }
     const _sD = await _sR.json();
