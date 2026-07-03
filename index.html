@@ -7411,7 +7411,10 @@ function pgConfig() {
   <div class="card mb16">
     <div class="hint mb16">Estado real de la sincronización con Firebase en este dispositivo. Si algo no aparece en otro dispositivo, revisá esto primero antes de reportar un error.</div>
     <div id="sync-diag"></div>
-    <div class="fe mt16"><button class="btn-g btn-sm" onclick="forceSyncNow()">↻ Sincronizar ahora</button></div>
+    <div class="fe mt16" style="gap:8px">
+      <button class="btn-g btn-sm" onclick="forceFullReupload()" title="Vuelve a subir TODOS los datos locales a Firebase, hayan cambiado o no">⬆ Resubir todo</button>
+      <button class="btn-g btn-sm" onclick="forceSyncNow()">↻ Sincronizar ahora</button>
+    </div>
   </div>
 
   <div class="sh mb16">Excel</div>
@@ -10631,6 +10634,36 @@ async function forceSyncNow() {
   await fbSync();
   renderSyncDiag();
   toast('Sincronización completa', true);
+}
+// "Sincronizar ahora" solo empuja lo que YA está marcado como pendiente —
+// si un dato local nunca se subió con éxito (ej. quedó bloqueado por
+// permisos de Firebase, como pasó hoy) pero tampoco quedó marcado como
+// pendiente, un sync normal nunca lo vuelve a intentar. Esto fuerza una
+// resubida completa de TODAS las claves con el valor local actual,
+// independientemente de si figuran pendientes o no — para usar una vez,
+// después de arreglar algo como un problema de permisos, y asegurarse de
+// que Firebase realmente tenga una copia completa y al día.
+async function forceFullReupload() {
+  confirm2(
+    'Esto vuelve a subir TODOS tus datos locales a Firebase de cero, hayan cambiado o no. Usalo si sospechás que Firebase no tiene una copia completa (ej. después de arreglar un problema de permisos). Puede tardar un momento.',
+    async () => {
+      toast('Resubiendo todo…');
+      let ok = 0, fail = 0;
+      for (const k of FB_SYNC_KEYS) {
+        const v = DB.get(k);
+        if (v === null) continue;
+        try {
+          await fbWrite(k, v);
+          const pendingNow = JSON.parse(localStorage.getItem('tbr__pending')||'[]');
+          if (pendingNow.includes(k)) fail++; else ok++;
+        } catch { fail++; }
+      }
+      renderSyncDiag();
+      if (fail === 0) toast(`✓ ${ok} claves resubidas correctamente`, true, 4000);
+      else toast(`${ok} subidas bien, ${fail} fallaron — revisá el detalle abajo`, false, 6000);
+    },
+    'Resubir todo','cm-ok'
+  );
 }
 
 /* ═══════════════════════════════════════════
