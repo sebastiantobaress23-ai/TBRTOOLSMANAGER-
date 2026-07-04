@@ -6567,7 +6567,7 @@ function statsRecords(ps) {
   const maxInv = ps.reduce((a,b)=>(b.r?.ars||0)>(a.r?.ars||0)?b:a, ps[0]);
   cards.push({icon:ic('trophy',16),lbl:'Compra más grande',val:fmtA(maxInv.r?.ars||0),sub:maxInv.name||'—'});
   const maxGan = ps.reduce((a,b)=>purchaseGain(b)>purchaseGain(a)?b:a, ps[0]);
-  cards.push({icon:ic('trendUp',16),lbl:'Mayor ganancia',val:fmtA(purchaseGain(maxGan)),sub:maxGan.name||'—'});
+  cards.push({icon:ic('trendUp',16),lbl:'Mayor ganancia proyectada',val:fmtA(purchaseGain(maxGan)),sub:maxGan.name||'—'});
   const withTce = ps.filter(p=>p.r?.TCE);
   if (withTce.length) {
     const minTce = withTce.reduce((a,b)=>(b.r.TCE)<(a.r.TCE)?b:a, withTce[0]);
@@ -6576,7 +6576,7 @@ function statsRecords(ps) {
   const pm={};ps.forEach(p=>(p.products||[]).forEach(pr=>{const k=pr.n||'?';pm[k]=(pm[k]||0)+(pr.q||1);}));
   const topProd = Object.entries(pm).sort((a,b)=>b[1]-a[1])[0];
   if (topProd) cards.push({icon:ic('star',16),lbl:'Producto más comprado',val:topProd[0],sub:`${topProd[1]} unidades en total`});
-  return `<div class="sh mb16">Récords</div>
+  return `<div class="sh mb16">Récords de compras</div>
   <div class="g4 mb24">
     ${cards.map(c=>`<div class="record-card">
       <div class="record-icon">${c.icon}</div>
