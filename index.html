@@ -9450,7 +9450,7 @@ function cliListHTML(list) {
         <button class="hi-swipe-action danger" onclick="delCli('${c.id}')">${ic('trash')}<span>Eliminar</span></button>
       </div>
       <div class="hi-swipe-content" data-lp="cli" data-id="${c.id}" onclick="toggleHi('cli${i}')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
-        <div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:rgba(196,149,42,.15);border:1px solid rgba(196,149,42,.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--ud);letter-spacing:.5px">${initials}</div>
+        <div style="flex-shrink:0;width:38px;height:38px;border-radius:50%;background:rgba(237,217,180,.15);border:1px solid rgba(237,217,180,.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--ud);letter-spacing:.5px">${initials}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:600;color:var(--ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${highlight(c.nombre,cliSearch)}</div>
           <div style="font-size:11px;color:var(--di);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${meta}</div>
@@ -12739,7 +12739,7 @@ function riRenderItems() {
   if (!_riItems.length) { wrap.innerHTML = `<div style="font-size:12px;color:var(--di);padding:8px 0">Sin artículos agregados</div>`; return; }
   wrap.innerHTML = _riItems.map((it,i)=>`
     <div style="display:grid;grid-template-columns:${esValorizado?'auto 1fr 60px 100px auto':'auto 1fr 60px auto'};gap:6px;align-items:center">
-      <button onclick="openRiCatSheet(${i})" style="width:34px;height:34px;background:var(--b3);border:1px solid rgba(196,149,42,.25);border-radius:8px;cursor:pointer;color:var(--ud);display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Buscar en catálogo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button onclick="openRiCatSheet(${i})" style="width:34px;height:34px;background:var(--b3);border:1px solid rgba(237,217,180,.25);border-radius:8px;cursor:pointer;color:var(--ud);display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Buscar en catálogo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       <div class="iw" style="min-width:0"><input type="text" value="${esc(it.descripcion||'')}" placeholder="Descripción" oninput="_riItems[${i}].descripcion=this.value" style="font-size:13px"></div>
       <div class="iw"><input type="number" value="${it.qty||1}" min="1" placeholder="Cant." oninput="_riItems[${i}].qty=+this.value||1" style="text-align:center;font-size:13px"></div>
       ${esValorizado?`<div class="iw" style="min-width:0"><input type="number" value="${it.precio||''}" min="0" step="0.01" placeholder="Precio" oninput="_riItems[${i}].precio=+this.value||0" style="font-size:13px"></div>`:''}
