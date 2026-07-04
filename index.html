@@ -219,7 +219,7 @@ body.compact .g4{gap:8px!important}
 .ml-mode-bar{display:flex;gap:6px;margin-bottom:16px}
 .ml-mode-btn{flex:1;height:42px;background:var(--bg3);border:1px solid var(--b2);color:var(--di);border-radius:var(--r);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s}
 .ml-mode-btn:hover{border-color:var(--si);color:var(--si)}
-.ml-mode-btn.on{border-color:var(--ye);color:var(--ye);background:rgba(251,191,36,.08)}
+.ml-mode-btn.on{border-color:var(--ud);color:var(--ud);background:rgba(237,217,180,.08)}
 .ml-global{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px 16px;margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
 .ml-global label{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--di);display:block;margin-bottom:4px}
 .ml-gfield{display:flex;flex-direction:column}
@@ -1401,16 +1401,6 @@ body{line-height:1.5}
 @keyframes lockIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 #lock-ov>div{animation:lockIn .45s cubic-bezier(.22,.61,.36,1) both}
 @media(prefers-reduced-motion:reduce){#lock-ov>div{animation:none}}
-
-/* ══════════════════════════════════════════════
-   ACTIVE BUTTON STATES — subtle luminosity, no color accent */
-.ch-tg-btn.active{background:rgba(255,255,255,.11)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.95)!important}
-.sort-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
-.compact-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
-.ml-src-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
-.ml-mode-btn.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
-.btn-g.on{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.92)!important}
-html.light .ch-tg-btn.active,html.light .sort-btn.on,html.light .compact-btn.on,html.light .ml-src-btn.on,html.light .ml-mode-btn.on,html.light .btn-g.on{background:rgba(0,0,0,.09)!important;border-color:rgba(0,0,0,.2)!important;color:rgba(0,0,0,.85)!important}
 
 /* ══════════════════════════════════════════════
    DESIGN REFINEMENT — form labels, sort, catalog, stats */
